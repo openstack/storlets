@@ -66,7 +66,7 @@ For convenience we also provide a storlet all-in-one installation script that in
 See <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_all_in_one.rst>
 The installation is based on Ansible and was tested on Ubuntu 14.10, and with Swift 1.13 and Swift 2.2.
 
-Once installation is completed, you can try run the system tests as described in the <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst>
+Once installation is completed, you can try run the system tests as described in the <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/dev_and_test_guide.rst>
 The system tests are a good reference for writing and deploying a Storlet.
 
 Status
