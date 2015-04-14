@@ -21,7 +21,7 @@ The Swift Storlets repo provides:
   object service pipelines, and is responsible  to communicate with the compute engine passing 
   it the data to be processed and getting back the result.
 * The Docker based compute engine which is responsible for sandboxing the execution of the Storlet. 
-  The Docker based compute engine is described in doc/source/docker_compute_engine.rst.
+  The Docker based compute engine is described in <https://github.com/Open-I-Beam/swift-storlets/doc/source/docker_compute_engine.rst>.
 * Initial tools for managing and deploying Docker images within the Swift cluster.
 
 The documentation in this repo is organized according to the various roles involved with Swift Storlets:
