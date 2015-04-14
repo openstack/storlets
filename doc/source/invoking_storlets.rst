@@ -2,12 +2,14 @@
 Storlets Invocation
 ===================
 
-Once the storlet and its dependencies are deployed the storlet is ready for execution,
-and can be invoked. Storlets can be invoked as part of a GET or a PUT request.
+Once the storlet and its dependencies are deployed the storlet is ready for invocation.
+Storlets can be invoked in 2 ways:
 
-Invocation via PUT and GET involves adding an extra header to the Swift original
-PUT/GET requests. Following our Identity Storlet example, here are invocation 
-examples. This time the examples make use of the python swift client.
+1. Invocation upon GET. In this case the user gets a transformation of the object residing in the store (as opposed to the actual object). Typical use case for GET is anonimization, where the user might not have access to a certain data unless it is being anonymized by some storlet.
+2. Invocation upon PUT. In this case the data kept in the store is a transformation of the object uploaded by the user (as opposed to the actual uploaded data or metadata). A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data and adds it as Swift metadata.
+
+Invocation involves adding an extra header to the Swift original
+PUT/GET requests. Following our Identity Storlet example given in <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>, here are invocation examples. This time the examples make use of the python swift client.
 
 Invocation on GET
 =================

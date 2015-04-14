@@ -27,12 +27,12 @@ The Swift Storlets repo provides:
 The documentation in this repo is organized according to the various roles involved with Swift Storlets:
 
 1. Storlet developer. The Storlet developer develops, packages and deploys Storlets to Swift. This is described in: <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>
-. Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/invoking_storlets.rst> describes how to invoke a Storlet.
-2. Storlets account manager (or account manager in short). The account manager is an admin user on the customer side who is typically the one responsible for paying the 
+2. Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/invoking_storlets.rst> describes how storlets can be invoked.
+3. Storlets account manager (or account manager in short). The account manager is an admin user on the customer side who is typically the one responsible for paying the 
    bill (and perhaps setting ACLs). From Storlets perspective the account manager is responsible for managing the Docker image as well as the Storlets that can be executed 
    on data in the account. Part of the echo system is giving the account manager a way to deploy a Docker image to be used for Storlets execution within that account. 
    <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/building_and_deploying_docker_images.rst> has the details.
-3. Swift Storlet manager. Typically, this is the Swift admin on the provider side that deals with rings and broken disks. 
+4. Swift Storlet manager. Typically, this is the Swift admin on the provider side that deals with rings and broken disks. 
    From the Storlets perspective (s)he is the one responsible for the below. <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_management.rst> has the details of the provided tools to do that.
    Those tools are installed on a designated node having a 'Storlet management' role (See installation section below)
 
@@ -42,7 +42,7 @@ The documentation in this repo is organized according to the various roles invol
   * Deploy an account's Docker image across the cluster. This allows the account admin to upload a self tailored Docker image that the Swift admin can 
     then deploy across the cluster. Requests for running Storlets in that account would be served by Storlets running over this account's self tailored image.
 
-4. Swift storlet developer. Someone looking at playing with the code of the storlet middleware and the storlet gateway. If you are one of those you will be interested in:
+5. Swift storlet developer. Someone looking at playing with the code of the storlet middleware and the storlet gateway. If you are one of those, you will be interested in:
 
   * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/dev_and_test_guide.rst>
   * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_docker_gateway.rst>
@@ -51,13 +51,6 @@ Finally, these are a MUST:
 
 * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst>
 * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/source/storlet_all_in_one.rst>
-
-Storlets Invocation Types
-=========================
-Storlets can be invoked in 2 ways:
-
-1. Invocation upon GET. In this case the user gets a transformation of the object residing in the store (as opposed to the actual object). Typical use case for GET is anonimization, where the user might not have access to a certain data unless it is being anonymized by some storlet.
-2. Invocation upon PUT. In this case the data kept in the store is a transformation of the object uploaded by the user (as opposed to the actual uploaded data or metadata). A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data and adds it as Swift metadata.
 
 Installation
 ============
