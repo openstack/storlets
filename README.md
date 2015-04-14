@@ -50,7 +50,7 @@ The documentation in this repo is organized according to the various roles invol
 Finally, these are a MUST:
 
 * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst>
-* <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/source/storlet_all_in_one.rst>
+* <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlet_all_in_one.rst>
 
 Installation
 ============
