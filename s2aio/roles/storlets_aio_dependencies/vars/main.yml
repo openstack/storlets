@@ -1,0 +1,6 @@
+packages:
+  - git
+  - ansible
+  - sshpass
+  - ant
+  - openjdk-7-jdk
