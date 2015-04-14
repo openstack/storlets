@@ -21,19 +21,19 @@ The Swift Storlets repo provides:
   object service pipelines, and is responsible  to communicate with the compute engine passing 
   it the data to be processed and getting back the result.
 * The Docker based compute engine which is responsible for sandboxing the execution of the Storlet. 
-  The Docker based compute engine is described in <https://github.com/Open-I-Beam/swift-storlets/doc/source/docker_compute_engine.rst>.
+  The Docker based compute engine is described in <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/docker_compute_engine.rst>
 * Initial tools for managing and deploying Docker images within the Swift cluster.
 
 The documentation in this repo is organized according to the various roles involved with Swift Storlets:
 
-1. Storlet developer. The Storlet developer develops, packages and deploys Storlets to Swift. This is described in: doc/source/writing_and_deploying_storlets.rst
-. Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. doc/source/invoking_storlets.rst describes how to invoke a Storlet.
+1. Storlet developer. The Storlet developer develops, packages and deploys Storlets to Swift. This is described in: <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>
+. Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/invoking_storlets.rst> describes how to invoke a Storlet.
 2. Storlets account manager (or account manager in short). The account manager is an admin user on the customer side who is typically the one responsible for paying the 
    bill (and perhaps setting ACLs). From Storlets perspective the account manager is responsible for managing the Docker image as well as the Storlets that can be executed 
    on data in the account. Part of the echo system is giving the account manager a way to deploy a Docker image to be used for Storlets execution within that account. 
-   doc/source/building_and_deploying_docker_images.rst has the details.
+   <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/building_and_deploying_docker_images.rst> has the details.
 3. Swift Storlet manager. Typically, this is the Swift admin on the provider side that deals with rings and broken disks. 
-   From the Storlets perspective (s)he is the one responsible for the below. doc/source/storlets_management.rst has the details of the provided tools to do that.
+   From the Storlets perspective (s)he is the one responsible for the below. <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_management.rst> has the details of the provided tools to do that.
    Those tools are installed on a designated node having a 'Storlet management' role (See installation section below)
 
   * Enabling a Swift account for Storlets. Since we wanted to give a self contained implementation we actuially give a tool for 
@@ -44,13 +44,13 @@ The documentation in this repo is organized according to the various roles invol
 
 4. Swift storlet developer. Someone looking at playing with the code of the storlet middleware and the storlet gateway. If you are one of those you will be interested in:
 
-  * doc/source/dev_and_test_guide.rst
-  * doc/source/storlets_docker_gateway.rst
+  * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/dev_and_test_guide.rst>
+  * <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_docker_gateway.rst>
 
 Finally, these are a MUST:
 
-* doc/source/storlets_installation_guide.rst
-* doc/source/storlet_all_in_one.rst
+* <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst>
+* <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/source/storlet_all_in_one.rst>
 
 Storlets Invocation Types
 =========================
@@ -61,12 +61,12 @@ Storlets can be invoked in 2 ways:
 
 Installation
 ============
-doc/source/storlets_installation_guide.rst describes how to install Storlets in an existing Swift cluster that uses Keystone.
+<https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst> describes how to install Storlets in an existing Swift cluster that uses Keystone.
 For convenience we also provide a storlet all-in-one installation script that installs Swift with Keystone and Storlets in a single virtual machine.
-See doc/source/storlets_all_in_one.rst
+See <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_all_in_one.rst>
 The installation is based on Ansible and was tested on Ubuntu 14.10, and with Swift 1.13 and Swift 2.2.
 
-Once installation is completed, you can try run the system tests as described in the doc/source/storlets_installation_guide.rst
+Once installation is completed, you can try run the system tests as described in the <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlets_installation_guide.rst>
 The system tests are a good reference for writing and deploying a Storlet.
 
 Status
@@ -76,10 +76,6 @@ implementaton.
 Having said that we will be doing fixing of major bugs, potentially add some improvements and adaptations required to stay tuned with
 the Swift Storlets middleware as it evolves while getting upstream.
 Given enough interest from the community this status may change to be a more active project.
-
-Development and Testing
-=======================
-doc/sources/dev_and_test_guide.rst describes how to develop within this repo environment. At this point the development guide is given to allow playing with the code, and make some experiments.
 
 Acknowledgements
 ================
