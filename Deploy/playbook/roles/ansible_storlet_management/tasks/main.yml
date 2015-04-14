@@ -1,0 +1,98 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+
+- name: Install Ansible
+  shell: dpkg --get-selections | grep ansible | awk {'print $2'} | grep -w install | wc -l
+  register: dpkg
+
+- apt: name=ansible state=present update-cache=yes force=yes
+  when: "'0' in dpkg.stdout_lines[0]"
+
+- name: Install Dependencies
+  apt:
+    pkg: "{{ item }}"
+    state: latest
+  with_items:
+    - python-swiftclient
+    - python-keystoneclient
+    - sshpass
+
+- name: create storlet management installation dir
+  file: state=directory dest="{{ item }}"
+  with_items:
+    - "{{ storlet_management_ansible_dir }}/roles/add_new_tenant/tasks" 
+    - "{{ storlet_management_ansible_dir }}/roles/pull_tenant_image/tasks" 
+    - "{{ storlet_management_ansible_dir }}/roles/push_tenant_image/tasks"
+    - "{{ storlet_management_ansible_dir }}/roles/push_tenant_image/templates" 
+
+- name: create storlet management var file
+  template: 
+    src: "var_yml_file"
+    dest: "{{ storlet_management_ansible_dir }}/common.yml"
+    owner: root
+    mode: 0644
+    
+- name: create storlets_add_new_tenant.yml file
+  template: 
+    src: "storlets_add_new_tenant_yml_file"
+    dest: "{{ storlet_management_ansible_dir }}/storlets_add_new_tenant.yml"
+    owner: root
+    mode: 0644
+
+- name: create pull_tenant_image.yml file
+  template: 
+    src: "pull_tenant_image_yml_file"
+    dest: "{{ storlet_management_ansible_dir }}/pull_tenant_image.yml"
+    owner: root
+    mode: 0644
+
+- name: create push_tenant_image.yml file
+  template: 
+    src: "push_tenant_image_yml_file"
+    dest: "{{ storlet_management_ansible_dir }}/push_tenant_image.yml"
+    owner: root
+    mode: 0644
+
+- name: create storlet_mgmt_common.py file
+  template:
+    src: "storlet_mgmt_common_py_file"
+    dest: "{{ storlet_management_install_dir }}/storlet_mgmt_common.py"
+    owner: root
+    mode: 0755
+
+- name: create add_new_tenant.py file
+  template:
+    src: "add_new_tenant_py_file"
+    dest: "{{ storlet_management_install_dir }}/add_new_tenant.py"
+    owner: root
+    mode: 0755
+
+- name: create deploy_image.py file
+  template:
+    src: "deploy_image_py_file"
+    dest: "{{ storlet_management_install_dir }}/deploy_image.py"
+    owner: root
+    mode: 0755
+
+- copy: src=add_new_tenant_main.yml dest={{ storlet_management_ansible_dir }}/roles/add_new_tenant/tasks/main.yml
+
+- copy: src=pull_tenant_image_main.yml dest={{ storlet_management_ansible_dir }}/roles/pull_tenant_image/tasks/main.yml
+
+- copy: src=push_tenant_image_main.yml dest={{ storlet_management_ansible_dir }}/roles/push_tenant_image/tasks/main.yml
+
+- copy: src=create_tenant_image_Dockerfile dest={{ storlet_management_ansible_dir }}/roles/push_tenant_image/templates/create_tenant_image_Dockerfile
+
+- copy: src=tenant_id dest={{ storlet_management_ansible_dir }}/roles/push_tenant_image/templates/tenant_id

@@ -1,0 +1,73 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- name: Place Ubuntu 14.04 in local repository
+  shell: docker images | grep "{{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04" | wc -l
+  register: ubuntu_image
+
+- command: "{{ item }}"
+  with_items:
+  - "docker pull ubuntu:14.04"
+  - "docker tag ubuntu:14.04 {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
+  - "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
+  tags: ubuntu_14.04_jre7
+  when: "'0' in ubuntu_image.stdout_lines[0]"
+  
+- name: Create Repository for building the image
+  stat: path=/data/registry/repositories/ubuntu_14.04_jre7
+  register: st0
+
+- file:
+    path: /data/registry/repositories/ubuntu_14.04_jre7
+    state: directory
+    mode: 0755
+    owner: root
+  tags: ubuntu_14.04_jre7
+  when: not st0.stat.exists
+    
+- name: Download necessary Java dependencies
+  get_url: 
+    url: "{{ item }}"
+    dest: /data/registry/repositories/ubuntu_14.04_jre7
+  with_items:
+    - https://json-simple.googlecode.com/files/json_simple-1.1.jar
+    - http://www.slf4j.org/dist/slf4j-1.7.7.tar.gz
+    - http://logback.qos.ch/dist/logback-1.1.2.tar.gz
+  tags: ubuntu_14.04_jre7
+    
+- name: Untar downloaded dependencies
+  command: "{{ item }}"
+  args:
+    chdir: "/data/registry/repositories/ubuntu_14.04_jre7"
+  with_items:
+    - "tar xvf slf4j-1.7.7.tar.gz"
+    - "mv slf4j-1.7.7/slf4j-api-1.7.7.jar ."
+    - "rm -fr slf4j-1.7.7 slf4j-1.7.7.tar.gz"
+    - "tar xvf logback-1.1.2.tar.gz"
+    - "mv logback-1.1.2/logback-core-1.1.2.jar ."
+    - "mv logback-1.1.2/logback-classic-1.1.2.jar ."
+    - "rm -fr logback-1.1.2/ logback-1.1.2.tar.gz"
+  tags: ubuntu_14.04_jre7
+    
+- name: Copy additional resources
+  copy:
+    src: "{{ item }}"
+    dest: /data/registry/repositories/ubuntu_14.04_jre7
+  with_items:
+    - logback.xml
+    - rsyslog.conf
+  tags: ubuntu_14.04_jre7
+ 
+- include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre7 layer_suffix=jre7 tags=jre7

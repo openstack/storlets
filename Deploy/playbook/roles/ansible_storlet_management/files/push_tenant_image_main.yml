@@ -1,0 +1,66 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- name: Get the tenant id from Keystone
+  shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ tenant_name }} | awk '{print $2}'
+  register: tenant_id
+
+- name: get image tar file
+  command: swift download
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ storlet_management_admin_username }}"
+           --os-password="{{ storlet_manager_admin_password }}"
+           --os-tenant-name="{{ storlet_management_account }}"
+           --os-storage-url="{{ swift_public_url }}/AUTH_{{ tenant_id.stdout_lines[0] }}"
+           docker_images "{{ tar_object_name }}"
+  args:
+    chdir: "{{ storlet_management_install_dir }}"
+
+- name: load image to local docker registry
+  shell: docker load -i "{{ storlet_management_install_dir }}/{{ tar_object_name }}"
+
+- name: create the tenant specific docker image step 1 - create repo dir
+  file: 
+    state: directory 
+    dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
+    owner: root
+    mode: 0755
+- name: create the tenant specific docker image step 2 - create Docker file
+  template:
+    src:  create_tenant_image_Dockerfile
+    dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}/Dockerfile"
+    owner: root
+    mode: 0755
+    
+- name: create the tenant specific docker image step 3 - copy tenant_id file to build dir
+  template:
+    src:  tenant_id
+    dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}/tenant_id"
+    owner: root
+    mode: 0755
+
+- name: "Build the image {{ tenant_id.stdout_lines[0] }}"
+  command: "docker build -t {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
+  args:
+    chdir: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
+  register: command_result
+  failed_when: "'Successfully built' not in command_result.stdout"
+
+- name: Push the image to the global registry
+  command: "docker push {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"
+
+- name: remove storlet docker image tar file
+  command: rm "{{ storlet_management_install_dir }}/{{ tar_object_name }}"
+

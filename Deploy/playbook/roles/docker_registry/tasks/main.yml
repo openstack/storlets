@@ -1,0 +1,115 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- name: Install dependencies
+  apt: 
+    pkg: "{{ item }}"
+  with_items:
+    - git 
+    - build-essential
+    - libevent-dev
+    - libssl-dev 
+    - liblzma-dev 
+    - python-dev
+    
+- stat: path=/usr/bin/pip
+  register: p
+- shell: wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+  when: not p.stat.exists 
+- shell: python get-pip.py
+  when: not p.stat.exists 
+- shell: ln -s /usr/local/bin/pip /usr/bin/pip
+  when: not p.stat.exists 
+
+
+- name: Git clone and checkout the Docker repository service code
+  stat: path=/opt/docker-registry
+  register: p
+- git: 
+    repo: https://github.com/dotcloud/docker-registry.git 
+    dest: /opt/docker-registry
+    version: 0.6.3
+  when: not p.stat.exists
+  
+
+- name: pip install the Docker repository service requirements
+  pip:
+    chdir: /opt/docker-registry
+    requirements: requirements.txt
+    
+#- name: Hack to resolve repository dependencies bug
+#  pip:
+#    name: Jinja2
+#    version: 2.7.3
+
+- name: Create log dir
+  file: 
+    path: /var/log/docker-registry
+    state: directory 
+    mode: 0755
+    owner: root
+
+- name: Create data dir
+  file: 
+    path: /data/registry
+    state: directory
+    mode: 0755
+    owner: root
+
+- name: Create repository service config file
+  stat: path=/opt/docker-registry/config/config.yml
+  register: st0
+
+- template: 
+    src: opt/docker-registry/config/config.yml
+    dest: /opt/docker-registry/config/config.yml
+    owner: root
+    mode: 0644
+  when: not st0.stat.exists
+
+- name: Create Docker repository service upstart job
+  stat: path=/etc/init/docker-registry.conf
+  register: st1
+
+- template: 
+    src: etc/init/docker-registry.conf
+    dest: /etc/init/docker-registry.conf
+    owner: root
+    mode: 0644
+  when: not st1.stat.exists
+
+- name: Stop  docker repository service
+  service:
+    name: docker-registry
+    state: stopped
+  ignore_errors: yes 
+
+- name: Start Docker repository service
+  service:
+    name: docker-registry
+    state: started
+
+- name: Test repository
+  shell: docker images | grep my_busybox | wc -l
+  register: busy_box
+
+- command: docker pull busybox
+  when: "'0' in busy_box.stdout_lines[0]"
+
+- command: docker tag busybox "{{ inventory_hostname }}:{{ docker_registry_port }}/my_busybox"
+  when: "'0' in busy_box.stdout_lines[0]"
+
+- command: docker push "{{ inventory_hostname }}:{{ docker_registry_port }}/my_busybox"
+  when: "'0' in busy_box.stdout_lines[0]"

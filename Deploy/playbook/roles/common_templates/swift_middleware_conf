@@ -1,0 +1,15 @@
+[proxy-confs]
+proxy_server_conf_file = /etc/swift/proxy-server.conf
+storlet_proxy_server_conf_file = /etc/swift/storlet-proxy-server.conf
+
+[object-confs]
+#object_server_conf_files = /etc/swift/object-server/1.conf, /etc/swift/object-server/2.conf, /etc/swift/object-server/3.conf, /etc/swift/object-server/4.conf
+object_server_conf_files = /etc/swift/object-server.conf
+
+[common-confs]
+storlet_middleware = storlet_handler
+storlet_container = storlet
+storlet_dependency = dependency
+storlet_timeout = 40
+storlet_gateway_module = storlet_gateway.storlet_docker_gateway:StorletGatewayDocker
+storlet_gateway_conf = {{ storlet_gateway_conf_file }}

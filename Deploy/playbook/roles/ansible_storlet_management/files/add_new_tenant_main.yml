@@ -1,0 +1,106 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- name: Test if tenant is already created
+  shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ tenant_name }} | wc -l
+  register: tenant
+
+- name: Test if user is already created
+  shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} user-list | grep {{ user_name }} | wc -l
+  register: user
+
+- name: create new tenant {{ tenant_name }}
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ tenant_name }}"
+  when: "'0' in tenant.stdout_lines[0]"
+
+- name: create new user {{ user_name }} for tenant {{ tenant_name }}
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ tenant_name }}"
+    user: "{{ user_name }}"
+    password: "{{ user_password }}"
+  when: "'0' in user.stdout_lines[0]"
+
+- name: apply role admin to user {{ user_name }}
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ tenant_name }}"
+    user: "{{ user_name }}"
+    role: admin
+  when: "'0' in user.stdout_lines[0]"
+
+- name: Set account metadata in swift -- enable storlets
+  command: swift post 
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           --meta "Storlet-Enabled:True"
+
+- name: put account container log
+  command: swift post
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           log
+
+- name: put account container storlet
+  command: swift post
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           storlet
+
+- name: put account container dependency
+  command: swift post
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           dependency
+
+- name: put account container docker_images
+  command: swift post
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           --read-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
+           --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
+           docker_images
+
+- name: save default storlet docker image as tar file
+  command: docker save -o /tmp/{{ base_os_image }}_jre7_storlets.tar {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ base_os_image }}_jre7_storlets
+  
+- name: upload docker image to docker_images container
+  command: swift upload
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ user_name }}"
+           --os-password="{{ user_password }}"
+           --os-tenant-name="{{ tenant_name }}"
+           docker_images {{ base_os_image }}_jre7_storlets.tar
+           -H "X-Object-Meta-image_name:{{ storlets_image_name_suffix }}"
+  args:
+    chdir: "/tmp"
+  
+- name: remove storlet docker image tar file
+  command: rm /tmp/{{ base_os_image }}_jre7_storlets.tar

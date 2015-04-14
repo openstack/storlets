@@ -1,0 +1,76 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- name: Install Keystone and Swift clients
+  apt:
+    pkg: "{{ item }}"
+    state: latest
+  with_items:
+    - python-swiftclient
+    - python-keystoneclient
+    
+- name: Create the Storlet management tenant
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ storlet_management_account }}"
+    tenant_description: The storlets management tenant
+    
+- name: create the user {{ storlet_management_admin_username }} for tenant {{ storlet_management_account }}
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ storlet_management_account }}"
+    user: "{{ storlet_management_admin_username }}"
+    password: "{{ storlet_manager_admin_password }}"
+
+- name: assign {{ storlet_management_admin_username }} an admin role
+  keystone_user:
+    endpoint: "{{ keystone_admin_url }}"
+    token: "{{ keystone_admin_token }}"
+    tenant: "{{ storlet_management_account }}"
+    user: "{{ storlet_management_admin_username }}"
+    role: admin
+    
+- name: copy cluster information file
+  copy: 
+    src="{{ inventory_file }}" 
+    dest="/tmp/{{ storlet_management_swift_topology_object }}"
+  
+- name: Create the cluster information container
+  command: swift 
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ storlet_management_admin_username }}"
+           --os-password="{{ storlet_manager_admin_password }}"
+           --os-tenant-name="{{ storlet_management_account }}"
+           post "{{ storlet_management_swift_topology_container }}"
+           --read-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
+           --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
+           --meta "{{ storlets_enabled_attribute_name }}:true"
+
+- name: Create the cluster information object
+  command: swift
+           --os-auth-url="{{ keystone_public_url }}" 
+           --os-username="{{ storlet_management_admin_username }}"
+           --os-password="{{ storlet_manager_admin_password }}"
+           --os-tenant-name="{{ storlet_management_account }}"
+           upload "{{ storlet_management_swift_topology_container }}" "{{ storlet_management_swift_topology_object }}" 
+  args:
+    chdir: /tmp/
+
+- name: delete cluster information file
+  file: 
+    path="/tmp/{{ storlet_management_swift_topology_object }}"
+    state=absent
