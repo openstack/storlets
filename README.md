@@ -26,13 +26,13 @@ The Swift Storlets repo provides:
 
 The documentation in this repo is organized according to the various roles involved with Swift Storlets:
 
-#. Storlet developer. The Storlet developer develops, packages and deploys Storlets to Swift. This is described in: doc/source/writing_and_deploying_storlets.rst
-#. Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. doc/source/invoking_storlets.rst describes how to invoke a Storlet.
-#. Storlets account manager (or account manager in short). The account manager is an admin user on the customer side who is typically the one responsible for paying the 
+# Storlet developer. The Storlet developer develops, packages and deploys Storlets to Swift. This is described in: doc/source/writing_and_deploying_storlets.rst
+# Storlet user. A Swift user that wishes to invoke a deployed Storlet on some data object in Swift. doc/source/invoking_storlets.rst describes how to invoke a Storlet.
+# Storlets account manager (or account manager in short). The account manager is an admin user on the customer side who is typically the one responsible for paying the 
    bill (and perhaps setting ACLs). From Storlets perspective the account manager is responsible for managing the Docker image as well as the Storlets that can be executed 
    on data in the account. Part of the echo system is giving the account manager a way to deploy a Docker image to be used for Storlets execution within that account. 
    doc/source/building_and_deploying_docker_images.rst has the details.
-#. Swift Storlet manager. Typically, this is the Swift admin on the provider side that deals with rings and broken disks. 
+# Swift Storlet manager. Typically, this is the Swift admin on the provider side that deals with rings and broken disks. 
    From the Storlets perspective (s)he is the one responsible for the below. doc/source/storlets_management.rst has the details of the provided tools to do that.
    Those tools are installed on a designated node having a 'Storlet management' role (See installation section below)
 
@@ -42,7 +42,7 @@ The documentation in this repo is organized according to the various roles invol
   * Deploy an account's Docker image across the cluster. This allows the account admin to upload a self tailored Docker image that the Swift admin can 
     then deploy across the cluster. Requests for running Storlets in that account would be served by Storlets running over this account's self tailored image.
 
-#. Swift storlet developer. Someone looking at playing with the code of the storlet middleware and the storlet gateway. If you are one of those you will be interested in:
+# Swift storlet developer. Someone looking at playing with the code of the storlet middleware and the storlet gateway. If you are one of those you will be interested in:
 
   * doc/source/dev_and_test_guide.rst
   * doc/source/storlets_docker_gateway.rst
