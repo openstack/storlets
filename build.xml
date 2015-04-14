@@ -1,0 +1,119 @@
+<!-- 
+  Copyright IBM Corp. 2015, 2015 All Rights Reserved
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  Limitations under the License.
+-->
+
+<project>
+	<!-- Bring build Dependencies-->
+	<target name="dependencies" >
+                <mkdir dir="Engine/dependencies" />
+		<get src="http://json-simple.googlecode.com/files/json_simple-1.1.jar" 
+	    	dest="Engine/dependencies/json_simple-1.1.jar" 
+	    	verbose="true"
+	    	usetimestamp="true"/>
+		<get src="http://central.maven.org/maven2/ch/qos/logback/logback-classic/1.1.2/logback-classic-1.1.2.jar" 
+	    	dest="Engine/dependencies/logback-classic-1.1.2.jar" 
+	    	verbose="true"
+	    	usetimestamp="true"/>
+		<get src="http://central.maven.org/maven2/ch/qos/logback/logback-core/1.1.2/logback-core-1.1.2.jar" 
+	    	dest="Engine/dependencies/logback-core-1.1.2.jar" 
+	    	verbose="true"
+	    	usetimestamp="true"/>
+		<get src="http://central.maven.org/maven2/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar" 
+	    	dest="Engine/dependencies/slf4j-api-1.7.7.jar" 
+	    	verbose="true"
+	    	usetimestamp="true"/>
+	</target>
+	
+	<!-- Storlets Engine build -->
+	<macrodef name="iterate_engine">
+		<attribute name="target" />
+		<sequential>
+			<subant target="@{target}">
+				<fileset dir="Engine/SBus/SBusTransportLayer" includes="build.xml" />
+				<fileset dir="Engine/SBus/SBusJavaFacade" includes="build.xml" />
+				<fileset dir="Engine/SBus/SBusPythonFacade" includes="build.xml" />
+				<fileset dir="Engine/SCommon" includes="build.xml" />
+				<fileset dir="Engine/SDaemon" includes="build.xml" />
+				<fileset dir="Engine/SMScripts" includes="build.xml" />
+				<fileset dir="Engine/storlet_daemon_factory" includes="build.xml" />
+				<fileset dir="Engine/swift" includes="build.xml" />
+			</subant>
+		</sequential>
+	</macrodef>
+	
+	<target name="build_engine" depends="dependencies">
+		<iterate_engine target="build" />
+	</target>
+	
+	<target name="clean_engine">
+		<iterate_engine target="clean" />
+                <delete dir="Engine/dependencies" />
+	</target>
+	<!-- Storlets Engine build /-->
+	
+	<!-- Storlets Samples build -->
+	<macrodef name="iterate_storlets">
+		<attribute name="target" />
+		<sequential>
+			<subant target="@{target}">
+				<fileset dir="StorletSamples/TestStorlet" includes="build.xml" />
+				<fileset dir="StorletSamples/ExecDepStorlet" includes="build.xml" />
+				<fileset dir="StorletSamples/IdentityStorlet" includes="build.xml" />
+				<fileset dir="StorletSamples/TestMetadataStorlet" includes="build.xml" />
+			</subant>
+		</sequential>
+	</macrodef>
+
+	<target name="build_storlets">
+		<iterate_storlets target="build" />
+	</target>
+	
+	<target name="clean_storlets">
+		<iterate_storlets target="clean" />
+	</target>
+	
+	
+	<target name="build" depends="build_engine, build_storlets" />
+	<target name="clean" depends="clean_engine, clean_storlets">
+		<delete dir="bin" />
+        </target>
+	
+	<!-- Storlets Samples build /-->
+	
+	<!--			Deploy			-->
+	<!-- To execute the below tasks you must have:
+	     (1) ansible installed
+	     (2) hosts file configured
+	-->
+	<target name="deploy_host_engine" depends="build_engine">
+		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
+			<arg value="-s"/>
+			<arg value="-i"/>
+			<arg value="hosts"/>
+			<arg value="host_storlet_engine.yml"/>
+		</exec>
+	</target>
+	  
+	<target name="deploy_container_engine" depends="build_engine">
+		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
+			<arg value="-s"/>
+			<arg value="-i"/>
+			<arg value="hosts"/>
+			<arg value="container_storlet_engine.yml"/>
+		</exec>
+	</target>
+
+	<target name="deploy" depends="deploy_host_engine, deploy_container_engine"/>
+	
+</project>
