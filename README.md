@@ -76,10 +76,10 @@ Acknowledgements
 * The research leading to the development of this code received funding from the European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreements for the ENSURE and VISION Cloud projects.
 * The development of this code received funding from the European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreements for the:
 
-  * ForgetIT, where the code is used for pushing down analytics jobs to the object storage
-  * COSMOS projects, where the code is used for TODO
+  * The ForgetIT project, where the code is used for offloading digital preservation functionalities to the storage.
+  * The COSMOS project, where the code is used for analysis of IoT data.
 
 * Future development of this code would receive funding from:
 
   * The European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreement for the FI-CORE project where the code is integrated with a holistic cloud deployment solution, and from
-  * the European Community's Horizon 2020 (H2020/2014-2020) under the grant agreement for the IOStack project where the codeis used as a backend implementing Storage policies
+  * the European Community's Horizon 2020 (H2020/2014-2020) under the grant agreement for the IOStack project where the code is used as a backend implementing Storage policies.
