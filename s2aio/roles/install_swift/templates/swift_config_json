@@ -1,0 +1,43 @@
+{
+    "vagrant" : {
+        "machines" : {
+            "proxy" : {
+                "num":{{ proxy_num }}
+            },
+            "storage" : {
+                "num":{{ storage_num }},
+                "disk":{{ storage_disks}},
+                "disk_size":{{ storage_size }}
+            },
+            "client" : {
+                "num": {{ client_num }}
+            },
+            "dockerhub" : {
+            "num":{{ dockerhub_num }}
+            }
+        },
+        "boxes" : {
+            "centos7" : {
+                "box": "centbox" ,
+                "disk_controller" : "SATA Controller"
+            },
+            "ubuntu1404" : {
+                "box": "ubuntu/trusty64" ,
+                "box_url" : "https://vagrantcloud.com/ubuntu/boxes/trusty64",
+                "disk_controller" : "SATAController"
+            }
+        },
+        "box":"ubuntu1404",
+        "cpus":2,
+        "memory":2048,
+        "ip_prefix": "{{ ip_prefix }}"
+    },
+    "openstack_version":"juno",
+    "fstype":"xfs",
+    "groupvars":{
+    },
+    "credentials":{
+        "ansible_ssh_user":"vagrant",
+        "ansible_ssh_private_key_file":"~/.vagrant.d/insecure_private_key"
+    }
+}
