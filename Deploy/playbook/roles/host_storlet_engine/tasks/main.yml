@@ -40,6 +40,8 @@
     src: "{{ storlet_source_dir }}/{{ item }}"
     dest:  "{{ lxc_device }}/scripts/"
     mode: "04755"
+    owner: root
+    group: root
   with_items:
     - "Engine/SMScripts/bin/restart_docker_container"
     - "Engine/SMScripts/send_halt_cmd_to_daemon_factory.py"
@@ -62,7 +64,7 @@
    
 - name: Copy gateway conf template
   template: 
-    src: "{{ swift_middleware_dir }}/etc/storlet-docker-gateway.conf-sample"
+    src: ../../common_templates/storlet-docker-gateway.conf-sample
     dest: "{{ storlet_gateway_conf_file }}"
     owner: swift
     group: swift

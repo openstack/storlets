@@ -278,10 +278,10 @@ class RunTimeSandbox():
                                         pipe_mount, 
                                         storlet_mount)
         
-        res = commands.getoutput(cmd) # YM python way of running a shell command. Runs a c program which invokes running dockerRun.  The middleware runs a user swift
+        res = commands.getoutput(cmd)
         return self.wait()
 
-    def start_storlet_daemon(self, spath, storlet_id):   ### YM this is step "3.5"
+    def start_storlet_daemon(self, spath, storlet_id):
         prms = {}
         prms['daemon_language'] = 'java'
         prms['storlet_path']    = spath

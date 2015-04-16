@@ -124,7 +124,7 @@ class StorletHandlerMiddleware(object):
         if 'X-Run-Storlet' in req.headers:
             storlet_execution = True
         if (storlet_execution and account and container and obj) or \
-            (container in self.storlet_containers):
+            (container in self.storlet_containers and obj):
                 gateway  = self.gateway_module(self.gateway_conf,
                                 self.logger, self.app, version, account,
                                 container, obj)

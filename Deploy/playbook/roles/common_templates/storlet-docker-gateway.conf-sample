@@ -1,0 +1,10 @@
+[DEFAULT]
+storlet_logcontainer = {{ storlet_log }}
+lxc_root = {{ lxc_device }}/scopes
+cache_dir = {{lxc_device }}/cache/scopes
+log_dir = {{ lxc_device }}/logs/scopes
+script_dir = {{ lxc_device }}/scripts
+storlets_dir = {{ lxc_device }}/storlets/scopes
+pipes_dir = {{ lxc_device }}/pipes/scopes
+docker_repo = {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}
+restart_linux_container_timeout = {{ restart_linux_container_timeout }}

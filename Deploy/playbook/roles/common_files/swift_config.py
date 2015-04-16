@@ -94,11 +94,13 @@ def unpatch_swift_config_file(conf, conf_file):
     storlet_middleware = conf.get('common-confs','storlet_middleware')
     filter_block_first_line = '[filter:%s]\n' % storlet_middleware
 
-    for line in fileinput.input(conf_file_path, inplace = 1):
+    for line in fileinput.input(conf_file, inplace = 1):
         if line.startswith('pipeline'):
-            new_line = _unpatch_object_pipeline_line(line, storlet_middleware)
+            new_line = _unpatch_pipeline_line(line, storlet_middleware)
             line = new_line
         print line,
+
+    _chown_to_swift(conf_file)
  
 def patch_swift_config_file(conf, conf_file, service):
     storlet_middleware = conf.get('common-confs','storlet_middleware')
