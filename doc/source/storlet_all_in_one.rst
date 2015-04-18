@@ -1,10 +1,10 @@
 =====
 S2AIO
 =====
-NOTE: This is still WIP. The Script still suffers some issues, will be available soon!
-
 swift-storlets all in one is an Ansible based script that installs both swift and storlets in a virtual machine.
-To run the script simply cd to the s2aio directory, and run the *storlets_aio.sh* script. Note that the script takes a long time to run (10 minutes or more). More information below. 
+To run the script simply cd to the s2aio directory, edit the credentials for localhost in the hosts file, and run
+the *storlets_aio.sh* script. The credentials for localhost must be of a 'sudoer user'
+Note that the script takes a long time to run (10 minutes or more). More information below. 
 
 The script does the following:
 
@@ -25,10 +25,13 @@ The defaults for the storlets installation are found in:
 
 known issues
 ------------
-1. The storlets installation playbook which is executed from within the VM needs to ssh to localhost. In some cases the host key checking is not disabled, resulting in a failure. If this happens, and assuming the defaults, just do:
+1. Most issues are around ssh: The *storlets_aio.sh* script activates 2 major ansible playbooks:
 
- * ssh vagrant@192.168.10.2 (typing vagrant as the password)
- * ssh localhost (confirm the key)
+  * An ansible playbook that uses ssh to localhost with root or a 'sudoer user'
+  * An ansible palybook that is activated witin the VM and uses ssh to localhost (within the VM) with the user vagrant
+
+  Although Ansible is configured not to check the host key, it sometimes fail. If this is the case just ssh manually where required and confirm the host key
+
 2. The script takes a long time to run, and for most of the time it does not show progress. An alternative to executing *storlets_aio.sh* are the following steps. These would allow monitoring the progress of the ansible installation inside the VM.
 
  1. cd s2aio
@@ -37,7 +40,7 @@ known issues
  4. ansible-playbook -s -i prepare_storlets_install.yml
  5. ssh vagrant 192.168.10.2 (using 'vagrant' as password)
 
- Now, insode the VM:
+ Now, inside the VM:
 
  1. cd /home/vagrant/swift-storlets
  2. ant build
