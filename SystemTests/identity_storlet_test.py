@@ -192,7 +192,6 @@ def main():
     invoke_storlet(url, token,'GET', {'double' : 'true'})
     print "Invoking Identity storlet on GET with execution of dependency"
     invoke_storlet(url, token,'GET',{'execute' : 'true'})
-    print "Invoking Identity storlet in Task"
     
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":
