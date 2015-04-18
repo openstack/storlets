@@ -51,3 +51,15 @@ storlets_image_name_suffix: ubuntu_14.04_jre7_storlets
 swift_user_id: 1003
 swift_group_id: 1003
 #----------------------------------------------------------------
+
+#----------------------------------------------------------------
+# middleware and gateway config file constants
+storlet_middleware: storlet_handler
+storlet_container: storlet
+storlet_dependency: dependency
+storlet_log: storletlog
+storlet_images: docker_images
+storlet_timeout: 40
+storlet_gateway_module: storlet_gateway.storlet_docker_gateway:StorletGatewayDocker
+restart_linux_container_timeout: 3
+#----------------------------------------------------------------
