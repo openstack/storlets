@@ -57,7 +57,7 @@ def deploy_storlet(url,token):
                         STORLET_NAME,
                         PATH_TO_BUNDLE,
                         '',
-                        'com.ibm.storlet.testmetadatastorlet.TestMetadataStorlet')
+                        'com.ibm.storlet.testmetadatastorlet.MetadataStorlet')
     put_storlet_input_object( url, token )
     
 '''------------------------------------------------------------------------'''

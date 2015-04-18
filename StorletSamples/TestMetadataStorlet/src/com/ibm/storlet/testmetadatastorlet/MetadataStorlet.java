@@ -31,7 +31,7 @@ import com.ibm.storlet.common.StorletLogger;
 import com.ibm.storlet.common.StorletObjectOutputStream;
 import com.ibm.storlet.common.StorletOutputStream;
 
-public class TestMetadataStorlet implements IStorlet 
+public class MetadataStorlet implements IStorlet 
 {
     @Override
     public void invoke( ArrayList<StorletInputStream>  inputStreams,
