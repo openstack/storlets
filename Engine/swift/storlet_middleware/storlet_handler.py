@@ -140,22 +140,43 @@ class StorletHandlerMiddleware(object):
                     if not is_success(orig_resp.status_int):
                         return orig_resp
 
-                    old_env = req.environ.copy()
-                    orig_req = Request.blank(old_env['PATH_INFO'], old_env)
-                    (out_md, stream) = gateway.gatewayObjectGetFlow(req,
-                                                               container,
-                                                               obj,
-                                                               orig_resp)
-                    if 'Content-Length' in orig_resp.headers:
-                        orig_resp.headers.pop('Content-Length')
-                    if 'Transfer-Encoding' in orig_resp.headers:
-                        orig_resp.headers.pop('Transfer-Encoding')
-
-                    return  Response(
-                        app_iter=IterLike(stream, self.stimeout),
-                        headers = orig_resp.headers,
-                        request=orig_req, 
-                        conditional_response=True)
+                    # YM add
+                    if self._is_slo_get_request(req, orig_resp, account, \
+                                               container, obj):
+                        # For SLOs, Storlet can only be invoked in 
+                        # proxy nodewhere the full object will be 
+                        # reconstructed.
+                        # Therefore we return the object part without
+                        # Storlet invocation:
+                        self.logger.debug('SLO storlet_handler call in %s: with %s/%s/%s' %
+                                          (self.execution_server,
+                                           account,
+                                           container,
+                                           obj))
+                        return orig_resp
+                    else: 
+                        # non SLO case, we apply here the Storlet:
+                        self.logger.debug('NON SLO storlet_handler call in %s: with %s/%s/%s' %
+                                          (self.execution_server,
+                                           account,
+                                           container,
+                                           obj))
+                        old_env = req.environ.copy()
+                        orig_req = Request.blank(old_env['PATH_INFO'], old_env)
+                        (out_md, stream) = gateway.gatewayObjectGetFlow(req,
+                                                                        container,
+                                                                        obj,
+                                                                        orig_resp)
+                        if 'Content-Length' in orig_resp.headers:
+                            orig_resp.headers.pop('Content-Length')
+                        if 'Transfer-Encoding' in orig_resp.headers:
+                            orig_resp.headers.pop('Transfer-Encoding')
+                      
+                        return  Response(
+                            app_iter=IterLike(stream, self.stimeout),
+                            headers = orig_resp.headers,
+                            request=orig_req, 
+                            conditional_response=True)
 
             elif (self.execution_server == 'proxy'):
                 if (storlet_execution or container in self.storlet_containers):
@@ -171,23 +192,59 @@ class StorletHandlerMiddleware(object):
                     if not gateway.authorizeStorletExecution(req):
                         return HTTPUnauthorized('Storlet: no permission')
 
+                    # The get request may be a SLO object GET request.
+                    # Simplest solution would be to invoke a HEAD 
+                    # for every GET request to test if we are in SLO case.
+                    # In order to save the HEAD overhead we implemented
+                    # a slightly more involved flow:
+                    # At proxy side, we augment request with Storlet stuff
+                    # and let the request flow.
+                    # At object side, we invoke the plain (non Storlet)
+                    # request and test if we are in SLO case.
+                    # and invoke Storlet only if non SLO case.
+                    # Back at proxy side, we test if test received 
+                    # full object to detect if we are in SLO case, 
+                    # and invoke Storlet only if in SLO case.
                     gateway.augmentStoreltRequest(req)
                     original_resp = req.get_response(self.app)
-                    if 'Transfer-Encoding' in original_resp.headers:
-                        original_resp.headers.pop('Transfer-Encoding')
-    
-                    if is_success(original_resp.status_int):
-                        old_env = req.environ.copy()
-                        orig_req = Request.blank(old_env['PATH_INFO'], old_env)
-                        resp_headers = original_resp.headers
 
-                        resp_headers['Content-Length'] = None
-                        return Response(
-                                app_iter=original_resp.app_iter,
-                                headers=resp_headers,
-                                request=orig_req,
-                                conditional_response=True)
-                    return original_resp
+                    # YM add
+                    if self._is_slo_get_request(req, original_resp, account, \
+                                               container, obj):
+                        ### SLO case
+                        (out_md, stream) = gateway.gatewayObjectGetFlow(req,
+                                                                        container,
+                                                                        obj,
+                                                                        original_resp)
+
+                        if 'Content-Length' in orig_resp.headers:
+                            orig_resp.headers.pop('Content-Length')
+                        if 'Transfer-Encoding' in orig_resp.headers:
+                            orig_resp.headers.pop('Transfer-Encoding')
+                      
+                        return  Response(
+                            app_iter=IterLike(stream, self.stimeout),
+                            headers = orig_resp.headers,
+                            request=orig_req, 
+                            conditional_response=True)
+
+                    else:
+                        # Non SLO case, Storlet was invoked at object side
+                        if 'Transfer-Encoding' in original_resp.headers:
+                            original_resp.headers.pop('Transfer-Encoding')
+                    
+                        if is_success(original_resp.status_int):
+                            old_env = req.environ.copy()
+                            orig_req = Request.blank(old_env['PATH_INFO'], old_env)
+                            resp_headers = original_resp.headers
+                    
+                            resp_headers['Content-Length'] = None
+                            return Response(
+                                    app_iter=original_resp.app_iter,
+                                    headers=resp_headers,
+                                    request=orig_req,
+                                    conditional_response=True)
+                        return original_resp
 
                 elif req.method == 'PUT':
                     if (container in self.storlet_containers):
@@ -217,6 +274,38 @@ class StorletHandlerMiddleware(object):
             return HTTPInternalServerError(body='Storlet execution failed')
 
         return req.get_response(self.app)
+
+    # YM add
+    '''
+       Determines from a GET request and its  associated response 
+       if the object is a SLO 
+       args:
+       req:       the request
+       resp:      the response
+       account:   the account as extracted from req
+       container: the response  as extracted from req
+       obj:       the response  as extracted from req
+    '''
+    def _is_slo_get_request(self, req, resp, account, container, obj):
+        if req.method != 'GET':
+            return False 
+        if req.params.get('multipart-manifest') == 'get':
+            return False
+
+        self.logger.info( 'Verify is {0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
+
+        self.logger.info(resp.headers)
+        self.logger.info(type(resp.headers))
+        if resp.status_int < 300 and resp.status_int >= 200 :
+            for key in resp.headers:
+                if (key.lower() == 'x-static-large-object' and
+                    config_true_value(resp.headers[key])):
+                    self.logger.debug( '{0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
+                    return True
+            self.logger.debug( '{0}/{1}/{2} is NOT an SLO assembly object'.format(account,container, obj))
+            return False
+        self.logger.error( 'Failed to check if {0}/{1}/{2} is an SLO assembly object. Got status {3}'.format(account,container, obj,resp.status))
+        raise Exception('Failed to check if {0}/{1}/{2} is an SLO assembly object. Got status {3}'.format(account,container, obj,resp.status))
 
 def filter_factory(global_conf, **local_conf):
 
@@ -251,3 +340,4 @@ def filter_factory(global_conf, **local_conf):
     def storlet_handler_filter(app):
         return StorletHandlerMiddleware(app, conf, storlet_conf)
     return storlet_handler_filter
+
