@@ -21,13 +21,14 @@ Created on Feb 18, 2014
 
 from storlet_common import StorletTimeout,StorletException
 
-from swift.common.utils import get_logger, register_swift_info, is_success
+from swift.common.utils import get_logger, register_swift_info, is_success, config_true_value
 from swift.common.swob import Request, Response, wsgify, \
                               HTTPBadRequest, HTTPUnauthorized, \
                               HTTPInternalServerError
 from swift.proxy.controllers.base import get_account_info
 from swift.common.exceptions import ConnectionTimeout
 from eventlet import Timeout
+
 import select
 import ConfigParser
 import os
@@ -148,7 +149,7 @@ class StorletHandlerMiddleware(object):
                         # reconstructed.
                         # Therefore we return the object part without
                         # Storlet invocation:
-                        self.logger.debug('SLO storlet_handler call in %s: with %s/%s/%s' %
+                        self.logger.info('SLO storlet_handler call in %s: with %s/%s/%s' %
                                           (self.execution_server,
                                            account,
                                            container,
@@ -156,7 +157,7 @@ class StorletHandlerMiddleware(object):
                         return orig_resp
                     else: 
                         # non SLO case, we apply here the Storlet:
-                        self.logger.debug('NON SLO storlet_handler call in %s: with %s/%s/%s' %
+                        self.logger.info('NON SLO storlet_handler call in %s: with %s/%s/%s' %
                                           (self.execution_server,
                                            account,
                                            container,
@@ -292,7 +293,7 @@ class StorletHandlerMiddleware(object):
         if req.params.get('multipart-manifest') == 'get':
             return False
 
-        self.logger.info( 'Verify is {0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
+        self.logger.info( 'Verify if {0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
 
         self.logger.info(resp.headers)
         self.logger.info(type(resp.headers))
@@ -300,9 +301,9 @@ class StorletHandlerMiddleware(object):
             for key in resp.headers:
                 if (key.lower() == 'x-static-large-object' and
                     config_true_value(resp.headers[key])):
-                    self.logger.debug( '{0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
+                    self.logger.info( '{0}/{1}/{2} is indeed an SLO assembly object'.format(account,container, obj))
                     return True
-            self.logger.debug( '{0}/{1}/{2} is NOT an SLO assembly object'.format(account,container, obj))
+            self.logger.info( '{0}/{1}/{2} is NOT an SLO assembly object'.format(account,container, obj))
             return False
         self.logger.error( 'Failed to check if {0}/{1}/{2} is an SLO assembly object. Got status {3}'.format(account,container, obj,resp.status))
         raise Exception('Failed to check if {0}/{1}/{2} is an SLO assembly object. Got status {3}'.format(account,container, obj,resp.status))
