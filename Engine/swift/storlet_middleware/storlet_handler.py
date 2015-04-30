@@ -261,8 +261,8 @@ class StorletHandlerMiddleware(object):
                     if storlet_execution:
                         gateway.augmentStorletRequest(req)
                         (out_md, stream) = gateway.gatewayProxyPutFlow(req,
-                                                                  container,
-                                                                  obj)
+                                                                       container,
+                                                                       obj)
                         req.environ['wsgi.input'] = IterLike(stream,
                                                              self.stimeout)
                         if 'CONTENT_LENGTH' in req.environ:

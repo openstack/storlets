@@ -165,7 +165,8 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self.\
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationPUTProtocol(sreq, storlet_pipe_path,
+        sprotocol = StorletInvocationPUTProtocol(sreq, 
+                                                 storlet_pipe_path,
                                                  slog_path,
                                                  self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
@@ -192,7 +193,6 @@ class StorletGatewayDocker(StorletGatewayBase):
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
         sprotocol = StorletInvocationSLOProtocol(sreq, 
-                                                 orig_resp, 
                                                  storlet_pipe_path,
                                                  slog_path,
                                                  self.storlet_timeout)
