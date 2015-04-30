@@ -141,7 +141,6 @@ class StorletHandlerMiddleware(object):
                     if not is_success(orig_resp.status_int):
                         return orig_resp
 
-                    # YM add
                     if self._is_slo_get_request(req, orig_resp, account, \
                                                container, obj):
                         # For SLOs, Storlet can only be invoked in 
@@ -206,31 +205,35 @@ class StorletHandlerMiddleware(object):
                     # Back at proxy side, we test if test received 
                     # full object to detect if we are in SLO case, 
                     # and invoke Storlet only if in SLO case.
-                    gateway.augmentStoreltRequest(req)
+                    gateway.augmentStorletRequest(req)
                     original_resp = req.get_response(self.app)
 
-                    # YM add
                     if self._is_slo_get_request(req, original_resp, account, \
                                                container, obj):
-                        ### SLO case
-                        (out_md, stream) = gateway.gatewayObjectGetFlow(req,
-                                                                        container,
-                                                                        obj,
-                                                                        original_resp)
+                        ### SLO case: storlet to be invoked now at proxy side:
+                        (out_md, stream) = gateway.gatewayProxySloFlow(req,
+                                                                       container,
+                                                                       obj,
+                                                                       original_resp)
 
-                        if 'Content-Length' in orig_resp.headers:
-                            orig_resp.headers.pop('Content-Length')
-                        if 'Transfer-Encoding' in orig_resp.headers:
-                            orig_resp.headers.pop('Transfer-Encoding')
-                      
-                        return  Response(
-                            app_iter=IterLike(stream, self.stimeout),
-                            headers = orig_resp.headers,
-                            request=orig_req, 
-                            conditional_response=True)
+                        #  adapted from non SLO GET flow
+                        if is_success(original_resp.status_int):
+                            old_env = req.environ.copy()
+                            orig_req = Request.blank(old_env['PATH_INFO'], old_env)
+                            resp_headers = original_resp.headers
+                    
+                            resp_headers['Content-Length'] = None
+
+                            iter = IterLike(stream, self.stimeout)
+                            return Response(
+                                    app_iter=iter,
+                                    headers=resp_headers,
+                                    request=orig_req,
+                                    conditional_response=True)
+                        return original_resp
 
                     else:
-                        # Non SLO case, Storlet was invoked at object side
+                        # Non SLO case: Storlet was already invoked at object side
                         if 'Transfer-Encoding' in original_resp.headers:
                             original_resp.headers.pop('Transfer-Encoding')
                     
@@ -256,7 +259,7 @@ class StorletHandlerMiddleware(object):
                         if not gateway.authorizeStorletExecution(req):
                             return HTTPUnauthorized('Storlet: no permissions')
                     if storlet_execution:
-                        gateway.augmentStoreltRequest(req)
+                        gateway.augmentStorletRequest(req)
                         (out_md, stream) = gateway.gatewayProxyPutFlow(req,
                                                                   container,
                                                                   obj)

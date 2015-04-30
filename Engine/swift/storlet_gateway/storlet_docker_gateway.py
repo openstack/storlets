@@ -27,7 +27,7 @@ from swift.common.internal_client import InternalClient as ic
 from swift.common.swob import Request
 from storlet_runtime import RunTimeSandbox, RunTimePaths
 from storlet_runtime import StorletInvocationGETProtocol,\
-    StorletInvocationPUTProtocol
+    StorletInvocationPUTProtocol, StorletInvocationSLOProtocol
 from swift.common.utils import config_true_value
 from storlet_middleware.storlet_common import StorletGatewayBase
 
@@ -85,15 +85,20 @@ class DockerStorletRequest():
 
 
 class StorletGETRequest(DockerStorletRequest):
-    def __init__(self, account, request, params):
-        DockerStorletRequest.__init__(self, account, request, params)
-        self.stream = request.app_iter._fp.fileno()
-
+    def __init__(self, account, orig_resp, params):
+        DockerStorletRequest.__init__(self, account, orig_resp, params)
+        self.stream = orig_resp.app_iter._fp.fileno()
 
 class StorletPUTRequest(DockerStorletRequest):
     def __init__(self, account, request):
         DockerStorletRequest.__init__(self, account, request, request.params)
         self.stream = request.environ['wsgi.input'].read
+        return
+
+class StorletSLORequest(DockerStorletRequest):
+    def __init__(self, account, orig_resp, params):
+        DockerStorletRequest.__init__(self, account, orig_resp, params)
+        self.stream = orig_resp.app_iter
         return
 
 
@@ -136,7 +141,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self.storlet_metadata = headers
         return True
 
-    def augmentStoreltRequest(self, req):
+    def augmentStorletRequest(self, req):
         if self.storlet_metadata:
             self._fix_request_headers(req)
 
@@ -169,6 +174,35 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._upload_storlet_logs(slog_path)
 
         return out_md, self.data_read_fd
+
+    def gatewayProxySloFlow(self, req, container, obj, orig_resp):
+        # Adapted from PUT flow to SLO
+        sreq = StorletSLORequest(self.account, orig_resp, req.params)
+
+        self.idata = self._get_storlet_invocation_data(req)
+        run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
+        docker_updated = self.update_docker_container_from_cache()
+        run_time_sbox.activate_storlet_daemon(self.idata,
+                                              docker_updated)
+        self._add_system_params(req.params)
+
+        slog_path = self.\
+            paths.slog_path(self.idata['storlet_main_class'])
+        storlet_pipe_path = self.\
+            paths.host_storlet_pipe(self.idata['storlet_main_class'])
+
+        sprotocol = StorletInvocationSLOProtocol(sreq, 
+                                                 orig_resp, 
+                                                 storlet_pipe_path,
+                                                 slog_path,
+                                                 self.storlet_timeout)
+        out_md, self.data_read_fd = sprotocol.communicate()
+
+        self._set_metadata_in_headers(req.headers, out_md)
+        self._upload_storlet_logs(slog_path)
+
+        return out_md, self.data_read_fd
+
 
     def gatewayObjectGetFlow(self, req, container, obj, orig_resp):
         sreq = StorletGETRequest(self.account, orig_resp, req.params)
