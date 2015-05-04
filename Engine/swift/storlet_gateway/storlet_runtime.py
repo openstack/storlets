@@ -567,11 +567,12 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
         self._wait_for_write_with_timeout(self.input_data_write_fd)
         # We do the writing in a different thread.
         # Otherwise, we can run into the following deadlock
-        # 1. md writeds to Storlet
-        # 2. Storlet reads and starts to write md and thed data
-        # 3. md continues writing
-        # 4. Storlet continues writing and gets stuck as md is busy writing,
-        #    not consuming the reader end of the Storlet writer.
+        # 1. middleware writes to Storlet
+        # 2. Storlet reads and starts to write metadata and then data
+        # 3. middleware continues writing
+        # 4. Storlet continues writing and gets stuck as middleware
+        #    is busy writing, but still not consuming the reader end 
+        #    of the Storlet writer.
         eventlet.spawn_n(self._write_input_data)
         out_md = self._read_metadata()
         self._wait_for_read_with_timeout(self.data_read_fd)
