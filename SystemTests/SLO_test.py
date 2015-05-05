@@ -9,6 +9,9 @@ from swiftclient import client as c
 from storlets_test_utils import put_storlet_containers, put_storlet_object, progress, progress_ln, progress_msg
 from identity_storlet_test import IDENTITY_STORLET_NAME
 
+SLOIDENTITY_PATH_TO_BUNDLE ='../StorletSamples/SLOIdentityStorlet/bin'
+SLOIDENTITY_STORLET_NAME='sloidentitystorlet-1.0.jar'
+
 '''------------------------------------------------------------------------'''
 # Test Constants
 #PATH_TO_BUNDLE =
@@ -178,17 +181,31 @@ def invoke_identity_on_partial_get_SLO(url, token):
     progress_ln()
     
 
-def delete_files():
-    for i in range(1,4):
-        fname = '/tmp/aux_file%d' % i
-        os.remove(fname)
+# def delete_files():
+#     for i in range(1,4):
+#         fname = '/tmp/aux_file%d' % i
+#         os.remove(fname)
         
 def create_container(url, token, name):
     response = dict()
     c.put_container(url, token, name, headers=None, response_dict = response)
     status = response.get('status')    
     assert (status >= 200 or status < 300)
-  
+
+def deploy_sloidentity_storlet(url, token):
+    progress()
+    response = dict()
+    c.put_container(url, token, 'mysloobject', None, None, response)
+    status = response.get('status')    
+    assert (status >= 200 or status < 300)
+
+    progress()
+    put_storlet_object( url, token,
+                        SLOIDENTITY_STORLET_NAME,
+                        SLOIDENTITY_PATH_TO_BUNDLE,
+                        '',
+                        'com.ibm.storlet.sloidentity.SLOIdentityStorlet')
+    progress_ln()
     
 '''------------------------------------------------------------------------'''
 def main():
@@ -199,12 +216,12 @@ def main():
                              PASSWORD, 
                              os_options = os_options, 
                              auth_version = '2.0' )
-    print('Creating containers for auxiliary files')
+    # print('Creating containers for auxiliary files')
     create_container(url, token, 'myobjects')
     create_container(url, token, 'container1')
     create_container(url, token, 'container2')
     create_container(url, token, 'container3')
-    print('Creating Auxiliary files')
+    # print('Creating Auxiliary files')
     progress_msg("Creating SLO chunks for upload")
     create_local_chunks()
     progress_msg("Uploading SLO chunks and assembly")
@@ -213,12 +230,13 @@ def main():
     get_SLO(url, token)
     progress_msg("Invoking storlet on SLO in GET")
     invoke_identity_on_get_SLO(url, token)
+    # YM comment out 2 lines - temporary only!
     progress_msg("Invoking storlet on SLO in GET with double")
     invoke_identity_on_get_SLO_double(url, token)
+
     #progress_msg("Invoking storlet on SLO in partial GET")
     #invoke_identity_on_partial_get_SLO(url, token)
     delete_local_chunks()
-    delete_files()
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":

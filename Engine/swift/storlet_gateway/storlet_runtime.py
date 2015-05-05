@@ -392,12 +392,23 @@ class RunTimeSandbox():
 
 '''---------------------------------------------------------------------------
 Storlet Daemon API
-The StorletInvocationGETProtocol, StorletInvocationPUTProtocol
+The StorletInvocationGETProtocol, StorletInvocationPUTProtocol, StorletInvocationSLOProtocol
 server as an API between the Docker Gateway and the Storlet Daemon which 
 runs inside the Docker container. These classes implement the Storlet execution
 protocol
 ---------------------------------------------------------------------------'''
 class StorletInvocationProtocol():
+
+    def _add_input_stream(self, appendFd):
+        #self.fds.append(self.srequest.stream
+        self.fds.append(appendFd)
+        # TODO: Break request metadata and systemmetadata
+        md = dict()
+        md['type'] = SBUS_FD_INPUT_OBJECT
+        if self.srequest.user_metadata is not None:
+            for key, val in self.srequest.user_metadata.iteritems():
+                md[key] = val
+        self.fdmd.append(md)
                 
     def _add_output_stream(self):
         self.fds.append(self.data_write_fd)
@@ -484,14 +495,7 @@ class StorletInvocationProtocol():
 class StorletInvocationGETProtocol(StorletInvocationProtocol):
     
     def _add_input_stream(self):
-        self.fds.append(self.srequest.stream)
-        # TODO: Break request metadata and systemmetadata
-        md = dict()
-        md['type'] = SBUS_FD_INPUT_OBJECT
-        if self.srequest.user_metadata is not None:
-            for key, val in self.srequest.user_metadata.iteritems():
-                md[key] = val
-        self.fdmd.append(md)
+        StorletInvocationProtocol._add_input_stream(self, self.srequest.stream)
 
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout):
         StorletInvocationProtocol.__init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout)
@@ -515,25 +519,18 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
         
         return out_md, self.data_read_fd
 
-    
-class StorletInvocationPUTProtocol(StorletInvocationProtocol):
-    
-    def _add_input_stream(self):
-        self.fds.append(self.input_data_read_fd)
-        # TODO: Break request metadata and systemmetadata
-        md = dict()
-        md['type'] = SBUS_FD_INPUT_OBJECT
-        if self.srequest.user_metadata is not None:
-            for key, val in self.srequest.user_metadata.iteritems():
-                md[key] = val
-        self.fdmd.append(md)
+class StorletInvocationProxyProtocol(StorletInvocationProtocol):
 
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout):
         StorletInvocationProtocol.__init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout)
         self.input_data_read_fd, self.input_data_write_fd = os.pipe()
         # YM this pipe permits to take data from srequest.stream to input_data_write_fd
         # YM the write side stays with us, the read side is sent to storlet
-        
+
+    
+    def _add_input_stream(self):
+        StorletInvocationProtocol._add_input_stream(self, self.input_data_read_fd)
+
     def _wait_for_write_with_timeout(self,fd):
         r, w, e = select.select([ ], [ fd ], [ ], self.timeout)
         if len(w) == 0:
@@ -554,13 +551,6 @@ class StorletInvocationPUTProtocol(StorletInvocationProtocol):
         finally:
             timeout.cancel()
 
-    def _write_input_data(self):
-        writer = os.fdopen(self.input_data_write_fd, 'w')
-        reader = self.srequest.stream
-        for chunk in iter(lambda: reader(65536), ''):
-            self._write_with_timeout(writer, chunk)
-        writer.close()
-
     def communicate(self):
         self.storlet_logger = StorletLogger(self.storlet_logger_path, 'storlet_invoke')
         self.storlet_logger.open()
@@ -577,13 +567,42 @@ class StorletInvocationPUTProtocol(StorletInvocationProtocol):
         self._wait_for_write_with_timeout(self.input_data_write_fd)
         # We do the writing in a different thread.
         # Otherwise, we can run into the following deadlock
-        # 1. md writeds to Storlet
-        # 2. Storlet reads and starts to write md and thed data
-        # 3. md continues writing
-        # 4. Storlet continues writing and gets stuck as md is busy writing,
-        #    not consuming the reader end of the Storlet writer.
+        # 1. middleware writes to Storlet
+        # 2. Storlet reads and starts to write metadata and then data
+        # 3. middleware continues writing
+        # 4. Storlet continues writing and gets stuck as middleware
+        #    is busy writing, but still not consuming the reader end 
+        #    of the Storlet writer.
         eventlet.spawn_n(self._write_input_data)
         out_md = self._read_metadata()
         self._wait_for_read_with_timeout(self.data_read_fd)
         
         return out_md, self.data_read_fd
+    
+class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):
+    
+    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout):
+        StorletInvocationProxyProtocol.__init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout)
+        
+    def _write_input_data(self):
+        writer = os.fdopen(self.input_data_write_fd, 'w')
+        reader = self.srequest.stream
+        for chunk in iter(lambda: reader(65536), ''):
+            self._write_with_timeout(writer, chunk)
+        writer.close()
+
+
+class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
+    
+    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout):
+        StorletInvocationProxyProtocol.__init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout)
+        
+    def _write_input_data(self):
+        writer = os.fdopen(self.input_data_write_fd, 'w')
+        reader = self.srequest.stream
+        # print >> sys.stdout, ' type of reader %s'% (type(reader))
+        for chunk in reader:
+            self._write_with_timeout(writer, chunk)
+            # print >> sys.stderr,  'next SLO chunk...%d'% len(chunk)
+        writer.close()
+
