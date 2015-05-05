@@ -16,7 +16,7 @@
 - name: copy swift install template
   template:
     src: swift_config_json 
-    dest: "{{ installation_dir }}{{ swift_install_repo_name }}/{{ swift_install_swift_config_dir }}{{ swift_install_swift_config_file }}"
+    dest: "{{ installation_dir }}{{ swift_install_repo_name }}/{{ swift_install_swift_config_file }}"
     mode: 0755
 
 - name: bring up aio VM

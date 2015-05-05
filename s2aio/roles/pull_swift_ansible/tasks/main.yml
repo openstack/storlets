@@ -24,6 +24,7 @@
 
 - git: repo={{ swift_install_repo_url }}
        dest={{ installation_dir }}{{ swift_install_repo_name }}
+       version=1.0.0
   when: not repo_dir.stat.exists
 
 - command: chmod 1777 "{{ installation_dir }}/{{swift_install_repo_name}}"
