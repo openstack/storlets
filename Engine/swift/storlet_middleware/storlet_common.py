@@ -63,20 +63,20 @@ class StorletException(object):
 
 class StorletGatewayBase():
 
-    def validateStorletUpload(self, req):
+    def validateStorletUpload(self, request):
         raise NotImplementedError("Not implemented: validateStorletUpload")
 
-    def authorizeStorletExecution(self, req):
+    def authorizeStorletExecution(self, request):
         raise NotImplementedError("Not implemented: authorizeStorletExecution")
 
-    def augmentStorletRequest(self, req):
+    def augmentStorletRequest(self, request):
         raise NotImplementedError("Not implemented: augmentStorletRequest")
 
-    def gatewayProxyPutFlow(self, sreq, container,obj):
+    def gatewayProxyPutFlow(self, orig_request, container, obj):
         raise NotImplementedError("Not implemented: gatewayProxyPutFlow")
 
-    def gatewayProxySloFlow(self, sreq, container,obj):
+    def gatewayProxySloFlow(self, request, container, obj, original_response):
         raise NotImplementedError("Not implemented: gatewayProxySloFlow")
 
-    def gatewayObjectGetFlow(self, req, sreq, container, obj):
+    def gatewayObjectGetFlow(self, request, container, obj, original_response):
         raise NotImplementedError("Not implemented: gatewayObjectGetFlow")
