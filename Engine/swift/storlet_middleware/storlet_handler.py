@@ -331,7 +331,7 @@ def filter_factory(global_conf, **local_conf):
 
     configParser = ConfigParser.RawConfigParser()
     configParser.read(conf.get('storlet_gateway_conf',
-                               '/etc/swift/storlet_docker_gateway.conf'))
+                               '/etc/swift/storlet_stub_gateway.conf'))
 
     additional_items = configParser.items("DEFAULT")
     for key, val in additional_items:
