@@ -28,7 +28,7 @@ known issues
 1. Most issues are around ssh: The *storlets_aio.sh* script activates 2 major ansible playbooks:
 
   * An ansible playbook that uses ssh to localhost with root or a 'sudoer user'
-  * An ansible palybook that is activated witin the VM and uses ssh to localhost (within the VM) with the user vagrant
+  * An ansible palybook that is activated within the VM and uses ssh to localhost (within the VM) with the user vagrant
 
   Although Ansible is configured not to check the host key, it sometimes fail. If this is the case just ssh manually where required and confirm the host key
 
@@ -45,6 +45,6 @@ known issues
  1. cd /home/vagrant/swift-storlets
  2. ant build
  3. cd Deploy/playbook
- 4. sudo ansible-playbook -s -i hosts storlet.yml
+ 4. ansible-playbook -s -i hosts storlet.yml
 
-3. sometimes the storlet installation part fails on a docker build operation. Usually, re-executing the ansible playbook is enough.
+3. Sometimes the storlet installation part fails on a docker build operation. Usually, re-executing the ansible playbook is enough. This seems to have disappeared with Docker 1.6.2. Leaving the comment for a while.
