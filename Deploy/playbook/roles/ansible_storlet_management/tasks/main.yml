@@ -18,7 +18,13 @@
   shell: dpkg --get-selections | grep ansible | awk {'print $2'} | grep -w install | wc -l
   register: dpkg
 
-- apt: name=ansible state=present update-cache=yes force=yes
+- shell: apt-cache showpkg ansible | grep 1.9.1-1ppa~trusty | wc -l
+  register: add_repo
+
+- apt_repository: repo='ppa:ansible/ansible' state=present
+  when: "'0' in add_repo.stdout_lines[0]"
+
+- apt: name=ansible-1.9.1-1ppa~trusty state=present update-cache=yes force=yes
   when: "'0' in dpkg.stdout_lines[0]"
 
 - name: Install Dependencies

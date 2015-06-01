@@ -25,6 +25,4 @@
   when: "'2' in opt_lines_count.stdout" 
     
 - name: Restart Docker
-  service: 
-    name: docker
-    state: restarted
+  shell: service docker stop ; sleep 1; service docker start

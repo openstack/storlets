@@ -28,3 +28,7 @@
 - command: vagrant up
   args:
     chdir: "{{ installation_dir }}{{ swift_install_repo_name }}"
+
+- command: ansible-playbook -s -i inventory/vagrant/swift_dynamic_inventory.py main-install.yml
+  args:
+    chdir: "{{ installation_dir }}{{ swift_install_repo_name }}"

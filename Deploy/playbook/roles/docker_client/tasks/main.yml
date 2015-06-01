@@ -29,7 +29,7 @@
 - apt: name=linux-image-extra-{{ uname.stdout_lines[0] }} update-cache=yes force=yes
   when: "'0' in linux_image_extra.stdout_lines[0]"
 
-- apt: name=aufs-tools update-cache=yes force=yes
+- apt: name=aufs-tools=1:3.2+20130722-1.1 update-cache=yes force=yes
   when: "'0' in aufs.stdout_lines[0]"
 
 - name: Set Docker Ubuntu Repo Key
@@ -42,7 +42,7 @@
   when: "'0' in lxc_docker.stdout_lines[0]"
       
 - name: Install Docker Client
-  apt: name=lxc-docker state=present update-cache=yes force=yes
+  apt: name=lxc-docker=1.6.1 state=present update-cache=yes force=yes
   when: "'0' in lxc_docker.stdout_lines[0]"
 
 # There seem to be a bug in the installation where config files are not installed.
@@ -85,6 +85,4 @@
   when: not st4.stat.exists
 
 - name: Restart Docker Daemon
-  service:
-    name: docker
-    state: restarted
+  shell: service docker stop ; sleep 1 ; service docker start

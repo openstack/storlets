@@ -14,8 +14,8 @@
 #---------------------------------------------------------------------------
 - hosts: storlet-proxy[0]
   tasks:
-    - fetch: src=/etc/swift/proxy-server.conf dest=roles/common_files/ flat=yes
+    - fetch: src=/etc/swift/proxy-server.conf dest=/tmp/ flat=yes
 
 - hosts: storlet-storage
   tasks:
-    - copy: src=roles/common_files/proxy-server.conf dest=/etc/swift/proxy-server.conf
+    - copy: src=/tmp/proxy-server.conf dest=/etc/swift/proxy-server.conf
