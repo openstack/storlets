@@ -98,12 +98,13 @@ Below are the entries of interest of common.yml
 
 Install
 =======
-to perform the installation follow these 3 steps:
+to perform the installation follow these steps:
 
 #. Create a hosts file as described above
 #. Edit the file Deploy/playbook/common.yml according to the above
+#. Under the root dir of the repo run 'ant build'
 #. Under Deploy/playbook/ run 'ansible-playbook -i <hosts file> storlet.yml'
-   in case the hosts file has credentials of a sudoer user, you eill need to run:  'ansible-playbook -s -i <hosts file> storlet.yml'
+   in case the hosts file has credentials of a sudoer user, you will need to run:  'ansible-playbook -s -i <hosts file> storlet.yml'
 
 Tip: you might want to "export ANSIBLE_HOST_KEY_CHECKING=False" before running the playbook in case the hosts are not in known_hosts.
 Note: The hosts file used for running the playbook is also used by the admin tool to deploy future images. Thus, the ssh information kept in
