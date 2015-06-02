@@ -67,6 +67,8 @@ common.yml
 ==========
 Below are the entries of interest of common.yml
 
+Special attention should be given to the swift user and group IDs. Make sure they are identical on all hosts and match what is defined in the common.yml file.
+
 ::
 
   # A cross nodes directory for Storlets internal usage. Must exist with the same name in all proxy and storage nodes.
@@ -95,6 +97,9 @@ Below are the entries of interest of common.yml
   storlets_default_tenant_name: service
   storlets_default_tenant_user_name: swift
   storlets_default_tenant_user_password: passw0rd
+
+  swift_user_id: 1003
+  swift_group_id: 1003
 
 Install
 =======
