@@ -1,6 +1,6 @@
 ibm_container_install_dir: opt/ibm
-lxc_device: <Set Me!>
-storlet_source_dir: <Set Me!>
+lxc_device: /home/docker_device
+storlet_source_dir: ~/swift-storlets
 python_dist_packages_dir: usr/local/lib/python2.7/dist-packages
 storlet_gateway_conf_file: /etc/swift/storlet_docker_gateway.conf
 
@@ -15,7 +15,7 @@ keystone_admin_token: ADMIN
 keystone_admin_password: passw0rd
 
 swift_endpoint_host: <Set Me!>
-swift_public_url: "http://swift_endpoint_host:80/v1"
+swift_public_url: "http://{{ swift_endpoint_host }}:80/v1"
 
 storlet_management_account: storlet_management
 storlet_management_admin_username: storlet_manager
