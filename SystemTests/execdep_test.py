@@ -85,7 +85,7 @@ def main():
                              os_options = os_options, 
                              auth_version = '2.0' )
     
-    print 'Deploying EecDep storlet and dependencies'
+    print 'Deploying ExecDep storlet and dependencies'
     deploy_storlet(url, token)
     
     print "Invoking ExecDep storlet"
