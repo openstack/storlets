@@ -156,7 +156,7 @@ def main():
                             PASSWORD, os_options = os_options, 
                             auth_version="2.0")
 
-    print 'Creating myobjets container'
+    print 'Creating myobjects container'
     c.put_container(url, token, 'myobjects')
     
     print 'Invoking test storlet'    
