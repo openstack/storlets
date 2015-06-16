@@ -50,7 +50,7 @@
         <move file="SCommon.jar" todir="bin/" />
     </target>
 
-	<target name="build" depends="jar">
+	<target name="build" depends="clean, jar">
 	</target>
 
 </project>

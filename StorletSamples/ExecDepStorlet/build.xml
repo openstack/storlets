@@ -51,6 +51,6 @@
 		<echo message="Some junk content" file="bin/junk.txt" />
 	</target>
 
-	<target name="build" depends="jar,exe,text">
+	<target name="build" depends="clean,jar,exe,text">
 	</target>
 </project>

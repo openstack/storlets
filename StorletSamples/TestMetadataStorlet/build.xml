@@ -41,6 +41,6 @@
 		<delete dir="bin" />
 	</target>
 	
-	<target name="build" depends="common, text, testmetadatastorlet"/>
+	<target name="build" depends="clean, common, text, testmetadatastorlet"/>
 
 </project>

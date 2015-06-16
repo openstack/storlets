@@ -51,6 +51,6 @@
 		<echo message="Some content to copy" file="bin/source.txt" />
 	</target>
 
-	<target name="build" depends="jar,exe,text">
+	<target name="build" depends="clean, jar,exe,text">
 	</target>
 </project>
