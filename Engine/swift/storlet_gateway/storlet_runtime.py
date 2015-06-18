@@ -385,7 +385,7 @@ class RunTimeSandbox():
                                 invocation_data['storlet_main_class'])
 
             if daemon_status != 1:
-                self.logger.error('Daemon start Failed')
+                self.logger.error('Daemon start Failed, returned code is %d' % daemon_status)
                 raise Exception('Daemon start failed')
             else:
                 self.logger.debug('Daemon started')
