@@ -14,3 +14,4 @@ storlet_dependency = {{ storlet_dependency }}
 storlet_timeout = {{ storlet_timeout }}
 storlet_gateway_module = {{ storlet_gateway_module }}
 storlet_gateway_conf = {{ storlet_gateway_conf_file }}
+storlet_proxy_execution = {{ storlet_execute_on_proxy_only }}

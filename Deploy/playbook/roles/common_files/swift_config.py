@@ -129,6 +129,7 @@ def patch_swift_config_file(conf, conf_file, service):
             f.write('storlet_timeout = %s\n' % conf.get('common-confs','storlet_timeout'))
             f.write('storlet_gateway_module = %s\n' % conf.get('common-confs','storlet_gateway_module'))
             f.write('storlet_gateway_conf = %s\n' % conf.get('common-confs','storlet_gateway_conf'))
+            f.write('storlet_execute_on_proxy_only = %s\n') % conf.get('storlet_proxy_execution','false')
             f.write('execution_server = %s\n' % service)
             
     _chown_to_swift(conf_file)
