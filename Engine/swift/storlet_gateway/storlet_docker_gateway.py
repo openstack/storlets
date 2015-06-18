@@ -89,11 +89,13 @@ class StorletGETRequest(DockerStorletRequest):
         DockerStorletRequest.__init__(self, account, orig_resp, params)
         self.stream = orig_resp.app_iter._fp.fileno()
 
+
 class StorletPUTRequest(DockerStorletRequest):
     def __init__(self, account, request):
         DockerStorletRequest.__init__(self, account, request, request.params)
         self.stream = request.environ['wsgi.input'].read
         return
+
 
 class StorletSLORequest(DockerStorletRequest):
     def __init__(self, account, orig_resp, params):
@@ -165,7 +167,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self.\
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationPUTProtocol(sreq, 
+        sprotocol = StorletInvocationPUTProtocol(sreq,
                                                  storlet_pipe_path,
                                                  slog_path,
                                                  self.storlet_timeout)
@@ -176,8 +178,8 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         return out_md, self.data_read_fd
 
-    def gatewayProxySloFlow(self, req, container, obj, orig_resp):
-        # Adapted from PUT flow to SLO
+    def gatewayProxyGETFlow(self, req, container, obj, orig_resp):
+        # Flow for running the GET computation on the proxy
         sreq = StorletSLORequest(self.account, orig_resp, req.params)
 
         self.idata = self._get_storlet_invocation_data(req)
@@ -192,17 +194,16 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self.\
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationSLOProtocol(sreq, 
+        sprotocol = StorletInvocationSLOProtocol(sreq,
                                                  storlet_pipe_path,
                                                  slog_path,
                                                  self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
-        self._set_metadata_in_headers(req.headers, out_md)
+        self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
         return out_md, self.data_read_fd
-
 
     def gatewayObjectGetFlow(self, req, container, obj, orig_resp):
         sreq = StorletGETRequest(self.account, orig_resp, req.params)
@@ -399,7 +400,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             path = client.make_path(self.account, swift_source_container,
                                     obj_name)
             self.logger.debug('Invoking ic on path %s' % path)
-            resp = client.make_request('GET', path, {'PATH_INFO' : path}, [200])
+            resp = client.make_request('GET', path, {'PATH_INFO': path}, [200])
             fn = open(cache_target_path, 'w')
             fn.write(resp.body)
             fn.close()
