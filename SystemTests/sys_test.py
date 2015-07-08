@@ -164,6 +164,7 @@ def main():
 
     os.system('python execdep_test.py')
     os.system('python identity_storlet_test.py')
+    os.system('python half_storlet_test.py')
     os.system('python metadata_storlet_test.py')
     os.system('python SLO_test.py')
     

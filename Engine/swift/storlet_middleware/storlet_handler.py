@@ -142,7 +142,8 @@ class StorletHandlerMiddleware(object):
                     if not is_success(orig_resp.status_int):
                         return orig_resp
 
-                    if self._is_slo_get_request(req, orig_resp, account, \
+                    if self._is_range_request(req) == True or \
+                        self._is_slo_get_request(req, orig_resp, account, \
                                                container, obj) or \
                         self.proxy_only_storlet_execution == True:
                         # For SLOs, and proxy only mode
@@ -207,7 +208,8 @@ class StorletHandlerMiddleware(object):
                     gateway.augmentStorletRequest(req)
                     original_resp = req.get_response(self.app)
 
-                    if self._is_slo_get_request(req, original_resp, account, \
+                    if self._is_range_request(req) == True or \
+                        self._is_slo_get_request(req, original_resp, account, \
                                                container, obj) or \
                         self.proxy_only_storlet_execution == True:
                         # SLO / proxy only  case: 
@@ -279,6 +281,16 @@ class StorletHandlerMiddleware(object):
             return HTTPInternalServerError(body='Storlet execution failed')
 
         return req.get_response(self.app)
+
+    '''
+       Determines whether the request is a byte-range request
+       args:
+       req:       the request
+    '''
+    def _is_range_request(self, req):
+        if 'Range' in req.headers:
+            return True
+        return False
 
     '''
        Determines from a GET request and its  associated response 
