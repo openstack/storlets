@@ -411,6 +411,11 @@ class StorletInvocationProtocol():
         self.fdmd.append(md)
                 
     def _add_output_stream(self):
+        self.fds.append(self.execution_str_write_fd)
+        md = dict()
+        md['type'] = SBUS_FD_OUTPUT_TASK_ID
+        self.fdmd.append(md)
+
         self.fds.append(self.data_write_fd)
         md = dict()
         md['type'] = SBUS_FD_OUTPUT_OBJECT
@@ -433,6 +438,7 @@ class StorletInvocationProtocol():
 
         # Add the output stream        
         self.data_read_fd, self.data_write_fd = os.pipe()
+        self.execution_str_read_fd, self.execution_str_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
         self._add_output_stream()
         
@@ -444,6 +450,21 @@ class StorletInvocationProtocol():
             os.close(self.data_write_fd)
         if self.metadata_write_fd:
             os.close(self.metadata_write_fd)
+        if self.execution_str_write_fd:
+            os.close(self.execution_str_write_fd)
+
+    def _cancel(self):
+        read_fd, write_fd = os.pipe()
+        dtg = SBusDatagram.create_service_datagram( SBUS_CMD_CANCEL, write_fd )
+        dtg.set_task_id(self.task_id)
+        rc = SBus.send( self.storlet_pipe_path, dtg )
+        if (rc < 0):
+            return -1
+
+        reply = os.read(read_fd,10)
+        os.close(read_fd)
+        os.close(write_fd)
+
         
     def _invoke(self):
         dtg  = SBusDatagram()
@@ -455,6 +476,9 @@ class StorletInvocationProtocol():
         
         if (rc < 0):
             raise Exception("Failed to send execute command")
+
+        self._wait_for_read_with_timeout(self.execution_str_read_fd)
+        self.task_id = os.read(self.execution_str_read_fd, 10)
 
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path, timeout):
         self.srequest = srequest
@@ -472,15 +496,18 @@ class StorletInvocationProtocol():
         self.data_write_fd = None
         self.metadata_read_fd = None
         self.metadata_write_fd = None
+        self.execution_str_read_fd = None
+        self.execution_str_write_fd = None
+        self.task_id = None
         
-        
-
         if not os.path.exists(storlet_logger_path):
             os.makedirs(storlet_logger_path)
 
     def _wait_for_read_with_timeout(self, fd):
         r, w, e = select.select([ fd ], [], [ ], self.timeout)
         if len(r) == 0:
+            if self.task_id:
+                self._cancel()
             raise Timeout('Timeout while waiting for storlet output')
         if fd in r:
             return
@@ -516,6 +543,7 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
         out_md = self._read_metadata()
         os.close(self.metadata_read_fd)        
         self._wait_for_read_with_timeout(self.data_read_fd)
+        os.close(self.execution_str_read_fd)        
         
         return out_md, self.data_read_fd
 
