@@ -102,6 +102,7 @@ class StorletHandlerMiddleware(object):
                                    storlet_conf.get('storlet_dependency')]
         self.execution_server = storlet_conf.get('execution_server')
         self.gateway_module = storlet_conf['gateway_module']
+        self.proxy_only_storlet_execution = storlet_conf['storlet_execute_on_proxy_only']
         self.gateway_conf = storlet_conf
 
         
@@ -124,10 +125,10 @@ class StorletHandlerMiddleware(object):
                              container,
                              obj))
 
-        storlet_execution = False;
+        storlet_execution = False
         if 'X-Run-Storlet' in req.headers:
             storlet_execution = True
-        if (storlet_execution and account and container and obj) or \
+        if (storlet_execution == True and account and container and obj) or \
             (container in self.storlet_containers and obj):
                 gateway  = self.gateway_module(self.gateway_conf,
                                 self.logger, self.app, version, account,
@@ -144,26 +145,25 @@ class StorletHandlerMiddleware(object):
                     if not is_success(orig_resp.status_int):
                         return orig_resp
 
-                    if self._is_slo_get_request(req, orig_resp, account, \
-                                               container, obj):
-                        # For SLOs, Storlet can only be invoked in 
-                        # proxy nodewhere the full object will be 
-                        # reconstructed.
+                    if self._is_range_request(req) == True or \
+                        self._is_slo_get_request(req, orig_resp, account, \
+                                               container, obj) or \
+                        self.proxy_only_storlet_execution == True:
+                        # For SLOs, and proxy only mode
+                        # Storlet are executed on the proxy 
                         # Therefore we return the object part without
                         # Storlet invocation:
-                        self.logger.info('SLO storlet_handler call in %s: with %s/%s/%s' %
-                                          (self.execution_server,
-                                           account,
-                                           container,
-                                           obj))
+                        self.logger.info(
+                            'storlet_handler: invocation over %s/%s/%s %s' %
+                            (account, container, obj,
+                            'to be executed on proxy'))
                         return orig_resp
                     else: 
-                        # non SLO case, we apply here the Storlet:
-                        self.logger.info('NON SLO storlet_handler call in %s: with %s/%s/%s' %
-                                          (self.execution_server,
-                                           account,
-                                           container,
-                                           obj))
+                        # We apply here the Storlet:
+                        self.logger.info(
+                            'storlet_handler: invocation over %s/%s/%s %s' %
+                            (account, container, obj,
+                            'to be executed locally'))
                         old_env = req.environ.copy()
                         orig_req = Request.blank(old_env['PATH_INFO'], old_env)
                         (out_md, stream, sprotocol) = gateway.gatewayObjectGetFlow(req,
@@ -211,10 +211,13 @@ class StorletHandlerMiddleware(object):
                     gateway.augmentStorletRequest(req)
                     original_resp = req.get_response(self.app)
 
-                    if self._is_slo_get_request(req, original_resp, account, \
-                                               container, obj):
-                        ### SLO case: storlet to be invoked now at proxy side:
-                        (out_md, stream, sprotocol) = gateway.gatewayProxySloFlow(req,
+                    if self._is_range_request(req) == True or \
+                        self._is_slo_get_request(req, original_resp, account, \
+                                               container, obj) or \
+                        self.proxy_only_storlet_execution == True:
+                        # SLO / proxy only  case: 
+                        # storlet to be invoked now at proxy side:
+                        (out_md, stream, sprotocol) = gateway.gatewayProxyGETFlow(req,
                                                                        container,
                                                                        obj,
                                                                        original_resp)
@@ -236,7 +239,7 @@ class StorletHandlerMiddleware(object):
                         return original_resp
 
                     else:
-                        # Non SLO case: Storlet was already invoked at object side
+                        # Non proxy GET case: Storlet was already invoked at object side
                         if 'Transfer-Encoding' in original_resp.headers:
                             original_resp.headers.pop('Transfer-Encoding')
                     
@@ -282,7 +285,16 @@ class StorletHandlerMiddleware(object):
 
         return req.get_response(self.app)
 
-    # YM add
+    '''
+       Determines whether the request is a byte-range request
+       args:
+       req:       the request
+    '''
+    def _is_range_request(self, req):
+        if 'Range' in req.headers:
+            return True
+        return False
+
     '''
        Determines from a GET request and its  associated response 
        if the object is a SLO 
@@ -301,8 +313,6 @@ class StorletHandlerMiddleware(object):
 
         self.logger.info( 'Verify if {0}/{1}/{2} is an SLO assembly object'.format(account,container, obj))
 
-        self.logger.info(resp.headers)
-        self.logger.info(type(resp.headers))
         if resp.status_int < 300 and resp.status_int >= 200 :
             for key in resp.headers:
                 if (key.lower() == 'x-static-large-object' and
@@ -324,6 +334,7 @@ def filter_factory(global_conf, **local_conf):
     storlet_conf['storlet_dependency'] = conf.get('storlet_dependency',
                                                   'dependency')
     storlet_conf['execution_server'] = conf.get('execution_server', '')
+    storlet_conf['storlet_execute_on_proxy_only'] = config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
     storlet_conf['gateway_conf'] = {}
 
     module_name = conf.get('storlet_gateway_module','')

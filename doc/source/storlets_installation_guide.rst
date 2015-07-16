@@ -15,7 +15,7 @@ The installation consists of the following components:
 #. A basic storlets enabled Docker image that is added to the private Docker registry.
 #. A default account, enabled for Storlets with a default image deployed on all proxy and object nodes. This image is based on the basic storlets enabled image.
 
-The installation scripts takes two input files:
+The installation scripts take two input files:
 
 #. A 'hosts' file describing the nodes on which the installation takes place. This is a standard Ansible hosts file that needs to have the following sections (an example is given below).
 
@@ -25,7 +25,7 @@ The installation scripts takes two input files:
    #. storlet-storage. The list of the Swift cluster object servers
    #. root or a sudoer credentials Ansible can use to ssh the machines. In the below example we assume all nodes have the same credentials.
 
-#. An Ansible var file with various inputs, such as the Keystone IP and credentials, the Storlet management account information, etc. The file is Deploy/playbook/common.yml, and we give below the entries of interest that may need editing.
+#. An Ansible var file with various inputs, such as the Keystone IP and credentials, the Storlet management account information, etc. The file is located in Deploy/playbook/common.yml, and we give below the entries of interest that may need editing.
 
 At a high level the installation consists of the following steps:
 
@@ -68,6 +68,8 @@ common.yml
 Below are the entries of interest of common.yml
 
 Special attention should be given to the swift user and group IDs. Make sure they are identical on all hosts and match what is defined in the common.yml file.
+The entry 'storlet_execute_on_proxy_only' controls whether storlets will be invoked only on proxy servers or also on object servers. This option allows to use
+storlets with EC and encryption. Valid values are true / false
 
 ::
 
@@ -100,6 +102,9 @@ Special attention should be given to the swift user and group IDs. Make sure the
 
   swift_user_id: 1003
   swift_group_id: 1003
+
+  # middleware and gateway config file constants
+  storlet_execute_on_proxy_only: false
 
 Install
 =======

@@ -26,31 +26,20 @@
 			   includeantruntime="false" />
 	</target>
 
-	<target name="csrc" depends="jar">
-		<echo message="int main(){return 42;}" file="bin/get42.c" />
-	</target>
-	
-	<target name="exe" depends="csrc">
-		<exec dir="." executable="gcc">
-			<arg line="-o bin/get42 " />
-			<arg line="bin/get42.c" />
-		</exec>
-	</target>
-
 	<target name="jar" depends="java">
-		<jar destfile="identitystorlet-1.0.jar" basedir="bin">
+		<jar destfile="halfstorlet-1.0.jar" basedir="bin">
 			<manifest>
 				<attribute name="Main-Class" 
-					       value="com.ibm.storlet.IdentityStorlet" />
+					       value="com.ibm.storlet.HalfStorlet" />
 			</manifest>
 		</jar>
-		<move file="identitystorlet-1.0.jar" todir="bin" />
+		<move file="halfstorlet-1.0.jar" todir="bin" />
 	</target>
 
-	<target name="text" depends="jar">
-		<echo message="Some content to copy" file="bin/source.txt" />
+        <target name="text" depends="jar">
+		<echo message="abcdefghijklmonp" file="bin/source.txt" />
 	</target>
 
-	<target name="build" depends="clean, jar,exe,text">
+	<target name="build" depends="jar, text">
 	</target>
 </project>

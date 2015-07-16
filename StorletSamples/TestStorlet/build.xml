@@ -37,6 +37,6 @@
 		<delete dir="bin" />
 	</target>
 	
-	<target name="build" depends="common, test"/>
+	<target name="build" depends="clean, common, test"/>
 
 </project>

@@ -71,6 +71,7 @@
 				<fileset dir="StorletSamples/ExecDepStorlet" includes="build.xml" />
 				<fileset dir="StorletSamples/IdentityStorlet" includes="build.xml" />
 				<fileset dir="StorletSamples/TestMetadataStorlet" includes="build.xml" />
+				<fileset dir="StorletSamples/HalfStorlet" includes="build.xml" />
 			</subant>
 		</sequential>
 	</macrodef>

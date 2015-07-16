@@ -17,7 +17,7 @@ FROM {{ inventory_hostname }}:{{ docker_registry_port }}/{{base_os_image}}_jre7
 
 MAINTAINER {{ base_image_maintainer }}
 
-RUN [ "groupadd", "-g", "{{ swift_user_id }}", "swift" ]
+RUN [ "groupadd", "-g", "{{ swift_group_id }}", "swift" ]
 RUN [ "useradd", "-u" , "{{ swift_user_id }}", "-g", "{{ swift_group_id }}", "swift" ]
 
 ADD SBusPythonFacade-1.0.linux-x86_64.tar.gz            /
