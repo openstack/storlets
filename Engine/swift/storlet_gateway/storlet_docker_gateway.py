@@ -174,7 +174,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(req.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd
+        return out_md, self.data_read_fd, sprotocol
 
     def gatewayProxySloFlow(self, req, container, obj, orig_resp):
         # Adapted from PUT flow to SLO
@@ -201,7 +201,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(req.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd
+        return out_md, self.data_read_fd, sprotocol
 
 
     def gatewayObjectGetFlow(self, req, container, obj, orig_resp):
@@ -228,7 +228,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd
+        return out_md, self.data_read_fd, sprotocol
 
     def verify_access(self, env, version, account, container, object):
         self.logger.info('Verify access to {0}/{1}/{2}'.format(account,
