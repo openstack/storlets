@@ -15,8 +15,7 @@
 */
 
 /*============================================================================
- DD-MMM-YYYY    eranr       Initial implementation.
- 10-Jul-2014    evgenyl     Refactoring.
+ 20-Jul-2015    cdoron       Initial implementation.
  ===========================================================================*/
 package com.ibm.storlet.daemon;
 
@@ -28,8 +27,9 @@ import org.slf4j.Logger;
 /*----------------------------------------------------------------------------
  * SCancelTask
  * 
- * Instantiate AbstractTask class. The primary usage intent is to response 
- * that this Storlet Daemon is running
+ * Instantiate AbstractTask class. SCancelTask objects contain the task-id,
+ * which could later be used to cancel a running storlet (for instance, if
+ * a timeout is encountered)
  * */
 public class SCancelTask extends SAbstractTask 
 {
@@ -60,8 +60,6 @@ public class SCancelTask extends SAbstractTask
 	
     /*------------------------------------------------------------------------
      * run
-     * 
-     * The actual response on "ping" command.
      * */
 	public boolean run()
 	{
