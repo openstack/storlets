@@ -31,5 +31,6 @@ SBUS_FD_OUTPUT_OBJECT_METADATA      = 2
 SBUS_FD_OUTPUT_OBJECT_AND_METADATA  = 3
 SBUS_FD_LOGGER                      = 4
 SBUS_FD_OUTPUT_CONTAINER            = 5
+SBUS_FD_OUTPUT_TASK_ID              = 6
 
 '''============================ END OF FILE ==============================='''

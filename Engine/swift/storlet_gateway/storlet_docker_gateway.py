@@ -22,6 +22,8 @@ Created on Mar 24, 2015
 import os
 import sys
 import shutil
+import select
+from eventlet import Timeout
 
 from swift.common.internal_client import InternalClient as ic
 from swift.common.swob import Request
@@ -119,6 +121,65 @@ class StorletGatewayDocker(StorletGatewayBase):
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
         self.paths = RunTimePaths(account, sconf)
 
+    class IterLike(object):
+        def __init__(self, obj_data, timeout, cancel_func):
+            self.closed = False
+            self.obj_data = obj_data
+            self.timeout = timeout
+            self.cancel_func = cancel_func
+
+        def __iter__(self):
+            return self
+            
+        def read_with_timeout(self, size):
+            timeout = Timeout(self.timeout)
+            try:
+                chunk = os.read(self.obj_data, size)
+            except Timeout as t:
+                if t is timeout:
+                    if self.cancel_func:
+                        self.cancel_func()
+                    self.close()
+                    raise t
+            except Exception as e:
+                self.close()
+                raise e
+            finally:
+                timeout.cancel()
+
+            return chunk
+        
+        def next(self, size = 1024):
+            chunk = None
+            r, w, e = select.select([ self.obj_data ], [], [ ], self.timeout)
+            if len(r) == 0:
+                self.close()
+            if self.obj_data in r:
+                chunk = self.read_with_timeout(size)
+                if chunk == '':
+                    raise StopIteration('Stopped iterator ex')
+                else:
+                    return chunk
+            raise StopIteration('Stopped iterator ex')
+             
+        def read(self, size=1024):
+            return self.next(size)
+        
+        def readline(self, size=-1):
+            return ''
+        def readlines(self, sizehint=-1):
+            pass;
+
+        def close(self):
+            if self.closed == True:
+                return
+            self.closed = True
+            os.close(self.obj_data)
+        
+        def __del__(self):
+            self.close()
+
+
     def validateStorletUpload(self, req):
 
         if (self.container == self.sconf['storlet_container']):
@@ -176,7 +237,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(req.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd, sprotocol
+        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd, self.storlet_timeout, sprotocol._cancel)
 
     def gatewayProxyGETFlow(self, req, container, obj, orig_resp):
         # Flow for running the GET computation on the proxy
@@ -203,7 +264,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd, sprotocol
+        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd, self.storlet_timeout, sprotocol._cancel)
 
     def gatewayObjectGetFlow(self, req, container, obj, orig_resp):
         sreq = StorletGETRequest(self.account, orig_resp, req.params)
@@ -229,7 +290,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
-        return out_md, self.data_read_fd, sprotocol
+        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd, self.storlet_timeout, sprotocol._cancel)
 
     def verify_access(self, env, version, account, container, object):
         self.logger.info('Verify access to {0}/{1}/{2}'.format(account,

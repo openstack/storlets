@@ -29,68 +29,9 @@ from swift.proxy.controllers.base import get_account_info
 from swift.common.exceptions import ConnectionTimeout
 from eventlet import Timeout
 
-import select
 import ConfigParser
 import os
 import sys
-
-class IterLike(object):
-    def __init__(self, obj_data, timeout, sprotocol=None):
-        self.closed = False
-        self.obj_data = obj_data
-        self.timeout = timeout
-        self.sprotocol = sprotocol
-
-    def __iter__(self):
-        return self
-            
-    def read_with_timeout(self, size):
-        timeout = Timeout(self.timeout)
-        try:
-            chunk = os.read(self.obj_data, size)
-        except Timeout as t:
-            if t is timeout:
-                if self.sprotocol:
-                    self.sprotocol._cancel()
-                self.close()
-                raise t
-        except Exception as e:
-            self.close()
-            raise e
-        finally:
-            timeout.cancel()
-
-        return chunk
-        
-    def next(self, size = 1024):
-        chunk = None
-        r, w, e = select.select([ self.obj_data ], [], [ ], self.timeout)
-        if len(r) == 0:
-            self.close()
-        if self.obj_data in r:
-            chunk = self.read_with_timeout(size)
-            if chunk == '':
-                raise StopIteration('Stopped iterator ex')
-            else:
-                return chunk
-        raise StopIteration('Stopped iterator ex')
-             
-    def read(self, size=1024):
-        return self.next(size)
-        
-    def readline(self, size=-1):
-        return ''
-    def readlines(self, sizehint=-1):
-        pass;
-
-    def close(self):
-        if self.closed == True:
-            return
-        self.closed = True
-        os.close(self.obj_data)
-        
-    def __del__(self):
-        self.close()
 
 class StorletHandlerMiddleware(object):
     
@@ -166,7 +107,7 @@ class StorletHandlerMiddleware(object):
                             'to be executed locally'))
                         old_env = req.environ.copy()
                         orig_req = Request.blank(old_env['PATH_INFO'], old_env)
-                        (out_md, stream, sprotocol) = gateway.gatewayObjectGetFlow(req,
+                        (out_md, app_iter) = gateway.gatewayObjectGetFlow(req,
                                                                         container,
                                                                         obj,
                                                                         orig_resp)
@@ -176,7 +117,7 @@ class StorletHandlerMiddleware(object):
                             orig_resp.headers.pop('Transfer-Encoding')
                       
                         return  Response(
-                            app_iter=IterLike(stream, self.stimeout, sprotocol),
+                            app_iter,
                             headers = orig_resp.headers,
                             request=orig_req, 
                             conditional_response=True)
@@ -217,7 +158,7 @@ class StorletHandlerMiddleware(object):
                         self.proxy_only_storlet_execution == True:
                         # SLO / proxy only  case: 
                         # storlet to be invoked now at proxy side:
-                        (out_md, stream, sprotocol) = gateway.gatewayProxyGETFlow(req,
+                        (out_md, app_iter) = gateway.gatewayProxyGETFlow(req,
                                                                        container,
                                                                        obj,
                                                                        original_resp)
@@ -230,9 +171,8 @@ class StorletHandlerMiddleware(object):
                     
                             resp_headers['Content-Length'] = None
 
-                            iter = IterLike(stream, self.stimeout, sprotocol)
                             return Response(
-                                    app_iter=iter,
+                                    app_iter=app_iter,
                                     headers=resp_headers,
                                     request=orig_req,
                                     conditional_response=True)
@@ -266,11 +206,10 @@ class StorletHandlerMiddleware(object):
                             return HTTPUnauthorized('Storlet: no permissions')
                     if storlet_execution:
                         gateway.augmentStorletRequest(req)
-                        (out_md, stream, sprotocol) = gateway.gatewayProxyPutFlow(req,
+                        (out_md, app_iter) = gateway.gatewayProxyPutFlow(req,
                                                                        container,
                                                                        obj)
-                        req.environ['wsgi.input'] = IterLike(stream,
-                                                             self.stimeout, sprotocol)
+                        req.environ['wsgi.input'] = app_iter
                         if 'CONTENT_LENGTH' in req.environ:
                             req.environ.pop('CONTENT_LENGTH')
                         req.headers['Transfer-Encoding'] = 'chunked'

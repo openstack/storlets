@@ -26,6 +26,9 @@ import com.ibm.storlet.common.*;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.io.OutputStream;
+
+import java.util.concurrent.Future;
 
 /*----------------------------------------------------------------------------
  * SExecutionTask
@@ -40,13 +43,17 @@ public class SExecutionTask extends SAbstractTask implements Runnable
 	private ArrayList<StorletInputStream>  inStreams_          = null;
 	private ArrayList<StorletOutputStream> outStreams_         = null;
 	private HashMap<String, String>        executionParams_    = null;
+        private OutputStream                   taskIdOut_          = null;
+        private String                         taskId_             = null;
+        private HashMap<String, Future>        taskIdToTask_       = null;
 	
 	/*------------------------------------------------------------------------
 	 * CTOR
 	 * */
 	public SExecutionTask( IStorlet                        storlet,
 	                       ArrayList<StorletInputStream>   instreams,
-	                       ArrayList<StorletOutputStream>  outstreams, 
+	                       ArrayList<StorletOutputStream>  outstreams,
+                               OutputStream                    taskIdOut, 
 	                       HashMap<String, String>         executionParams, 
 	                       StorletLogger                   storletLogger,
 	                       Logger                          logger ) 
@@ -57,6 +64,7 @@ public class SExecutionTask extends SAbstractTask implements Runnable
 		this.outStreams_       =   outstreams;
 		this.executionParams_  =   executionParams;
 		this.storletLogger_    =   storletLogger;
+                this.taskIdOut_        =   taskIdOut;
 		
 	}
 	
@@ -78,6 +86,25 @@ public class SExecutionTask extends SAbstractTask implements Runnable
 		return executionParams_;
 	}
 
+        public OutputStream getTaskIdOut()
+        {
+                return taskIdOut_;
+        }
+
+	/*------------------------------------------------------------------------
+	 * setters
+	 * */
+        public void setTaskId(String taskId)
+        {
+                taskId_ = taskId;
+        }
+
+        public void setTaskIdToTask(HashMap<String, Future> taskIdToTask)
+        {
+                taskIdToTask_ = taskIdToTask;
+        }
+
+
 	/*------------------------------------------------------------------------
 	 * run
 	 * 
@@ -92,6 +119,9 @@ public class SExecutionTask extends SAbstractTask implements Runnable
 			storlet_.invoke( inStreams_, outStreams_, 
 			                executionParams_, storletLogger_);
 			storletLogger_.emitLog("Storlet invocation done");
+                        synchronized (taskIdToTask_) {
+                            taskIdToTask_.remove(taskId_);
+                        }
 		} 
 		catch( StorletException e ) 
 		{

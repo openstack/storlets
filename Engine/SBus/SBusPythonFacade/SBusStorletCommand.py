@@ -33,6 +33,7 @@ SBUS_CMD_DAEMON_STATUS  = 4
 SBUS_CMD_STOP_DAEMONS   = 5
 SBUS_CMD_PING           = 6
 SBUS_CMD_DESCRIPTOR     = 7
-SBUS_CMD_NOP            = 8
+SBUS_CMD_CANCEL         = 8
+SBUS_CMD_NOP            = 9
 
 '''============================ END OF FILE ==============================='''

@@ -38,6 +38,7 @@ class SBusDatagram(object):
     '''
 
     command_dict_key_name_ = 'command'
+    task_id_dict_key_name_ = 'taskId'
 
     '''--------------------------------------------------------------------'''
     def __init__(self):
@@ -59,6 +60,7 @@ class SBusDatagram(object):
                                is the same as in h_files_, i.e. n_files_.
         '''
         self.e_command_      = SBUS_CMD_NOP
+        self.task_id_        = None
         self.h_files_        = None
         self.n_files_        = 0
         self.files_metadata_ = None
@@ -151,9 +153,13 @@ class SBusDatagram(object):
         '''
         ext_params = json.loads(str_json_params)
         cmd = self.command_dict_key_name_
+        tid = self.task_id_dict_key_name_
         if cmd in ext_params:
             self.e_command_ = ext_params[cmd]
             ext_params.pop(cmd, None)
+        elif tid in ext_params:
+            self.task_id_ = ext_params[tid]
+            ext_params.pop(tid, None)
         else:
             self.e_command_ = SBUS_CMD_NOP
         b_exec_params_is_not_empty = len(ext_params.keys()) > 0
@@ -180,6 +186,9 @@ class SBusDatagram(object):
             exec_params = self.exec_params_.copy()
         cmd = self.command_dict_key_name_
         exec_params[cmd] = self.e_command_
+        if self.task_id_:
+            tid = self.task_id_dict_key_name_
+            exec_params[tid] = self.task_id_
         str_result = json.dumps(exec_params)
         return str_result
 
@@ -365,43 +374,27 @@ class SBusDatagram(object):
         self.e_command_ = cmd
 
     '''--------------------------------------------------------------------'''
-    def is_equal(self, other):
+    def get_task_id(self):
         '''
-        @summary: Comparison function
+        @summary: Getter.
 
-        @return:  The answer whether two datagrams has the same content.
-        @rtype:   boolean.
+        @return:  The task id.
+        @rtype:   string
         '''
+        return self.task_id_
 
-        # Iterate and compare met-data dictionaries
-        b_result = True
-        if (self.get_num_files() ==
-            other.get_num_files()) and (self.get_command() ==
-                                        other.get_command()):
-            # Compare file descriptors
-            for i in range(self.get_num_files()):
-                my_fd = self.get_files()[i]
-                oth_fd = other.get_files()[i]
-                b_result = b_result and (my_fd == oth_fd)
+    '''--------------------------------------------------------------------'''
+    def set_task_id(self, taskId):
+        '''
+        @summary:   Setter.
+                    Assign task id
 
-            # Compare files meta-data
-            for i in range(self.get_num_files()):
-                my_curr_md = self.get_metadata()[i]
-                oth_curr_md = other.get_metadata()[i]
-                b_result = b_result and self.dictionaies_equal(my_curr_md,
-                                                               oth_curr_md)
-            # Compare execution parameters dictionaries
-            my_params = self.get_exec_params()
-            oth_params = self.get_exec_params()
-            if (not my_params) and (not oth_params):
-                b_result = b_result and True
-            elif my_params and oth_params:
-                b_result = b_result and self.dictionaies_equal(my_params,
-                                                               oth_params)
-        else:
-            b_result = False
+        @param taskId: Command to assign
+        @type  taskId: string
 
-        return b_result
+        @rtype:     void
+        '''
+        self.task_id_ = taskId
 
     '''--------------------------------------------------------------------'''
     @staticmethod

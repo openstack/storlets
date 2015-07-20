@@ -21,7 +21,10 @@
 
 package com.ibm.storlet.daemon;
 
+import java.io.OutputStream;
 import java.io.IOException;
+
+import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +35,6 @@ import com.ibm.storlet.daemon.STaskFactory;
 import com.ibm.storlet.sbus.*;
 
 import java.util.concurrent.*;
-
-
 /*----------------------------------------------------------------------------
  * SDaemon
  * 
@@ -48,6 +49,7 @@ public class SDaemon
 	private static STaskFactory storletTaskFactory_;
 	private static ExecutorService threadPool_;
 	private static String strStorletName_;
+        private static HashMap<String, Future> taskIdToTask_;
 	private static int nDefaultTimeoutToWaitBeforeShutdown_ = 3;
 	/*------------------------------------------------------------------------
 	 * initLog
@@ -158,6 +160,7 @@ public class SDaemon
 		}
         logger_.trace("Initialising thread pool with "+nPoolSize+" threads");		
 		threadPool_ = Executors.newFixedThreadPool( nPoolSize );
+                taskIdToTask_ = new HashMap<String, Future>();
 	}
 	
 	/*------------------------------------------------------------------------
@@ -247,7 +250,26 @@ public class SDaemon
 		else if( sTask instanceof SExecutionTask )
 		{
 			logger_.trace( strStorletName_ + ": Got Invoke command" );
-			threadPool_.submit( (SExecutionTask) sTask );
+			Future futureTask = threadPool_.submit( (SExecutionTask) sTask );
+                        String taskId = futureTask.toString().split("@")[1];
+
+                        ( (SExecutionTask) sTask ).setTaskIdToTask(taskIdToTask_);
+                        ( (SExecutionTask) sTask ).setTaskId(taskId);
+
+                        logger_.trace( strStorletName_ +": task id is " + taskId);
+
+                        synchronized (taskIdToTask_) {
+                            taskIdToTask_.put(taskId, futureTask);
+                        }
+                        OutputStream taskIdOut = ( (SExecutionTask) sTask ).getTaskIdOut();
+                        try {
+                            taskIdOut.write(taskId.getBytes());
+                        } catch ( IOException e ) {
+                            logger_.trace( strStorletName_ +
+                                       ": problem returning taskId " + taskId +
+                                       ": " + e.toString() );
+                            bStatus = false;
+                        } 
 		} 
 		else if( sTask instanceof SDescriptorTask )
 		{
@@ -259,6 +281,25 @@ public class SDaemon
             logger_.trace(strStorletName_ + ": Got Ping command" );
 		    bStatus = ((SPingTask) sTask).run();
 		}
+                else if( sTask instanceof SCancelTask )
+                {
+                    String taskId = ((SCancelTask) sTask).getTaskId();
+            logger_.trace(strStorletName_ + ": Got Cancel command for taskId " + taskId);
+            if (taskIdToTask_.get(taskId) == null) {
+                bStatus = false;
+                logger_.trace(strStorletName_ + ": COULD NOT FIND taskId " + taskId);
+                try
+                {
+                    ((SCancelTask) sTask).getSOut().write((new String("BAD")).getBytes());
+                }
+                catch (IOException e) {}
+	    } else {
+                logger_.trace(strStorletName_ + ": good. found taskId " + taskId);
+                    (taskIdToTask_.get(taskId)).cancel(true);
+                    taskIdToTask_.remove(taskId);
+	    }
+                    bStatus = ((SCancelTask) sTask).run();
+                }
 		return bStatus;
 	}
 	

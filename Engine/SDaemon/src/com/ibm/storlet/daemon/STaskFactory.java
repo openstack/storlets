@@ -90,6 +90,12 @@ public class STaskFactory
                                 "received Ping command");
             ResObj = createPingTask( dtg );
         }
+        else if( eStorletCommand.SBUS_CMD_CANCEL == command )
+        {
+            this.logger_.trace( "createStorletTask: " +
+                                "received Cancel command");
+            ResObj = createCancelTask( dtg );
+        }
 		else
 		{
 		    this.logger_.error( "createStorletTask: " + 
@@ -113,6 +119,7 @@ public class STaskFactory
 	    int nFiles = dtg.getNFiles();
 	    HashMap<String, String>[] FilesMD = dtg.getFilesMetadata();
 	    this.logger_.trace("StorletTask: Got " + nFiles + " fds");
+            OutputStream taskIdOut = null;
 	    for( int i = 0; i < nFiles; ++i ) 
 	    {
 	        String strFDtype = FilesMD[i].get( "type" );
@@ -120,7 +127,11 @@ public class STaskFactory
         	// make it further to the Storlet invocation
 
 	        FilesMD[i].remove("type");
-	        if( strFDtype.equals("SBUS_FD_INPUT_OBJECT") )
+                if (strFDtype.equals("SBUS_FD_OUTPUT_TASK_ID"))
+		{
+                    taskIdOut = new FileOutputStream( dtg.getFiles()[i] );
+		}
+	        else if( strFDtype.equals("SBUS_FD_INPUT_OBJECT") )
 	        {
 	            this.logger_.trace( "createStorletTask: fd " + 
 	                                i + 
@@ -184,7 +195,8 @@ public class STaskFactory
 	    }
 	    return new SExecutionTask( storlet_, 
                                          inStreams, 
-                                         outStreams, 
+                                         outStreams,
+                                         taskIdOut,
                                          dtg.getExecParams(), 
                                          storletLogger, 
                                          logger_ );
@@ -253,6 +265,50 @@ public class STaskFactory
                                                 logger_ );
         }
         return ResObj; 
+    }
+
+/*------------------------------------------------------------------------
+     * createCancelTask
+     * */
+    private SCancelTask createCancelTask( SBusDatagram dtg )
+    {
+        SCancelTask ResObj = null;
+        String taskId = dtg.getTaskId();
+        boolean bStatus = true;
+
+        if( 1 != dtg.getNFiles() )
+        {
+            this.logger_.error( "createCancelTask: " +
+                                "Wrong fd count for descriptor command. "+
+                                "Expected 1, got " + dtg.getNFiles() );
+            bStatus = false;
+        }
+        this.logger_.trace( "createCancelTask: #FDs is good" );
+
+        if( bStatus )
+        {
+            String strFDType = dtg.getFilesMetadata()[0].get("type");
+            if( !strFDType.equals( "SBUS_FD_OUTPUT_OBJECT" ) )
+            {
+                this.logger_.error( "createCancelTask: " +
+                             "Wrong fd type for Cancel command. "+
+                             "Expected SBUS_FD_OUTPUT_OBJECT " +
+                             " got " + strFDType );
+                bStatus = false;
+            }
+            this.logger_.trace("createCancelTask: " +
+                    "fd metadata is good. Creating stream");
+        }
+
+        if( bStatus )
+        {
+            OutputStream sOut = new FileOutputStream( dtg.getFiles()[0] );
+            // parse descriptor stuff
+            this.logger_.trace( "createCancelTask: " +
+                                "Returning StorletCancelTask");
+            ResObj = new SCancelTask( sOut, logger_, taskId );
+        }
+        return ResObj;
     }
 
     /*------------------------------------------------------------------------
