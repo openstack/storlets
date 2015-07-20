@@ -61,7 +61,8 @@ public class SBusDatagram
 		SBUS_CMD_STOP_DAEMONS   (5),
 		SBUS_CMD_PING           (6),
 		SBUS_CMD_DESCRIPTOR     (7),
-		SBUS_CMD_NOP            (8);
+		SBUS_CMD_CANCEL         (8),
+		SBUS_CMD_NOP            (9);
 				
 		private eStorletCommand(int n){}
 	};
@@ -79,7 +80,8 @@ public class SBusDatagram
 		SBUS_FD_OUTPUT_OBJECT_METADATA      (2),
 		SBUS_FD_OUTPUT_OBJECT_AND_METADATA  (3),
 		SBUS_FD_LOGGER                      (4),
-		SBUS_FD_OUTPUT_CONTAINER            (5);		
+		SBUS_FD_OUTPUT_CONTAINER            (5),
+		SBUS_FD_OUTPUT_TASK_ID              (6);
 
 		private eFileDescription(int n){}
 	};	
@@ -90,6 +92,8 @@ public class SBusDatagram
 	private int nFiles_;
 	// Command to execute
 	private eStorletCommand eCommand_;
+	// identifier for the task
+        private static String taskId_; 
 	// Metadata for the file descriptors
 	// Descriptor usage intents - input, output, etc
     private HashMap<String, String>[] FilesMetadata_;
@@ -99,6 +103,7 @@ public class SBusDatagram
     // The key name to store eCommand_ field in ExecParams_ hash
     // during data transfer. 
     private final static String strCommandKeyName = "command"; 
+    private final static String strTaskIdName = "taskId"; 
 	/*------------------------------------------------------------------------
 	 * Default CTOR
 	 * */    
@@ -109,6 +114,7 @@ public class SBusDatagram
     	this.eCommand_ 		= eStorletCommand.SBUS_CMD_NOP;
     	this.FilesMetadata_	= null;
     	this.ExecParams_ 	= null;
+    	this.taskId_            = null;
     }
 
 	/*------------------------------------------------------------------------
@@ -137,7 +143,9 @@ public class SBusDatagram
     	    String strValue = e.getValue().toString();
     	    if( strKey.equals(strCommandKeyName) )
     	        setCommand( convertStringToCommand( strValue ) );
-    	    else
+    	    else if ( strKey.equals(strTaskIdName) )
+                setTaskId( strValue );
+            else
     	        JustParams.put( strKey, strValue );
     	}
     	
@@ -255,6 +263,7 @@ public class SBusDatagram
     	else
     		Params = new HashMap<String, String>( getExecParams() );
     	Params.put( strCommandKeyName, getCommand().toString() );
+    	Params.put( strTaskIdName, getTaskId() );
     	return JSONObject.toJSONString( Params );   	
     }
     
@@ -305,6 +314,8 @@ public class SBusDatagram
             eCmd = eStorletCommand.SBUS_CMD_PING;
         else if(strVal.equals("7") || strVal.equals( "SBUS_CMD_DESCRIPTOR" ))
             eCmd = eStorletCommand.SBUS_CMD_DESCRIPTOR;
+        else if(strVal.equals("8") || strVal.equals( "SBUS_CMD_CANCEL" ))
+            eCmd = eStorletCommand.SBUS_CMD_CANCEL;
        
         return eCmd;
     }
@@ -334,44 +345,14 @@ public class SBusDatagram
             break;
         case "5":
             strType = "SBUS_FD_OUTPUT_CONTAINER";
-            break;        
+            break;
+        case "6":
+            strType = "SBUS_FD_OUTPUT_TASK_ID";
+            break;
         }
         return strType;
     }
     
-    /*------------------------------------------------------------------------
-     * Comparison. 
-     * */    
-    public boolean equals( final SBusDatagram other )
-    {
-        boolean bIsEq = true;
-        int i = 0;
-        if(    this.getCommand() == other.getCommand() 
-            && this.getNFiles()  == other.getNFiles()  )
-        {
-            for( i = 0; i < getNFiles() && bIsEq; ++i )
-            {
-                FileDescriptor ThisCurrFd  = this.getFiles()[i];
-                FileDescriptor OtherCurrFd = other.getFiles()[i];
-                bIsEq = bIsEq && ThisCurrFd.equals( OtherCurrFd );
-            }
-            for( i = 0; i < getNFiles() && bIsEq; ++i )
-            {
-                HashMap<String, String> ThisFMd = this.getFilesMetadata()[i];
-                HashMap<String, String> OthFMd  = other.getFilesMetadata()[i];
-                bIsEq = bIsEq && ThisFMd.equals(OthFMd);
-            }
-            if( null != getExecParams() && null != other.getExecParams() )
-                bIsEq = bIsEq &&getExecParams().equals(other.getExecParams());
-            else if(null == getExecParams() && null == other.getExecParams())
-                ; // both of them are null, don't change bIsEq
-            else
-                bIsEq = false;
-        }
-        else
-            bIsEq = false;
-        return bIsEq;
-    }
     /*------------------------------------------------------------------------
 	 * Setters/getters
 	 * */    
@@ -388,13 +369,21 @@ public class SBusDatagram
 	{
 		return nFiles_;
 	}
-	public eStorletCommand getCommand() 
+        public eStorletCommand getCommand()
+        {
+                return eCommand_;
+        }
+        public void setCommand(eStorletCommand eCommand)
+        {
+                this.eCommand_ = eCommand;
+        }
+	public String getTaskId() 
 	{
-		return eCommand_;
+		return taskId_;
 	}
-	public void setCommand(eStorletCommand eCommand)
+	public void setTaskId(String id)
 	{
-		this.eCommand_ = eCommand;
+		this.taskId_ = id;
 	}
 	public HashMap<String, String>[] getFilesMetadata() 
 	{
