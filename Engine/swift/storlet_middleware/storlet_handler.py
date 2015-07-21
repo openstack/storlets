@@ -57,8 +57,8 @@ class StorletHandlerMiddleware(object):
                 device, partition, account, container, obj = \
                     req.split_path(5, 5, rest_with_last=True)
                 version = '0'
-        except ValueError as e:
-            StorletException.handle(self.logger, e)
+        except Exception as e:
+            return req.get_response(self.app)
             
         self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
                             (self.execution_server,
