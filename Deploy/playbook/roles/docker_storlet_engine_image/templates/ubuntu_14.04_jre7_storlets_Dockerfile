@@ -21,9 +21,7 @@ RUN [ "groupadd", "-g", "{{ swift_group_id }}", "swift" ]
 RUN [ "useradd", "-u" , "{{ swift_user_id }}", "-g", "{{ swift_group_id }}", "swift" ]
 
 ADD SBusPythonFacade-1.0.linux-x86_64.tar.gz            /
-RUN ["chmod", "-R" ,"0755", "/usr/local/lib/python2.7/dist-packages/SBusPythonFacade"]
-RUN ["chmod", "-R" ,"0755", "/usr/local/lib/python2.7/dist-packages/SBusPythonFacade-1.0.egg-info"]
-
+RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/SBusPythonFacade*
 
 COPY sbus.so                                            /usr/local/lib/python2.7/dist-packages/
 RUN ["chmod", "0755", "/usr/local/lib/python2.7/dist-packages/sbus.so"]
@@ -41,8 +39,7 @@ COPY SCommon.jar                                        /opt/ibm/
 RUN ["chmod", "0744", "/opt/ibm/SCommon.jar"]
 
 ADD storlet_daemon_factory-1.0.linux-x86_64.tar.gz      /
-RUN ["chmod", "-R" ,"0755", "/usr/local/lib/python2.7/dist-packages/storlet_daemon_factory"]
-RUN ["chmod", "-R" ,"0755", "/usr/local/lib/python2.7/dist-packages/storlet_daemon_factory-1.0.egg-info"]
+RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/storlet_daemon_factory*
 
 COPY init_container.sh                                  /opt/ibm/
 RUN ["chmod", "0755", "/opt/ibm/init_container.sh"]
