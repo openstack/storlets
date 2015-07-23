@@ -13,7 +13,7 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-FROM {{ inventory_hostname }}:{{ docker_registry_port }}/{{base_os_image}}_jre7
+FROM {{ inventory_hostname }}:{{ docker_registry_port }}/{{base_os_image}}_jre8
 
 MAINTAINER {{ base_image_maintainer }}
 

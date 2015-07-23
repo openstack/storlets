@@ -15,7 +15,7 @@
 
 - name: Create Repository for building the image
   file:
-    path: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    path: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
     state: directory
     mode: 0755
     owner: root
@@ -24,7 +24,7 @@
 - name: Copy SBus resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   with_items:
     - "Engine/SBus/SBusJavaFacade/bin/libjsbus.so"
     - "Engine/SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"
@@ -35,7 +35,7 @@
 - name: Copy SDaemon resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   with_items:
     - "Engine/SDaemon/bin/SDaemon.jar"
   tags: storlets
@@ -43,7 +43,7 @@
 - name: Copy SCommon resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   with_items:
     - "Engine/SCommon/bin/SCommon.jar"
   tags: storlets
@@ -51,7 +51,7 @@
 - name: Copy Daemon Factory resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   with_items:
     - "Engine/storlet_daemon_factory/dist/storlet_daemon_factory-1.0.linux-x86_64.tar.gz"
   tags: storlets
@@ -59,7 +59,7 @@
 - name: Copy Init Container Script
   copy:
     src: init_container.sh
-    dest: /data/registry/repositories/{{ base_os_image }}_jre7_storlets
+    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   tags: storlets
 
-- include: create_layer.yml dockerfile_prefix={{ base_os_image }}_jre7_storlets layer_suffix=jre7_storlets tags=storlets
+- include: create_layer.yml dockerfile_prefix={{ base_os_image }}_jre8_storlets layer_suffix=jre8_storlets tags=storlets

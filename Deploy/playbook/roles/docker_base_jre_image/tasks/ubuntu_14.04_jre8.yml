@@ -22,35 +22,35 @@
   - "docker pull ubuntu:14.04"
   - "docker tag ubuntu:14.04 {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
   - "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
-  tags: ubuntu_14.04_jre7
+  tags: ubuntu_14.04_jre8
   when: "'0' in ubuntu_image.stdout_lines[0]"
   
 - name: Create Repository for building the image
-  stat: path=/data/registry/repositories/ubuntu_14.04_jre7
+  stat: path=/data/registry/repositories/ubuntu_14.04_jre8
   register: st0
 
 - file:
-    path: /data/registry/repositories/ubuntu_14.04_jre7
+    path: /data/registry/repositories/ubuntu_14.04_jre8
     state: directory
     mode: 0755
     owner: root
-  tags: ubuntu_14.04_jre7
+  tags: ubuntu_14.04_jre8
   when: not st0.stat.exists
     
 - name: Download necessary Java dependencies
   get_url: 
     url: "{{ item }}"
-    dest: /data/registry/repositories/ubuntu_14.04_jre7
+    dest: /data/registry/repositories/ubuntu_14.04_jre8
   with_items:
     - https://json-simple.googlecode.com/files/json_simple-1.1.jar
     - http://www.slf4j.org/dist/slf4j-1.7.7.tar.gz
     - http://logback.qos.ch/dist/logback-1.1.2.tar.gz
-  tags: ubuntu_14.04_jre7
+  tags: ubuntu_14.04_jre8
     
 - name: Untar downloaded dependencies
   command: "{{ item }}"
   args:
-    chdir: "/data/registry/repositories/ubuntu_14.04_jre7"
+    chdir: "/data/registry/repositories/ubuntu_14.04_jre8"
   with_items:
     - "tar xvf slf4j-1.7.7.tar.gz"
     - "mv slf4j-1.7.7/slf4j-api-1.7.7.jar ."
@@ -59,15 +59,15 @@
     - "mv logback-1.1.2/logback-core-1.1.2.jar ."
     - "mv logback-1.1.2/logback-classic-1.1.2.jar ."
     - "rm -fr logback-1.1.2/ logback-1.1.2.tar.gz"
-  tags: ubuntu_14.04_jre7
+  tags: ubuntu_14.04_jre8
     
 - name: Copy additional resources
   copy:
     src: "{{ item }}"
-    dest: /data/registry/repositories/ubuntu_14.04_jre7
+    dest: /data/registry/repositories/ubuntu_14.04_jre8
   with_items:
     - logback.xml
     - rsyslog.conf
-  tags: ubuntu_14.04_jre7
+  tags: ubuntu_14.04_jre8
  
-- include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre7 layer_suffix=jre7 tags=jre7
+- include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8 tags=jre8

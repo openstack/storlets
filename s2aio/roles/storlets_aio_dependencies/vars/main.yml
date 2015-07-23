@@ -2,5 +2,5 @@ packages:
   - git
   - sshpass
   - ant
-  - openjdk-7-jdk
+  - oracle-java8-installer
   - python-setuptools

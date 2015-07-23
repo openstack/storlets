@@ -47,7 +47,7 @@ docker_registry_port: 5001
 # docker_base_storlet_images / docekr_base_images 
 base_image_maintainer: root
 base_os_image: ubuntu_14.04
-storlets_image_name_suffix: ubuntu_14.04_jre7_storlets
+storlets_image_name_suffix: ubuntu_14.04_jre8_storlets
 swift_user_id: 1003
 swift_group_id: 1003
 #----------------------------------------------------------------

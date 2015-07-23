@@ -43,11 +43,11 @@ Downloading the Docker Image
 Downloading the Docker image involves a simple retrieval of a Swift object. To
 get the exact name of the object just list the docker_images container in the
 account. The name will carry the base OS system and engine language binding run
-time. An example might be: ubuntu_14.04_jre7_storlets reflecting the following
+time. An example might be: ubuntu_14.04_jre8_storlets reflecting the following
 facts:
 
 #. The base OS is Ubuntu 14.04. Currently this is the only base OS we support.
-#. The Storlets run time is jre7. Currently storlets can be written only in Java.
+#. The Storlets run time is jre8. Currently storlets can be written only in Java.
 #. The storlet engine code is installed.
 
 The image will come in a .tar format.
@@ -75,18 +75,18 @@ In the below be show:
 ::
 
    eranr@lnx-ccs8:~$ swift list docker_images
-   ubuntu_14.04_jre7_storlets.tar
-   eranr@lnx-ccs8:~$ swift download docker_images ubuntu_14.04_jre7_storlets.tar
-   ubuntu_14.04_jre7_storlets.tar [headers 0.311s, total 8.550s, 68.008 MB/s]
-   eranr@lnx-ccs8:~$ swift stat docker_images ubuntu_14.04_jre7_storlets.tar
+   ubuntu_14.04_jre8_storlets.tar
+   eranr@lnx-ccs8:~$ swift download docker_images ubuntu_14.04_jre8_storlets.tar
+   ubuntu_14.04_jre8_storlets.tar [headers 0.311s, total 8.550s, 68.008 MB/s]
+   eranr@lnx-ccs8:~$ swift stat docker_images ubuntu_14.04_jre8_storlets.tar
           Account: AUTH_305f5f3d12834be187238e080b8643e4
         Container: docker_images
-           Object: ubuntu_14.04_jre7_storlets.tar
+           Object: ubuntu_14.04_jre8_storlets.tar
      Content Type: application/x-tar
    Content Length: 581439488
     Last Modified: Sat, 25 Oct 2014 19:47:13 GMT
              ETag: ac014db984be37faf7307801baa11ab0
-  Meta Image-Name: ubuntu_14.04_jre7_storlets
+  Meta Image-Name: ubuntu_14.04_jre8_storlets
        Meta Mtime: 1414266426.880534
     Accept-Ranges: bytes
       X-Timestamp: 1414266432.09929
@@ -107,10 +107,10 @@ The below steps illustrate the tuning process:
 
   ::
 
-    root@lnx-ccs8:/home/eranr# docker load -i ubuntu_14.04_jre7_storlets.tar
+    root@lnx-ccs8:/home/eranr# docker load -i ubuntu_14.04_jre8_storlets.tar
     root@lnx-ccs8:/home/eranr# docker images
     REPOSITORY                                  TAG                 IMAGE ID		CREATED             VIRTUAL SIZE
-    localhost:5001/ubuntu_14.04_jre7_storlets   latest              f6929e6abc60	3 days ago          563.6 MB
+    localhost:5001/ubuntu_14.04_jre8_storlets   latest              f6929e6abc60	3 days ago          563.6 MB
 
 2. Use a Docker file that is based on the loaded image to make the necessary
    changes to the image. Below is a Dockerfile for installing 'ffmpeg'. Few 
@@ -128,7 +128,7 @@ The below steps illustrate the tuning process:
   ::
 
     root@lnx-ccs8:/home/eranr/dockerfile_example# cat Dockerfile
-    FROM 127.0.0.1:5001/ubuntu_14.04_jre7_storlets
+    FROM 127.0.0.1:5001/ubuntu_14.04_jre8_storlets
   
     MAINTAINER root
 
@@ -152,7 +152,7 @@ The below steps illustrate the tuning process:
     root@lnx-ccs8:/home/eranr/dockerfile_example# docker build -t service_tenant_image .
     Sending build context to Docker daemon  2.56 kB
     Sending build context to Docker daemon
-    Step 0 : FROM 127.0.0.1:5001/ubuntu_14.04_jre7_storlets
+    Step 0 : FROM 127.0.0.1:5001/ubuntu_14.04_jre8_storlets
     ---> f6929e6abc60
     ......
     Processing triggers for libc-bin (2.19-0ubuntu6.3) ...
@@ -167,7 +167,7 @@ The below steps illustrate the tuning process:
     root@lnx-ccs8:/home/eranr/dockerfile_example# docker images
     REPOSITORY                                  TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
     service_tenant_image                        latest              11975468ecf8        7 minutes ago       660.1 MB
-    localhost:5001/ubuntu_14.04_jre7_storlets   latest              f6929e6abc60        4 days ago          563.6 MB
+    localhost:5001/ubuntu_14.04_jre8_storlets   latest              f6929e6abc60        4 days ago          563.6 MB
 
 Currently, we have no testing tool that can actually test a storlet inside the
 created image. The best one can do is run a Docker container based on the

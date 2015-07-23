@@ -146,8 +146,8 @@ Recommendations
 Tips
 ====
 
-#. The storlets are executed in an open-jdk 7 environment. Thus, any dependencies
-   that the storlet code requires which are outside of open-jdk 7 should be 
+#. The storlets are executed in an open-jdk 8 environment. Thus, any dependencies
+   that the storlet code requires which are outside of open-jdk 8 should be 
    stated as storlet dependencies and uploaded with the storlet. Exact details
    are found in the deployment section below.
 
