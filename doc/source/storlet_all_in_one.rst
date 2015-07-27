@@ -35,7 +35,7 @@ known issues
 2. The script takes a long time to run, and for most of the time it does not show progress. An alternative to executing *storlets_aio.sh* are the following steps. These would allow monitoring the progress of the ansible installation inside the VM.
 
  1. cd s2aio
- 2. export export ANSIBLE_HOST_KEY_CHECKING=False
+ 2. export ANSIBLE_HOST_KEY_CHECKING=False
  3. ansible-playbook -s -i swift_install.yml
  4. ansible-playbook -s -i prepare_storlets_install.yml
  5. ssh vagrant 192.168.10.2 (using 'vagrant' as password)
