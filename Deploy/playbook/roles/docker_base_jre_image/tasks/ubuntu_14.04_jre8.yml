@@ -67,7 +67,6 @@
     dest: /data/registry/repositories/ubuntu_14.04_jre8
   with_items:
     - logback.xml
-    - rsyslog.conf
   tags: ubuntu_14.04_jre8
  
 - include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8 tags=jre8

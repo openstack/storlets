@@ -29,7 +29,7 @@
 /*----------------------------------------------------------------------------
  * start/halt logging
  */
-extern void sbus_start_logger( const char* str_log_level );
+extern void sbus_start_logger( const char* str_log_level,  const char* container_id);
 extern void sbus_stop_logger(  void );
 
 /*----------------------------------------------------------------------------

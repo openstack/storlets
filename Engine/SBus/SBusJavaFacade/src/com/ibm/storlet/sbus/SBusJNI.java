@@ -36,7 +36,7 @@ public class SBusJNI
 		System.loadLibrary("jsbus");
 	}
 
-	public native void startLogger(   final String         strLogLevel );
+	public native void startLogger(   final String         strLogLevel, final String contId );
 	public native void stopLogger();
 	public native int createSBus(     final String         strBusName  );
 	public native int listenSBus(     int                  nBus        );

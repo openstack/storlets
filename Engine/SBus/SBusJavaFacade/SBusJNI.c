@@ -116,13 +116,17 @@ int init_java_accessors( JNIEnv* env )
 JNIEXPORT void JNICALL
 Java_com_ibm_storlet_sbus_SBusJNI_startLogger( 	JNIEnv* env,
 												jobject obj,
-												jstring jLevel )
+												jstring jLevel,
+												jstring jContId )
 {
 	const char* pLogLevel = (*env)->GetStringUTFChars( env, jLevel, NULL );
 	if( NULL == pLogLevel )
 		return;
+	const char* pContId = (*env)->GetStringUTFChars( env, jContId, NULL );
+        if( NULL == pContId )
+                return;
 
-	sbus_start_logger( pLogLevel);
+	sbus_start_logger( pLogLevel, pContId);
 
 	(*env)->ReleaseStringUTFChars( env, jLevel, pLogLevel );
 }

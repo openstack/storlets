@@ -75,7 +75,7 @@ class SBus(object):
 
     '''--------------------------------------------------------------------'''
     @staticmethod
-    def start_logger(str_log_level='DEBUG'):
+    def start_logger(str_log_level='DEBUG', container_id=None):
         '''
         @summary:             Start logger.
 
@@ -88,8 +88,8 @@ class SBus(object):
         # load the C-library
         sbus_back_ = ctypes.CDLL(SBus.SBUS_SO_NAME)
 
-        sbus_back_.sbus_start_logger.argtypes = [c_char_p]
-        sbus_back_.sbus_start_logger(str_log_level)
+        sbus_back_.sbus_start_logger.argtypes = [c_char_p, c_char_p]
+        sbus_back_.sbus_start_logger(str_log_level, container_id)
 
     '''--------------------------------------------------------------------'''
     @staticmethod

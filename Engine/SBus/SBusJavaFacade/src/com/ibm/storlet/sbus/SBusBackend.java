@@ -53,7 +53,7 @@ public class SBusBackend
 	/*------------------------------------------------------------------------
 	 * Initiate logging with the required detail level 
 	 * */
-	public void startLogger( eLogLevel eLogLevel )
+	public void startLogger( eLogLevel eLogLevel, String contId )
 	{
 		String strLogLevel = null;
 		switch( eLogLevel )
@@ -77,7 +77,7 @@ public class SBusBackend
 			strLogLevel = "WARNINIG";
 			break;
 		}
-		SBusJNIObj_.startLogger(strLogLevel);
+		SBusJNIObj_.startLogger(strLogLevel, contId);
 	}
 	
 	/*------------------------------------------------------------------------

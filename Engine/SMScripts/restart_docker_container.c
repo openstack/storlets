@@ -23,7 +23,7 @@
  /*
   * Stop and Run a docker container using:
   * docker stop <container name>
-  * docker run --name <container name> -d -v <mount dir 1> -v <mount dir 2> -i -t <image> --net='none'
+  * docker run --name <container name> -d -v /dev/log:/dev/log -v <mount dir 1> -v <mount dir 2> -i -t <image> --net='none'
   * <container name> - The name of the container to stop / to start
   * <image name> - the name of the image from which to start the container
   * <mount dir 1> - The directory where the named pipes are placed. Typically mounted to /mnt/channels in the container
@@ -52,7 +52,7 @@ int main(int argc, char **argv) {
 	ret = system(command);
 
 	sprintf(command,
-			"/usr/bin/docker run --net=none --name %s -d -v %s -v %s -i -t %s",
+			"/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -i -t %s",
 			container_name,
 			mount_dir1,
 			mount_dir2,

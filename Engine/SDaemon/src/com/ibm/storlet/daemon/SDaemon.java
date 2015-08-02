@@ -137,6 +137,7 @@ public class SDaemon
 		String strSBusPath = args[1];
 		String strLogLevel = args[2];
 		int nPoolSize = Integer.parseInt(args[3]);
+		String strContId = args[4];
 		
 		if( initLog( strStorletName_, strLogLevel ) == false )
 			return;
@@ -147,7 +148,7 @@ public class SDaemon
 		
 		storletTaskFactory_ = new STaskFactory( storlet, logger_ );
 		logger_.trace("Instanciating SBus");
-		sbus_ = new SBus();
+		sbus_ = new SBus(strContId);
 		try 
 		{
 			logger_.trace("Initialising SBus");

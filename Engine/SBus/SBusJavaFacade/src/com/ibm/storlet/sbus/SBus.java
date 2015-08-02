@@ -39,10 +39,10 @@ public class SBus
      * 
      * Instantiate the SBusBackend object. Start logging
      * */
-    public SBus() throws IOException 
+    public SBus( final String contId ) throws IOException
     {
         SBusBack_ = new SBusBackend();
-        SBusBack_.startLogger( eLogLevel.SBUS_LOG_DEBUG );
+        SBusBack_.startLogger( eLogLevel.SBUS_LOG_DEBUG, contId );
     }
 
     /*------------------------------------------------------------------------

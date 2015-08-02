@@ -75,7 +75,8 @@ class daemon_factory():
                      storlet_name,
                      pool_size,
                      uds_path,
-                     log_level):
+                     log_level,
+                     container_id):
         '''
         @summary:               get_jvm_args
                                 Check the input parameters, produce the list
@@ -95,6 +96,8 @@ class daemon_factory():
         @type  uds_path:        String
         @param log_level:       Logger verbosity level
         @type  log_level:       String
+        @param container_id:    container id
+        @type  container_id:    String
 
         @return:                Error code, 0 if successful
         @rtype:                 Integer
@@ -142,7 +145,8 @@ class daemon_factory():
                      str(storlet_name),
                      str(uds_path),
                      str(log_level),
-                     str('%d' % pool_size)]
+                     str('%d' % pool_size),
+                     str(container_id)]
             str_pargs = ' '.join(map(str, pargs))
             self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
         else:
@@ -245,7 +249,8 @@ class daemon_factory():
                              storlet_name,
                              pool_size,
                              uds_path,
-                             log_level):
+                             log_level,
+                             container_id):
         '''
         @summary: process_start_daemon
                   Start storlet daemon process
@@ -270,7 +275,8 @@ class daemon_factory():
                                                           storlet_name,
                                                           pool_size,
                                                           uds_path,
-                                                          log_level)
+                                                          log_level,
+                                                          container_id)
         if 0 != n_error_id:
             self.logger.debug('Problems with arguments for {0}'.
                               format(storlet_name))
@@ -468,13 +474,15 @@ class daemon_factory():
         return b_status
     
     '''--------------------------------------------------------------------'''
-    def dispatch_command(self, dtg):
+    def dispatch_command(self, dtg, container_id):
         '''
         @summary:   dispatch_command
                     Parse datagram. React on the request.  
 
         @param dtg: Datagram to process
         @type  dtg: SBus python facade Datagram
+        @param container_id: container id
+        @type  container_id: String
         
         @return:    Status
         @rtype:     Boolean
@@ -507,7 +515,8 @@ class daemon_factory():
                                           prms['storlet_name'], 
                                           prms['pool_size'], 
                                           prms['uds_path'], 
-                                          prms['log_level'])
+                                          prms['log_level'],
+                                          container_id)
         elif command == SBUS_CMD_STOP_DAEMON:
             self.logger.debug( 'Do SBUS_CMD_STOP_DAEMON' )
             b_status, error_text = self.process_kill(\
@@ -537,7 +546,7 @@ class daemon_factory():
         return b_status, error_text, b_iterate
         
     '''--------------------------------------------------------------------'''
-    def main_loop(self):
+    def main_loop(self, container_id):
         '''
         @summary: main_loop
                   The 'internal' loop. Listen to SBus, receive datagram,
@@ -575,7 +584,7 @@ class daemon_factory():
             else:
                 self.logger.debug("Received outfd %d" % outfd.fileno())
 
-            b_status, error_text, b_iterate = self.dispatch_command(dtg)
+            b_status, error_text, b_iterate = self.dispatch_command(dtg, container_id)
                 
             self.log_and_report(outfd, b_status, error_text)
             outfd.close()
@@ -612,7 +621,7 @@ class daemon_factory():
 '''======================= END OF daemon_factory CLASS ===================='''
 
 '''------------------------------------------------------------------------'''
-def start_logger(logger_name, log_level):
+def start_logger(logger_name, log_level, container_id):
     '''
     @summary:           start_logger
                         Initialize logging of this process. 
@@ -640,7 +649,7 @@ def start_logger(logger_name, log_level):
         level = logging.ERROR
 
 
-    logger = logging.getLogger(logger_name)
+    logger = logging.getLogger("CONT #" + container_id + ": " + logger_name)
 
     if log_level == 'OFF':
         logging.disable(logging.CRITICAL)
@@ -674,7 +683,7 @@ def usage():
                
     @rtype:   void
     '''
-    print "daemon_factory <path> <log level>"
+    print "daemon_factory <path> <log level> <container_id>"
 
 '''------------------------------------------------------------------------'''
 def main(argv):
@@ -686,15 +695,16 @@ def main(argv):
               - create an instance of daemon_factory, 
               - start the main loop. 
     '''
-    if (len(argv) != 2):
+    if (len(argv) != 3):
         usage()
         return
     
     pipe_path = argv[0]
     log_level = argv[1]
-    logger = start_logger("daemon_factory", log_level)
+    container_id = argv[2]
+    logger = start_logger("daemon_factory", log_level, container_id)
     logger.debug("Daemon factory started")
-    SBus.start_logger("DEBUG")
+    SBus.start_logger("DEBUG", container_id=container_id)
         
     # Impersonate the swift user
     pw = pwd.getpwnam('swift')
@@ -703,7 +713,7 @@ def main(argv):
 
     
     factory = daemon_factory(pipe_path, logger)
-    factory.main_loop()      
+    factory.main_loop(container_id)
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":
