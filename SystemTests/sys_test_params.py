@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 '''
-IMPORTANT: Make sure the variables AUTH_PI and KEYSTONE_IP point to the system 
+IMPORTANT: Make sure the variables AUTH_PI and KEYSTONE_IP point to the system
 you are testing!!!
 '''
 '''------------------------------------------------------------------------'''

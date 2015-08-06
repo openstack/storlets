@@ -21,19 +21,19 @@ Limitations under the License.
                           dictionary of dictionaries
 ==========================================================================='''
 
-import os
 import json
+import os
 import syslog
 
-from SBusStorletCommand import SBUS_CMD_NOP
 from SBusFileDescription import SBUS_FD_OUTPUT_OBJECT
+from SBusStorletCommand import SBUS_CMD_NOP
 
 '''------------------------------------------------------------------------'''
 
 
 class SBusDatagram(object):
-    '''
-    @summary: This class aggregates data to be transferred
+    '''@summary: This class aggregates data to be transferred
+
               using SBus functionality.
     '''
 
@@ -41,9 +41,9 @@ class SBusDatagram(object):
     task_id_dict_key_name_ = 'taskId'
 
     '''--------------------------------------------------------------------'''
+
     def __init__(self):
-        '''
-        @summary:              CTOR
+        '''@summary:              CTOR
 
         @ivar e_command_ :     A command to Storlet Daemon.
         @type e_command_ :     Integer. SBusStorletCommand enumerated value.
@@ -59,19 +59,20 @@ class SBusDatagram(object):
         @invariant:            Quantity of entries in files_metadata_ list
                                is the same as in h_files_, i.e. n_files_.
         '''
-        self.e_command_      = SBUS_CMD_NOP
-        self.task_id_        = None
-        self.h_files_        = None
-        self.n_files_        = 0
+        self.e_command_ = SBUS_CMD_NOP
+        self.task_id_ = None
+        self.h_files_ = None
+        self.n_files_ = 0
         self.files_metadata_ = None
-        self.exec_params_    = None
+        self.exec_params_ = None
 
     '''--------------------------------------------------------------------'''
+
     @staticmethod
     def create_service_datagram(command,
                                 outfd):
-        '''
-        @summary:       Datagram static factory.
+        '''@summary:       Datagram static factory.
+
                         Create "service" datagram, i.e.
                         - command shall be one of
                           {PING, START/STOP/STATUS-DAEMON}
@@ -99,12 +100,13 @@ class SBusDatagram(object):
         return dtg
 
     '''--------------------------------------------------------------------'''
+
     def from_raw_data(self,
                       h_files,
                       str_json_metadata,
                       str_json_params):
-        '''
-        @summary:                 CTOR
+        '''@summary:                 CTOR
+
                                   Construct object from file list and
                                   two JSON-encoded strings.
 
@@ -122,10 +124,11 @@ class SBusDatagram(object):
         self.extract_params(str_json_params)
 
     '''--------------------------------------------------------------------'''
+
     def extract_metadata(self,
                          str_json_metadata):
-        '''
-        @summary:                 Extract files_metadata array
+        '''@summary:                 Extract files_metadata array
+
                                   of dictionaries form a JSON string
         @requires:                n_files_ has to be se
 
@@ -142,9 +145,10 @@ class SBusDatagram(object):
                 self.files_metadata_.append(json.loads(str_curr_metadata))
 
     '''--------------------------------------------------------------------'''
+
     def extract_params(self, str_json_params):
-        '''
-        @summary:               Extract command field and exec_params
+        '''@summary:               Extract command field and exec_params
+
                                 dictionary form a JSON string
         @param str_json_params: JSON encoding for the execution parameters.
         @type  str_json_params: string.
@@ -169,9 +173,10 @@ class SBusDatagram(object):
             self.exec_params_ = None
 
     '''--------------------------------------------------------------------'''
+
     def get_params_and_cmd_as_json(self):
-        '''
-        @summary: Convert command field and execution parameters
+        '''@summary: Convert command field and execution parameters
+
                   dictionary into JSON as the following -
                   1. Copy exec_params_. Initialize the combined dictionary.
                   2. Push the next pair into the combined dictionary
@@ -193,9 +198,10 @@ class SBusDatagram(object):
         return str_result
 
     '''--------------------------------------------------------------------'''
+
     def get_files_metadata_as_json(self):
-        '''
-        @summary: Encode the list of dictionaries into JSON as the following -
+        '''@summary: Encode the list of dictionaries into JSON as the following
+
                   1. Create a combined dictionary (Integer-to-String)
                      Key   - index in the original list
                      Value - JSON encoding of the certain dictionary
@@ -213,9 +219,9 @@ class SBusDatagram(object):
         return str_result
 
     '''--------------------------------------------------------------------'''
+
     def get_num_files(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The quantity of file descriptors.
         @rtype:   integer
@@ -223,9 +229,9 @@ class SBusDatagram(object):
         return self.n_files_
 
     '''--------------------------------------------------------------------'''
+
     def get_files(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The list of file descriptors.
         @rtype:   List of integers
@@ -233,9 +239,10 @@ class SBusDatagram(object):
         return self.h_files_
 
     '''--------------------------------------------------------------------'''
+
     def set_files(self, h_files):
-        '''
-        @summary:       Setter.
+        '''@summary:       Setter.
+
                         Assign file handlers list and update n_files_ field
 
         @param h_files: File descriptors.
@@ -257,9 +264,10 @@ class SBusDatagram(object):
                     self.h_files_.append(h_files[i])
 
     '''--------------------------------------------------------------------'''
+
     def get_first_file_of_type(self, file_type):
-        '''
-        @summary:         Iterate through file list and metadata.
+        '''@summary:         Iterate through file list and metadata.
+
                           Find the first file with the required type
 
         @param file_type: The file type to look for
@@ -273,15 +281,15 @@ class SBusDatagram(object):
             if (self.get_metadata()[i])['type'] == file_type:
                 try:
                     required_file = os.fdopen(self.get_files()[i], 'w')
-                except IOError, err:
+                except IOError as err:
                     syslog.syslog(syslog.LOG_DEBUG,
                                   'Failed to open file: %s' % err.strerror)
         return required_file
 
     '''--------------------------------------------------------------------'''
+
     def get_metadata(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The list of meta-data dictionaries.
         @rtype:   List of dictionaries
@@ -289,9 +297,10 @@ class SBusDatagram(object):
         return self.files_metadata_
 
     '''--------------------------------------------------------------------'''
+
     def set_metadata(self, metadata):
-        '''
-        @summary:        Setter.
+        '''@summary:        Setter.
+
                          Assign file_metadata_ field
 
         @param metadata: File descriptors meta-data dictionaries.
@@ -302,9 +311,9 @@ class SBusDatagram(object):
         self.files_metadata_ = metadata
 
     '''--------------------------------------------------------------------'''
+
     def get_exec_params(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The execution parameters dictionary.
         @rtype:   Dictionary
@@ -312,9 +321,10 @@ class SBusDatagram(object):
         return self.exec_params_
 
     '''--------------------------------------------------------------------'''
+
     def set_exec_params(self, params):
-        '''
-        @summary:      Setter.
+        '''@summary:      Setter.
+
                        Assign execution parameters dictionary.
 
         @param params: Execution parameters to assign
@@ -326,9 +336,10 @@ class SBusDatagram(object):
         self.exec_params_ = params
 
     '''--------------------------------------------------------------------'''
+
     def add_exec_param(self, param_name, param_value):
-        '''
-        @summary:           Add a single pair to the exec_params_ dictionary
+        '''@summary:        Add a single pair to the exec_params_ dictionary
+
                             Don't change if the parameter exists already
 
         @param param_name:  Execution parameter name to be added
@@ -351,9 +362,9 @@ class SBusDatagram(object):
         return b_status
 
     '''--------------------------------------------------------------------'''
+
     def get_command(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The Storlet Daemon command.
         @rtype:   SBusStorletCommand
@@ -361,9 +372,10 @@ class SBusDatagram(object):
         return self.e_command_
 
     '''--------------------------------------------------------------------'''
+
     def set_command(self, cmd):
-        '''
-        @summary:   Setter.
+        '''@summary:   Setter.
+
                     Assign Storlet Daemon command.
 
         @param cmd: Command to assign
@@ -374,9 +386,9 @@ class SBusDatagram(object):
         self.e_command_ = cmd
 
     '''--------------------------------------------------------------------'''
+
     def get_task_id(self):
-        '''
-        @summary: Getter.
+        '''@summary: Getter.
 
         @return:  The task id.
         @rtype:   string
@@ -384,9 +396,10 @@ class SBusDatagram(object):
         return self.task_id_
 
     '''--------------------------------------------------------------------'''
+
     def set_task_id(self, taskId):
-        '''
-        @summary:   Setter.
+        '''@summary:   Setter.
+
                     Assign task id
 
         @param taskId: Command to assign
@@ -397,10 +410,11 @@ class SBusDatagram(object):
         self.task_id_ = taskId
 
     '''--------------------------------------------------------------------'''
+
     @staticmethod
     def dictionaies_equal(d1, d2):
-        '''
-        @summary: Check whether two dictionaries has the same content.
+        '''@summary: Check whether two dictionaries has the same content.
+
                   The order of the entries is not considered.
 
         @return:  The answer to the above

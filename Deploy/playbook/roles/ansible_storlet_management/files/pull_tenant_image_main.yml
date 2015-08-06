@@ -21,5 +21,5 @@
   command: docker pull {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}
 
 - name: shutdown_container
-  shell: "{{ lxc_device }}/scripts/send_halt_cmd_to_daemon_factory.py 
+  shell: "/usr/bin/python {{ lxc_device }}/scripts/send_halt_cmd_to_daemon_factory.py 
          {{ lxc_device }}/pipes/scopes/AUTH_{{ tenant_id.stdout_lines[0] }}/factory_pipe"

@@ -18,22 +18,21 @@ Limitations under the License.
 13-Jan-2015    evgenyl    Initial implementation.
 ==========================================================================='''
 
-import time
 import sys
+import time
 
 '''------------------------------------------------------------------------'''
 
 
-class TextUIProgressBar:
-    '''
-    @summary: This class simulates Progress Bar GUI widget in UNIX terminal.
+class TextUIProgressBar(object):
+    '''@summary: This class simulates Progress Bar GUI widget in UNIX terminal.
+
     '''
 
     '''--------------------------------------------------------------------'''
+
     def __init__(self):
-        '''
-        @summary: CTOR, define some constant mapping
-        '''
+        '''@summary: CTOR, define some constant mapping'''
         self.colors = {}
         self.colors['gray'] = '30'
         self.colors['red'] = '31'
@@ -45,12 +44,12 @@ class TextUIProgressBar:
         self.colors['white'] = '37'
 
     '''--------------------------------------------------------------------'''
-    def update_progress_bar(self, complete, total, caption = '', color='' ):
-        '''
-        @summary:        update_progress_bar
-                         Drawing code. The idea is 
+
+    def update_progress_bar(self, complete, total, caption='', color=''):
+        '''@summary:        update_progress_bar Drawing code. The idea is
+
                          - jump to the beginning of the line
-                         - print the same amount of characters 
+                         - print the same amount of characters
                            but in a different proportion (complete/total)
         @param complete: How many steps were completed?
         @type  complete: Integer, not-negative
@@ -58,30 +57,32 @@ class TextUIProgressBar:
         @type  total:    Integer, not-negative
         @param caption:  Description to add after the bar
         @type  caption:  String
-        @param color:    Which color to use while drawing? 
+        @param color:    Which color to use while drawing?
                          Only a predefined set of colors is supported
         @type color:     String
         '''
-        color = self.colors.get(color, self.colors['white']) 
+        color = self.colors.get(color, self.colors['white'])
         color_start = '\033[01;' + color + 'm'
-        color_stop = '\033[00m' 
-        print '\r' + color_start + u'\u2591'*complete + \
-               u'\u2593'*(total-complete) + color_stop,
+        color_stop = '\033[00m'
+        sys.stdout.write('\r' + color_start + u'\u2591' * complete +
+                         u'\u2593' * (total - complete) + color_stop)
         if 0 < len(caption):
-            print '{0}'.format(caption) ,
+            sys.stdout.write('{0}'.format(caption))
         sys.stdout.flush()
 
     '''--------------------------------------------------------------------'''
+
     def test(self):
+        '''@summary: test
+
+                  Unit test. Simulate a process of 10 steps with delay of one
+                  second after each step.
         '''
-        @summary: test
-                  Unit test. Simulate a process of 10 steps with 
-                  delay of one second after each step. 
-        '''
+
         k = self.colors.keys()
         l = len(k)
-        for j in range(1, l+1):
-            self.update_progress_bar(j, l, str(j), k[j-1])
+        for j in range(1, l + 1):
+            self.update_progress_bar(j, l, str(j), k[j - 1])
             time.sleep(1)
 
 '''============================= END OF FILE =============================='''

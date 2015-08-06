@@ -13,10 +13,11 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 from setuptools import setup
-paste_factory = ['storlet_handler = storlet_middleware.storlet_handler:filter_factory']
+paste_factory = ['storlet_handler = '
+                 'storlet_middleware.storlet_handler:filter_factory']
 
 setup(name='storlets',
       version='1.0',
-      packages=['storlet_middleware','storlet_gateway'],
+      packages=['storlet_middleware', 'storlet_gateway'],
       entry_points={'paste.filter_factory': paste_factory}
       )

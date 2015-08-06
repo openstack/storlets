@@ -1,6 +1,6 @@
 ibm_container_install_dir: opt/ibm
 lxc_device: /home/docker_device
-storlet_source_dir: ~/swift-storlets
+storlet_source_dir: ~/storlets
 python_dist_packages_dir: usr/local/lib/python2.7/dist-packages
 storlet_gateway_conf_file: /etc/swift/storlet_docker_gateway.conf
 

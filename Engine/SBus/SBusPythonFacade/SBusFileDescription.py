@@ -17,7 +17,6 @@ Limitations under the License.
 21-Jul-2014    evgenyl    Initial implementation.
 ==========================================================================='''
 
-
 '''------------------------------------------------------------------------'''
 '''
 @summary:   Enumerate file usage intents.
@@ -25,12 +24,12 @@ Limitations under the License.
             with its Java counterpart.
 '''
 
-SBUS_FD_INPUT_OBJECT                = 0
-SBUS_FD_OUTPUT_OBJECT               = 1
-SBUS_FD_OUTPUT_OBJECT_METADATA      = 2
-SBUS_FD_OUTPUT_OBJECT_AND_METADATA  = 3
-SBUS_FD_LOGGER                      = 4
-SBUS_FD_OUTPUT_CONTAINER            = 5
-SBUS_FD_OUTPUT_TASK_ID              = 6
+SBUS_FD_INPUT_OBJECT = 0
+SBUS_FD_OUTPUT_OBJECT = 1
+SBUS_FD_OUTPUT_OBJECT_METADATA = 2
+SBUS_FD_OUTPUT_OBJECT_AND_METADATA = 3
+SBUS_FD_LOGGER = 4
+SBUS_FD_OUTPUT_CONTAINER = 5
+SBUS_FD_OUTPUT_TASK_ID = 6
 
 '''============================ END OF FILE ==============================='''

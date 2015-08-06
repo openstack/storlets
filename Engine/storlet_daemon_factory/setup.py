@@ -14,8 +14,9 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-from setuptools import setup, Extension
-setup(name = 'storlet_daemon_factory',
-      version = '1.0',
-      package_dir={'storlet_daemon_factory':''},
+from setuptools import setup
+
+setup(name='storlet_daemon_factory',
+      version='1.0',
+      package_dir={'storlet_daemon_factory': ''},
       packages=['storlet_daemon_factory'])

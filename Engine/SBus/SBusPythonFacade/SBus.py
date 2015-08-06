@@ -29,16 +29,17 @@ from ctypes import POINTER
 
 
 class SBus(object):
-    '''
-    @summary: This class wraps low level C-API for SBus functionality
+    '''@summary: This class wraps low level C-API for SBus functionality
+
               to be used with Python
     '''
     SBUS_SO_NAME = '/usr/local/lib/python2.7/dist-packages/sbus.so'
 
     '''--------------------------------------------------------------------'''
+
     def __init__(self):
-        '''
-        @summary:             CTOR
+        '''@summary:             CTOR
+
                               Setup argument types mappings.
         '''
 
@@ -46,12 +47,12 @@ class SBus(object):
         self.sbus_back_ = ctypes.CDLL(SBus.SBUS_SO_NAME)
 
         # create SBus
-        self.sbus_back_.sbus_create.argtypes   = [c_char_p]
-        self.sbus_back_.sbus_create.restype    =  c_int
+        self.sbus_back_.sbus_create.argtypes = [c_char_p]
+        self.sbus_back_.sbus_create.restype = c_int
 
         # listen to SBus
-        self.sbus_back_.sbus_listen.argtypes   = [c_int]
-        self.sbus_back_.sbus_listen.restype    =  c_int
+        self.sbus_back_.sbus_listen.argtypes = [c_int]
+        self.sbus_back_.sbus_listen.restype = c_int
 
         # send message
         self.sbus_back_.sbus_send_msg.argtypes = [c_char_p,
@@ -61,7 +62,7 @@ class SBus(object):
                                                   c_int,
                                                   c_char_p,
                                                   c_int]
-        self.sbus_back_.sbus_send_msg.restype  =  c_int
+        self.sbus_back_.sbus_send_msg.restype = c_int
 
         # receive message
         self.sbus_back_.sbus_recv_msg.argtypes = [c_int,
@@ -71,13 +72,13 @@ class SBus(object):
                                                   POINTER(c_int),
                                                   POINTER(c_char_p),
                                                   POINTER(c_int)]
-        self.sbus_back_.sbus_recv_msg.restype  =  c_int
+        self.sbus_back_.sbus_recv_msg.restype = c_int
 
     '''--------------------------------------------------------------------'''
+
     @staticmethod
     def start_logger(str_log_level='DEBUG', container_id=None):
-        '''
-        @summary:             Start logger.
+        '''@summary:             Start logger.
 
         @param str_log_level: The level of verbosity in log records.
                               Default value - 'DEBUG'.
@@ -92,10 +93,10 @@ class SBus(object):
         sbus_back_.sbus_start_logger(str_log_level, container_id)
 
     '''--------------------------------------------------------------------'''
+
     @staticmethod
     def stop_logger():
-        '''
-        @summary: Stop logger.
+        '''@summary: Stop logger.
 
         @rtype:   void
         '''
@@ -104,9 +105,9 @@ class SBus(object):
         sbus_back_.sbus_stop_logger()
 
     '''--------------------------------------------------------------------'''
+
     def create(self, sbus_name):
-        '''
-        @summary:         Instantiate an SBus. A wrapper for C function.
+        '''@summary:         Instantiate an SBus. A wrapper for C function.
 
         @param sbus_name: Path to domain socket "file".
         @type  sbus_name: string
@@ -117,9 +118,10 @@ class SBus(object):
         return self.sbus_back_.sbus_create(sbus_name)
 
     '''--------------------------------------------------------------------'''
+
     def listen(self, sbus_handler):
-        '''
-        @summary:            Listen to the SBus.
+        '''@summary:            Listen to the SBus.
+
                              Suspend the executing thread.
 
         @param sbus_handler: Handler to SBus to listen.
@@ -131,9 +133,10 @@ class SBus(object):
         return self.sbus_back_.sbus_listen(sbus_handler)
 
     '''--------------------------------------------------------------------'''
+
     def receive(self, sbus_handler):
-        '''
-        @summary:            Read the data from SBus.
+        '''@summary:            Read the data from SBus.
+
                              Create a datagram.
 
         @param sbus_handler: Handler to SBus to read data from.
@@ -142,12 +145,12 @@ class SBus(object):
         @return:             An object with the obtained data. Null-able.
         @rtype:              SBusDatagram
         '''
-        ph_files    = POINTER(c_int)()
+        ph_files = POINTER(c_int)()
         pp_metadata = (c_char_p)()
-        pp_params   = (c_char_p)()
-        pn_files    = (c_int)()
+        pp_params = (c_char_p)()
+        pn_files = (c_int)()
         pn_metadata = (c_int)()
-        pn_params   = (c_int)()
+        pn_params = (c_int)()
 
         # Invoke C function
         n_status = self.sbus_back_.sbus_recv_msg(sbus_handler,
@@ -157,7 +160,7 @@ class SBus(object):
                                                  pn_metadata,
                                                  pp_params,
                                                  pn_params)
-        result_dtg   = None
+        result_dtg = None
         if 0 <= n_status:
             # The invocation was successful.
             # De-serialize the data
@@ -169,10 +172,10 @@ class SBus(object):
                 h_files.append(ph_files[i])
 
             # Extract Python strings
-            n_metadata   = pn_metadata.value
+            n_metadata = pn_metadata.value
             str_metadata = pp_metadata.value
-            n_params     = pn_params.value
-            str_params   = pp_params.value
+            n_params = pn_params.value
+            str_params = pp_params.value
 
             # Trim the junk out
             if 0 < n_metadata:
@@ -187,10 +190,11 @@ class SBus(object):
         return result_dtg
 
     '''--------------------------------------------------------------------'''
+
     @staticmethod
     def send(sbus_name, datagram):
-        '''
-        @summary:         Send the datagram through SBus.
+        '''@summary:         Send the datagram through SBus.
+
                           Serialize dictionaries into JSON strings.
 
         @param sbus_name: Path to domain socket "file".
@@ -204,30 +208,30 @@ class SBus(object):
 
         # Serialize the datagram into JSON strings and C integer array
         str_json_params = datagram.get_params_and_cmd_as_json()
-        p_params        = c_char_p(str_json_params)
-        n_params        = c_int(len(str_json_params))
+        p_params = c_char_p(str_json_params)
+        n_params = c_int(len(str_json_params))
 
-        n_files         = c_int(0)
-        h_files         = None
-        n_metadata      = c_int(0)
-        p_metadata      = None
+        n_files = c_int(0)
+        h_files = None
+        n_metadata = c_int(0)
+        p_metadata = None
 
         if datagram.get_num_files() > 0:
             str_json_metadata = datagram.get_files_metadata_as_json()
-            p_metadata        = c_char_p(str_json_metadata)
-            n_metadata        = c_int(len(str_json_metadata))
+            p_metadata = c_char_p(str_json_metadata)
+            n_metadata = c_int(len(str_json_metadata))
 
-            n_fds             = datagram.get_num_files()
-            n_files           = c_int(n_fds)
+            n_fds = datagram.get_num_files()
+            n_files = c_int(n_fds)
 
-            file_fds          = datagram.get_files()
-            h_files           = (c_int * n_fds)()
+            file_fds = datagram.get_files()
+            h_files = (c_int * n_fds)()
 
             for i in range(n_fds):
                 h_files[i] = file_fds[i]
 
         # Invoke C function
-        sbus     = SBus()
+        sbus = SBus()
         n_status = sbus.sbus_back_.sbus_send_msg(sbus_name,
                                                  h_files,
                                                  n_files,
@@ -236,6 +240,5 @@ class SBus(object):
                                                  p_params,
                                                  n_params)
         return n_status
-
 
 '''============================ END OF FILE ==============================='''

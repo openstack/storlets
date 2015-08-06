@@ -1,5 +1,4 @@
 #!/usr/bin/python
-#-----------------------------------------------------------------------------------------------
 '''-------------------------------------------------------------------------
 Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +15,7 @@ Limitations under the License.
 -------------------------------------------------------------------------'''
 
 from setuptools import setup
-setup( name = 'SBusPythonFacade',
-      version = '1.0',
-      package_dir={'SBusPythonFacade':''},
-      packages=['SBusPythonFacade'] )
-
+setup(name='SBusPythonFacade',
+      version='1.0',
+      package_dir={'SBusPythonFacade': ''},
+      packages=['SBusPythonFacade'])
