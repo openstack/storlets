@@ -56,7 +56,7 @@ Installation
 ============
 <https://github.com/openstack/storlets/blob/master/doc/source/storlets_installation_guide.rst> describes how to install Storlets in an existing Swift cluster that uses Keystone.
 For convenience we also provide a storlet all-in-one installation script that installs Swift with Keystone and Storlets in a single virtual machine.
-See <https://github.com/openstack/storlets/blob/master/doc/source/storlets_all_in_one.rst>
+See <https://github.com/openstack/storlets/blob/master/doc/source/storlet_all_in_one.rst>
 The installation is based on Ansible and was tested on Ubuntu 14.10, and with Swift 1.13 and Swift 2.2.
 
 Once installation is completed, you can try run the system tests as described in the <https://github.com/openstack/storlets/blob/master/doc/source/dev_and_test_guide.rst>
