@@ -19,7 +19,7 @@ swift_install_repo_name: swift-install
 swift_install_swift_config_dir: inventory/vagrant/
 swift_install_swift_config_file: vagrant_config.json
 swift_install_dynamic_inventory: swift_dynamic_inventory.py 
-swift_storlet_repo_url: https://github.com/Open-I-Beam/swift-storlets.git
+swift_storlet_repo_url: https://github.com/openstack/storlets.git
 swift_storlet_repo_name: swift-storlets
 
 #--------------------------------------------------------------------------

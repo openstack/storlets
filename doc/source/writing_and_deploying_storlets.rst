@@ -26,7 +26,7 @@ how the Storlet is written):
    and can output user metadata.
 
 To write a storlet you will need the SCommon.jar which is being built as part of
-the Storlets build process (see <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/dev_and_test_guide.rst>). Import the .jar to a Java 
+the Storlets build process (see <https://github.com/openstack/storlets/blob/master/doc/source/dev_and_test_guide.rst>). Import the .jar to a Java 
 project in Eclipse and implement the com.ibm.storlet.common.IStorlet interface.
 The interface has a single method that looks like this:
 
@@ -70,7 +70,7 @@ Here is a class diagram illustrating the classes involved in the above API.
    in a designated container called storletlog by default, and will carry the name
    <storlet_name>.log. Creating an object containing the logs per request has its
    overhead. Thus, the actual creation of the logs object is controlled by a header
-   supplied during storlet invocation. More information is given in <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/invoking_storlets.rst>
+   supplied during storlet invocation. More information is given in <https://github.com/openstack/storlets/blob/master/doc/source/invoking_storlets.rst>
 
 When invoked via the Swift GET REST API the invoke method
 will be called as follows:
@@ -82,7 +82,7 @@ will be called as follows:
    stream is effectively written to the response body returned to the user's GET
    request.
 #. The parameters map includes execution parameters sent. These parameters can be
-   specified in the storlet execution request. See <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/invoking_storlets.rst>
+   specified in the storlet execution request. See <https://github.com/openstack/storlets/blob/master/doc/source/invoking_storlets.rst>
    **IMPORTANT: Do not use parameters that start with 'storlet_' these are
    kept for system parameters that the storlet can use.**
 #. A StorletLogger instance.

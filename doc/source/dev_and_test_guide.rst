@@ -4,7 +4,7 @@ Development and Testing
 
 This guide explains how to build the various components, and how to deploy them once built.
 Note that some of the components being built need to be inserted to a docker image before
-they can be tested. Thus, once should have an installed environment (see <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/storlet_installation_guide.rst>)
+they can be tested. Thus, once should have an installed environment (see <https://github.com/openstack/storlets/blob/master/doc/source/storlet_installation_guide.rst>)
 before proceeding with the test and deploy steps (which are in fact a subset of the installation steps).
 
 Building

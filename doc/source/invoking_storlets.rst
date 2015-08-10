@@ -9,7 +9,7 @@ Storlets can be invoked in 2 ways:
 2. Invocation upon PUT. In this case the data kept in the store is a transformation of the object uploaded by the user (as opposed to the actual uploaded data or metadata). A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data and adds it as Swift metadata.
 
 Invocation involves adding an extra header to the Swift original
-PUT/GET requests. Following our Identity Storlet example given in <https://github.com/Open-I-Beam/swift-storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>, here are invocation examples. This time the examples make use of the python swift client.
+PUT/GET requests. Following our Identity Storlet example given in <https://github.com/openstack/storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>, here are invocation examples. This time the examples make use of the python swift client.
 
 Invocation on GET
 =================
