@@ -116,7 +116,8 @@ class StorletHandlerMiddleware(object):
                         if 'Transfer-Encoding' in orig_resp.headers:
                             orig_resp.headers.pop('Transfer-Encoding')
 
-                        return Response(app_iter, headers=orig_resp.headers,
+                        return Response(app_iter=app_iter,
+                                        headers=orig_resp.headers,
                                         request=orig_req,
                                         conditional_response=True)
 
