@@ -94,7 +94,7 @@ public class IdentityStorlet implements IStorlet
     	/* 
     	 * Get optional chunk size
     	 */
-		String strChunkSize = "1024";
+		String strChunkSize = "65536";
 		if (parameters.get("chunk_size") != null) {
 			strChunkSize = parameters.get("chunk_size"); 
 		}
@@ -177,7 +177,7 @@ public class IdentityStorlet implements IStorlet
 				readString = new String(buffer);
 				readString = readString.replaceAll("\0", "");
 				log.emitLog(new Date().toString() + "Writing to output " + bytes_read + "bytes");
-				os.write(readString.getBytes());
+				os.write(readString.getBytes(), 0, bytes_read);
 				if (bDouble == true) {
 					log.emitLog("bDouble == true writing again");
 					log.emitLog(new Date().toString() + "Writing to output " + bytes_read + "bytes");
