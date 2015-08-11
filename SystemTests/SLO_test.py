@@ -266,8 +266,8 @@ def main():
     progress_msg("Invoking storlet on SLO in GET")
     invoke_identity_on_get_SLO(url, token)
     # YM comment out 2 lines - temporary only!
-    progress_msg("Invoking storlet on SLO in GET with double")
-    invoke_identity_on_get_SLO_double(url, token)
+    # progress_msg("Invoking storlet on SLO in GET with double")
+    # invoke_identity_on_get_SLO_double(url, token)
 
     # progress_msg("Invoking storlet on SLO in partial GET")
     # invoke_identity_on_partial_get_SLO(url, token)
