@@ -37,6 +37,12 @@ int main(int argc, char **argv) {
 	char mount_dir1[1024];
 	char mount_dir2[1024];
 
+	if (argc != 5) {
+		fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2\n",
+			argv[0]);
+		return 1;
+	}
+
 	snprintf(container_name,(size_t)256,"%s",argv[1]);
 	snprintf(container_image,(size_t)256,"%s",argv[2]);
 	snprintf(mount_dir1,(size_t)1024, "%s", argv[3]);
