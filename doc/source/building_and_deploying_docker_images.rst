@@ -36,7 +36,7 @@ Below are the steps of this flow:
    it to all Swift nodes. Again, <https://github.com/openstack/storlets/blob/master/doc/source/storlets_management.rst> describes the provided tool 
    the Storlet manager can use for the actual deployment.
 
-The below sections describe in details the steps taken by the account manager
+The sections below describe in detail the steps taken by the account manager.
  
 Downloading the Docker Image
 ============================
@@ -53,19 +53,19 @@ facts:
 The image will come in a .tar format.
 
 Below is an example of downloading the image from the tenant's docker_images 
-container using the swift CLI. As with all examples using the Swicf CLI, we are
+container using the swift CLI. As with all examples using the Swift CLI, we are
 using environment variables defining the tenant, user credentials and auth URI.
 All these are required for the operation of any Swift CLI. Please change them
 accordingly.
 
-::
+.. code-block:: bash
 
   export OS_USERNAME=swift
   export OS_PASSWORD=passw0rd
   export OS_TENANT_NAME=service
   export OS_AUTH_URL=http://127.0.0.1:35357/v2.0
 
-In the below be show:
+In the below we show:
 
 #. Listing the docker_images container.
 #. Downloading the image object
@@ -147,7 +147,7 @@ The below steps illustrate the tuning process:
    when building an image that copies stuff into the image, all that stuff must
    reside in that building directory.
 
-  ::
+.. code-block:: bash
 
     root@lnx-ccs8:/home/eranr/dockerfile_example# docker build -t service_tenant_image .
     Sending build context to Docker daemon  2.56 kB
@@ -163,7 +163,7 @@ The below steps illustrate the tuning process:
 4. At this point listing the images, shows the newly created image.
 
   ::
-  
+
     root@lnx-ccs8:/home/eranr/dockerfile_example# docker images
     REPOSITORY                                  TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
     service_tenant_image                        latest              11975468ecf8        7 minutes ago       660.1 MB
@@ -177,7 +177,7 @@ We then invoke ffmpeg showing that the installation was indeed successful.
 Note that the 'debug' parameter tells our entry point not to execute the storlet
 engine but rather the /bin/bash from which we can run ffmpeg
 
-::
+.. code-block:: bash
 
   root@lnx-ccs8:/home/eranr/dockerfile_example# docker run -i -t service_tenant_image debug /bin/bash
   root@b129c3e6e76b:/# ffmpeg
@@ -197,19 +197,19 @@ engine but rather the /bin/bash from which we can run ffmpeg
 
   Use -h to get full help or, even better, run 'man ffmpeg'
 
- 
+
 Uploading the Docker Image
 ==========================
 1. Use docker save to save the image as a tar file:
 
-::
+.. code-block:: bash
 
   root@lnx-ccs8:/home/eranr/dockerfile_example# docker save -o service_tenant_image.tar service_tenant_image
 
 2. Again, we use the Swift CLI to upload the image. We assume the appropriate
    environment variables are in place.
 
-::
+.. code-block:: bash
 
   root@lnx-ccs8:/home/eranr/dockerfile_example# swift upload docker_images service_tenant_image.tar
   service_tenant_image.tar
