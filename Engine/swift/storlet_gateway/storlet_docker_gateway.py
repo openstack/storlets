@@ -152,7 +152,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
             return chunk
 
-        def next(self, size=1024):
+        def next(self, size=64 * 1024):
             chunk = None
             r, w, e = select.select([self.obj_data], [], [], self.timeout)
             if len(r) == 0:
@@ -165,7 +165,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                     return chunk
             raise StopIteration('Stopped iterator ex')
 
-        def read(self, size=1024):
+        def read(self, size=64 * 1024):
             return self.next(size)
 
         def readline(self, size=-1):
