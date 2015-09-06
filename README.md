@@ -73,7 +73,7 @@ Given enough interest from the community this status may change to be a more act
 Acknowledgements
 ================
 
-* The research leading to the development of this code received funding from the European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreements for the ENSURE and VISION Cloud projects.
+* The research leading to the development of this code received funding from the European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreements for the CASPAR, ENSURE and VISION Cloud projects.
 * The development of this code received funding from the European Community's Seventh Framework Programme (FP7/2007-2013) under the grant agreements for the:
 
   * The ForgetIT project, where the code is used for offloading digital preservation functionalities to the storage.
