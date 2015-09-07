@@ -9,9 +9,18 @@ Welcome to storlets's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    readme
+   building_and_deploying_docker_images
+   dev_and_test_guide
+   docker_compute_engine
+   invoking_storlets
+   storlets_all_in_one
+   storlets_docker_gateway
+   storlets_installation_guide
+   storlets_management
+   writing_and_deploying_storlets
    installation
    usage
    contributing
