@@ -35,50 +35,52 @@ import com.ibm.storlet.common.StorletLogger;
 import com.ibm.storlet.common.StorletObjectOutputStream;
 import com.ibm.storlet.common.StorletOutputStream;
 
-public class HalfStorlet implements IStorlet 
-{
-    @Override
-    public void invoke( ArrayList<StorletInputStream>  inputStreams,
-                        ArrayList<StorletOutputStream> outputStreams, 
-                        Map<String, String>            parameters,
-                        StorletLogger                  log ) 
-                                                       throws StorletException {
-    	log.emitLog("HalfStorlet Invoked");
-    	
-	StorletInputStream sis = inputStreams.get(0);
-		
-	StorletObjectOutputStream storletObjectOutputStream;
-	storletObjectOutputStream = (StorletObjectOutputStream)outputStreams.get(0);
-	storletObjectOutputStream.setMetadata(sis.getMetadata());
+public class HalfStorlet implements IStorlet {
+	@Override
+	public void invoke(ArrayList<StorletInputStream> inputStreams,
+			ArrayList<StorletOutputStream> outputStreams,
+			Map<String, String> parameters, StorletLogger log)
+			throws StorletException {
+		log.emitLog("HalfStorlet Invoked");
 
-	/*
-	 * Copy every other byte from input stream to output stream
-	 */
-	log.emitLog("Copying every other byte");
-	StorletInputStream psis = (StorletInputStream)inputStreams.get(0);
-	InputStream is;
-	is = psis.getStream();
-		
-	OutputStream os = storletObjectOutputStream.getStream();
-	try {
-		log.emitLog(new Date().toString() + "About to read from input");
-		int a;
-                boolean bool = true;
-		while ( (a = is.read()) != -1 ) {
-                        if (bool)
-				os.write(a);
-                        bool = !bool;
-		}
-	} catch (Exception e) {
-		log.emitLog("Copying every other byte from input stream to output stream failed: " + e.getMessage());
-		throw new StorletException("Copying every other byte from input stream to output stream failed: " + 
-				e.getMessage());
-	} finally {
+		StorletInputStream sis = inputStreams.get(0);
+
+		StorletObjectOutputStream storletObjectOutputStream;
+		storletObjectOutputStream = (StorletObjectOutputStream) outputStreams
+				.get(0);
+		storletObjectOutputStream.setMetadata(sis.getMetadata());
+
+		/*
+		 * Copy every other byte from input stream to output stream
+		 */
+		log.emitLog("Copying every other byte");
+		StorletInputStream psis = (StorletInputStream) inputStreams.get(0);
+		InputStream is;
+		is = psis.getStream();
+
+		OutputStream os = storletObjectOutputStream.getStream();
 		try {
-			is.close();
-			os.close();
-		} catch (IOException e) { }
+			log.emitLog(new Date().toString() + "About to read from input");
+			int a;
+			boolean bool = true;
+			while ((a = is.read()) != -1) {
+				if (bool)
+					os.write(a);
+				bool = !bool;
+			}
+		} catch (Exception e) {
+			log.emitLog("Copying every other byte from input stream to output stream failed: "
+					+ e.getMessage());
+			throw new StorletException(
+					"Copying every other byte from input stream to output stream failed: "
+							+ e.getMessage());
+		} finally {
+			try {
+				is.close();
+				os.close();
+			} catch (IOException e) {
+			}
+		}
+		log.emitLog("HalfStorlet Invocation done");
 	}
-	log.emitLog("HalfStorlet Invocation done");
-    }
 }

@@ -23,29 +23,28 @@ import java.io.FileDescriptor;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-
 public class StorletLogger {
 	private FileOutputStream stream;
 
 	public StorletLogger(FileDescriptor fd) {
 		stream = new FileOutputStream(fd);
 	}
-	
+
 	public void emitLog(String message) {
 		message = message + "\n";
 		try {
 			stream.write(message.getBytes());
-		} catch (IOException e){
-			
+		} catch (IOException e) {
+
 		}
-		
+
 	}
-	
+
 	public void Flush() {
 		try {
 			stream.flush();
 		} catch (IOException e) {
-		}		
+		}
 	}
-	
+
 }

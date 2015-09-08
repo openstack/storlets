@@ -27,15 +27,13 @@ import org.slf4j.Logger;
  * 
  * A common parent object for different Tasks created by STaskFactory
  * */
-public class SAbstractTask 
-{
+public class SAbstractTask {
 
 	protected Logger logger;
 
-	public SAbstractTask( Logger logger ) 
-	{
+	public SAbstractTask(Logger logger) {
 		this.logger = logger;
 	}
 
 }
-/*============================== END OF FILE ===============================*/
+/* ============================== END OF FILE =============================== */

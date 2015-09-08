@@ -29,51 +29,39 @@ import java.util.Iterator;
 
 import org.json.simple.JSONObject;
 
-public class StorletObjectOutputStream extends StorletOutputStream 
-{
+public class StorletObjectOutputStream extends StorletOutputStream {
 
-    private OutputStream MetadataStream_;	
-	
-	public StorletObjectOutputStream( FileDescriptor           data_fd, 
-			                          HashMap<String, String>  data_md, 
-			                          FileDescriptor           md_fd ) 
-	{
-		super( data_fd, data_md );
-		MetadataStream_ = ((OutputStream)(new FileOutputStream(md_fd)));
+	private OutputStream MetadataStream_;
+
+	public StorletObjectOutputStream(FileDescriptor data_fd,
+			HashMap<String, String> data_md, FileDescriptor md_fd) {
+		super(data_fd, data_md);
+		MetadataStream_ = ((OutputStream) (new FileOutputStream(md_fd)));
 	}
-	
-    public OutputStream getStream() 
-    {
-        return stream;
-    }
 
-    public OutputStream getMDStream() 
-    {
-        return MetadataStream_;
-    }
+	public OutputStream getStream() {
+		return stream;
+	}
+
+	public OutputStream getMDStream() {
+		return MetadataStream_;
+	}
 
 	@SuppressWarnings("unchecked")
-    public void setMetadata( Map<String, String> md ) 
-                                                     throws StorletException 
-    {
+	public void setMetadata(Map<String, String> md) throws StorletException {
 		JSONObject jobj = new JSONObject();
-		Iterator<Map.Entry<String,String>> it = md.entrySet().iterator();
-	    while( it.hasNext() ) 
-	    {
-	        Map.Entry<String,String> pairs = 
-	                                 (Map.Entry<String,String>) it.next();
-	        jobj.put( (String) pairs.getKey(), (String) pairs.getValue() );
-	        it.remove();
-	    }
-	    try 
-	    {
-	        MetadataStream_.write( jobj.toString().getBytes() );
-	        MetadataStream_.close();
-	    } 
-	    catch( IOException e )
-	    {
-	    	throw 
-	    	    new StorletException("Failed to set metadata "+ e.toString());
-	    }
-	}	
+		Iterator<Map.Entry<String, String>> it = md.entrySet().iterator();
+		while (it.hasNext()) {
+			Map.Entry<String, String> pairs = (Map.Entry<String, String>) it
+					.next();
+			jobj.put((String) pairs.getKey(), (String) pairs.getValue());
+			it.remove();
+		}
+		try {
+			MetadataStream_.write(jobj.toString().getBytes());
+			MetadataStream_.close();
+		} catch (IOException e) {
+			throw new StorletException("Failed to set metadata " + e.toString());
+		}
+	}
 }

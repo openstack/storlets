@@ -20,12 +20,12 @@
 package com.ibm.storlet.common;
 
 public class StorletException extends Exception {
-    /**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
 
 	public StorletException(String message) {
-        super(message);
-    }
+		super(message);
+	}
 }

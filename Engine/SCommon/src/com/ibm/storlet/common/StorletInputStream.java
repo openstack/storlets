@@ -26,9 +26,9 @@ import java.util.HashMap;
 public class StorletInputStream {
 	private HashMap<String, String> metadata;
 	private InputStream stream;
-	
+
 	public StorletInputStream(FileDescriptor fd, HashMap<String, String> md) {
-		stream = ((InputStream)(new FileInputStream(fd)));
+		stream = ((InputStream) (new FileInputStream(fd)));
 		metadata = md;
 	}
 
@@ -38,5 +38,5 @@ public class StorletInputStream {
 
 	public InputStream getStream() {
 		return stream;
-	}	
+	}
 }

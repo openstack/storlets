@@ -16,7 +16,7 @@
 
 /*============================================================================
  DD-MMM-2014    eranr       Initial implementation as sChannel.
-                            Introducing wrapping structures.
+ Introducing wrapping structures.
  30-Jun-2014    evgenyl     Switching to SBus. Code refactoring.
  ===========================================================================*/
 
@@ -31,63 +31,55 @@ import java.io.FileDescriptor;
  * No logic is implemented here. 
  * */
 
-public class SBusRawMessage 
-{
+public class SBusRawMessage {
 	/*------------------------------------------------------------------------
 	 * Data Fields
 	 * */
-	
+
 	// Array of open file descriptors (FDs)
 	private FileDescriptor[] hFiles_;
-	
+
 	// JSON-encoded string describing the FDs
 	private String strMetadata_;
-	
-	// JSON-encoded string with additional information 
-	// for storlet execution 
+
+	// JSON-encoded string with additional information
+	// for storlet execution
 	private String strParams_;
 
 	/*------------------------------------------------------------------------
 	 * Default CTOR
 	 * */
-	public SBusRawMessage()
-	{
-		hFiles_      = null;
+	public SBusRawMessage() {
+		hFiles_ = null;
 		strMetadata_ = null;
-		strParams_   = null;
+		strParams_ = null;
 	}
 
 	/*------------------------------------------------------------------------
 	 * Setters/getters
 	 * */
-	public FileDescriptor[] getFiles()
-	{
+	public FileDescriptor[] getFiles() {
 		return hFiles_;
 	}
 
-	public void setFiles( FileDescriptor[] hFiles )
-	{
+	public void setFiles(FileDescriptor[] hFiles) {
 		this.hFiles_ = hFiles;
 	}
 
-	public String getMetadata()
-	{
+	public String getMetadata() {
 		return strMetadata_;
 	}
 
-	public void setMetadata( String strMetadata )
-	{
+	public void setMetadata(String strMetadata) {
 		this.strMetadata_ = strMetadata;
 	}
 
-	public String getParams()
-	{
+	public String getParams() {
 		return strParams_;
 	}
 
-	public void setParams( String strParams ) 
-	{
+	public void setParams(String strParams) {
 		this.strParams_ = strParams;
 	}
 }
-/*============================== END OF FILE ===============================*/
+/* ============================== END OF FILE =============================== */

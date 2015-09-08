@@ -19,23 +19,21 @@
  ===========================================================================*/
 package com.ibm.storlet.common;
 
-public class StorletUtils 
-{
-    public static final String getClassFolder( 
-            @SuppressWarnings("rawtypes") Class o )
-    {
-        String strResult = "";
-        String strJarPath = o.getProtectionDomain().getCodeSource().
-                            getLocation().getPath();        
-        String strSep = java.io.File.separator;
-        String[] strSubfolders = strJarPath.split( strSep );
-        // The content of strSubfolders is something like:
-        // "/home" "swift" "SomeStorlet" "SomeStorlet-1.0.jar"
-        // The first token contains separator, the last shall be thrown.
-        strResult = strSubfolders[0];
-        int nOfSubF = strSubfolders.length - 1;
-        for( int  i = 1; i < nOfSubF; ++i )
-            strResult = strResult + strSep + strSubfolders[i];        
-        return strResult;
-    }
+public class StorletUtils {
+	public static final String getClassFolder(
+			@SuppressWarnings("rawtypes") Class o) {
+		String strResult = "";
+		String strJarPath = o.getProtectionDomain().getCodeSource()
+				.getLocation().getPath();
+		String strSep = java.io.File.separator;
+		String[] strSubfolders = strJarPath.split(strSep);
+		// The content of strSubfolders is something like:
+		// "/home" "swift" "SomeStorlet" "SomeStorlet-1.0.jar"
+		// The first token contains separator, the last shall be thrown.
+		strResult = strSubfolders[0];
+		int nOfSubF = strSubfolders.length - 1;
+		for (int i = 1; i < nOfSubF; ++i)
+			strResult = strResult + strSep + strSubfolders[i];
+		return strResult;
+	}
 }

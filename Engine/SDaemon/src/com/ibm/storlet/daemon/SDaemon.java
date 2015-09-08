@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * Limitations under the License.
  * ---------------------------------------------------------------------------
-*/
+ */
 
 /*============================================================================
  DD-MMM-YYYY    eranr       Initial implementation.
@@ -35,64 +35,55 @@ import com.ibm.storlet.daemon.STaskFactory;
 import com.ibm.storlet.sbus.*;
 
 import java.util.concurrent.*;
+
 /*----------------------------------------------------------------------------
  * SDaemon
  * 
  * This class acts as a language binding and management layer for 
  * user's Storlet logic implementation(~s?)  
  * */
-public class SDaemon 
-{
+public class SDaemon {
 
 	private static ch.qos.logback.classic.Logger logger_;
 	private static SBus sbus_;
 	private static STaskFactory storletTaskFactory_;
 	private static ExecutorService threadPool_;
 	private static String strStorletName_;
-        private static HashMap<String, Future> taskIdToTask_;
+	private static HashMap<String, Future> taskIdToTask_;
 	private static int nDefaultTimeoutToWaitBeforeShutdown_ = 3;
+
 	/*------------------------------------------------------------------------
 	 * initLog
 	 * */
-	private static boolean initLog( final String strClassName, 
-	                                final String strLogLevel ) 
-	{
-	    Level newLevel = Level.toLevel( strLogLevel );
-	    boolean bStatus = true;
+	private static boolean initLog(final String strClassName,
+			final String strLogLevel) {
+		Level newLevel = Level.toLevel(strLogLevel);
+		boolean bStatus = true;
 		try {
-			logger_ = (ch.qos.logback.classic.Logger)
-			          LoggerFactory.getLogger("StorletDaemon_"+ strClassName);
-			logger_.setLevel( newLevel );
+			logger_ = (ch.qos.logback.classic.Logger) LoggerFactory
+					.getLogger("StorletDaemon_" + strClassName);
+			logger_.setLevel(newLevel);
 			logger_.info("Logger Started");
-		} 
-		catch( Exception e )
-		{
-			System.err.println("got exception " + e); 
+		} catch (Exception e) {
+			System.err.println("got exception " + e);
 			bStatus = false;
 		}
 		return bStatus;
 	}
 
-    /*------------------------------------------------------------------------
-     * loadStorlet
-     * */
-	private static IStorlet loadStorlet( final String strStorletClassName ) 
-	{
+	/*------------------------------------------------------------------------
+	 * loadStorlet
+	 * */
+	private static IStorlet loadStorlet(final String strStorletClassName) {
 		IStorlet storlet = null;
-		try 
-		{
-			Class<?> c = Class.forName( strStorletClassName );
-			storlet = (IStorlet)c.newInstance();
-		} 
-		catch( Exception e ) 
-		{
-			logger_.error( strStorletName_ + 
-			               ": Failed to load storlet class " + 
-			               strStorletClassName + 
-			               "class path is " + 
-			               System.getProperty( "java.class.path" ) );
-			logger_.error( strStorletName_ + ": " + 
-			               e.getStackTrace().toString() );
+		try {
+			Class<?> c = Class.forName(strStorletClassName);
+			storlet = (IStorlet) c.newInstance();
+		} catch (Exception e) {
+			logger_.error(strStorletName_ + ": Failed to load storlet class "
+					+ strStorletClassName + "class path is "
+					+ System.getProperty("java.class.path"));
+			logger_.error(strStorletName_ + ": " + e.getStackTrace().toString());
 		}
 		return storlet;
 	}
@@ -119,99 +110,83 @@ public class SDaemon
 	 * where <args> can be: storlet.test.TestStorlet /tmp/aaa FINE 5
 	 * 
 	 * */
-	public static void main( String[] args ) throws Exception 
-	{
-	    initialize( args );
-	    mainLoop();
-	    exit();
+	public static void main(String[] args) throws Exception {
+		initialize(args);
+		mainLoop();
+		exit();
 	}
-	
+
 	/*------------------------------------------------------------------------
 	 * initialize
 	 * 
 	 * Initialize the resources
 	 * */
-	private static void initialize( String[] args ) throws Exception
-	{
+	private static void initialize(String[] args) throws Exception {
 		strStorletName_ = args[0];
 		String strSBusPath = args[1];
 		String strLogLevel = args[2];
 		int nPoolSize = Integer.parseInt(args[3]);
 		String strContId = args[4];
-		
-		if( initLog( strStorletName_, strLogLevel ) == false )
+
+		if (initLog(strStorletName_, strLogLevel) == false)
 			return;
 
-		IStorlet storlet = loadStorlet( strStorletName_ );
-		if( storlet == null )
+		IStorlet storlet = loadStorlet(strStorletName_);
+		if (storlet == null)
 			return;
-		
-		storletTaskFactory_ = new STaskFactory( storlet, logger_ );
+
+		storletTaskFactory_ = new STaskFactory(storlet, logger_);
 		logger_.trace("Instanciating SBus");
 		sbus_ = new SBus(strContId);
-		try 
-		{
+		try {
 			logger_.trace("Initialising SBus");
-			sbus_.create( strSBusPath );
-		} 
-		catch (IOException e) 
-		{
-			logger_.error( strStorletName_ + ": Failed to create SBus" );
-			return;			
+			sbus_.create(strSBusPath);
+		} catch (IOException e) {
+			logger_.error(strStorletName_ + ": Failed to create SBus");
+			return;
 		}
-        logger_.trace("Initialising thread pool with "+nPoolSize+" threads");		
-		threadPool_ = Executors.newFixedThreadPool( nPoolSize );
-                taskIdToTask_ = new HashMap<String, Future>();
+		logger_.trace("Initialising thread pool with " + nPoolSize + " threads");
+		threadPool_ = Executors.newFixedThreadPool(nPoolSize);
+		taskIdToTask_ = new HashMap<String, Future>();
 	}
-	
+
 	/*------------------------------------------------------------------------
 	 * mainLoop
 	 * 
 	 * The main loop - listen, receive, execute till the HALT command. 
 	 * */
-	private static void mainLoop() throws Exception
-	{
+	private static void mainLoop() throws Exception {
 		boolean doContinue = true;
-		while( doContinue )
-		{
+		while (doContinue) {
 			// Wait for incoming commands
-			try 
-			{
-                logger_.trace( strStorletName_ + 
-                        ": listening on SBus");
+			try {
+				logger_.trace(strStorletName_ + ": listening on SBus");
 				sbus_.listen();
-				logger_.trace( strStorletName_ + 
-				               ": SBus listen() returned");
-			} 
-			catch( IOException e )
-			{
-				logger_.error( strStorletName_ + 
-				               ": Failed to listen on SBus");
+				logger_.trace(strStorletName_ + ": SBus listen() returned");
+			} catch (IOException e) {
+				logger_.error(strStorletName_ + ": Failed to listen on SBus");
 				doContinue = false;
 				break;
 			}
-			
+
 			logger_.trace(strStorletName_ + ": Calling receive");
 			SBusDatagram dtg = null;
-			try
-			{
-			    dtg = sbus_.receive();
-			    logger_.trace( strStorletName_ + ": Receive returned" );
+			try {
+				dtg = sbus_.receive();
+				logger_.trace(strStorletName_ + ": Receive returned");
+			} catch (IOException e) {
+				logger_.error(strStorletName_
+						+ ": Failed to receive data on SBus");
+				doContinue = false;
+				break;
+
 			}
-			catch( IOException e )
-			{
-                logger_.error( strStorletName_ + 
-                               ": Failed to receive data on SBus");
-                doContinue = false;
-                break;
-			    
-			}			
 			// We have the request
 			// Initialize a task according to command and execute it
-			doContinue = processDatagram( dtg );
+			doContinue = processDatagram(dtg);
 		}
 	}
-	
+
 	/*------------------------------------------------------------------------
 	 * processDatagram
 	 * 
@@ -219,113 +194,93 @@ public class SDaemon
 	 * or do some other job ( halt, description, or maybe something 
 	 * else in the future ).
 	 * */
-	private static boolean processDatagram( SBusDatagram dtg )
-	{
-	    boolean bStatus = true;
-	    SAbstractTask sTask = null;
-		try 
-		{
-			logger_.trace(  strStorletName_ + 
-			                ": Calling createStorletTask with " 
-			                + dtg.toString());
-			sTask = storletTaskFactory_.createStorletTask( dtg );
-		} 
-		catch( StorletException e )
-		{
-			logger_.trace( strStorletName_ + 
-			               ": Failed to init task " + e.toString() );
+	private static boolean processDatagram(SBusDatagram dtg) {
+		boolean bStatus = true;
+		SAbstractTask sTask = null;
+		try {
+			logger_.trace(strStorletName_ + ": Calling createStorletTask with "
+					+ dtg.toString());
+			sTask = storletTaskFactory_.createStorletTask(dtg);
+		} catch (StorletException e) {
+			logger_.trace(strStorletName_ + ": Failed to init task "
+					+ e.toString());
 			bStatus = false;
 		}
-			
-		if( null == sTask ) 
-		{
-			logger_.error( strStorletName_ + 
-			               ": Unknown command received Quitting" );
+
+		if (null == sTask) {
+			logger_.error(strStorletName_
+					+ ": Unknown command received Quitting");
 			bStatus = false;
-		} 
-		else if( sTask instanceof SHaltTask )
-		{ 
-			logger_.trace( strStorletName_ + ": Got Halt Command" );
+		} else if (sTask instanceof SHaltTask) {
+			logger_.trace(strStorletName_ + ": Got Halt Command");
 			bStatus = false;
-		} 
-		else if( sTask instanceof SExecutionTask )
-		{
-			logger_.trace( strStorletName_ + ": Got Invoke command" );
-			Future futureTask = threadPool_.submit( (SExecutionTask) sTask );
-                        String taskId = futureTask.toString().split("@")[1];
+		} else if (sTask instanceof SExecutionTask) {
+			logger_.trace(strStorletName_ + ": Got Invoke command");
+			Future futureTask = threadPool_.submit((SExecutionTask) sTask);
+			String taskId = futureTask.toString().split("@")[1];
 
-                        ( (SExecutionTask) sTask ).setTaskIdToTask(taskIdToTask_);
-                        ( (SExecutionTask) sTask ).setTaskId(taskId);
+			((SExecutionTask) sTask).setTaskIdToTask(taskIdToTask_);
+			((SExecutionTask) sTask).setTaskId(taskId);
 
-                        logger_.trace( strStorletName_ +": task id is " + taskId);
+			logger_.trace(strStorletName_ + ": task id is " + taskId);
 
-                        synchronized (taskIdToTask_) {
-                            taskIdToTask_.put(taskId, futureTask);
-                        }
-                        OutputStream taskIdOut = ( (SExecutionTask) sTask ).getTaskIdOut();
-                        try {
-                            taskIdOut.write(taskId.getBytes());
-                        } catch ( IOException e ) {
-                            logger_.trace( strStorletName_ +
-                                       ": problem returning taskId " + taskId +
-                                       ": " + e.toString() );
-                            bStatus = false;
-                        } 
-		} 
-		else if( sTask instanceof SDescriptorTask )
-		{
-			logger_.trace(strStorletName_ + ": Got Descriptor command" );
+			synchronized (taskIdToTask_) {
+				taskIdToTask_.put(taskId, futureTask);
+			}
+			OutputStream taskIdOut = ((SExecutionTask) sTask).getTaskIdOut();
+			try {
+				taskIdOut.write(taskId.getBytes());
+			} catch (IOException e) {
+				logger_.trace(strStorletName_ + ": problem returning taskId "
+						+ taskId + ": " + e.toString());
+				bStatus = false;
+			}
+		} else if (sTask instanceof SDescriptorTask) {
+			logger_.trace(strStorletName_ + ": Got Descriptor command");
 			((SDescriptorTask) sTask).run();
+		} else if (sTask instanceof SPingTask) {
+			logger_.trace(strStorletName_ + ": Got Ping command");
+			bStatus = ((SPingTask) sTask).run();
+		} else if (sTask instanceof SCancelTask) {
+			String taskId = ((SCancelTask) sTask).getTaskId();
+			logger_.trace(strStorletName_ + ": Got Cancel command for taskId "
+					+ taskId);
+			if (taskIdToTask_.get(taskId) == null) {
+				bStatus = false;
+				logger_.trace(strStorletName_ + ": COULD NOT FIND taskId "
+						+ taskId);
+				try {
+					((SCancelTask) sTask).getSOut().write(
+							(new String("BAD")).getBytes());
+				} catch (IOException e) {
+				}
+			} else {
+				logger_.trace(strStorletName_ + ": good. found taskId "
+						+ taskId);
+				(taskIdToTask_.get(taskId)).cancel(true);
+				taskIdToTask_.remove(taskId);
+			}
+			bStatus = ((SCancelTask) sTask).run();
 		}
-		else if( sTask instanceof SPingTask )
-		{
-            logger_.trace(strStorletName_ + ": Got Ping command" );
-		    bStatus = ((SPingTask) sTask).run();
-		}
-                else if( sTask instanceof SCancelTask )
-                {
-                    String taskId = ((SCancelTask) sTask).getTaskId();
-            logger_.trace(strStorletName_ + ": Got Cancel command for taskId " + taskId);
-            if (taskIdToTask_.get(taskId) == null) {
-                bStatus = false;
-                logger_.trace(strStorletName_ + ": COULD NOT FIND taskId " + taskId);
-                try
-                {
-                    ((SCancelTask) sTask).getSOut().write((new String("BAD")).getBytes());
-                }
-                catch (IOException e) {}
-	    } else {
-                logger_.trace(strStorletName_ + ": good. found taskId " + taskId);
-                    (taskIdToTask_.get(taskId)).cancel(true);
-                    taskIdToTask_.remove(taskId);
-	    }
-                    bStatus = ((SCancelTask) sTask).run();
-                }
 		return bStatus;
 	}
-	
+
 	/*------------------------------------------------------------------------
 	 * exit
 	 * 
 	 * Release the resources and quit
 	 * */
-	private static void exit()
-	{
-		logger_.info( strStorletName_ + 
-		              ": Daemon for storlet " + 
-		              strStorletName_ + 
-		              " is going down...shutting down threadpool" );
-		try 
-		{
-            threadPool_.awaitTermination(nDefaultTimeoutToWaitBeforeShutdown_,
-                                         TimeUnit.SECONDS );
-        } 
-		catch( InterruptedException e ) 
-		{
-            e.printStackTrace();
-        }
+	private static void exit() {
+		logger_.info(strStorletName_ + ": Daemon for storlet "
+				+ strStorletName_ + " is going down...shutting down threadpool");
+		try {
+			threadPool_.awaitTermination(nDefaultTimeoutToWaitBeforeShutdown_,
+					TimeUnit.SECONDS);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 		threadPool_.shutdown();
-		logger_.info( strStorletName_ + ": threadpool down" );
+		logger_.info(strStorletName_ + ": threadpool down");
 	}
 }
-/*============================== END OF FILE ===============================*/
+/* ============================== END OF FILE =============================== */

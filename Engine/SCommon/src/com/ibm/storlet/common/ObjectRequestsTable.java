@@ -23,23 +23,23 @@ import java.util.HashMap;
 
 public class ObjectRequestsTable {
 	private HashMap<String, ObjectRequestEntry> requestsTable;
-	
+
 	public ObjectRequestsTable() {
 		requestsTable = new HashMap<String, ObjectRequestEntry>();
 	}
-	
+
 	public ObjectRequestEntry Insert(String key) {
 		ObjectRequestEntry requestEntry = new ObjectRequestEntry();
 		synchronized (requestsTable) {
-			requestsTable.put(key,requestEntry);
+			requestsTable.put(key, requestEntry);
 		}
 		return requestEntry;
 	}
-	
+
 	public ObjectRequestEntry Get(String key) {
 		return requestsTable.get(key);
 	}
-	
+
 	public void Remove(String key) {
 		synchronized (requestsTable) {
 			requestsTable.remove(key);

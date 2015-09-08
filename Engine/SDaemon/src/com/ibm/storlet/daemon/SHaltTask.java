@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * Limitations under the License.
  * ---------------------------------------------------------------------------
-*/
+ */
 
 /*============================================================================
  DD-MMM-YYYY    eranr       Initial implementation.
@@ -28,14 +28,12 @@ import org.slf4j.Logger;
  * Instantiate AbstractTask class. The primary usage intent is to stop 
  * a relevant working thread. 
  * */
-public class SHaltTask extends SAbstractTask 
-{
-    /*------------------------------------------------------------------------
-     * CTOR
-     * */
-	public SHaltTask(Logger logger) 
-	{
+public class SHaltTask extends SAbstractTask {
+	/*------------------------------------------------------------------------
+	 * CTOR
+	 * */
+	public SHaltTask(Logger logger) {
 		super(logger);
 	};
 }
-/*============================== END OF FILE ===============================*/
+/* ============================== END OF FILE =============================== */

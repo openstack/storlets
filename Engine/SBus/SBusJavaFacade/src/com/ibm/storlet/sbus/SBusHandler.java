@@ -16,9 +16,9 @@
 
 /*============================================================================
  DD-MMM-2014	eranr     Initial implementation as sChannel.
-         	 	 	 	 	 	 	  Introducing wrapping structures.
+ Introducing wrapping structures.
  30-Jun-2014	evgenyl   Switching to SBus. Code refactoring.
-				        			  Simplifying API. Extracting business logic.
+ Simplifying API. Extracting business logic.
  ===========================================================================*/
 
 package com.ibm.storlet.sbus;
@@ -28,34 +28,30 @@ package com.ibm.storlet.sbus;
  * in Transport Layer APIs. 
  * */
 
-public class SBusHandler 
-{
+public class SBusHandler {
 	private int nFD_;
 
 	/*------------------------------------------------------------------------
 	 * CTOR
 	 * No default value
 	 * */
-	public SBusHandler( int nFD )
-	{
+	public SBusHandler(int nFD) {
 		nFD_ = nFD;
 	}
 
 	/*------------------------------------------------------------------------
 	 * Getter
 	 * */
-	public int getFD()
-	{
+	public int getFD() {
 		return nFD_;
 	}
-	
+
 	/*------------------------------------------------------------------------
-     * Validity
-     * */
-    public boolean isValid()
-    {
-        return (0 <= getFD());
-    }
+	 * Validity
+	 * */
+	public boolean isValid() {
+		return (0 <= getFD());
+	}
 
 }
-/*============================== END OF FILE ===============================*/
+/* ============================== END OF FILE =============================== */

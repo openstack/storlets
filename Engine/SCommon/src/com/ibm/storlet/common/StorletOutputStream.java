@@ -27,9 +27,9 @@ import java.util.HashMap;
 public class StorletOutputStream {
 	private HashMap<String, String> metadata;
 	protected OutputStream stream;
-	
+
 	public StorletOutputStream(FileDescriptor fd, HashMap<String, String> md) {
-		stream = ((OutputStream)(new FileOutputStream(fd)));
+		stream = ((OutputStream) (new FileOutputStream(fd)));
 		metadata = md;
 	}
 

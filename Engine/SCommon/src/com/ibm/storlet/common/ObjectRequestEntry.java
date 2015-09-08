@@ -21,15 +21,17 @@ package com.ibm.storlet.common;
 
 public class ObjectRequestEntry {
 	private StorletObjectOutputStream objectStream = null;
-	
-	public synchronized StorletObjectOutputStream get() throws InterruptedException {
+
+	public synchronized StorletObjectOutputStream get()
+			throws InterruptedException {
 		if (objectStream == null)
 			wait();
-		
+
 		return objectStream;
 	}
-	
-	public synchronized void put(StorletObjectOutputStream objectStream) throws InterruptedException {
+
+	public synchronized void put(StorletObjectOutputStream objectStream)
+			throws InterruptedException {
 		this.objectStream = objectStream;
 		notify();
 	}

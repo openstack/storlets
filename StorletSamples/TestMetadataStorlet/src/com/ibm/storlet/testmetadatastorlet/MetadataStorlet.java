@@ -31,45 +31,47 @@ import com.ibm.storlet.common.StorletLogger;
 import com.ibm.storlet.common.StorletObjectOutputStream;
 import com.ibm.storlet.common.StorletOutputStream;
 
-public class MetadataStorlet implements IStorlet 
-{
-    @Override
-    public void invoke( ArrayList<StorletInputStream>  inputStreams,
-                        ArrayList<StorletOutputStream> outputStreams, 
-                        Map<String, String>            parameters,
-                        StorletLogger                  log ) 
-                                                       throws StorletException {
-    	log.emitLog("Test Metadata Storlet Invoked");
-    	final InputStream inputStream = inputStreams.get(0).getStream();
-        final HashMap<String, String> metadata = inputStreams.get(0).getMetadata();
-        final StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream) outputStreams.get(0);
+public class MetadataStorlet implements IStorlet {
+	@Override
+	public void invoke(ArrayList<StorletInputStream> inputStreams,
+			ArrayList<StorletOutputStream> outputStreams,
+			Map<String, String> parameters, StorletLogger log)
+			throws StorletException {
+		log.emitLog("Test Metadata Storlet Invoked");
+		final InputStream inputStream = inputStreams.get(0).getStream();
+		final HashMap<String, String> metadata = inputStreams.get(0)
+				.getMetadata();
+		final StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream) outputStreams
+				.get(0);
 		Iterator it = metadata.entrySet().iterator();
 		log.emitLog("Printing the input metadata");
-	    while (it.hasNext()) {
-	        Map.Entry pairs = (Map.Entry)it.next();
-	        log.emitLog((String)pairs.getKey() + " : "+ (String)pairs.getValue());
-	    }
-        
-        metadata.put("override_key", "new_value");
-        it = metadata.entrySet().iterator();
-		log.emitLog("Printing the input metadata");
-	    while (it.hasNext()) {
-	        Map.Entry pairs = (Map.Entry)it.next();
-	        log.emitLog((String)pairs.getKey() + " : "+ (String)pairs.getValue());
-	    }
-        storletObjectOutputStream.setMetadata(metadata);
-                
-        OutputStream outputStream = storletObjectOutputStream.getStream();
-        try {
-            byte[] bytearray = new byte[100];
-            inputStream.read(bytearray ,0,100);
+		while (it.hasNext()) {
+			Map.Entry pairs = (Map.Entry) it.next();
+			log.emitLog((String) pairs.getKey() + " : "
+					+ (String) pairs.getValue());
+		}
 
-        	outputStream.write("1234567890".getBytes());
-        	inputStream.close();
-        	outputStream.close();
-        } catch (IOException ex) {
-            log.emitLog(ex.getMessage());
-            throw new StorletException(ex.getMessage());
-        }   
-	 }
+		metadata.put("override_key", "new_value");
+		it = metadata.entrySet().iterator();
+		log.emitLog("Printing the input metadata");
+		while (it.hasNext()) {
+			Map.Entry pairs = (Map.Entry) it.next();
+			log.emitLog((String) pairs.getKey() + " : "
+					+ (String) pairs.getValue());
+		}
+		storletObjectOutputStream.setMetadata(metadata);
+
+		OutputStream outputStream = storletObjectOutputStream.getStream();
+		try {
+			byte[] bytearray = new byte[100];
+			inputStream.read(bytearray, 0, 100);
+
+			outputStream.write("1234567890".getBytes());
+			inputStream.close();
+			outputStream.close();
+		} catch (IOException ex) {
+			log.emitLog(ex.getMessage());
+			throw new StorletException(ex.getMessage());
+		}
+	}
 }
