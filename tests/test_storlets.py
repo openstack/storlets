@@ -19,7 +19,7 @@ test_storlets
 Tests for `storlets` module.
 """
 
-from storlets.tests import base
+from tests import base
 
 
 class TestStorlets(base.TestCase):
