@@ -1,6 +1,6 @@
-===============================
+========
 storlets
-===============================
+========
 
 Middleware and Compute Engine for an OpenStack Swift compute framework that runs compute within a Swift cluster
 
