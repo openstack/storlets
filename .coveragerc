@@ -4,4 +4,4 @@ source = storlets
 omit = storlets/openstack/*
 
 [report]
-ignore-errors = True
+ignore_errors = True
