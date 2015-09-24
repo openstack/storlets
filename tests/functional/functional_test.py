@@ -16,10 +16,11 @@ Limitations under the License.
 '''
 @author: cdoron
 '''
+import subprocess
 
 
 def main():
-    pass
+    subprocess.call(["ls", "/tmp/swift_install/"])
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":
