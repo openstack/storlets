@@ -16,22 +16,10 @@ Limitations under the License.
 '''
 @author: cdoron
 '''
-import subprocess
-
-
-def launch_docker_container():
-    subprocess.call(['docker', 'run', '-d', 'busybox'])
-
-
-def check_docker_container_is_up():
-    all_containers = subprocess.check_output(['docker',
-                                              'ps', '-a']).rstrip().split('\n')
-    assert(len(all_containers) > 1)
 
 
 def main():
-    launch_docker_container()
-    check_docker_container_is_up()
+    pass
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":
