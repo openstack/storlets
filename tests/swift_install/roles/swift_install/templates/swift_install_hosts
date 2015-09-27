@@ -12,11 +12,29 @@
 # See the License for the specific language governing permissions and
 # Limitations under the License.
 #---------------------------------------------------------------------------
+# Written By George Goldberg (georgeg@il.ibm.com)
 
-- hosts: deploy
-  vars_files:
-  - [ vars.yml ]
-  roles:
-  - role: prepare_loop_device
-  - role: pull_swift_ansible
-  - role: swift_install
+swift-ring-builder ansible_ssh_host=localhost ansible_ssh_user={{ user_name }}
+
+proxy1 ansible_ssh_host=localhost ansible_ssh_user={{ user_name }}
+
+storage1 ansible_ssh_host=localhost ansible_ssh_user={{ user_name }}
+
+client1 ansible_ssh_host=localhost ansible_ssh_user={{ user_name }}
+mgmt    ansible_ssh_host=localhost ansible_ssh_user={{ user_name }}
+
+[keystone]
+proxy1
+
+[swift-proxy]
+proxy1
+
+[swift-storage]
+storage1
+
+[swift-storage:children]
+swift-proxy
+
+[swift-client]
+client1
+mgmt

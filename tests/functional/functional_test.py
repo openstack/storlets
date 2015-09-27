@@ -20,7 +20,8 @@ import subprocess
 
 
 def main():
-    subprocess.call(["ls", "/tmp/swift_install/"])
+    subprocess.call(["cat", "/tmp/swift_install/swift-install/" +
+                            "inventory/swift_install_hosts"])
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":

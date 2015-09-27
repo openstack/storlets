@@ -18,10 +18,11 @@ sudo apt-get install -y python-setuptools
 
 ant build
 
-ssh-keygen -q -t rsa -f /home/jenkins/.ssh/id_rsa -N ""
-cp /home/jenkins/.ssh/id_rsa.pub /home/jenkins/.ssh/authorized_keys
+ssh-keygen -q -t rsa -f /home/$USER/.ssh/id_rsa -N ""
+cp /home/$USER/.ssh/id_rsa.pub /home/$USER/.ssh/authorized_keys
 
-ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
+ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml -e user_name=$USER
+ansible-playbook -s -i /tmp/swift_install/swift-install/inventory/swift_install_hosts /tmp/swift_install/swift-install/keystone.yml
 
 # install the lxc-docker package
 #sudo apt-get update

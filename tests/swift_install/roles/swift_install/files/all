@@ -1,0 +1,50 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+# Written By George Goldberg (georgeg@il.ibm.com)
+
+openstack_region: 1
+openstack_version: juno
+global_log_verbose: False
+global_log_debug: False
+
+# should be an ip address on which keystone is listening
+# can be assigned directly like
+# keystone_endpoint_host: 9.148.41.222
+keystone_endpoint_host: localhost
+
+keystone_internal_url: http://{{ keystone_endpoint_host }}:5000/v2.0
+keystone_admin_url: http://{{ keystone_endpoint_host }}:35357/v2.0
+keystone_public_url: http://{{ keystone_endpoint_host }}:5000/v2.0
+
+openstack_version: juno
+
+# for real security purposes should be assigned with
+# secure token and pwd
+keystone_admin_token: ADMIN
+keystone_admin_password: passw0rd
+
+# to be a list of all ip adresses of all proxy nodes
+# can be assigned directly (with ips from the swift-proxy host group)
+# swift_proxy_ips: [9.148.41.204 , 9.148.41.206]
+swift_proxy_ips: [localhost] 
+
+# for real security purposes should be assigned with
+# real password
+swift_identity_password: passw0rd
+
+# assigne random strings
+swift_hash_path_prefix: d55ca1881f1e09b1
+swift_hash_path_suffix: a3f3c381c916a198
+

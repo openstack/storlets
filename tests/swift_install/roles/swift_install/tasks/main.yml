@@ -13,10 +13,16 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- hosts: deploy
-  vars_files:
-  - [ vars.yml ]
-  roles:
-  - role: prepare_loop_device
-  - role: pull_swift_ansible
-  - role: swift_install
+- name: copy swift install hosts template
+  template:
+    src: swift_install_hosts
+    dest: "{{ installation_dir }}{{ swift_install_repo_name }}/inventory/swift_install_hosts"
+    mode: 0644
+
+- name: Copy additional resources
+  copy:
+    src: all
+    dest: "{{ installation_dir }}{{ swift_install_repo_name }}/inventory/group_vars/all"
+
+- git: repo=https://github.com/openstack-ansible/openstack-ansible-modules.git
+       dest={{ installation_dir }}/{{ swift_install_repo_name }}/openstack-ansible-modules
