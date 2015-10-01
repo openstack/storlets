@@ -28,7 +28,3 @@
   when: not repo_dir.stat.exists
 
 - command: chmod 1777 "{{ installation_dir }}/{{swift_install_repo_name}}"
-
-#- command: ansible-playbook -s -i "{{ installation_dir }}/{{swift_install_repo_name}}/{{ swift_install_swift_config_dir}}/{{swift_install_dynamic_inventory }}" pull_keystone_service_module.yml
-#  args:
-#    chdir: "{{ installation_dir }}{{ swift_install_repo_name }}"

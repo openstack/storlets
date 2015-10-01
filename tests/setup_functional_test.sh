@@ -21,13 +21,8 @@ ant build
 ssh-keygen -q -t rsa -f /home/$USER/.ssh/id_rsa -N ""
 cp /home/$USER/.ssh/id_rsa.pub /home/$USER/.ssh/authorized_keys
 
-ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml -e user_name=$USER
-ansible-playbook -s -i /tmp/swift_install/swift-install/inventory/swift_install_hosts /tmp/swift_install/swift-install/keystone.yml
+ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
 
-# install the lxc-docker package
-#sudo apt-get update
-#sudo apt-get install -y linux-image-extra-`uname -r`
-#sudo sh -c "wget -qO- https://get.docker.io/gpg | apt-key add -"
-#sudo sh -c "echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list"
-#sudo apt-get update
-#sudo apt-get install -y lxc-docker
+cd /tmp/swift_install/swift-install
+ansible-playbook -s -i inventory/vagrant/localhost_dynamic_inventory.py main-install.yml
+
