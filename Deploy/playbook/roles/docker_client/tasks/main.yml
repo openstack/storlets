@@ -42,7 +42,7 @@
   when: "'0' in lxc_docker.stdout_lines[0]"
       
 - name: Install Docker Client
-  apt: name=lxc-docker=1.6.2 state=present update-cache=yes force=yes
+  apt: name=lxc-docker state=present update-cache=yes force=yes
   when: "'0' in lxc_docker.stdout_lines[0]"
 
 # There seem to be a bug in the installation where config files are not installed.

@@ -20,7 +20,7 @@ import subprocess
 
 
 def main():
-    subprocess.call(["ls", "/etc/swift"])
+    subprocess.call(["pwd"])
 
 '''------------------------------------------------------------------------'''
 if __name__ == "__main__":
