@@ -39,3 +39,4 @@ ansible-playbook -s -i hosts docker_base_storlet_images.yml
 ansible-playbook -s -i hosts docker_storlet_engine_image.yml
 ansible-playbook -s -i hosts storlet_mgmt.yml
 ansible-playbook -s -i hosts fetch_proxy_conf.yml
+ansible-playbook -s -i hosts host_storlet_engine.yml

@@ -43,6 +43,14 @@
     version: 0.6.3
   when: not p.stat.exists
   
+- shell: chdir=/opt/docker-registry
+         /bin/sed -i '/keystoneclient/d' requirements.txt
+
+- shell: chdir=/opt/docker-registry
+         /bin/sed -i '/swiftclient/d' requirements.txt
+
+- shell: chdir=/opt/docker-registry
+         /bin/sed -i '/requests/d' requirements.txt
 
 - name: pip install the Docker repository service requirements
   pip:
