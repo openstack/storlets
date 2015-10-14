@@ -22,35 +22,38 @@ Limitations under the License.
 import sys
 import subprocess
 from storlet_mgmt_common import get_hosts_object, monitor_playbook_execution
- 
+
+
 def add_new_tenant(hosts_file, tenant_name, user_name, user_password):
-    p = subprocess.Popen(['ansible-playbook', 
+    p = subprocess.Popen(['ansible-playbook',
                                 '-s',
-    				'-i', hosts_file, 
-    				'{{ storlet_management_ansible_dir }}/storlets_add_new_tenant.yml', 
-    				'-e', 'tenant_name=' + tenant_name, 
-    				'-e', 'user_name=' + user_name, 
-    				'-e', 'user_password=' + user_password,
-    				'-e', 'storlets_image_name_suffix=' + '{{ storlets_image_name_suffix }}' ],
-                                env={"ANSIBLE_HOST_KEY_CHECKING" : "False"},
+                    '-i', hosts_file,
+                    '{{ storlet_management_ansible_dir }}/storlets_add_new_tenant.yml',
+                    '-e', 'tenant_name=' + tenant_name,
+                    '-e', 'user_name=' + user_name,
+                    '-e', 'user_password=' + user_password,
+                    '-e', 'storlets_image_name_suffix=' + '{{ storlets_image_name_suffix }}'],
+                                # env={"ANSIBLE_HOST_KEY_CHECKING" : "False"},
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
     monitor_playbook_execution(p)
-    
+
+
 def usage(argv):
     print argv[0] + " <tenant_name> <user_name> <user_password>"
+
 
 def main(argv):
     if len(argv) != 4:
         usage(argv)
         return
-   
+
     tenant_name = argv[1]
     user_name = argv[2]
     user_password = argv[3]
 
     get_hosts_object()
-    add_new_tenant("{{ storlet_management_ansible_dir }}/swift_cluster_nodes",tenant_name, user_name, user_password)
+    add_new_tenant("{{ storlet_management_ansible_dir }}/swift_cluster_nodes", tenant_name, user_name, user_password)
 
 if __name__ == "__main__":
     main(sys.argv)

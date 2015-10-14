@@ -24,10 +24,11 @@ import select
 import subprocess
 from swiftclient import client as c
 
+
 def get_hosts_object():
     os_options = {'tenant_name': '{{ storlet_management_account }}'}
     url, token = c.get_auth('{{ keystone_public_url }}', '{{ storlet_management_account }}' + ":" + '{{ storlet_management_admin_username }}',
-                            '{{ storlet_manager_admin_password }}', os_options = os_options,
+                            '{{ storlet_manager_admin_password }}', os_options=os_options,
                             auth_version="2.0")
 
     response = dict()
@@ -36,15 +37,16 @@ def get_hosts_object():
                             token,
                             '{{ storlet_management_swift_topology_container }}',
                             '{{ storlet_management_swift_topology_object }}',
-        	            None,
+                        None,
                             None,
                             None,
-                            response_dict = response,
-                            headers = None)
+                            response_dict=response,
+                            headers=None)
     assert(response.get('status') == 200)
-    f = open("{{ storlet_management_ansible_dir }}/swift_cluster_nodes", "w" )
+    f = open("{{ storlet_management_ansible_dir }}/swift_cluster_nodes", "w")
     f.write(content)
     f.close()
+
 
 def monitor_playbook_execution(p):
     #stdout = []
@@ -69,7 +71,6 @@ def monitor_playbook_execution(p):
                 #stderr.append(read)
                 if "FATAL" in read:
                     raise Exception("Error while executing ansible script")
-                    
+
         if p.poll() != None:
             break
-

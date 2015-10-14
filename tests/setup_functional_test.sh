@@ -40,3 +40,8 @@ ansible-playbook -s -i hosts docker_storlet_engine_image.yml
 ansible-playbook -s -i hosts storlet_mgmt.yml
 ansible-playbook -s -i hosts fetch_proxy_conf.yml
 ansible-playbook -s -i hosts host_storlet_engine.yml
+sudo chmod -R 777 /opt/ibm
+ansible-playbook -i hosts create_default_tenant.yml
+
+cd ../../SystemTests
+python sys_test.py
