@@ -26,9 +26,9 @@ localhost
 localhost
 
 [storlet-proxy:vars]
-ansible_ssh_user = root
+ansible_ssh_user = <Set Me!>
 ansible_ssh_pass = passw0rd
 
 [storlet-storage:vars]
-ansible_ssh_user = root
+ansible_ssh_user = <Set Me!>
 ansible_ssh_pass = passw0rd

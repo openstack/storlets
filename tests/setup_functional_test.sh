@@ -24,13 +24,19 @@ cp /home/$USER/.ssh/id_rsa.pub /home/$USER/.ssh/authorized_keys
 ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
 
 cd /tmp/swift_install/swift-install
+sudo sed -i 's/<Set Me!>/'$USER'/g' localhost_config.json
 ansible-playbook -s -i inventory/vagrant/localhost_dynamic_inventory.py main-install.yml
 
 cd -
 sed -i 's/<Set Me!>/127.0.0.1/g' Deploy/playbook/common.yml
-sed -i 's/root/jenkins/g' Deploy/playbook/hosts
+sed -i 's/<Set Me!>/'$USER'/g' Deploy/playbook/hosts
 sed -i '/ansible_ssh_pass/d' Deploy/playbook/hosts
-sed -i 's/~\/storlets/\/home\/jenkins\/workspace\/gate-storlets-functional\//g' Deploy/playbook/common.yml
+# If no arguments are supplied, assume we are under jenkins job, and
+# we need to edit common.yml to set the appropriate source dir
+if [ -z "$1" ]
+  then
+    sed -i 's/~\/storlets/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' Deploy/playbook/common.yml
+fi
 
 cd Deploy/playbook
 ansible-playbook -s -i hosts cluster_check.yml
@@ -43,5 +49,10 @@ ansible-playbook -s -i hosts host_storlet_engine.yml
 sudo chmod -R 777 /opt/ibm
 ansible-playbook -i hosts create_default_tenant.yml
 
-cd ../../SystemTests
-python sys_test.py
+# If no arguments are supplied, assume we are under jenkins job, and we
+# execute the functional tests as part of that job
+if [ -z "$1" ]
+  then
+    cd ../../SystemTests
+    python sys_test.py
+fi
