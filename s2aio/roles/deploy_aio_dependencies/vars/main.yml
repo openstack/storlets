@@ -1,6 +1,0 @@
-# Note that all packages carry a specific version.
-# Thus, the ansible task would not use version: latest
-packages:
-  - vagrant=1:1.5.4
-  - ansible=1.9.1-1ppa~trusty
-  - virtualbox=4.3.10-dfsg-1ubuntu4

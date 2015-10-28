@@ -1,6 +1,0 @@
-packages:
-  - git
-  - sshpass
-  - ant
-  - oracle-java8-installer
-  - python-setuptools

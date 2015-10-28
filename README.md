@@ -2,6 +2,21 @@
 Swift Storlets
 ==============
 
+tl ; dr
+=======
+* Get a fresh 14.04 Ubuntu (A disposal VM is a good start)
+* Create a sudoer that can sudo without a password
+::
+    sudo apt-get install python-tox
+    sudo apt-get install python-nose
+    git clone https://github.com/openstack/storlets.git
+    cd storlets
+    ./s2aio.sh
+
+Browse through the StorletSamples directory so see storlet code examples,
+and through the SystemTests to see samples of deploying and invoking a storlet
+
+
 Introduction
 ============
 Swift Storlets extend Swift with the capability to run computation near the data in a secure and isolated manner. With Swift Storlets a user can write code,
@@ -47,28 +62,15 @@ The documentation in this repo is organized according to the various roles invol
   * <https://github.com/openstack/storlets/blob/master/doc/source/dev_and_test_guide.rst>
   * <https://github.com/openstack/storlets/blob/master/doc/source/storlets_docker_gateway.rst>
 
-Finally, these are a MUST:
-
-* <https://github.com/openstack/storlets/blob/master/doc/source/storlets_installation_guide.rst>
-* <https://github.com/openstack/storlets/blob/master/doc/source/storlet_all_in_one.rst>
 
 Installation
 ============
-<https://github.com/openstack/storlets/blob/master/doc/source/storlets_installation_guide.rst> describes how to install Storlets in an existing Swift cluster that uses Keystone.
-For convenience we also provide a storlet all-in-one installation script that installs Swift with Keystone and Storlets in a single virtual machine.
-See <https://github.com/openstack/storlets/blob/master/doc/source/storlet_all_in_one.rst>
-The installation is based on Ansible and was tested on Ubuntu 14.10, and with Swift 1.13 and Swift 2.2.
+<https://github.com/openstack/storlets/blob/master/doc/source/installation.rst> describes how to install Storlets in an existing Swift cluster that uses Keystone.
+The installation is based on Ansible and was tested on Ubuntu 14.04, 14.10, and with Swift 1.13 and Swift 2.2.
 
 Once installation is completed, you can try run the system tests as described in the <https://github.com/openstack/storlets/blob/master/doc/source/dev_and_test_guide.rst>
 The system tests are a good reference for writing and deploying a Storlet.
 
-Status
-======
-The purpose of this repository is to serve as a mostly read only reference for (1) the Swift storlets middleware, and (2) a storlets gateway 
-implementaton.
-Having said that we will be doing fixing of major bugs, potentially add some improvements and adaptations required to stay tuned with
-the Swift Storlets middleware as it evolves while getting upstream.
-Given enough interest from the community this status may change to be a more active project.
 
 Acknowledgements
 ================
