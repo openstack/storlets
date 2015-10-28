@@ -6,7 +6,9 @@ tl ; dr
 =======
 * Get a fresh 14.04 Ubuntu (A disposal VM is a good start)
 * Create a sudoer that can sudo without a password
+
 ::
+
     sudo apt-get install python-tox
     sudo apt-get install python-nose
     git clone https://github.com/openstack/storlets.git
