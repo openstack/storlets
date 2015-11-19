@@ -127,7 +127,7 @@ class StorletHandlerMiddleware(object):
                                                     self.app)['meta']
                     storlets_enabled = account_meta.get('storlet-enabled',
                                                         'False')
-                    if storlets_enabled == 'False':
+                    if not config_true_value(storlets_enabled):
                         self.logger.info('Account disabled for storlets')
                         return HTTPBadRequest('Account disabled for storlets')
 
