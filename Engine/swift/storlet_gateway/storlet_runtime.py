@@ -529,11 +529,13 @@ class StorletInvocationProtocol(object):
             os.makedirs(storlet_logger_path)
 
     def _wait_for_read_with_timeout(self, fd):
-        r, w, e = select.select([fd], [], [], self.timeout)
-        if len(r) == 0:
+        try:
+            with Timeout(self.timeout):
+                r, w, e = select.select([fd], [], [])
+        except Timeout as to:
             if self.task_id:
                 self._cancel()
-            raise Timeout('Timeout while waiting for storlet output')
+            raise to
         if fd in r:
             return
 
@@ -593,9 +595,8 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
                                                     self.input_data_read_fd)
 
     def _wait_for_write_with_timeout(self, fd):
-        r, w, e = select.select([], [fd], [], self.timeout)
-        if len(w) == 0:
-            raise Timeout('Timeout while waiting for storlet to read')
+        with Timeout(self.timeout):
+            r, w, e = select.select([], [fd], [])
         if fd in w:
             return
 
