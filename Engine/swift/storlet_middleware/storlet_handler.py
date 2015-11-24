@@ -23,8 +23,9 @@ import ConfigParser
 from eventlet import Timeout
 from storlet_common import StorletException, StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
-from swift.common.swob import HTTPBadRequest, HTTPInternalServerError, \
-    HTTPUnauthorized, Request, Response, wsgify
+from swift.common.swob import HTTPBadRequest, HTTPException, \
+    HTTPInternalServerError, HTTPNotFound, HTTPUnauthorized, Request, \
+    Response, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
@@ -210,6 +211,9 @@ class StorletHandlerMiddleware(object):
         except (StorletTimeout, ConnectionTimeout, Timeout) as e:
             StorletException.handle(self.logger, e)
             return HTTPInternalServerError(body='Storlet execution timed out')
+        except HTTPException as e:
+            StorletException.handle(self.logger, e)
+            return e
         except Exception as e:
             StorletException.handle(self.logger, e)
             return HTTPInternalServerError(body='Storlet execution failed')
@@ -260,6 +264,8 @@ class StorletHandlerMiddleware(object):
         self.logger.error('Failed to check if {0}/{1}/{2} is an SLO assembly '
                           'object. Got status {3}'.
                           format(account, container, obj, resp.status))
+        if resp.status_int == 404:
+            raise HTTPNotFound('The target object is not found')
         raise Exception('Failed to check if {0}/{1}/{2} is an SLO assembly '
                         'object. Got status {3}'.format(account, container,
                                                         obj, resp.status))
