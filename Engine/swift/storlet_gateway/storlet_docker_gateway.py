@@ -183,15 +183,33 @@ class StorletGatewayDocker(StorletGatewayBase):
         def __del__(self):
             self.close()
 
+    def _validateStorletUpload(self, req):
+        if (self.obj.find('-') < 0 or self.obj.find('.') < 0):
+            return 'Storlet name is incorrect'
+
+    def _validateDependencyUpload(self, req):
+        perm = req.headers. \
+            get('X-Object-Meta-Storlet-Dependency-Permissions')
+        if perm is not None:
+            try:
+                perm_int = int(perm)
+            except ValueError:
+                return 'Dependency permission is incorrect'
+            if perm_int / 100 < 6:
+                return 'The owner should have rw permission'
+
     def validateStorletUpload(self, req):
-
-        if (self.container == self.sconf['storlet_container']):
-            if (self.obj.find('-') < 0 or self.obj.find('.') < 0):
-                return 'Storlet name is incorrect'
-
         ret = self._validate_mandatory_headers(req)
         if ret:
             return ret
+
+        if (self.container == self.sconf['storlet_container']):
+            ret = self._validateStorletUpload(req)
+        elif (self.container == self.sconf['storlet_dependency']):
+            ret = self._validateDependencyUpload(req)
+        if ret:
+            return ret
+
         return False
 
     def authorizeStorletExecution(self, req):
@@ -480,6 +498,8 @@ class StorletGatewayDocker(StorletGatewayBase):
                     get('X-Object-Meta-Storlet-Dependency-Permissions', '')
                 if expected_perm != '':
                     os.chmod(cache_target_path, int(expected_perm, 8))
+                else:
+                    os.chmod(cache_target_path, int('0600', 8))
 
         # The node's local cache is now updated.
         # We now verify if we need to update the
