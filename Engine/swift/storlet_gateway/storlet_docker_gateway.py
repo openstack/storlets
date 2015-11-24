@@ -35,6 +35,9 @@ from swift.common.swob import Request
 from swift.common.utils import config_true_value
 
 
+CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
+                    'IF_UNMODIFIED_SINCE']
+
 '''---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
@@ -308,6 +311,10 @@ class StorletGatewayDocker(StorletGatewayBase):
         new_env = dict(env)
         if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
             del new_env['HTTP_TRANSFER_ENCODING']
+        for key in CONDITIONAL_KEYS:
+            env_key = 'HTTP_' + key
+            if env_key in new_env.keys():
+                del new_env[env_key]
         new_env['REQUEST_METHOD'] = 'HEAD'
         new_env['swift.source'] = 'SE'
         new_env['PATH_INFO'] = os.path.join('/' + version, account,
