@@ -44,25 +44,20 @@ from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMONS
 
 
 class daemon_factory(object):
-    '''@summary: This class acts as the manager for storlet daemons.
+    '''This class acts as the manager for storlet daemons.
 
-              It listens to commands and reacts on them in an internal loop.
-              As for now (01-Dec-2014) it is a single thread, synchronous
-              processing.
+       It listens to commands and reacts on them in an internal loop.
+       As for now (01-Dec-2014) it is a single thread, synchronous
+       processing.
     '''
 
-    '''--------------------------------------------------------------------'''
-
     def __init__(self, path, logger):
-        '''@summary:             CTOR
+        '''params
 
-                              Prepare the auxiliary data structures
-
-        @param path:          Path to the pipe file internal SBus listens to
-        @type  path:          String
-        @param logger:        Logger to dump the information to
-        @type  logger:        SysLogHandler
+        path: Path to the pipe file internal SBus listens to
+        logger: Logger to dump the information to
         '''
+
         self.logger = logger
         self.pipe_path = path
         # Dictionary: map storlet name to pipe name
@@ -70,9 +65,7 @@ class daemon_factory(object):
         # Dictionary: map storlet name to daemon process PID
         self.storlet_name_to_pid = dict()
 
-        self.NUM_OF_TRIES_PINGING_STARTING_DAEMON = 5
-
-    '''--------------------------------------------------------------------'''
+        self.NUM_OF_TRIES_PINGING_STARTING_DAEMON = 10
 
     def get_jvm_args(self,
                      daemon_language,
@@ -180,13 +173,21 @@ class daemon_factory(object):
             self.logger.debug('START_DAEMON: actual invocation')
             self.logger.debug('The arguments are: {0}'.format(str(pargs)))
             dn = open('/dev/null', 'w')
-            jvm_pid = subprocess.Popen(pargs,
-                                       stdout=dn,
-                                       stderr=dn,
-                                       shell=False).pid
+            daemon_p = subprocess.Popen(pargs,
+                                        stdout=dn,
+                                        stderr=subprocess.PIPE,
+                                        shell=False)
+
+            logger_p = subprocess.Popen('logger',
+                                        stdin=daemon_p.stderr,
+                                        stdout=dn,
+                                        stderr=dn,
+                                        shell=False)
+            jvm_pid = daemon_p.pid
             # Wait for the JVM initializes itself
             time.sleep(1)
-            self.logger.debug('JVM process ID is: {0}'.format(jvm_pid))
+            self.logger.debug('Daemon process ID is: {0}'.format(jvm_pid))
+            self.logger.debug('Logger process ID is: {0}'.format(logger_p.pid))
             storlet_name = pargs[2]
 
             # Does JVM run?

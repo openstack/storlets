@@ -48,11 +48,3 @@ ansible-playbook -s -i hosts fetch_proxy_conf.yml
 ansible-playbook -s -i hosts host_storlet_engine.yml
 sudo chmod -R 777 /opt/ibm
 ansible-playbook -i hosts create_default_tenant.yml
-
-# If no arguments are supplied, assume we are under jenkins job, and we
-# execute the functional tests as part of that job
-if [ -z "$1" ]
-  then
-    cd ../../SystemTests
-    python sys_test.py
-fi
