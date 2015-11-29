@@ -13,30 +13,25 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
+from __init__ import ACCOUNT
+from __init__ import AUTH_IP
+from __init__ import AUTH_PORT
+from __init__ import PASSWORD
+from __init__ import put_storlet_object
+from __init__ import USER_NAME
 import os
 import random
 import string
 from swiftclient import client as c
-from sys_test_params import ACCOUNT
-from sys_test_params import AUTH_IP
-from sys_test_params import AUTH_PORT
-from sys_test_params import PASSWORD
-from sys_test_params import USER_NAME
+import unittest
 
-from storlets_test_utils import progress
-from storlets_test_utils import progress_ln
-from storlets_test_utils import progress_msg
-from storlets_test_utils import put_storlet_object
 
-'''------------------------------------------------------------------------'''
 # Test Constants
-IDENTITY_PATH_TO_BUNDLE = '../StorletSamples/IdentityStorlet/bin/'
+IDENTITY_PATH_TO_BUNDLE = '../../StorletSamples/IdentityStorlet/bin/'
 IDENTITY_STORLET_NAME = 'identitystorlet-1.0.jar'
 IDENTITY_STORLET_LOG_NAME = 'identitystorlet-1.0.log'
 IDENTITY_SOURCE_FILE = 'source.txt'
 IDENTITY_DEPS_NAMES = ['get42']
-
-'''------------------------------------------------------------------------'''
 
 
 def put_storlet_executable_dependencies(url, token):
@@ -54,8 +49,6 @@ def put_storlet_executable_dependencies(url, token):
         status = resp.get('status')
         assert (status == 200 or status == 201)
 
-'''------------------------------------------------------------------------'''
-
 
 def put_storlet_input_object(url, token):
     resp = dict()
@@ -69,10 +62,8 @@ def put_storlet_input_object(url, token):
     status = resp.get('status')
     assert (status == 200 or status == 201)
 
-'''------------------------------------------------------------------------'''
 
-
-def deploy_storlet(url, token):
+def deploy_identity_storlet(url, token):
     # No need to create containers every time
     # put_storlet_containers(url, token)
     put_storlet_object(url, token,
@@ -83,13 +74,10 @@ def deploy_storlet(url, token):
     put_storlet_executable_dependencies(url, token)
     put_storlet_input_object(url, token)
 
-'''------------------------------------------------------------------------'''
-
 
 def invoke_storlet_on_1GB_file(url, token):
     GBFile = open('/tmp/1GB_file', 'w')
     for _ in range(128):
-        progress()
         uploaded_content = ''.join('1' for _ in range(8 * 1024 * 1024))
         GBFile.write(uploaded_content)
     GBFile.close()
@@ -97,16 +85,12 @@ def invoke_storlet_on_1GB_file(url, token):
     headers = {'X-Run-Storlet': IDENTITY_STORLET_NAME}
     GBFile = open('/tmp/1GB_file', 'r')
     response = dict()
-    progress()
     c.put_object(url, token, 'myobjects', '1GBFile', GBFile,
                  1024 * 1024 * 1024, None, None, "application/octet-stream",
                  headers, None, None, None, response)
-    progress()
     status = response.get('status')
     assert (status == 200 or status == 201)
-    progress()
     os.remove('/tmp/1GB_file')
-    progress_ln()
 
 
 def invoke_storlet(url, token, op, params=None, global_params=None):
@@ -177,37 +161,34 @@ def invoke_storlet(url, token, op, params=None, global_params=None):
 
         assert(resp_headers['X-Object-Meta-Testkey'.lower()] == random_md)
 
-'''------------------------------------------------------------------------'''
 
+class TestIdentityStorlet(unittest.TestCase):
+    def setUp(self):
+        os_options = {'tenant_name': ACCOUNT}
+        self.url, self.token = c.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT
+                                          + "/v2.0", ACCOUNT + ":" + USER_NAME,
+                                          PASSWORD, os_options=os_options,
+                                          auth_version="2.0")
 
-def main():
-    os_options = {'tenant_name': ACCOUNT}
-    url, token = c.get_auth('http://' + AUTH_IP + ":" +
-                            AUTH_PORT + '/v2.0',
-                            ACCOUNT + ':' + USER_NAME,
-                            PASSWORD,
-                            os_options=os_options,
-                            auth_version='2.0')
+        deploy_identity_storlet(self.url, self.token)
 
-    print('Deploying Identity storlet and dependencies')
+    def test_put(self):
+        invoke_storlet(self.url, self.token, 'PUT')
 
-    deploy_storlet(url, token)
+    def test_put_1GB(self):
+        invoke_storlet_on_1GB_file(self.url, self.token)
 
-    print("Invoking Identity storlet on PUT")
-    invoke_storlet(url, token, 'PUT')
-    progress_msg("Invoking Identity storlet on 1GB file PUT")
-    invoke_storlet_on_1GB_file(url, token)
-    print("Invoking Identity storlet on PUT with execution of dependency")
-    invoke_storlet(url, token, 'PUT', {'execute': 'true'})
-    print("Invoking Identity storlet on PUT with double")
-    invoke_storlet(url, token, 'PUT', {'double': 'true'})
-    print("Invoking Identity storlet on GET")
-    invoke_storlet(url, token, 'GET')
-    print("Invoking Identity storlet on GET with double")
-    invoke_storlet(url, token, 'GET', {'double': 'true'})
-    print("Invoking Identity storlet on GET with execution of dependency")
-    invoke_storlet(url, token, 'GET', {'execute': 'true'})
+    def test_put_execute(self):
+        invoke_storlet(self.url, self.token, 'PUT', {'execute': 'true'})
 
-'''------------------------------------------------------------------------'''
-if __name__ == "__main__":
-    main()
+    def test_put_double(self):
+        invoke_storlet(self.url, self.token, 'PUT', {'double': 'true'})
+
+    def test_get(self):
+        invoke_storlet(self.url, self.token, 'GET')
+
+    def test_get_double(self):
+        invoke_storlet(self.url, self.token, 'GET', {'double': 'true'})
+
+    def test_get_execute(self):
+        invoke_storlet(self.url, self.token, 'GET', {'execute': 'true'})

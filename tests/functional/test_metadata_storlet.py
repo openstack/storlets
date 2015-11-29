@@ -1,4 +1,4 @@
-'''-------------------------------------------------------------------------
+'''----------------------------------------------------------------
 Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,24 +11,22 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
--------------------------------------------------------------------------'''
+----------------------------------------------------------------'''
 
+from __init__ import ACCOUNT
+from __init__ import AUTH_IP
+from __init__ import AUTH_PORT
+from __init__ import PASSWORD
+from __init__ import put_storlet_object
+from __init__ import USER_NAME
 from swiftclient import client as c
-from sys_test_params import ACCOUNT
-from sys_test_params import AUTH_IP
-from sys_test_params import AUTH_PORT
-from sys_test_params import PASSWORD
-from sys_test_params import USER_NAME
+import unittest
 
-from storlets_test_utils import put_storlet_object
-
-'''------------------------------------------------------------------------'''
 # Test Constants
-PATH_TO_BUNDLE = '../StorletSamples/TestMetadataStorlet/bin/'
+PATH_TO_BUNDLE = '../../StorletSamples/TestMetadataStorlet/bin/'
 STORLET_NAME = 'testmetadatastorlet-1.0.jar'
 STORLET_LOG_NAME = 'testmetadatastorlet-1.0.log'
 SOURCE_FILE = 'source.txt'
-'''------------------------------------------------------------------------'''
 
 
 def put_storlet_input_object(url, token):
@@ -52,8 +50,6 @@ def put_storlet_input_object(url, token):
     status = resp.get('status')
     assert (status == 200 or status == 201)
 
-'''------------------------------------------------------------------------'''
-
 
 def deploy_storlet(url, token):
     # No need to create containers every time
@@ -64,8 +60,6 @@ def deploy_storlet(url, token):
                        '',
                        'com.ibm.storlet.testmetadatastorlet.MetadataStorlet')
     put_storlet_input_object(url, token)
-
-'''------------------------------------------------------------------------'''
 
 
 def invoke_storlet(url, token, op, params=None, global_params=None):
@@ -96,24 +90,15 @@ def invoke_storlet(url, token, op, params=None, global_params=None):
         assert(original_headers['X-Object-Meta-override_key'.lower()] ==
                'new_value')
 
-'''------------------------------------------------------------------------'''
 
+class TestMetadataStorlet(unittest.TestCase):
+    def setUp(self):
+        os_options = {'tenant_name': ACCOUNT}
+        self.url, self.token = c.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT
+                                          + "/v2.0", ACCOUNT + ":" + USER_NAME,
+                                          PASSWORD, os_options=os_options,
+                                          auth_version="2.0")
+        deploy_storlet(self.url, self.token)
 
-def main():
-    os_options = {'tenant_name': ACCOUNT}
-    url, token = c.get_auth('http://' + AUTH_IP + ":"
-                            + AUTH_PORT + '/v2.0',
-                            ACCOUNT + ':' + USER_NAME,
-                            PASSWORD,
-                            os_options=os_options,
-                            auth_version='2.0')
-
-    print('Deploying storlet and dependencies')
-    deploy_storlet(url, token)
-
-    print("Invoking storlet on GET")
-    invoke_storlet(url, token, 'GET')
-
-'''------------------------------------------------------------------------'''
-if __name__ == "__main__":
-    main()
+    def test_metadata_get(self):
+        invoke_storlet(self.url, self.token, 'GET')
