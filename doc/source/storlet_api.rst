@@ -31,11 +31,9 @@ The Content-type of the response is (text/plain).
 
 ::
 
-        [
-            storlet1,
-            storlet2,
-            storlet3
-        ]
+            storlet1.jar
+            storlet2.jar
+            storlet3.jar
 
 
 Upload a New Storlet

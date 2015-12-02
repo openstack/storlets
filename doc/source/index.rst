@@ -18,6 +18,7 @@ Contents:
    docker_compute_engine
    invoking_storlets
    storlets_all_in_one
+   storlet_api
    storlets_docker_gateway
    storlets_installation_guide
    storlets_management
