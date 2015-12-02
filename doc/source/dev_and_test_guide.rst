@@ -45,8 +45,7 @@ To run the system tests follow the next steps:
 
 #. cd to the repo root
 #. run 'ant build_storlets'
-#. cd to SystemTests
-#. Edit the file sys_test_params.py and make sure that the following variables match the installation.
+#. Edit the file tests/functional/__init__.py and make sure that the following variables match the installation.
    If you have used the storlets all-in-one installation, this is already taken care of.
 
   - DEV_AUTH_IP - The IP of the Keystone authentication endpoint 
@@ -54,5 +53,5 @@ To run the system tests follow the next steps:
   - USER_NAME - The user name created for the account 
   - PASSWORD = The above user password
 
-#. run 'python sys_test.py'
+#. run ./.functests
 
