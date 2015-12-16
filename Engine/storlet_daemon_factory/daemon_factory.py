@@ -136,6 +136,12 @@ class daemon_factory(object):
             self.logger.debug('START_DAEMON:preparing arguments')
             # Setting two environmental variables
             # The path strings are corrupted if passed is pargs list below
+            if os.environ.get('CLASSPATH'):
+                str_dmn_clspth = os.environ['CLASSPATH'] + ':' \
+                    + str_dmn_clspth
+            if os.environ.get('LD_LIBRARY_PATH'):
+                str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' \
+                    + str_library_path
             os.environ['CLASSPATH'] = str_dmn_clspth
             os.environ['LD_LIBRARY_PATH'] = str_library_path
             pargs = [str('/usr/bin/java'),
