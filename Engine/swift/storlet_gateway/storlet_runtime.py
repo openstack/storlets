@@ -31,17 +31,12 @@ import json
 
 from SBusPythonFacade.SBus import SBus
 from SBusPythonFacade.SBusDatagram import SBusDatagram
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_LOGGER
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_OUTPUT_OBJECT
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_OUTPUT_OBJECT_METADATA
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_OUTPUT_TASK_ID
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_DAEMON_STATUS
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_EXECUTE
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_PING
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_START_DAEMON
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMON
+from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
+    SBUS_FD_LOGGER, SBUS_FD_OUTPUT_OBJECT, SBUS_FD_OUTPUT_OBJECT_METADATA, \
+    SBUS_FD_OUTPUT_TASK_ID
+from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL, \
+    SBUS_CMD_DAEMON_STATUS, SBUS_CMD_EXECUTE, SBUS_CMD_PING, \
+    SBUS_CMD_START_DAEMON, SBUS_CMD_STOP_DAEMON
 from storlet_middleware.storlet_common import StorletLogger
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
