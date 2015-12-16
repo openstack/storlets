@@ -21,19 +21,12 @@ Created on Feb 18, 2014
 
 import ConfigParser
 from eventlet import Timeout
-from storlet_common import StorletException
-from storlet_common import StorletTimeout
+from storlet_common import StorletException, StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
-from swift.common.swob import HTTPBadRequest
-from swift.common.swob import HTTPInternalServerError
-from swift.common.swob import HTTPUnauthorized
-from swift.common.swob import Request
-from swift.common.swob import Response
-from swift.common.swob import wsgify
-from swift.common.utils import config_true_value
-from swift.common.utils import get_logger
-from swift.common.utils import is_success
-from swift.common.utils import register_swift_info
+from swift.common.swob import HTTPBadRequest, HTTPInternalServerError, \
+    HTTPUnauthorized, Request, Response, wsgify
+from swift.common.utils import config_true_value, get_logger, is_success, \
+    register_swift_info
 from swift.proxy.controllers.base import get_account_info
 
 

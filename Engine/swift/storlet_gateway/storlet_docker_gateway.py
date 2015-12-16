@@ -25,11 +25,9 @@ import shutil
 
 from eventlet import Timeout
 from storlet_middleware.storlet_common import StorletGatewayBase
-from storlet_runtime import RunTimePaths
-from storlet_runtime import RunTimeSandbox
-from storlet_runtime import StorletInvocationGETProtocol
-from storlet_runtime import StorletInvocationPUTProtocol
-from storlet_runtime import StorletInvocationSLOProtocol
+from storlet_runtime import RunTimePaths, RunTimeSandbox, \
+    StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
+    StorletInvocationSLOProtocol
 from swift.common.internal_client import InternalClient as ic
 from swift.common.swob import Request
 from swift.common.utils import config_true_value
