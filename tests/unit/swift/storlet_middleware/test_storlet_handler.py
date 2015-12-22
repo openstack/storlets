@@ -37,7 +37,7 @@ class FakeApp(object):
             env, start_response)
 
 
-class TestStorletsMiddleware(unittest.TestCase):
+class TestStorletsHandler(unittest.TestCase):
     def setUp(self):
         self.got_statuses = []
 
