@@ -24,8 +24,7 @@ from eventlet import Timeout
 from storlet_common import StorletException, StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
 from swift.common.swob import HTTPBadRequest, HTTPException, \
-    HTTPInternalServerError, HTTPNotFound, HTTPUnauthorized, Request, \
-    Response, wsgify
+    HTTPInternalServerError, HTTPNotFound, Request, Response, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
@@ -55,7 +54,13 @@ class StorletHandlerMiddleware(object):
                 device, partition, account, container, obj = \
                     req.split_path(5, 5, rest_with_last=True)
                 version = '0'
-        except Exception as e:
+        except ValueError:
+            # TODO(kajinamit): Can we merge the following checking
+            #                  about the target here?
+            return req.get_response(self.app)
+
+        # The target should be object
+        if not (account and container and obj):
             return req.get_response(self.app)
 
         self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
@@ -64,8 +69,8 @@ class StorletHandlerMiddleware(object):
         storlet_execution = False
         if 'X-Run-Storlet' in req.headers:
             storlet_execution = True
-        if (storlet_execution is True and account and container and obj) or \
-                (container in self.storlet_containers and obj):
+
+        if storlet_execution or container in self.storlet_containers:
             gateway = self.gateway_module(self.gateway_conf,
                                           self.logger, self.app, version,
                                           account, container, obj)
@@ -123,11 +128,11 @@ class StorletHandlerMiddleware(object):
                                                         'False')
                     if not config_true_value(storlets_enabled):
                         self.logger.info('Account disabled for storlets')
-                        return HTTPBadRequest('Account disabled for storlets')
+                        raise HTTPBadRequest('Account disabled for storlets',
+                                             request=req)
 
                 if req.method == 'GET' and storlet_execution:
-                    if not gateway.authorizeStorletExecution(req):
-                        return HTTPUnauthorized('Storlet: no permission')
+                    gateway.authorizeStorletExecution(req)
 
                     # The get request may be a SLO object GET request.
                     # Simplest solution would be to invoke a HEAD
@@ -192,12 +197,9 @@ class StorletHandlerMiddleware(object):
 
                 elif req.method == 'PUT':
                     if (container in self.storlet_containers):
-                        ret = gateway.validateStorletUpload(req)
-                        if ret:
-                            return HTTPBadRequest(body=ret)
+                        gateway.validateStorletUpload(req)
                     else:
-                        if not gateway.authorizeStorletExecution(req):
-                            return HTTPUnauthorized('Storlet: no permissions')
+                        gateway.authorizeStorletExecution(req)
                     if storlet_execution:
                         gateway.augmentStorletRequest(req)
                         (out_md, app_iter) = \
@@ -210,13 +212,13 @@ class StorletHandlerMiddleware(object):
 
         except (StorletTimeout, ConnectionTimeout, Timeout) as e:
             StorletException.handle(self.logger, e)
-            return HTTPInternalServerError(body='Storlet execution timed out')
+            raise HTTPInternalServerError(body='Storlet execution timed out')
         except HTTPException as e:
             StorletException.handle(self.logger, e)
-            return e
+            raise
         except Exception as e:
             StorletException.handle(self.logger, e)
-            return HTTPInternalServerError(body='Storlet execution failed')
+            raise HTTPInternalServerError(body='Storlet execution failed')
 
         return req.get_response(self.app)
 

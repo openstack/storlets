@@ -29,7 +29,7 @@ from storlet_runtime import RunTimePaths, RunTimeSandbox, \
     StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
     StorletInvocationSLOProtocol
 from swift.common.internal_client import InternalClient as ic
-from swift.common.swob import Request
+from swift.common.swob import Request, HTTPBadRequest, HTTPUnauthorized
 from swift.common.utils import config_true_value
 
 
@@ -184,34 +184,30 @@ class StorletGatewayDocker(StorletGatewayBase):
         def __del__(self):
             self.close()
 
-    def _validateStorletUpload(self, req):
+    def _validate_storlet_upload(self, req):
         if (self.obj.find('-') < 0 or self.obj.find('.') < 0):
-            return 'Storlet name is incorrect'
+            raise HTTPBadRequest('Storlet name is incorrect', request=req)
 
-    def _validateDependencyUpload(self, req):
+    def _validate_dependency_upload(self, req):
         perm = req.headers. \
             get('X-Object-Meta-Storlet-Dependency-Permissions')
         if perm is not None:
             try:
-                perm_int = int(perm)
+                perm_int = int(perm, 8)
             except ValueError:
-                return 'Dependency permission is incorrect'
-            if perm_int / 100 < 6:
-                return 'The owner should have rw permission'
+                raise HTTPBadRequest('Dependency permission is incorrect',
+                                     request=req)
+            if (perm_int & int('600', 8)) != int('600', 8):
+                raise HTTPBadRequest('The owner hould have rw permission',
+                                     request=req)
 
     def validateStorletUpload(self, req):
-        ret = self._validate_mandatory_headers(req)
-        if ret:
-            return ret
+        self._validate_mandatory_headers(req)
 
         if (self.container == self.sconf['storlet_container']):
-            ret = self._validateStorletUpload(req)
+            self._validate_storlet_upload(req)
         elif (self.container == self.sconf['storlet_dependency']):
-            ret = self._validateDependencyUpload(req)
-        if ret:
-            return ret
-
-        return False
+            self._validate_dependency_upload(req)
 
     def authorizeStorletExecution(self, req):
         res, headers = self.verify_access(req.environ,
@@ -220,11 +216,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                                           self.sconf['storlet_container'],
                                           req.headers['X-Run-Storlet'])
         if not res:
-            return False
+            raise HTTPUnauthorized('Account disabled for storlets',
+                                   request=req)
 
         # keep the storlets headers for later use.
         self.storlet_metadata = headers
-        return True
 
     def augmentStorletRequest(self, req):
         if self.storlet_metadata:
@@ -362,8 +358,8 @@ class StorletGatewayDocker(StorletGatewayBase):
                 if md not in req.headers:
                     self.logger.info('Mandatory header ' +
                                      'is missing: {0}'.format(md))
-                    return 'Mandatory header is missing: {0}'.format(md)
-        return None
+                    raise HTTPBadRequest('Mandatory header is missing'
+                                         ': {0}'.format(md))
 
     def _fix_request_headers(self, req):
         # add to request the storlet metadata to be used in case the request
