@@ -198,9 +198,8 @@ class StorletHandlerMiddleware(object):
                 elif req.method == 'PUT':
                     if (container in self.storlet_containers):
                         gateway.validateStorletUpload(req)
-                    else:
-                        gateway.authorizeStorletExecution(req)
                     if storlet_execution:
+                        gateway.authorizeStorletExecution(req)
                         gateway.augmentStorletRequest(req)
                         (out_md, app_iter) = \
                             gateway.gatewayProxyPutFlow(req, container, obj)
