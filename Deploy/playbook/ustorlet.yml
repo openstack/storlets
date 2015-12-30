@@ -15,26 +15,26 @@
 
 - hosts: all
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   roles:
     - role: remove_docker
 
 - hosts: storlet-proxy:storlet-storage
   vars_files:
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   roles:
     - role: reconfigure_swift
       engine_install_dir: /tmp/swift/
 
 - hosts: storlet-proxy:storlet-storage
   vars_files:
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   roles:
     - role: remove_host_storlet_engine
 
 - hosts : docker
   vars_files:
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   roles:
     - role: remove_docker_registry
 

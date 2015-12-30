@@ -15,7 +15,7 @@
 
 - hosts: docker
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
     
   roles:
   - role: docker_base_jre_image

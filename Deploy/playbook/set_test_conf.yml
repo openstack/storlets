@@ -10,7 +10,7 @@
 
 - hosts: storlet-proxy:storlet-storage
   vars_files:
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   tasks:
     - replace: dest=/etc/swift/proxy-server.conf regexp='^storlet_execute_on_proxy_only.*$' replace='storlet_execute_on_proxy_only = {{ run_on_proxy }}' owner=swift group=swift mode=644
     - replace: dest=/etc/swift/object-server.conf regexp='^storlet_execute_on_proxy_only.*$' replace='storlet_execute_on_proxy_only = {{ run_on_proxy }}' owner=swift group=swift mode=644

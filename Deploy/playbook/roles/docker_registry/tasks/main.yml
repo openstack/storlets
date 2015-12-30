@@ -52,6 +52,9 @@
 - shell: chdir=/opt/docker-registry
          /bin/sed -i '/requests/d' requirements.txt
 
+- shell: chdir=/opt/docker-registry
+         /bin/sed -i '/glanceclient/d' requirements.txt
+
 - name: pip install the Docker repository service requirements
   pip:
     chdir: /opt/docker-registry

@@ -16,7 +16,7 @@
 - hosts: storlet-proxy:storlet-storage
      
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
 
   roles:
        - role: docker_client                                                

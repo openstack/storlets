@@ -15,7 +15,7 @@
 
 - hosts: storlet-mgmt
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
     
   roles:
   - role: create_default_tenant

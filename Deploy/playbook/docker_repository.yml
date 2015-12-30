@@ -15,20 +15,20 @@
 
 - hosts: docker
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
     
   roles:
   - role: docker_client
 
 - hosts: docker # TODO: This patch probably needs to propegate to all clients on all nodes. 
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
   tasks:
     - include: roles/docker_registry/tasks/patch_docker_configs.yml 
     
 - hosts: docker
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
     
   roles:
   - role: docker_registry

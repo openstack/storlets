@@ -15,7 +15,7 @@
 
 - hosts: storlet-proxy:storlet-storage:docker
   vars_files: 
-    - [ common.yml ]
+    - [ deploy/common.yml ]
     
   roles:
   - role: test_os_version
