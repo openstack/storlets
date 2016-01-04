@@ -13,73 +13,31 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-from __init__ import ACCOUNT
-from __init__ import AUTH_IP
-from __init__ import AUTH_PORT
-from __init__ import PASSWORD
-from __init__ import put_file_as_storlet_input_object
-from __init__ import put_storlet_object
-from __init__ import USER_NAME
 from swiftclient import client as c
-import unittest
-
-EXECDEP_PATH_TO_BUNDLE = '../../StorletSamples/ExecDepStorlet/bin/'
-EXECDEP_STORLET_NAME = 'execdepstorlet-1.0.jar'
-EXECDEP_STORLET_LOG_NAME = 'execdepstorlet-1.0.log'
-EXECDEP_JUNK_FILE = 'junk.txt'
-EXECDEP_DEPS_NAMES = ['get42']
+from __init__ import StorletFunctionalTest
 
 
-class TestExexDepStorlet(unittest.TestCase):
+class TestExecDepStorlet(StorletFunctionalTest):
     def setUp(self):
-        os_options = {'tenant_name': ACCOUNT}
-        self.url, self.token = c.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT
-                                          + "/v2.0", ACCOUNT + ":" + USER_NAME,
-                                          PASSWORD, os_options=os_options,
-                                          auth_version="2.0")
+        self.storlet_dir = 'ExecDepStorlet'
+        self.storlet_name = 'execdepstorlet-1.0.jar'
+        self.storlet_main = 'com.ibm.storlet.execdep.ExecDepStorlet'
+        self.storlet_log = 'execdepstorlet-1.0.log'
+        self.headers = None
+        self.storlet_file = 'junk.txt'
+        self.container = 'myobjects'
+        self.dep_names = ['get42']
+        super(TestExecDepStorlet, self).setUp()
 
-    def put_storlet_executable_dependencies(self):
-        resp = dict()
-        for d in EXECDEP_DEPS_NAMES:
-            metadata = {'X-Object-Meta-Storlet-Dependency-Version': '1',
-                        'X-Object-Meta-Storlet-Dependency-Permissions': '0755'}
-
-            f = open('%s/%s' % (EXECDEP_PATH_TO_BUNDLE, d), 'r')
-            c.put_object(self.url, self.token, 'dependency', d, f,
-                         content_type="application/octet-stream",
-                         headers=metadata,
-                         response_dict=resp)
-            f.close()
-            status = resp.get('status')
-            assert (status == 200 or status == 201)
-
-    def deploy_storlet(self):
-        # No need to create containers every time
-        # put_storlet_containers(url, token)
-        put_storlet_object(self.url, self.token,
-                           EXECDEP_STORLET_NAME,
-                           EXECDEP_PATH_TO_BUNDLE,
-                           ','.join(str(x) for x in EXECDEP_DEPS_NAMES),
-                           'com.ibm.storlet.execdep.ExecDepStorlet')
-        self.put_storlet_executable_dependencies()
-        put_file_as_storlet_input_object(self.url,
-                                         self.token,
-                                         EXECDEP_PATH_TO_BUNDLE,
-                                         EXECDEP_JUNK_FILE)
-
-    def invoke_storlet(self):
-        metadata = {'X-Run-Storlet': EXECDEP_STORLET_NAME}
+    def test_execdep(self):
+        headers = {'X-Run-Storlet': self.storlet_name}
         resp = dict()
         resp_headers, gf = c.get_object(self.url, self.token,
                                         'myobjects',
-                                        EXECDEP_JUNK_FILE,
+                                        self.storlet_file,
                                         response_dict=resp,
-                                        headers=metadata)
+                                        headers=headers)
 
-        assert 'x-object-meta-depend-ret-code' in resp_headers
-        assert resp_headers['x-object-meta-depend-ret-code'] == '42'
-        assert resp['status'] == 200
-
-    def test_execdep(self):
-        self.deploy_storlet()
-        self.invoke_storlet()
+        self.assertTrue('x-object-meta-depend-ret-code' in resp_headers)
+        self.assertTrue(resp_headers['x-object-meta-depend-ret-code'] == '42')
+        self.assertEqual(resp['status'], 200)

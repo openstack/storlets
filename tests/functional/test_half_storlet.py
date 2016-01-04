@@ -13,126 +13,99 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-from __init__ import ACCOUNT
-from __init__ import AUTH_IP
-from __init__ import AUTH_PORT
-from __init__ import PASSWORD
-from __init__ import put_storlet_object
-from __init__ import USER_NAME
 import random
 import string
 from swiftclient import client as c
-import unittest
+from __init__ import StorletFunctionalTest
 
 
-# Test Constants
-HALF_PATH_TO_BUNDLE = '../../StorletSamples/HalfStorlet/bin/'
-HALF_STORLET_NAME = 'halfstorlet-1.0.jar'
-HALF_SOURCE_FILE = 'source.txt'
-
-
-def put_storlet_input_object(url, token):
-    resp = dict()
-    metadata = {'X-Object-Meta-Testkey': 'tester'}
-    f = open('%s/%s' % (HALF_PATH_TO_BUNDLE, HALF_SOURCE_FILE), 'r')
-    c.put_object(url, token, 'myobjects', HALF_SOURCE_FILE, f,
-                 content_type="application/octet-stream",
-                 headers=metadata,
-                 response_dict=resp)
-    f.close()
-    status = resp.get('status')
-    assert (status == 200 or status == 201)
-
-
-def deploy_storlet(url, token):
-    # No need to create containers every time
-    # put_storlet_containers(url, token)
-    put_storlet_object(url, token,
-                       HALF_STORLET_NAME,
-                       HALF_PATH_TO_BUNDLE,
-                       '',
-                       'com.ibm.storlet.half.HalfStorlet')
-    put_storlet_input_object(url, token)
-
-
-def invoke_storlet(url, token, op, params=None, global_params=None,
-                   headers=None):
-    if params is not None:
-        querystring = ''
-        for key in params:
-            querystring += '%s=%s,' % (key, params[key])
-        querystring = querystring[:-1]
-    else:
-        querystring = None
-
-    metadata = {'X-Run-Storlet': HALF_STORLET_NAME}
-    if headers:
-        metadata.update(headers)
-
-    if op == 'GET':
-        # Get original object
-        original_headers, original_content = \
-            c.get_object(url, token, 'myobjects', HALF_SOURCE_FILE,
-                         response_dict=dict())
-        # print original_headers
-        file_length = int(original_headers['content-length'])
-        processed_headers, returned_content = \
-            c.get_object(url, token, 'myobjects', HALF_SOURCE_FILE,
-                         query_string=querystring, response_dict=dict(),
-                         headers=metadata, resp_chunk_size=file_length)
-        processed_content = ''
-        for chunk in returned_content:
-            if chunk:
-                processed_content += chunk
-
-        assert(original_headers['X-Object-Meta-Testkey'.lower()] ==
-               processed_headers['X-Object-Meta-Testkey'.lower()])
-        return processed_content
-
-    if op == 'PUT':
-        # PUT a random file
-        response = dict()
-        uploaded_content = ''.join(random.choice(string.ascii_uppercase +
-                                   string.digits) for _ in range(1024))
-        random_md = ''.join(random.choice(string.ascii_uppercase +
-                            string.digits) for _ in range(32))
-        # content_length = 1024
-        content_length = None
-        headers = {'X-Run-Storlet': HALF_STORLET_NAME,
-                   'X-Object-Meta-Testkey': random_md}
-        c.put_object(url, token, 'myobjects', 'half_random_source',
-                     uploaded_content, content_length, None, None,
-                     "application/octet-stream", headers, None, None,
-                     querystring, response)
-        resp_headers, saved_content = c.get_object(url, token, 'myobjects',
-                                                   'half_random_source',
-                                                   response_dict=dict())
-
-        if params is not None and params.get('double', None) == 'true':
-            assert(uploaded_content == saved_content[:1024])
-            assert(uploaded_content == saved_content[1024:])
-        else:
-            assert(uploaded_content == saved_content)
-
-        if params is not None and params.get('execute', None) is not None:
-            assert(resp_headers['X-Object-Meta-Execution result'.lower()] ==
-                   '42')
-
-        assert(resp_headers['X-Object-Meta-Testkey'.lower()] == random_md)
-
-
-class TestHalfIdentityStorlet(unittest.TestCase):
+class TestHalfIdentityStorlet(StorletFunctionalTest):
     def setUp(self):
-        os_options = {'tenant_name': ACCOUNT}
-        self.url, self.token = c.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT
-                                          + "/v2.0", ACCOUNT + ":" + USER_NAME,
-                                          PASSWORD, os_options=os_options,
-                                          auth_version='2.0')
-        deploy_storlet(self.url, self.token)
+        self.storlet_dir = 'HalfStorlet'
+        self.storlet_name = 'halfstorlet-1.0.jar'
+        self.storlet_main = 'com.ibm.storlet.half.HalfStorlet'
+        self.storlet_log = ''
+        self.headers = {'X-Object-Meta-Testkey': 'tester'}
+        self.storlet_file = 'source.txt'
+        self.container = 'myobjects'
+        self.dep_names = []
+        super(TestHalfIdentityStorlet, self).setUp()
+
+    def invoke_storlet(self, op, params=None, global_params=None,
+                       headers=None):
+        if params is not None:
+            querystring = ''
+            for key in params:
+                querystring += '%s=%s,' % (key, params[key])
+            querystring = querystring[:-1]
+        else:
+            querystring = None
+
+        req_headers = {'X-Run-Storlet': self.storlet_name}
+        if headers:
+            req_headers.update(headers)
+
+        if op == 'GET':
+            # Get original object
+            original_h, original_c = \
+                c.get_object(self.url, self.token, 'myobjects',
+                             self.storlet_file,
+                             response_dict=dict())
+            # print original_headers
+            file_length = int(original_h['content-length'])
+            processed_h, returned_c = \
+                c.get_object(self.url, self.token, 'myobjects',
+                             self.storlet_file,
+                             query_string=querystring, response_dict=dict(),
+                             headers=req_headers, resp_chunk_size=file_length)
+            processed_c = ''
+            for chunk in returned_c:
+                if chunk:
+                    processed_c += chunk
+
+            self.assertEqual(original_h['X-Object-Meta-Testkey'.lower()],
+                             processed_h['X-Object-Meta-Testkey'.lower()])
+            return processed_c
+
+        if op == 'PUT':
+            # PUT a random file
+            response = dict()
+            uploaded_content = ''.join(random.choice(string.ascii_uppercase +
+                                       string.digits) for _ in range(1024))
+            random_md = ''.join(random.choice(string.ascii_uppercase +
+                                string.digits) for _ in range(32))
+            # content_length = 1024
+            content_length = None
+            headers = {'X-Run-Storlet': self.storlet_name,
+                       'X-Object-Meta-Testkey': random_md}
+            c.put_object(self.url, self.token, self.container,
+                         'half_random_source',
+                         uploaded_content, content_length, None, None,
+                         "application/octet-stream", headers, None, None,
+                         querystring, response)
+            resp_headers, saved_content = c.get_object(self.url, self.token,
+                                                       'myobjects',
+                                                       'half_random_source',
+                                                       response_dict=dict())
+
+            if params is not None and params.get('double', None) == 'true':
+                self.assertEqual(uploaded_content, saved_content[:1024])
+                self.assertEqual(uploaded_content, saved_content[1024:])
+            else:
+                self.assertEqual(uploaded_content, saved_content)
+
+            if params is not None and params.get('execute', None) is not None:
+                self.assertEqual(
+                    resp_headers['X-Object-Meta-Execution result'.lower()],
+                    '42')
+
+            self.assertEqual(resp_headers['X-Object-Meta-Testkey'.lower()],
+                             random_md)
 
     def test_get(self):
-        assert (invoke_storlet(self.url, self.token, 'GET') == 'acegikmn')
+        res = self.invoke_storlet('GET')
+        self.assertEqual(res, 'acegikmn')
 
     def test_get_range(self):
-        assert (invoke_storlet(self.url, self.token, 'GET',
-                headers={'range': 'bytes=5-10'}) == 'fhj')
+        res = self.invoke_storlet('GET', headers={'range': 'bytes=5-10'})
+        self.assertEqual(res, 'fhj')

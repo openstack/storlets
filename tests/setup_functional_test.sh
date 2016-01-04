@@ -61,3 +61,7 @@ ansible-playbook -s -i deploy/hosts host_storlet_engine.yml
 sudo chmod -R 777 /opt/ibm
 echo "Running create_default_tenant playbook"
 ansible-playbook -i deploy/hosts create_default_tenant.yml
+
+cd -
+cp cluster_config.json-sample cluster_config.json
+sudo chown $USER:$USER cluster_config.json 
