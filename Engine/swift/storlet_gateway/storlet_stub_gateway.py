@@ -12,9 +12,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
+from storlet_middleware.storlet_common import StorletGatewayBase
 
 
-class StorletStubBase(object):
+class StorletGatewayStub(StorletGatewayBase):
 
     def __init__(self, storlet_conf, logger, app, version, account,
                  container, obj):
@@ -25,8 +26,8 @@ class StorletStubBase(object):
         self.container = container
         self.obj = obj
         self.storlet_conf = storlet_conf
-        self.storlet_metadata = None
-        self.storlet_timeout = int(self.storlet_conf['storlet_timeout'])
+        self.dummy_content = self.storlet_conf.get('dummy_content',
+                                                   'DUMMY_CONTENT')
 
     def validateStorletUpload(self, req):
         self.logger.debug("Storlet request validated")
@@ -36,14 +37,18 @@ class StorletStubBase(object):
         self.logger.debug("Storlet execution is authorized")
         return True
 
-    def augmentStorletRequest(self, req):
-        self.logger.debug("Storlet request augmeneted")
+    def dummy_invocation(self):
+        self.logger.debug("Dummy invocation is called")
+        return {}, [self.dummy_content]
 
-    def gatewayProxyPutFlow(self, sreq, container, obj):
-        raise NotImplementedError("Not implemented gatewayProxyPutFlow")
+    def augmentStorletRequest(self, request):
+        pass
 
-    def gatewayProxyGETFlow(self, req, container, obj, orig_resp):
-        raise NotImplementedError("Not implemented gatewayProxyGETFlow")
+    def gatewayProxyPutFlow(self, orig_request, container, obj):
+        return self.dummy_invocation()
 
-    def gatewayObjectGetFlow(self, req, sreq, container, obj):
-        raise NotImplementedError("Not implemented gatewayObjectGetFlow")
+    def gatewayProxySloFlow(self, request, container, obj, original_response):
+        return self.dummy_invocation()
+
+    def gatewayObjectGetFlow(self, request, container, obj, original_response):
+        return self.dummy_invocation()
