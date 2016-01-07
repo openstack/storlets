@@ -343,14 +343,14 @@ class StorletGatewayDocker(StorletGatewayBase):
     def _validate_mandatory_headers(self, req):
         mandatory_md = None
         if self.container in [self.sconf['storlet_container']]:
-            self.logger.info('PUT method for storlet dependency. Sanity check')
+            self.logger.info('PUT method for storlet container. Sanity check')
             mandatory_md = ['X-Object-Meta-Storlet-Language',
                             'X-Object-Meta-Storlet-Interface-Version',
                             'X-Object-Meta-Storlet-Dependency',
                             'X-Object-Meta-Storlet-Object-Metadata',
                             'X-Object-Meta-Storlet-Main']
         elif self.container in [self.sconf['storlet_dependency']]:
-            self.logger.info('PUT method for storlet container.  Sanity check')
+            self.logger.info('PUT method for storlet dependency. Sanity check')
             mandatory_md = ['X-Object-Meta-Storlet-Dependency-Version']
 
         if mandatory_md is not None:
