@@ -160,6 +160,56 @@ class TestStorletHandlerProxy(TestStorletsHandler):
                         get_fake_account_meta):
             get('/v1/AUTH_a/c/o')
 
+    def test_PUT_without_storlets(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(status='201 Created', request=req)(
+                    env, start_response)
+
+        def basic_put(path):
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
+            app = self.get_app(FakeApp(), self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+
+        for target in ('AUTH_a', 'AUTH_a/c', 'AUTH_a/c/o'):
+            path = join('/', 'v1', target)
+            basic_put(path)
+
+    def test_PUT_with_storlets(self):
+        class FakeApp(object):
+            def __init__(self):
+                self.req_body = []
+
+            def __call__(self, env, start_response):
+                if env['PATH_INFO'] == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
+                    return Response(status='200 OK')(env, start_response)
+                elif env['PATH_INFO'] == '/v1/AUTH_a/c/o':
+                    self.req_body.append(env['wsgi.input'])
+                    return Response(status='201 Created',
+                                    request=Request(env))(
+                        env, start_response)
+                else:
+                    raise Exception('Request for unexpected path')
+
+        def put(path):
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                                headers={'X-Run-Storlet': 'Storlet-1.0.jar'},
+                                body='FAKE APP')
+            fapp = FakeApp()
+            app = self.get_app(fapp, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+            self.assertEqual(['DUMMY_CONTENT'], fapp.req_body[-1])
+
+        def get_fake_account_meta(*args, **kwargs):
+            return {'meta': {'storlet-enabled': 'true'}}
+
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        get_fake_account_meta):
+            put('/v1/AUTH_a/c/o')
+
 
 class TestStorletHandlerObject(TestStorletsHandler):
     def setUp(self):
@@ -203,6 +253,7 @@ class TestStorletHandlerObject(TestStorletsHandler):
             self.assertEqual(resp, ['DUMMY_CONTENT'])
 
         get('/sda1/p/AUTH_a/c/o')
+
 
 if __name__ == '__main__':
     unittest.main()
