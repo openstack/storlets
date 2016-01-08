@@ -39,7 +39,8 @@ class TestStorletGatewayDocker(unittest.TestCase):
             'pipes_dir': '/home/docker_device/pipes/scopes',
             'storlet_timeout': '9',
             'storlet_container': 'storlet',
-            'storlet_dependency': 'dependency'
+            'storlet_dependency': 'dependency',
+            'reseller_prefix': 'AUTH'
         }
         self.logger = FakeLogger()
 
