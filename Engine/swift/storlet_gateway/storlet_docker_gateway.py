@@ -210,17 +210,13 @@ class StorletGatewayDocker(StorletGatewayBase):
             self._validate_dependency_upload(req)
 
     def authorizeStorletExecution(self, req):
-        res, headers = self.verify_access(req.environ,
-                                          self.version,
-                                          self.account,
-                                          self.sconf['storlet_container'],
-                                          req.headers['X-Run-Storlet'])
-        if not res:
-            raise HTTPUnauthorized('Account disabled for storlets',
-                                   request=req)
-
         # keep the storlets headers for later use.
-        self.storlet_metadata = headers
+        self.storlet_metadata = self._verify_access(
+            req,
+            self.version,
+            self.account,
+            self.sconf['storlet_container'],
+            req.headers['X-Run-Storlet'])
 
     def augmentStorletRequest(self, req):
         if self.storlet_metadata:
@@ -316,11 +312,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
 
-    def verify_access(self, env, version, account, container, object):
+    def _verify_access(self, req, version, account, container, object):
         self.logger.info('Verify access to {0}/{1}/{2}'.format(account,
                                                                container,
                                                                object))
-        new_env = dict(env)
+        new_env = dict(req.environ)
         if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
             del new_env['HTTP_TRANSFER_ENCODING']
         for key in CONDITIONAL_KEYS:
@@ -336,9 +332,10 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_req = Request.blank(new_env['PATH_INFO'], new_env)
 
         resp = storlet_req.get_response(self.app)
-        if resp.is_success:
-            return True, resp.headers
-        return False, []
+        if not resp.is_success:
+            raise HTTPUnauthorized('Account disabled for storlets',
+                                   request=req)
+        return resp.headers
 
     def _validate_mandatory_headers(self, req):
         mandatory_md = None
