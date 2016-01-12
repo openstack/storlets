@@ -79,38 +79,3 @@ class StorletGatewayBase(object):
 
     def gatewayObjectGetFlow(self, request, container, obj, original_response):
         raise NotImplementedError("Not implemented: gatewayObjectGetFlow")
-
-
-class StorletStubGateway(StorletGatewayBase):
-
-    def __init__(self, sconf, logger, app, version, account, container,
-                 obj):
-        self.logger = logger
-        self.app = app
-        self.version = version
-        self.account = account
-        self.container = container
-        self.obj = obj
-        self.sconf = sconf
-        self.dummy_stream = os.pipe()
-        self.dummy_content = sconf.get('dummy_content', 'aaaa')
-
-    def dummy_invocation(self):
-        os.write(self.dummy_stream[1], self.dummy_content)
-        os.close(self.dummy_stream[1])
-        return self.dummy_stream[0], {}
-
-    def authorizeStorletExecution(self, request):
-        return True
-
-    def augmentStorletRequest(self, request):
-        pass
-
-    def gatewayProxyPutFlow(self, orig_request, container, obj):
-        return self.dummy_invocation()
-
-    def gatewayProxySloFlow(self, request, container, obj, original_response):
-        return self.dummy_invocation()
-
-    def gatewayObjectGetFlow(self, request, container, obj, original_response):
-        return self.dummy_invocation()
