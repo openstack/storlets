@@ -210,6 +210,55 @@ class TestStorletHandlerProxy(TestStorletsHandler):
                         get_fake_account_meta):
             put('/v1/AUTH_a/c/o')
 
+    def test_PUT_storlet(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(status='201 Created', request=req)(
+                    env, start_response)
+
+        def put(path):
+            sheaders = {'X-Object-Meta-Storlet-Language': 'Java',
+                        'X-Object-Meta-Storlet-Interface-Version': '1.0',
+                        'X-Object-Meta-Storlet-Dependency': 'dependency',
+                        'X-Object-Meta-Storlet-Main':
+                            'org.openstack.storlet.Storlet'}
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                                headers=sheaders)
+            app = self.get_app(FakeApp(), self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+
+        def get_fake_account_meta(*args, **kwargs):
+            return {'meta': {'storlet-enabled': 'true'}}
+
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        get_fake_account_meta):
+            put('/v1/AUTH_a/storlet/storlet-1.0.jar')
+
+    def test_PUT_dependency(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(status='201 Created', request=req)(
+                    env, start_response)
+
+        def put(path):
+            sheaders = {'X-Object-Meta-Storlet-Dependency-Version': '1',
+                        'X-Object-Meta-Storlet-Dependency-Permissions': '0755'}
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                                headers=sheaders)
+            app = self.get_app(FakeApp(), self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+
+        def get_fake_account_meta(*args, **kwargs):
+            return {'meta': {'storlet-enabled': 'true'}}
+
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        get_fake_account_meta):
+            put('/v1/AUTH_a/dependency/dependency')
+
 
 class TestStorletHandlerObject(TestStorletsHandler):
     def setUp(self):
