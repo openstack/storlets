@@ -22,8 +22,9 @@ lib64
 # Installer logs
 pip-log.txt
 
-# Deploy created
-/Deploy/plabook/deploy
+# auto created for deploy
+Deploy/plabook/deploy/
+cluster_config.json
 
 # Unit test / coverage reports
 .coverage

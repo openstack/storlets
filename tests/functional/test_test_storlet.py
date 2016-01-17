@@ -13,20 +13,9 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-from __init__ import ACCOUNT
-from __init__ import AUTH_IP
-from __init__ import AUTH_PORT
-from __init__ import PASSWORD
-from __init__ import put_storlet_object
-from __init__ import USER_NAME
 import threading
-import unittest
-
 from swiftclient import client as c
-
-
-TEST_STORLET_NAME = 'test-10.jar'
-PATH_TO_STORLETS = '../../StorletSamples'
+from __init__ import StorletFunctionalTest
 
 
 class myTestThread (threading.Thread):
@@ -40,27 +29,26 @@ class myTestThread (threading.Thread):
         self.test_class.invokeTestStorlet("print", False)
 
 
-class TestTestStorlet(unittest.TestCase):
+class TestTestStorlet(StorletFunctionalTest):
     def setUp(self):
-        os_options = {'tenant_name': ACCOUNT}
-        self.url, self.token = c.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT
-                                          + "/v2.0", ACCOUNT + ":" + USER_NAME,
-                                          PASSWORD, os_options=os_options,
-                                          auth_version='2.0')
-        put_storlet_object(self.url,
-                           self.token,
-                           TEST_STORLET_NAME,
-                           "%s/TestStorlet/bin" % PATH_TO_STORLETS,
-                           '',
-                           'com.ibm.storlet.test.test1')
+        self.storlet_dir = 'TestStorlet'
+        self.storlet_name = 'test-10.jar'
+        self.storlet_main = 'com.ibm.storlet.test.test1'
+        self.storlet_log = ''
+        self.headers = None
+        self.storlet_file = ''
+        self.container = 'myobjects'
+        self.dep_names = []
+        super(TestTestStorlet, self).setUp()
+
         c.put_object(self.url,
                      self.token,
-                     'myobjects',
+                     self.container,
                      'test_object',
                      'some content')
 
     def invokeTestStorlet(self, op, withlog=False):
-        headers = {'X-Run-Storlet': TEST_STORLET_NAME}
+        headers = {'X-Run-Storlet': self.storlet_name}
         if withlog is True:
             headers['X-Storlet-Generate-Log'] = 'True'
 
@@ -78,21 +66,22 @@ class TestTestStorlet(unittest.TestCase):
                                                 'storletlog', 'test.log',
                                                 None, None, None, None,
                                                 headers)
-                assert resp_headers.get('status') == 200
+                self.assertEqual(resp_headers.get('status'), 200)
                 gf.read()
-                assert resp_headers.get('status') == 200
+                self.assertEqual(resp_headers.get('status') == 200)
 
             if op == 'print':
-                assert get_response_status == 200
-                assert 'op' in get_text
-                assert 'print' in get_text
-                assert 'param2' in get_text
-                assert 'val2' in get_text
+                self.assertEqual(get_response_status, 200)
+                self.assertTrue('op' in get_text)
+                self.assertTrue('print' in get_text)
+                self.assertTrue('param2' in get_text)
+                self.assertTrue('val2' in get_text)
 
         except Exception:
             get_response_status = resp_dict.get('status')
             if op == 'crash':
-                assert get_response_status >= 500 or get_response_status == 404
+                self.assertTrue(get_response_status >= 500 or
+                                get_response_status == 404)
 
     def test_print(self):
         self.invokeTestStorlet("print", False)
