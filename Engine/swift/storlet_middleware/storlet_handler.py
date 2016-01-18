@@ -47,20 +47,15 @@ class StorletHandlerMiddleware(object):
     @wsgify
     def __call__(self, req):
         try:
+            # storlet_handler deals only with objects
             if self.execution_server == 'proxy':
                 version, account, container, obj = req.split_path(
-                    2, 4, rest_with_last=True)
+                    4, 4, rest_with_last=True)
             else:
                 device, partition, account, container, obj = \
                     req.split_path(5, 5, rest_with_last=True)
                 version = '0'
         except ValueError:
-            # TODO(kajinamit): Can we merge the following checking
-            #                  about the target here?
-            return req.get_response(self.app)
-
-        # The target should be object
-        if not (account and container and obj):
             return req.get_response(self.app)
 
         self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
