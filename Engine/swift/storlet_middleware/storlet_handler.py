@@ -3,9 +3,7 @@ Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
-
 http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +13,11 @@ Limitations under the License.
 
 '''
 Created on Feb 18, 2014
-
 @author: Gil Vernik
 '''
 
 import ConfigParser
+import urllib
 from eventlet import Timeout
 from storlet_common import StorletException, StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
@@ -73,6 +71,10 @@ class StorletHandlerMiddleware(object):
             return req.get_response(self.app)
 
         try:
+            if storlet_execution:
+                header_parameters = \
+                    self._extract_parameters_from_headers(req)
+                req.params.update(header_parameters)
             if self.execution_server == 'object' and storlet_execution:
                 if req.method == 'GET':
                     self.logger.info('GET. Run storlet')
@@ -215,6 +217,24 @@ class StorletHandlerMiddleware(object):
             raise HTTPInternalServerError(body='Storlet execution failed')
 
         return req.get_response(self.app)
+
+    '''
+       Extract parameters for header (an alternative to parmeters through
+       the query string)
+       args:
+       req:       the request
+       Returned Value:
+       a dictionary with the header parameters
+    '''
+    def _extract_parameters_from_headers(self, req):
+        parameters = {}
+        for param in req.headers:
+            if param.lower().startswith('x-storlet-parameter'):
+                keyvalue = req.headers[param]
+                keyvalue = urllib.unquote(keyvalue)
+                [key, value] = keyvalue.split(':')
+                parameters[key] = value
+        return parameters
 
     '''
        Determines whether the request is a byte-range request
