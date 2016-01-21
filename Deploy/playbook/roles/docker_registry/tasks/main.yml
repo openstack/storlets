@@ -26,7 +26,7 @@
     
 - stat: path=/usr/bin/pip
   register: p
-- shell: wget https://raw.github.com/pypa/pip/master/contrib/get-pip.py
+- shell: wget https://raw.githubusercontent.com/pypa/pip/5d927de5cdc7c05b1afbdd78ae0d1b127c04d9d0/contrib/get-pip.py
   when: not p.stat.exists 
 - shell: python get-pip.py
   when: not p.stat.exists 
