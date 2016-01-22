@@ -107,6 +107,21 @@ To complete the rebase after manually merging the file(s) issue:
 After rebasing in any manner you may need to re-install storlets by going through the anisble script and building the various files.
 If using TOX, you may need to re-create the TOX environment using the 'tox -r ...' command.
 
+----------------
+Weekly Meetings:
+----------------
+https://wiki.openstack.org/wiki/Meetings/Storlets
+
+------------
+IRC channel:
+------------
+#openstack-storlets at irc.freenode.net
+
+=========
+IRC Logs:
+=========
+http://eavesdrop.openstack.org/irclogs/%23openstack-storlets/
+
 ----------
 Resources:
 ----------
