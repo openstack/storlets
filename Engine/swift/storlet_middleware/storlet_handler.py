@@ -218,15 +218,14 @@ class StorletHandlerMiddleware(object):
 
         return req.get_response(self.app)
 
-    '''
-       Extract parameters for header (an alternative to parmeters through
-       the query string)
-       args:
-       req:       the request
-       Returned Value:
-       a dictionary with the header parameters
-    '''
     def _extract_parameters_from_headers(self, req):
+        """
+        Extract parameters for header (an alternative to parmeters through
+        the query string)
+
+        :param req: the request
+        :returns: a dictionary with the header parameters
+        """
         parameters = {}
         for param in req.headers:
             if param.lower().startswith('x-storlet-parameter'):
@@ -236,29 +235,28 @@ class StorletHandlerMiddleware(object):
                 parameters[key] = value
         return parameters
 
-    '''
-       Determines whether the request is a byte-range request
-       args:
-       req:       the request
-    '''
-
     def _is_range_request(self, req):
+        """
+        Determines whether the request is a byte-range request
+
+        :param args:
+        :param req:       the request
+        """
         if 'Range' in req.headers:
             return True
         return False
 
-    '''
-       Determines from a GET request and its  associated response
-       if the object is a SLO
-       args:
-       req:       the request
-       resp:      the response
-       account:   the account as extracted from req
-       container: the response  as extracted from req
-       obj:       the response  as extracted from req
-    '''
-
     def _is_slo_get_request(self, req, resp, account, container, obj):
+        """
+        Determines from a GET request and its  associated response
+        if the object is a SLO
+
+        :param req:       the request
+        :param resp:      the response
+        :param account:   the account as extracted from req
+        :param container: the response  as extracted from req
+        :param obj:       the response  as extracted from req
+        """
         if req.method != 'GET':
             return False
         if req.params.get('multipart-manifest') == 'get':
