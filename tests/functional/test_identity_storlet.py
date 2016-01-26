@@ -32,16 +32,25 @@ class TestIdentityStorlet(StorletFunctionalTest):
         self.dep_names = ['get42']
         super(TestIdentityStorlet, self).setUp()
 
-    def invoke_storlet(self, op, params=None, global_params=None):
+    def invoke_storlet(self, op, params=None, global_params=None,
+                       header_parameters=False):
+        headers = {'X-Run-Storlet': self.storlet_name}
         if params is not None:
-            querystring = ''
-            for key in params:
-                querystring += '%s=%s,' % (key, params[key])
-            querystring = querystring[:-1]
+            if header_parameters:
+                querystring = None
+                count = 1
+                for key in params:
+                    headers['X-Storlet-Parameter-' + str(count)] = \
+                        key + ':' + params[key]
+                    count = count + 1
+            else:
+                querystring = ''
+                for key in params:
+                    querystring += '%s=%s,' % (key, params[key])
+                querystring = querystring[:-1]
         else:
             querystring = None
 
-        headers = {'X-Run-Storlet': self.storlet_name}
         if op == 'GET':
             # Get original object
             original_h, original_c = c.get_object(self.url, self.token,
@@ -79,8 +88,7 @@ class TestIdentityStorlet(StorletFunctionalTest):
             random_md = ''.join(random.choice(string.ascii_uppercase +
                                 string.digits) for _ in range(32))
             content_length = None
-            headers = {'X-Run-Storlet': self.storlet_name,
-                       'X-Object-Meta-Testkey': random_md}
+            headers['X-Object-Meta-Testkey'] = random_md
             c.put_object(self.url, self.token, self.container,
                          'identity_random_source',
                          uploaded_c, content_length, None, None,
@@ -128,15 +136,23 @@ class TestIdentityStorlet(StorletFunctionalTest):
 
     def test_put_execute(self):
         self.invoke_storlet('PUT', {'execute': 'true'})
+        self.invoke_storlet('PUT', {'execute': 'true'},
+                            header_parameters=True)
 
     def test_put_double(self):
         self.invoke_storlet('PUT', {'double': 'true'})
+        self.invoke_storlet('PUT', {'double': 'true'},
+                            header_parameters=True)
 
     def test_get(self):
         self.invoke_storlet('GET')
 
     def test_get_double(self):
         self.invoke_storlet('GET', {'double': 'true'})
+        self.invoke_storlet('GET', {'double': 'true'},
+                            header_parameters=True)
 
     def test_get_execute(self):
         self.invoke_storlet('GET', {'execute': 'true'})
+        self.invoke_storlet('GET', {'execute': 'true'},
+                            header_parameters=True)
