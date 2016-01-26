@@ -24,7 +24,6 @@ Contents:
    storlets_management
    writing_and_deploying_storlets
    installation
-   usage
    contributing
 
 Indices and tables
