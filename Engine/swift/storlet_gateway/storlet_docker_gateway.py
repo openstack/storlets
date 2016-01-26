@@ -24,7 +24,7 @@ import select
 import shutil
 
 from eventlet import Timeout
-from storlet_middleware.storlet_common import StorletGatewayBase
+from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 from storlet_runtime import RunTimePaths, RunTimeSandbox, \
     StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
     StorletInvocationSLOProtocol

@@ -12,7 +12,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
-from storlet_middleware.storlet_common import StorletGatewayBase
+from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 
 
 class StorletGatewayStub(StorletGatewayBase):
