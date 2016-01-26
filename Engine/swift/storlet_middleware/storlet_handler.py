@@ -247,7 +247,7 @@ class StorletHandlerMiddleware(object):
         self.logger.info('Verify if {0}/{1}/{2} is an SLO assembly object'.
                          format(account, container, obj))
 
-        if resp.status_int < 300 and resp.status_int >= 200:
+        if resp.is_success:
             for key in resp.headers:
                 if (key.lower() == 'x-static-large-object'
                         and config_true_value(resp.headers[key])):

@@ -336,7 +336,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_req = Request.blank(new_env['PATH_INFO'], new_env)
 
         resp = storlet_req.get_response(self.app)
-        if resp.status_int < 300 and resp.status_int >= 200:
+        if resp.is_success:
             return True, resp.headers
         return False, []
 
