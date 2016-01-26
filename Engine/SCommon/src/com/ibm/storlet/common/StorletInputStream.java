@@ -20,7 +20,9 @@
 package com.ibm.storlet.common;
 
 import java.io.FileDescriptor;
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.HashMap;
 
 public class StorletInputStream {
@@ -38,5 +40,12 @@ public class StorletInputStream {
 
 	public InputStream getStream() {
 		return stream;
+	}
+
+	public void close() {
+		try {
+			stream.close();
+		} catch (IOException e) {
+		}
 	}
 }

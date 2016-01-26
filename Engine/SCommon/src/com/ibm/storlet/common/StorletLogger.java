@@ -47,4 +47,11 @@ public class StorletLogger {
 		}
 	}
 
+	public void close() {
+		Flush();
+		try {
+			stream.close();
+		} catch (IOException e) {
+		}
+	}
 }
