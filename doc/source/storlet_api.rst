@@ -130,6 +130,18 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
     'X-Run-Storlet': {storlet_name}
     'X-Auth-Token': {authorization_token}
 
+One may also provide parameters to the storlet. There are two ways to send parameters:
+
+#. Through the URL query string. For instance: /v1/{account}/{container}/{object}?param1=val1&param2=val2
+
+#. Through the request headers. For instance:
+
+    ::
+
+        'X-Storlet-Parameter-1': 'param1:val1'
+        'X-Storlet-Parameter-2': 'param2:val2'
+
+Parameters that start with 'storlet\_' are not allowed. The 'storlet\_' prefix is reserved for internal system use.
 
 Invoke a storlet upon object upload
 -----------------------------------
@@ -145,3 +157,5 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
     'X-Run-Storlet': {storlet_name}
     'X-Auth-Token': {authorization_token}
 
+As with the invocation upon download, one may provide parameters to the storlet either through the URL query string or through
+the request headers.
