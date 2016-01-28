@@ -233,26 +233,19 @@ class RunTimeSandbox(object):
         return 0
 
     def wait(self):
-        do_wait = True
-        up = 0
-        to = Timeout(self.sandbox_wait_timeout)
         try:
-            while do_wait is True:
-                rc = self.ping()
-                if (rc != 1):
-                    time.sleep(self.sandbox_ping_interval)
-                    continue
-                else:
-                    to.cancel()
-                    do_wait = False
-                    up = 1
+            with Timeout(self.sandbox_wait_timeout):
+                while True:
+                    rc = self.ping()
+                    if (rc != 1):
+                        time.sleep(self.sandbox_ping_interval)
+                        continue
+                    else:
+                        return 1
         except Timeout:
             self.logger.info("wait for sandbox %s timedout" % self.account)
-            do_wait = False
-        finally:
-            to.cancel()
 
-        return up
+        return 0
 
     def restart(self):
         '''Restarts the account's sandbox
@@ -527,10 +520,10 @@ class StorletInvocationProtocol(object):
         try:
             with Timeout(self.timeout):
                 r, w, e = select.select([fd], [], [])
-        except Timeout as to:
+        except Timeout:
             if self.task_id:
                 self._cancel()
-            raise to
+            raise
         if fd in r:
             return
 
@@ -596,17 +589,12 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
             return
 
     def _write_with_timeout(self, writer, chunk):
-        timeout = Timeout(self.timeout)
         try:
-            writer.write(chunk)
-        except Timeout as t:
-            if t is timeout:
-                writer.close()
-                raise t
-        except Exception as e:
-            raise e
-        finally:
-            timeout.cancel()
+            with Timeout(self.timeout):
+                writer.write(chunk)
+        except Timeout:
+            writer.close()
+            raise
 
     def communicate(self):
         self.storlet_logger = StorletLogger(self.storlet_logger_path,
@@ -616,8 +604,8 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
         self._prepare_invocation_descriptors()
         try:
             self._invoke()
-        except Exception as e:
-            raise e
+        except Exception:
+            raise
         finally:
             self._close_remote_side_descriptors()
             self.storlet_logger.close()

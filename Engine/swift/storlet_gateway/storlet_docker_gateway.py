@@ -136,20 +136,17 @@ class StorletGatewayDocker(StorletGatewayBase):
             return self
 
         def read_with_timeout(self, size):
-            timeout = Timeout(self.timeout)
             try:
-                chunk = os.read(self.obj_data, size)
-            except Timeout as t:
-                if t is timeout:
-                    if self.cancel_func:
-                        self.cancel_func()
-                    self.close()
-                    raise t
-            except Exception as e:
+                with Timeout(self.timeout):
+                    chunk = os.read(self.obj_data, size)
+            except Timeout:
+                if self.cancel_func:
+                    self.cancel_func()
                 self.close()
-                raise e
-            finally:
-                timeout.cancel()
+                raise
+            except Exception:
+                self.close()
+                raise
 
             return chunk
 
