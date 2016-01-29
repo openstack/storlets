@@ -62,6 +62,8 @@ Few notes:
 
 #. For an 'all-in-one' type of installation, one can specify 127.0.0.1 in all sections.
 #. If all hosts have the same ssh user and password one can use ansible's group_vars/all
+#. Currently, keystoneclient should be installed in all swift nodes, but this limitation will be addressed in the future.
+#. It is recommended that the memcache servers on the proxy servers would be accessible from the storage nodes.
 
 common.yml
 ==========
