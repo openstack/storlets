@@ -22,6 +22,7 @@ from swift.common.swob import Response
 import unittest
 
 
+# TODO(takashi): take these values from config file
 DEFAULT_CONFIG = {
     'storlet_container': 'storlet',
     'storlet_dependency': 'dependency',
