@@ -56,13 +56,13 @@ The API is made of:
 
 
 class DockerStorletRequest(object):
-    '''The StorletRequest class represents a request to be processed by the
-
+    """
+    The StorletRequest class represents a request to be processed by the
     storlet the request is derived from the Swift request and
     essentially consists of:
     1. A data stream to be processed
     2. Metadata identifying the stream
-    '''
+    """
 
     def user_metadata(self, headers):
         metadata = {}
@@ -371,11 +371,12 @@ class StorletGatewayDocker(StorletGatewayBase):
                 req.headers['X-Storlet-' + key] = val
 
     def _add_system_params(self, params):
-        '''Adds Storlet engine specific parameters to the invocation
+        """
+        Adds Storlet engine specific parameters to the invocation
 
         currently, this consists only of the execution path of the
         Storlet within the Docker container.
-        '''
+        """
         params['storlet_execution_path'] = self. \
             paths.sbox_storlet_exec(self.idata['storlet_main_class'])
 
@@ -433,7 +434,8 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise e
 
     def bring_from_cache(self, obj_name, is_storlet):
-        '''Auxiliary function that:
+        """
+        Auxiliary function that:
 
         (1) Brings from Swift obj_name, whether this is a
             storlet or a storlet dependency.
@@ -441,8 +443,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         If this is a Storlet then also validates that the cache is updated
         with most recent copy of the Storlet compared to the copy residing in
         Swift.
-        Retunrs wheather the Docker container was updated with obj_name
-        '''
+
+        :returns: Wheather the Docker container was updated with obj_name
+        """
         # Determine the cache we are to work with
         # e.g. dependency or storlet
         if not is_storlet:
@@ -536,13 +539,15 @@ class StorletGatewayDocker(StorletGatewayBase):
         return update_docker
 
     def update_docker_container_from_cache(self):
-        '''Iterates over the storlet name and its dependencies appearing
+        """
+        Iterates over the storlet name and its dependencies appearing
 
         in the invocation data and make sure they are brought to the
         local cache, and from there to the Docker container.
         Uses the bring_from_cache auxiliary function.
-        Returns True if the Docker container was updated
-        '''
+
+        :returns: True if the Docker container was updated
+        """
         # where at the host side, reside the storlet containers
         storlet_path = self.paths.host_storlet_prefix()
         if not os.path.exists(storlet_path):

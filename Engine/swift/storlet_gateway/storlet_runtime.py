@@ -48,7 +48,8 @@ Sandbox API
 
 
 class RunTimePaths(object):
-    '''The Storlet Engine need to be access stuff located in many paths:
+    """
+    The Storlet Engine need to be access stuff located in many paths:
 
     1. The various communication channels represented as pipes in the
        filesystem
@@ -100,7 +101,7 @@ class RunTimePaths(object):
     ----
     Logs are located in paths of the form:
     <log_dir>/<account>/<storlet_name>.log
-    '''
+    """
 
     def __init__(self, account, conf):
         self.account = account
@@ -170,7 +171,8 @@ a re-usable per account sandbox
 
 
 class RunTimeSandbox(object):
-    '''The RunTimeSandbox represents a re-usable per account sandbox.
+    """
+    The RunTimeSandbox represents a re-usable per account sandbox.
 
     The sandbox is re-usable in the sense that it can run several storlet
     daemons.
@@ -182,7 +184,7 @@ class RunTimeSandbox(object):
     start_storlet_daemon - start a daemon for a given storlet
     stop_storlet_daemon - stop a daemon of a given storlet
     get_storlet_daemon_status - test if a given storlet daemon is running
-    '''
+    """
 
     def __init__(self, account, conf, logger):
         self.paths = RunTimePaths(account, conf)
@@ -255,13 +257,12 @@ class RunTimeSandbox(object):
         return up
 
     def restart(self):
-        '''Restarts the account's sandbox
+        """
+        Restarts the account's sandbox
 
-        Returned value:
-        True - If the sandbox was started successfully
-        False - Otherwise
-
-        '''
+        :returns: True - If the sandbox was started successfully
+                  False - Otherwise
+        """
         # Extract the account's ID from the account
         if self.account.lower().startswith('auth_'):
             account_id = self.account[len('auth_'):]
