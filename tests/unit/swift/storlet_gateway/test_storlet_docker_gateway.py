@@ -73,8 +73,8 @@ class TestStorletGatewayDocker(unittest.TestCase):
         a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
         c = 'storlet'
         o = 'storlet-1.0.jar'
-        path = '/'.join([a, c, o])
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        path = '/'.join(['/v1', a, c, o])
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
 
         # sufficient headers
@@ -100,8 +100,8 @@ class TestStorletGatewayDocker(unittest.TestCase):
         a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
         c = 'dependency'
         o = 'dep_file'
-        path = '/'.join([a, c, o])
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        path = '/'.join(['/v1', a, c, o])
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
 
         # sufficient headers
@@ -118,33 +118,33 @@ class TestStorletGatewayDocker(unittest.TestCase):
 
     def test_validate_storlet_upload(self):
         a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
-        c = 'storlet'
+        c = self.sconf['storlet_container']
 
         # correct name
         o = 'storlet-1.0.jar'
-        path = '/'.join([a, c, o])
+        path = '/'.join(['/v1', a, c, o])
         req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         gw._validate_storlet_upload(req)
 
         # wrong name
         o = 'storlet.jar'
-        path = '/'.join([a, c, o])
+        path = '/'.join(['/v1', a, c, o])
         req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_storlet_upload, req)
 
     def test_validate_dependency_upload(self):
         a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
-        c = 'dependency'
+        c = self.sconf['storlet_dependency']
         o = 'dep_file'
-        path = '/'.join([a, c, o])
+        path = '/'.join(['/v1', a, c, o])
 
         # w/o dependency parameter
         req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         gw._validate_dependency_upload(req)
 
@@ -153,7 +153,7 @@ class TestStorletGatewayDocker(unittest.TestCase):
             path,
             environ={'REQUEST_METHOD': 'PUT'},
             headers={'x-object-meta-storlet-dependency-permissions': '755'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         gw._validate_dependency_upload(req)
 
@@ -162,7 +162,7 @@ class TestStorletGatewayDocker(unittest.TestCase):
             path,
             environ={'REQUEST_METHOD': 'PUT'},
             headers={'x-object-meta-storlet-dependency-permissions': '400'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)
 
@@ -171,7 +171,7 @@ class TestStorletGatewayDocker(unittest.TestCase):
             path,
             environ={'REQUEST_METHOD': 'PUT'},
             headers={'x-object-meta-storlet-dependency-permissions': 'foo'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)
 
@@ -179,9 +179,94 @@ class TestStorletGatewayDocker(unittest.TestCase):
             path,
             environ={'REQUEST_METHOD': 'PUT'},
             headers={'x-object-meta-storlet-dependency-permissions': '888'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 1.0,
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)
+
+    def test_authorizeStorletExecution(self):
+        a = 'a'
+        c = 'c'
+        o = 'o'
+        so = 'storlets-1.0.jar'
+        path = '/'.join(['/v1', a, c, o])
+
+        sheaders = {
+            'X-Object-Meta-Storlet-Language': 'java',
+            'X-Object-Meta-Storlet-Interface-Version': '1.0',
+            'X-Object-Meta-Storlet-Dependency': 'dep_file',
+            'X-Object-Meta-Storlet-Object-Metadata': 'no'}
+
+        class FakeApp200(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(request=req, headers=sheaders)(
+                    env, start_response)
+
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp200(), 'v1',
+                                  a, c, o)
+        env = {'REQUEST_METHOD': 'GET'}
+        req = Request.blank(path, environ=env,
+                            headers={'X-Run-Storlet': so})
+        gw.authorizeStorletExecution(req)
+        for key in sheaders.keys():
+            self.assertEqual(sheaders[key], gw.storlet_metadata[key])
+
+    def test_verify_access(self):
+        a = 'a'
+        c = 'c'
+        o = 'o'
+        sc = self.sconf['storlet_container']
+        so = 'storlets-1.0.jar'
+        path = '/'.join(['/v1', a, c, o])
+
+        sheaders = {
+            'X-Object-Meta-Storlet-Language': 'java',
+            'X-Object-Meta-Storlet-Interface-Version': '1.0',
+            'X-Object-Meta-Storlet-Dependency': 'dep_file',
+            'X-Object-Meta-Storlet-Object-Metadata': 'no'}
+
+        class FakeApp200(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(request=req, headers=sheaders)(
+                    env, start_response)
+
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp200(), 'v1',
+                                  a, c, o)
+        env = {'REQUEST_METHOD': 'GET'}
+        req = Request.blank(path, environ=env,
+                            headers={'X-Run-Storlet': so})
+        headers = gw._verify_access(req, 'v1', a, sc, so)
+        for key in sheaders.keys():
+            self.assertEqual(sheaders[key], headers[key])
+
+        class FakeApp401(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(request=req, status='401 Unauthorized')(
+                    env, start_response)
+
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp401(), 'v1',
+                                  a, c, o)
+        env = {'REQUEST_METHOD': 'GET'}
+        req = Request.blank(path, environ=env,
+                            headers={'X-Run-Storlet': so})
+        self.assertRaisesWithStatus(401, gw._verify_access, req, 'v1',
+                                    a, sc, so)
+
+        class FakeApp404(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(request=req, status='404 Not Found')(
+                    env, start_response)
+
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp404(), 'v1',
+                                  a, c, o)
+        env = {'REQUEST_METHOD': 'GET'}
+        req = Request.blank(path, environ=env,
+                            headers={'X-Run-Storlet': so})
+        self.assertRaisesWithStatus(401, gw._verify_access, req, 'v1',
+                                    a, sc, so)
 
 
 if __name__ == '__main__':
