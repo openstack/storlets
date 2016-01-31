@@ -26,6 +26,7 @@ import com.ibm.storlet.common.*;
 
 import java.util.HashMap;
 import java.util.ArrayList;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import java.util.concurrent.Future;
@@ -95,6 +96,26 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 	}
 
 	/*------------------------------------------------------------------------
+	 * close streams
+	 * */
+	private void closeStorletInputStreams(){
+		for(StorletInputStream stream : inStreams_){
+			stream.close();
+		}
+	}
+
+	private void closeStorletOutputStreams(){
+		for(StorletOutputStream stream: outStreams_){
+			stream.close();
+		}
+	}
+
+	private void closeStorletStreams(){
+		closeStorletInputStreams();
+		closeStorletOutputStreams();
+	}
+
+	/*------------------------------------------------------------------------
 	 * run
 	 * 
 	 * Actual storlet invocation
@@ -112,7 +133,10 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 		} catch (StorletException e) {
 			storletLogger_.emitLog(e.getMessage());
 		} finally {
-			storletLogger_.Flush();
+			storletLogger_.close();
+
+			// We make sure all streams are closed
+			closeStorletStreams();
 		}
 	}
 }

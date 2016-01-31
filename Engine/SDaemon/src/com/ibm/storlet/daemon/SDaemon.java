@@ -234,6 +234,11 @@ public class SDaemon {
 				logger_.trace(strStorletName_ + ": problem returning taskId "
 						+ taskId + ": " + e.toString());
 				bStatus = false;
+			} finally {
+				try{
+					taskIdOut.close();
+				} catch (IOException e) {
+				}
 			}
 		} else if (sTask instanceof SDescriptorTask) {
 			logger_.trace(strStorletName_ + ": Got Descriptor command");

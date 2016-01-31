@@ -47,6 +47,13 @@ public class StorletObjectOutputStream extends StorletOutputStream {
 		return MetadataStream_;
 	}
 
+	public void closeMD(){
+		try{
+			MetadataStream_.close();
+		} catch (IOException e) {
+		}
+	}
+
 	@SuppressWarnings("unchecked")
 	public void setMetadata(Map<String, String> md) throws StorletException {
 		JSONObject jobj = new JSONObject();
@@ -59,9 +66,10 @@ public class StorletObjectOutputStream extends StorletOutputStream {
 		}
 		try {
 			MetadataStream_.write(jobj.toString().getBytes());
-			MetadataStream_.close();
 		} catch (IOException e) {
 			throw new StorletException("Failed to set metadata " + e.toString());
+		} finally {
+			closeMD();
 		}
 	}
 }

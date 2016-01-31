@@ -21,6 +21,7 @@ package com.ibm.storlet.common;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 
@@ -35,5 +36,12 @@ public class StorletOutputStream {
 
 	public HashMap<String, String> getMetadata() {
 		return metadata;
+	}
+
+	public void close(){
+		try{
+			stream.close();
+		} catch (IOException e) {
+		}
 	}
 }
