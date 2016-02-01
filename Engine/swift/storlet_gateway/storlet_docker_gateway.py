@@ -47,6 +47,7 @@ The API is made of:
     validateStorletUpload
     authorizeStorletExecution
     augmentStorletRequest
+    gatewayObjectGetFlow
     gatewayProxyPutFlow
     gatewayProxyGetFlow
 (3) parse_gateway_conf parses the docker gateway specific configuration. While
@@ -252,7 +253,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
 
-    def gatewayProxyGETFlow(self, req, container, obj, orig_resp):
+    def gatewayProxyGetFlow(self, req, container, obj, orig_resp):
         # Flow for running the GET computation on the proxy
         sreq = StorletSLORequest(self.account, orig_resp, req.params)
 

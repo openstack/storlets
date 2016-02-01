@@ -155,7 +155,7 @@ class StorletHandlerMiddleware(object):
                         # SLO / proxy only  case:
                         # storlet to be invoked now at proxy side:
                         (out_md, app_iter) = \
-                            gateway.gatewayProxyGETFlow(req, container, obj,
+                            gateway.gatewayProxyGetFlow(req, container, obj,
                                                         original_resp)
 
                         #  adapted from non SLO GET flow

@@ -47,7 +47,7 @@ class StorletGatewayStub(StorletGatewayBase):
     def gatewayProxyPutFlow(self, orig_request, container, obj):
         return self.dummy_invocation()
 
-    def gatewayProxySloFlow(self, request, container, obj, original_response):
+    def gatewayProxyGetFlow(self, request, container, obj, original_response):
         return self.dummy_invocation()
 
     def gatewayObjectGetFlow(self, request, container, obj, original_response):

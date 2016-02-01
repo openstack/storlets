@@ -52,7 +52,7 @@ class TestStorletsHandler(unittest.TestCase):
         class FakeApp(object):
             def __call__(self, env, start_response):
                 req = Request(env)
-                return Response(request=req, body='FAKE APP')(
+                return Response(body='FAKE APP', request=req)(
                     env, start_response)
 
         try:
@@ -70,7 +70,7 @@ class TestStorletHandlerProxy(TestStorletsHandler):
         class FakeApp(object):
             def __call__(self, env, start_response):
                 req = Request(env)
-                return Response(request=req, body='FAKE APP')(
+                return Response(body='FAKE APP', request=req)(
                     env, start_response)
 
         def basic_get(path):
@@ -87,10 +87,12 @@ class TestStorletHandlerProxy(TestStorletsHandler):
     def test_GET_with_storlets(self):
         class FakeApp(object):
             def __call__(self, env, start_response):
-                if env['PATH_INFO'] == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
-                    return Response(status='200 OK')(env, start_response)
-                elif env['PATH_INFO'] == '/v1/AUTH_a/c/o':
-                    return Response(request=Request(env), body='FAKE RESULT')(
+                req = Request(env)
+                if req.path == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
+                    return Response(request=req)(
+                        env, start_response)
+                elif req.path == '/v1/AUTH_a/c/o':
+                    return Response(body='FAKE RESULT', request=req)(
                         env, start_response)
                 else:
                     raise Exception('Request for unexpected path')
@@ -113,13 +115,7 @@ class TestStorletHandlerProxy(TestStorletsHandler):
     def test_GET_with_storlets_disabled_account(self):
         class FakeApp(object):
             def __call__(self, env, start_response):
-                if env['PATH_INFO'] == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
-                    return Response(status='200 OK')(env, start_response)
-                elif env['PATH_INFO'] == '/v1/AUTH_a/c/o':
-                    return Response(request=Request(env), body='FAKE RESULT')(
-                        env, start_response)
-                else:
-                    raise Exception('Request for unexpected path')
+                raise Exception('Request for unexpected path')
 
         def get(path):
             req = Request.blank(path, environ={'REQUEST_METHOD': 'GET'},
@@ -138,10 +134,12 @@ class TestStorletHandlerProxy(TestStorletsHandler):
     def test_GET_with_storlets_object_404(self):
         class FakeApp(object):
             def __call__(self, env, start_response):
-                if env['PATH_INFO'] == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
-                    return Response(status='200 OK')(env, start_response)
-                elif env['PATH_INFO'] == '/v1/AUTH_a/c/o':
-                    return Response(status='404 Not Found')(
+                req = Request(env)
+                if req.path == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
+                    return Response(status='200 OK', request=req)(
+                        env, start_response)
+                elif req.path == '/v1/AUTH_a/c/o':
+                    return Response(status='404 Not Found', request=req)(
                         env, start_response)
                 else:
                     raise Exception('Request for unexpected path')
@@ -159,6 +157,62 @@ class TestStorletHandlerProxy(TestStorletsHandler):
         with mock.patch('storlet_middleware.storlet_handler.get_account_info',
                         get_fake_account_meta):
             get('/v1/AUTH_a/c/o')
+
+    def test_GET_slo_without_storlets(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                if req.path == '/v1/AUTH_a/c/slo_manifest':
+                    return Response(
+                        body='FAKE APP',
+                        headers={'x-static-large-object': 'True'},
+                        request=req)(
+                        env, start_response)
+                else:
+                    raise Exception('Request for unexpected path')
+
+        def get(path):
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'GET'})
+            app = self.get_app(FakeApp(), self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual(resp, ['FAKE APP'])
+
+        def get_fake_account_meta(*args, **kwargs):
+            return {'meta': {}}
+
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        get_fake_account_meta):
+            get('/v1/AUTH_a/c/slo_manifest')
+
+    def test_GET_slo_with_storlets(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                if req.path == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
+                    return Response(request=req)(
+                        env, start_response)
+                elif req.path == '/v1/AUTH_a/c/slo_manifest':
+                    return Response(
+                        body='FAKE APP',
+                        headers={'x-static-large-object': 'True'},
+                        request=req)(
+                        env, start_response)
+                else:
+                    raise Exception('Request for unexpected path')
+
+        def get(path):
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'GET'},
+                                headers={'X-Run-Storlet': 'Storlet-1.0.jar'})
+            app = self.get_app(FakeApp(), self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual(resp, ['DUMMY_CONTENT'])
+
+        def get_fake_account_meta(*args, **kwargs):
+            return {'meta': {'storlet-enabled': 'true'}}
+
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        get_fake_account_meta):
+            get('/v1/AUTH_a/c/slo_manifest')
 
     def test_PUT_without_storlets(self):
         class FakeApp(object):
@@ -183,12 +237,13 @@ class TestStorletHandlerProxy(TestStorletsHandler):
                 self.req_body = []
 
             def __call__(self, env, start_response):
-                if env['PATH_INFO'] == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
-                    return Response(status='200 OK')(env, start_response)
-                elif env['PATH_INFO'] == '/v1/AUTH_a/c/o':
-                    self.req_body.append(env['wsgi.input'])
-                    return Response(status='201 Created',
-                                    request=Request(env))(
+                req = Request(env)
+                if req.path == '/v1/AUTH_a/storlets/Storlet-1.0.jar':
+                    return Response(status='200 OK', request=req)(
+                        env, start_response)
+                elif req.path == '/v1/AUTH_a/c/o':
+                    self.req_body.append(req.body_file)
+                    return Response(status='201 Created', request=req)(
                         env, start_response)
                 else:
                     raise Exception('Request for unexpected path')
@@ -300,6 +355,53 @@ class TestStorletHandlerObject(TestStorletsHandler):
             resp = app(req.environ, self.start_response)
             self.assertEqual('200 OK', self.got_statuses[-1])
             self.assertEqual(resp, ['DUMMY_CONTENT'])
+
+        get('/sda1/p/AUTH_a/c/o')
+
+    def test_GET_slo_manifest_with_storlets(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(
+                    request=req,
+                    headers={'X-Static-Large-Object': 'True'},
+                    body='FAKE MANIFEST')(
+                    env, start_response)
+
+        def get(path):
+            print(self.conf['execution_server'])
+            req = Request.blank(
+                path, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Backend-Storlet-Policy-Index': '0',
+                         'X-Run-Storlet': 'Storlet-1.0.jar'})
+            app = self.get_app(FakeApp(), self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual('200 OK', self.got_statuses[-1])
+            self.assertEqual(resp, ['FAKE MANIFEST'])
+
+        get('/sda1/p/AUTH_a/c/o')
+
+    def test_GET_slo_segment_with_storlets(self):
+        class FakeApp(object):
+            def __call__(self, env, start_response):
+                req = Request(env)
+                return Response(
+                    request=req,
+                    headers={'X-Static-Large-Object': 'True'},
+                    body='FAKE APP')(
+                    env, start_response)
+
+        def get(path):
+            print(self.conf['execution_server'])
+            req = Request.blank(
+                path, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Backend-Storlet-Policy-Index': '0',
+                         'multipart-manifest': 'get',
+                         'X-Run-Storlet': 'Storlet-1.0.jar'})
+            app = self.get_app(FakeApp(), self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual('200 OK', self.got_statuses[-1])
+            self.assertEqual(resp, ['FAKE APP'])
 
         get('/sda1/p/AUTH_a/c/o')
 
