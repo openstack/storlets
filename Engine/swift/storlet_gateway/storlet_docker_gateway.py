@@ -371,6 +371,8 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         currently, this consists only of the execution path of the
         Storlet within the Docker container.
+
+        :params params: Request parameters
         """
         params['storlet_execution_path'] = self. \
             paths.sbox_storlet_exec(self.idata['storlet_main_class'])
@@ -439,6 +441,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         with most recent copy of the Storlet compared to the copy residing in
         Swift.
 
+        :params obj_name: name of the object
+        :params is_storlet: True if the object is a storlet object
+                            False if the object is a dependency object
         :returns: Wheather the Docker container was updated with obj_name
         """
         # Determine the cache we are to work with
