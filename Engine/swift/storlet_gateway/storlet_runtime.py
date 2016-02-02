@@ -105,7 +105,8 @@ class RunTimePaths(object):
 
     def __init__(self, account, conf):
         self.account = account
-        self.scope = account[5:18]
+        self.reseller_prefix = conf['reseller_prefix']
+        self.scope = self._get_scope(account, self.reseller_prefix)
         self.host_restart_script_dir = conf['script_dir']
         self.host_pipe_root = conf['pipes_dir']
         self.factory_pipe_suffix = 'factory_pipe'
@@ -117,6 +118,11 @@ class RunTimePaths(object):
         self.host_cache_root = conf['cache_dir']
         self.storlet_container = conf['storlet_container']
         self.storlet_dependency = conf['storlet_dependency']
+
+    def _get_scope(self, account, prefix):
+        start = len(self.reseller_prefix) + 1
+        end = min(start + 13, len(account))
+        return account[start:end]
 
     def host_pipe_prefix(self):
         return os.path.join(self.host_pipe_root, self.scope)

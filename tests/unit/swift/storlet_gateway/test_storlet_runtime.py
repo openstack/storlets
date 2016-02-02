@@ -23,6 +23,11 @@ import unittest
 class TestRuntimePaths(unittest.TestCase):
 
     def setUp(self):
+        self.account = 'AUTH_0123456789abcdefghijklmnopqrstuv'
+        self.scope = '0123456789abc'
+        self._initialize()
+
+    def _initialize(self):
         # TODO(takashi): take these values from config file
         base_dir = '/home/docker_device'
         self.conf = {
@@ -31,10 +36,9 @@ class TestRuntimePaths(unittest.TestCase):
             'storlets_dir': os.path.join(base_dir, 'storlets', 'scopes'),
             'log_dir': os.path.join(base_dir, 'logs', 'scopes'),
             'cache_dir': os.path.join(base_dir, 'cache', 'scopes'),
+            'reseller_prefix': 'AUTH',
             'storlet_container': 'storlet',
             'storlet_dependency': 'dependency'}
-        self.account = 'AUTH_0123456789abcdefghijklmnopqrstuv'
-        self.scope = '0123456789abc'
         self.storlet_id = 'org.openstack.storlet.mystorlet'
         self.paths = storlet_gateway.storlet_runtime.RunTimePaths(
             self.account, self.conf)
@@ -136,6 +140,14 @@ class TestRuntimePaths(unittest.TestCase):
             self.paths.get_host_dependency_cache_dir(),
             os.path.join(self.conf['cache_dir'], self.scope,
                          self.conf['storlet_dependency']))
+
+
+class TestRuntimePathsTempauth(TestRuntimePaths):
+
+    def setUp(self):
+        self.account = 'AUTH_test'
+        self.scope = 'test'
+        self._initialize()
 
 
 class TestRunTimeSandbox(unittest.TestCase):
