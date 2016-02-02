@@ -65,14 +65,12 @@ class DockerStorletRequest(object):
     2. Metadata identifying the stream
     """
 
-    def user_metadata(self, headers):
+    def _get_user_metadata(self, headers):
         metadata = {}
         for key in headers:
-            if (key.startswith('X-Storlet') or
-                    key.startswith('X-Object-Meta-Storlet')):
+            if key.startswith('X-Object-Meta-Storlet'):
                 pass
-            elif (key.startswith('X-Object-Meta-') or
-                  key.startswith('X-Object-Meta-'.lower())):
+            elif key.startswith('X-Object-Meta-'):
                 short_key = key[len('X-Object-Meta-'):]
                 metadata[short_key] = headers[key]
         return metadata
@@ -84,7 +82,7 @@ class DockerStorletRequest(object):
         self.generate_log = request.headers.get('X-Storlet-Generate-Log',
                                                 False)
         self.storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
-        self.user_metadata = self.user_metadata(request.headers)
+        self.user_metadata = self._get_user_metadata(request.headers)
         self.params = params
         self.account = account
         self.request = request
