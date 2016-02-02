@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from tests.unit.swift import FakeLogger
 from storlet_gateway.storlet_docker_gateway import StorletGatewayDocker
 from swift.common.swob import HTTPException, Request, Response
 import unittest
@@ -27,24 +28,8 @@ class FakeApp(object):
 
 class TestStorletGatewayDocker(unittest.TestCase):
 
-    # TODO(kajinamit): We have to implement FakeLogger
-    class FakeLogger(object):
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def debug(self, msg):
-            pass
-
-        def info(self, msg):
-            pass
-
-        def warn(self, msg):
-            pass
-
-        def error(self, msg):
-            pass
-
     def setUp(self):
+        # TODO(takashi): take these values from config file
         self.sconf = {
             'lxc_root': '/home/docker_device/scopes',
             'cache_dir': '/home/docker_device/cache/scopes',
@@ -56,7 +41,7 @@ class TestStorletGatewayDocker(unittest.TestCase):
             'storlet_container': 'storlet',
             'storlet_dependency': 'dependency'
         }
-        self.logger = self.FakeLogger()
+        self.logger = FakeLogger()
 
     def tearDown(self):
         pass
