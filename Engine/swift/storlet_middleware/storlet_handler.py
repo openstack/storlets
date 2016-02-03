@@ -22,10 +22,290 @@ from eventlet import Timeout
 from storlet_common import StorletException, StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
 from swift.common.swob import HTTPBadRequest, HTTPException, \
-    HTTPInternalServerError, HTTPNotFound, Request, Response, wsgify
+    HTTPInternalServerError, HTTPMethodNotAllowed, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
+
+
+class NotStorletRequest(Exception):
+    pass
+
+
+class BaseStorletHandler(object):
+    """
+    This is an abstract handler for Proxy/Object Server middleware
+    """
+    def __init__(self, request, conf, app, logger):
+        """
+        :param request: swob.Request instance
+        :param conf: gatway conf dict
+        """
+        self.request = request
+        self.storlet_containers = [conf.get('storlet_container'),
+                                   conf.get('storlet_dependency')]
+        self.app = app
+        self.logger = logger
+        self.conf = conf
+
+    def _setup_gateway(self):
+        ver, acc, cont, obj = self.get_vaco()
+        gateway_class = self.conf['gateway_module']
+        self.gateway = gateway_class(
+            self.conf, self.logger, self.app, ver, acc, cont, obj)
+        self._update_storlet_parameters_from_headers()
+
+    def get_vaco(self):
+        """
+        Parse method of path from self.request which depends on child class
+        (Proxy or Object)
+        :return tuple: a string tuple of (version, account, container, object)
+        """
+        raise NotImplemented()
+
+    def handle_request(self):
+        """
+        Run storlet
+        """
+        raise NotImplemented()
+
+    @property
+    def is_storlet_execution(self):
+        return 'X-Run-Storlet' in self.request.headers
+
+    @property
+    def is_range_request(self):
+        """
+        Determines whether the request is a byte-range request
+        """
+        return 'Range' in self.request.headers
+
+    def is_slo_response(self, resp):
+        _, account, container, obj = self.get_vaco()
+        self.logger.info(
+            'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
+                account, container, obj))
+        is_slo = 'X-Static-Large-Object' in resp.headers
+        if is_slo:
+            self.logger.info('{0}/{1}/{2} is indeed an SLO assembly '
+                             'object'.format(account, container, obj))
+        else:
+            self.logger.info('{0}/{1}/{2} is NOT an SLO assembly object'.
+                             format(account, container, obj))
+        return is_slo
+
+    def _update_storlet_parameters_from_headers(self):
+        """
+        Extract parameters for header (an alternative to parmeters through
+        the query string)
+
+        """
+        parameters = {}
+        for param in self.request.headers:
+            if param.lower().startswith('x-storlet-parameter'):
+                keyvalue = self.request.headers[param]
+                keyvalue = urllib.unquote(keyvalue)
+                [key, value] = keyvalue.split(':')
+                parameters[key] = value
+        self.request.params.update(parameters)
+
+    def _call_gateway(self, resp):
+        """
+        Call gateway module to get result of storlet execution
+        in GET flow
+        """
+        raise NotImplemented()
+
+    def apply_storlet(self, resp):
+        outmd, app_iter = self._call_gateway(resp)
+
+        if 'Content-Length' in resp.headers:
+            resp.headers.pop('Content-Length')
+        if 'Transfer-Encoding' in resp.headers:
+            resp.headers.pop('Transfer-Encoding')
+        resp.app_iter = app_iter
+        return resp
+
+
+class StorletProxyHandler(BaseStorletHandler):
+    def __init__(self, request, conf, app, logger):
+        super(StorletProxyHandler, self).__init__(
+            request, conf, app, logger)
+
+        # proxy need the gateway module both execution and storlet object
+        if (self.is_storlet_execution or self.is_storlet_object_put):
+            # In proxy server, stolet handler validate if storlet enabled
+            # at the account, anyway
+            account_meta = get_account_info(self.request.environ,
+                                            self.app)['meta']
+            storlets_enabled = account_meta.get('storlet-enabled',
+                                                'False')
+            if not config_true_value(storlets_enabled):
+                self.logger.info('Account disabled for storlets')
+                raise HTTPBadRequest('Account disabled for storlets',
+                                     request=self.request)
+
+            self._setup_gateway()
+        else:
+            # others are not storlet request
+            raise NotStorletRequest()
+
+    def get_vaco(self):
+        return self.request.split_path(4, 4, rest_with_last=True)
+
+    def is_proxy_runnable(self, resp):
+        # SLO / proxy only case:
+        # storlet to be invoked now at proxy side:
+        runnable = any(
+            [self.is_range_request, self.is_slo_response(resp),
+             self.conf['storlet_execute_on_proxy_only']])
+        return runnable
+
+    @property
+    def is_storlet_object_put(self):
+        _, _, container, obj = self.get_vaco()
+        return (container in self.storlet_containers and obj
+                and self.request.method == 'PUT')
+
+    def handle_request(self):
+        if self.is_storlet_object_put:
+            self.gateway.validateStorletUpload(self.request)
+            return self.request.get_response(self.app)
+        else:
+            if hasattr(self, self.request.method):
+                resp = getattr(self, self.request.method)()
+                return resp
+            else:
+                raise HTTPMethodNotAllowed(req=self.request)
+
+    def _call_gateway(self, resp):
+        _, _, container, obj = self.get_vaco()
+        return self.gateway.gatewayProxyGetFlow(
+            self.request, container, obj, resp)
+
+    def GET(self):
+        """
+        GET handler on Proxy
+        """
+        self.gateway.authorizeStorletExecution(self.request)
+
+        # The get request may be a SLO object GET request.
+        # Simplest solution would be to invoke a HEAD
+        # for every GET request to test if we are in SLO case.
+        # In order to save the HEAD overhead we implemented
+        # a slightly more involved flow:
+        # At proxy side, we augment request with Storlet stuff
+        # and let the request flow.
+        # At object side, we invoke the plain (non Storlet)
+        # request and test if we are in SLO case.
+        # and invoke Storlet only if non SLO case.
+        # Back at proxy side, we test if test received
+        # full object to detect if we are in SLO case,
+        # and invoke Storlet only if in SLO case.
+        self.gateway.augmentStorletRequest(self.request)
+        original_resp = self.request.get_response(self.app)
+
+        if original_resp.is_success:
+            if self.is_proxy_runnable(original_resp):
+                return self.apply_storlet(original_resp)
+            else:
+                # Non proxy GET case: Storlet was already invoked at
+                # object side
+                # TODO(kota_): Do we need to pop the Transfer-Encoding/
+                #              Content-Length header from the resp?
+                if 'Transfer-Encoding' in original_resp.headers:
+                    original_resp.headers.pop('Transfer-Encoding')
+
+                original_resp.headers['Content-Length'] = None
+                return original_resp
+
+        else:
+            # In failure case, we need nothing to do, just return original
+            # response
+            return original_resp
+
+    def PUT(self):
+        """
+        PUT handler on Proxy
+        """
+        self.gateway.authorizeStorletExecution(self.request)
+        self.gateway.augmentStorletRequest(self.request)
+        _, _, container, obj = self.get_vaco()
+        (out_md, app_iter) = \
+            self.gateway.gatewayProxyPutFlow(self.request, container, obj)
+        self.request.environ['wsgi.input'] = app_iter
+        if 'CONTENT_LENGTH' in self.request.environ:
+            self.request.environ.pop('CONTENT_LENGTH')
+        self.request.headers['Transfer-Encoding'] = 'chunked'
+        return self.request.get_response(self.app)
+
+
+class StorletObjectHandler(BaseStorletHandler):
+    def __init__(self, request, conf, app, logger):
+        super(StorletObjectHandler, self).__init__(
+            request, conf, app, logger)
+        # object need the gateway module only execution
+        if (self.is_storlet_execution):
+            self._setup_gateway()
+        else:
+            raise NotStorletRequest()
+
+    def get_vaco(self):
+        _, _, acc, cont, obj = self.request.split_path(
+            5, 5, rest_with_last=True)
+        # TODO(kota_): make sure why object server api version is 0?
+        return ('0', acc, cont, obj)
+
+    @property
+    def is_slo_get_request(self):
+        """
+        Determines from a GET request and its  associated response
+        if the object is a SLO
+        """
+        return self.request.params.get('multipart-manifest') == 'get'
+
+    def handle_request(self):
+        if hasattr(self, self.request.method):
+            return getattr(self, self.request.method)()
+        else:
+            # un-defined method should be NOT ALLOWED
+            raise HTTPMethodNotAllowed(request=self.request)
+
+    def _call_gateway(self, resp):
+        _, _, container, obj = self.get_vaco()
+        return self.gateway.gatewayObjectGetFlow(
+            self.request, container, obj, resp)
+
+    def GET(self):
+        self.logger.debug('GET. Run storlet')
+        orig_resp = self.request.get_response(self.app)
+
+        if not is_success(orig_resp.status_int):
+            return orig_resp
+
+        _, account, container, obj = self.get_vaco()
+
+        # TODO(takashi): not sure manifest file should not be run with storlet
+        not_runnable = any(
+            [self.is_range_request, self.is_slo_get_request,
+             self.conf['storlet_execute_on_proxy_only'],
+             self.is_slo_response(orig_resp)])
+
+        if not_runnable:
+            # No need to invoke Storlet in the object server
+            # This is either an SLO or we are in proxy only mode
+            self.logger.debug('storlet_handler: invocation '
+                              'over %s/%s/%s %s' %
+                              (account, container, obj,
+                               'to be executed on proxy'))
+            return orig_resp
+        else:
+            # We apply here the Storlet:
+            self.logger.debug('storlet_handler: invocation '
+                              'over %s/%s/%s %s' %
+                              (account, container, obj,
+                               'to be executed locally'))
+            return self.apply_storlet(orig_resp)
 
 
 class StorletHandlerMiddleware(object):
@@ -36,175 +316,38 @@ class StorletHandlerMiddleware(object):
         self.stimeout = int(storlet_conf.get('storlet_timeout'))
         self.storlet_containers = [storlet_conf.get('storlet_container'),
                                    storlet_conf.get('storlet_dependency')]
-        self.execution_server = storlet_conf.get('execution_server')
+        self.exec_server = storlet_conf.get('execution_server')
+        self.handler_class = self._get_handler(self.exec_server)
         self.gateway_module = storlet_conf['gateway_module']
         self.proxy_only_storlet_execution = \
             storlet_conf['storlet_execute_on_proxy_only']
         self.gateway_conf = storlet_conf
 
+    def _get_handler(self, exec_server):
+        if exec_server == 'proxy':
+            return StorletProxyHandler
+        elif exec_server == 'object':
+            return StorletObjectHandler
+        else:
+            raise ValueError(
+                'configuration error: execution_server must be either proxy'
+                ' or object but is %s' % exec_server)
+
     @wsgify
     def __call__(self, req):
         try:
-            # storlet_handler deals only with objects
-            if self.execution_server == 'proxy':
-                version, account, container, obj = req.split_path(
-                    4, 4, rest_with_last=True)
-            else:
-                device, partition, account, container, obj = \
-                    req.split_path(5, 5, rest_with_last=True)
-                version = '0'
-        except ValueError:
-            return req.get_response(self.app)
-
-        self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
-                          (self.execution_server, account, container, obj))
-
-        storlet_execution = False
-        if 'X-Run-Storlet' in req.headers:
-            storlet_execution = True
-
-        if storlet_execution or container in self.storlet_containers:
-            gateway = self.gateway_module(self.gateway_conf,
-                                          self.logger, self.app, version,
-                                          account, container, obj)
-        else:
+            request_handler = self.handler_class(
+                req, self.gateway_conf, self.app, self.logger)
+            _, account, container, obj = request_handler.get_vaco()
+            self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
+                              (self.exec_server, account, container, obj))
+        except HTTPException:
+            raise
+        except (ValueError, NotStorletRequest):
             return req.get_response(self.app)
 
         try:
-            if storlet_execution:
-                header_parameters = \
-                    self._extract_parameters_from_headers(req)
-                req.params.update(header_parameters)
-            if self.execution_server == 'object' and storlet_execution:
-                if req.method == 'GET':
-                    self.logger.info('GET. Run storlet')
-                    orig_resp = req.get_response(self.app)
-
-                    if not is_success(orig_resp.status_int):
-                        return orig_resp
-
-                    if self._is_range_request(req) is True or \
-                            self._is_slo_get_request(req, orig_resp, account,
-                                                     container, obj) or \
-                            self.proxy_only_storlet_execution is True:
-                        # For SLOs, and proxy only mode
-                        # Storlet are executed on the proxy
-                        # Therefore we return the object part without
-                        # Storlet invocation:
-                        self.logger.info('storlet_handler: invocation '
-                                         'over %s/%s/%s %s' %
-                                         (account, container, obj,
-                                          'to be executed on proxy'))
-                        return orig_resp
-                    else:
-                        # We apply here the Storlet:
-                        self.logger.info('storlet_handler: invocation '
-                                         'over %s/%s/%s %s' %
-                                         (account, container, obj,
-                                          'to be executed locally'))
-                        old_env = req.environ.copy()
-                        orig_req = Request.blank(old_env['PATH_INFO'], old_env)
-                        (out_md, app_iter) = \
-                            gateway.gatewayObjectGetFlow(req, container,
-                                                         obj, orig_resp)
-                        if 'Content-Length' in orig_resp.headers:
-                            orig_resp.headers.pop('Content-Length')
-                        if 'Transfer-Encoding' in orig_resp.headers:
-                            orig_resp.headers.pop('Transfer-Encoding')
-
-                        return Response(app_iter=app_iter,
-                                        headers=orig_resp.headers,
-                                        request=orig_req,
-                                        conditional_response=True)
-
-            elif (self.execution_server == 'proxy'):
-                if (storlet_execution or container in self.storlet_containers):
-                    account_meta = get_account_info(req.environ,
-                                                    self.app)['meta']
-                    storlets_enabled = account_meta.get('storlet-enabled',
-                                                        'False')
-                    if not config_true_value(storlets_enabled):
-                        self.logger.info('Account disabled for storlets')
-                        raise HTTPBadRequest('Account disabled for storlets',
-                                             request=req)
-
-                if req.method == 'GET' and storlet_execution:
-                    gateway.authorizeStorletExecution(req)
-
-                    # The get request may be a SLO object GET request.
-                    # Simplest solution would be to invoke a HEAD
-                    # for every GET request to test if we are in SLO case.
-                    # In order to save the HEAD overhead we implemented
-                    # a slightly more involved flow:
-                    # At proxy side, we augment request with Storlet stuff
-                    # and let the request flow.
-                    # At object side, we invoke the plain (non Storlet)
-                    # request and test if we are in SLO case.
-                    # and invoke Storlet only if non SLO case.
-                    # Back at proxy side, we test if test received
-                    # full object to detect if we are in SLO case,
-                    # and invoke Storlet only if in SLO case.
-                    gateway.augmentStorletRequest(req)
-                    original_resp = req.get_response(self.app)
-
-                    if self._is_range_request(req) is True or \
-                            self._is_slo_get_request(req, original_resp,
-                                                     account,
-                                                     container, obj) or \
-                            self.proxy_only_storlet_execution is True:
-                        # SLO / proxy only  case:
-                        # storlet to be invoked now at proxy side:
-                        (out_md, app_iter) = \
-                            gateway.gatewayProxyGetFlow(req, container, obj,
-                                                        original_resp)
-
-                        #  adapted from non SLO GET flow
-                        if is_success(original_resp.status_int):
-                            old_env = req.environ.copy()
-                            orig_req = Request.blank(old_env['PATH_INFO'],
-                                                     old_env)
-                            resp_headers = original_resp.headers
-
-                            resp_headers['Content-Length'] = None
-
-                            return Response(app_iter=app_iter,
-                                            headers=resp_headers,
-                                            request=orig_req,
-                                            conditional_response=True)
-                        return original_resp
-
-                    else:
-                        # Non proxy GET case: Storlet was already invoked at
-                        # object side
-                        if 'Transfer-Encoding' in original_resp.headers:
-                            original_resp.headers.pop('Transfer-Encoding')
-
-                        if is_success(original_resp.status_int):
-                            old_env = req.environ.copy()
-                            orig_req = Request.blank(old_env['PATH_INFO'],
-                                                     old_env)
-                            resp_headers = original_resp.headers
-
-                            resp_headers['Content-Length'] = None
-                            return Response(app_iter=original_resp.app_iter,
-                                            headers=resp_headers,
-                                            request=orig_req,
-                                            conditional_response=True)
-                        return original_resp
-
-                elif req.method == 'PUT':
-                    if (container in self.storlet_containers):
-                        gateway.validateStorletUpload(req)
-                    if storlet_execution:
-                        gateway.authorizeStorletExecution(req)
-                        gateway.augmentStorletRequest(req)
-                        (out_md, app_iter) = \
-                            gateway.gatewayProxyPutFlow(req, container, obj)
-                        req.environ['wsgi.input'] = app_iter
-                        if 'CONTENT_LENGTH' in req.environ:
-                            req.environ.pop('CONTENT_LENGTH')
-                        req.headers['Transfer-Encoding'] = 'chunked'
-                        return req.get_response(self.app)
+            return request_handler.handle_request()
 
         except (StorletTimeout, ConnectionTimeout, Timeout) as e:
             StorletException.handle(self.logger, e)
@@ -215,74 +358,6 @@ class StorletHandlerMiddleware(object):
         except Exception as e:
             StorletException.handle(self.logger, e)
             raise HTTPInternalServerError(body='Storlet execution failed')
-
-        return req.get_response(self.app)
-
-    def _extract_parameters_from_headers(self, req):
-        """
-        Extract parameters for header (an alternative to parmeters through
-        the query string)
-
-        :param req: the request
-        :returns: a dictionary with the header parameters
-        """
-        parameters = {}
-        for param in req.headers:
-            if param.lower().startswith('x-storlet-parameter'):
-                keyvalue = req.headers[param]
-                keyvalue = urllib.unquote(keyvalue)
-                [key, value] = keyvalue.split(':')
-                parameters[key] = value
-        return parameters
-
-    def _is_range_request(self, req):
-        """
-        Determines whether the request is a byte-range request
-
-        :param args:
-        :param req:       the request
-        """
-        if 'Range' in req.headers:
-            return True
-        return False
-
-    def _is_slo_get_request(self, req, resp, account, container, obj):
-        """
-        Determines from a GET request and its  associated response
-        if the object is a SLO
-
-        :param req:       the request
-        :param resp:      the response
-        :param account:   the account as extracted from req
-        :param container: the response  as extracted from req
-        :param obj:       the response  as extracted from req
-        """
-        if req.method != 'GET':
-            return False
-        if req.params.get('multipart-manifest') == 'get':
-            return False
-
-        self.logger.info('Verify if {0}/{1}/{2} is an SLO assembly object'.
-                         format(account, container, obj))
-
-        if resp.is_success:
-            for key in resp.headers:
-                if (key.lower() == 'x-static-large-object'
-                        and config_true_value(resp.headers[key])):
-                    self.logger.info('{0}/{1}/{2} is indeed an SLO assembly '
-                                     'object'.format(account, container, obj))
-                    return True
-            self.logger.info('{0}/{1}/{2} is NOT an SLO assembly object'.
-                             format(account, container, obj))
-            return False
-        self.logger.error('Failed to check if {0}/{1}/{2} is an SLO assembly '
-                          'object. Got status {3}'.
-                          format(account, container, obj, resp.status))
-        if resp.status_int == 404:
-            raise HTTPNotFound('The target object is not found')
-        raise Exception('Failed to check if {0}/{1}/{2} is an SLO assembly '
-                        'object. Got status {3}'.format(account, container,
-                                                        obj, resp.status))
 
 
 def filter_factory(global_conf, **local_conf):

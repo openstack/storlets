@@ -29,8 +29,9 @@ from storlet_runtime import RunTimePaths, RunTimeSandbox, \
     StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
     StorletInvocationSLOProtocol
 from swift.common.internal_client import InternalClient as ic
-from swift.common.swob import Request, HTTPBadRequest, HTTPUnauthorized
+from swift.common.swob import HTTPBadRequest, HTTPUnauthorized
 from swift.common.utils import config_true_value
+from swift.common.wsgi import make_subrequest
 
 
 CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
@@ -319,16 +320,18 @@ class StorletGatewayDocker(StorletGatewayBase):
             env_key = 'HTTP_' + key
             if env_key in new_env.keys():
                 del new_env[env_key]
-        new_env['REQUEST_METHOD'] = 'HEAD'
-        new_env['swift.source'] = 'SE'
-        new_env['PATH_INFO'] = os.path.join('/' + version, account,
-                                            container, object)
-        new_env['RAW_PATH_INFO'] = os.path.join('/' + version, account,
-                                                container, object)
-        storlet_req = Request.blank(new_env['PATH_INFO'], new_env)
+
+        path = os.path.join('/' + version, account,
+                            container, object)
+        storlet_req = make_subrequest(
+            new_env, 'HEAD', path,
+            headers={'X-Auth-Token': req.headers.get('X-Auth-Token')},
+            swift_source='SE')
 
         resp = storlet_req.get_response(self.app)
         if not resp.is_success:
+            # TODO(takashi): Can we make this message more clear
+            #                to tell what's happening?
             raise HTTPUnauthorized('Account disabled for storlets',
                                    request=req)
         return resp.headers
