@@ -40,6 +40,6 @@ The StorletDockerGateway implements the StorletsGatewayBase API, which is called
     req  the Swift request
     container the targeted container
     obj the targeted object
-    orig_resp this is the Swift response of the plain GET request applied to the targetted object (that is without Storlet invocation)
+    orig_resp this is the Swift response of the plain GET request applied to the targeted object (that is without Storlet invocation)
     '''
     def gatewayObjectGetFlow(req, container, obj, orig_resp)
