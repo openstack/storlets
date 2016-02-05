@@ -13,9 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-'''
-@author: cdoron
-'''
 import ConfigParser
 import fileinput
 import os

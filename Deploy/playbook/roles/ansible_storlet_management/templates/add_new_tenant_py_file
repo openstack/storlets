@@ -15,10 +15,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-'''
-@author: cdoron
-'''
-
 import sys
 import subprocess
 from storlet_mgmt_common import get_hosts_object, monitor_playbook_execution

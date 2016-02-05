@@ -15,10 +15,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-'''
-@author: eranr
-'''
-
 import sys
 import select
 import subprocess

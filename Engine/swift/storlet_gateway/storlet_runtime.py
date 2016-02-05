@@ -13,12 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 
-"""
-Created on Feb 10, 2015
-
-@author: eranr
-"""
-
 import os
 import select
 import stat
