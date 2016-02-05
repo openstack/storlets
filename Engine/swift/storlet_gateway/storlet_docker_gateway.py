@@ -17,15 +17,16 @@ import os
 import select
 import shutil
 
-from eventlet import Timeout
-from storlet_gateway.storlet_base_gateway import StorletGatewayBase
-from storlet_runtime import RunTimePaths, RunTimeSandbox, \
-    StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
-    StorletInvocationCOPYProtocol, StorletInvocationSLOProtocol
 from swift.common.internal_client import InternalClient as ic
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized
 from swift.common.utils import config_true_value
 from swift.common.wsgi import make_subrequest
+from storlet_middleware.storlet_common import StorletConfigError, \
+    StorletTimeout
+from storlet_gateway.storlet_base_gateway import StorletGatewayBase
+from storlet_runtime import RunTimePaths, RunTimeSandbox, \
+    StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
+    StorletInvocationSLOProtocol, StorletInvocationCOPYProtocol
 
 
 CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
@@ -116,6 +117,7 @@ class StorletGatewayDocker(StorletGatewayBase):
     def __init__(self, sconf, logger, app, version, account, container,
                  obj):
         self.logger = logger
+        # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
         self.app = app
         self.version = version
         self.account = account
@@ -139,9 +141,9 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         def read_with_timeout(self, size):
             try:
-                with Timeout(self.timeout):
+                with StorletTimeout(self.timeout):
                     chunk = os.read(self.obj_data, size)
-            except Timeout:
+            except StorletTimeout:
                 if self.cancel_func:
                     self.cancel_func()
                 self.close()
@@ -645,4 +647,5 @@ def validate_conf(middleware_conf):
                  'docker_repo', 'restart_linux_container_timeout']
     for key in mandatory:
         if key not in mandatory:
-            raise Exception("Key {} is missing in configuration".format(key))
+            raise StorletConfigError("Key {} is missing in "
+                                     "configuration".format(key))

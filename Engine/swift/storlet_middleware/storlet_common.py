@@ -14,9 +14,19 @@ Limitations under the License.
 -------------------------------------------------------------------------"""
 
 import os
+from eventlet import Timeout
 
 
-class StorletTimeout(Exception):
+# TODO(takashi): Move the following modules under storlet_gateway
+class StorletRuntimeException(Exception):
+    pass
+
+
+class StorletTimeout(Timeout, StorletRuntimeException):
+    pass
+
+
+class StorletConfigError(Exception):
     pass
 
 

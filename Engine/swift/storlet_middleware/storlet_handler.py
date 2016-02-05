@@ -15,16 +15,16 @@ import ConfigParser
 import urllib
 from eventlet import Timeout
 from six.moves.urllib.parse import quote
-from storlet_common import StorletTimeout
 from swift.common.constraints import check_copy_from_header, \
     check_destination_header
-from swift.common.exceptions import ConnectionTimeout
 from swift.common.swob import HTTPException, Response, \
     HTTPBadRequest, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
     HTTPRequestedRangeNotSatisfiable, HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
+from storlet_middleware.storlet_common import StorletRuntimeException, \
+    StorletTimeout
 
 
 class NotStorletRequest(Exception):
@@ -512,17 +512,24 @@ class StorletHandlerMiddleware(object):
         try:
             return request_handler.handle_request()
 
-        except (StorletTimeout, ConnectionTimeout, Timeout):
+        # TODO(takashi): Consider handling them in lower layers
+        except StorletTimeout:
             self.logger.exception('Storlet execution timed out')
             raise HTTPInternalServerError(body='Storlet execution timed out')
+        except StorletRuntimeException:
+            self.logger.exception('Storlet execution failed')
+            raise HTTPInternalServerError(body='Storlet execution failed')
+        except Timeout:
+            self.logger.exception('Internal request timed out')
+            raise HTTPInternalServerError(body='Internal request timed out')
         except HTTPException:
             # TODO(takashi): Shoud we generate this log for all error?
             #                (ex. 404 when the object is not found)
             self.logger.exception('Storlet execution failed')
             raise
         except Exception:
-            self.logger.exception('Storlet execution failed')
-            raise HTTPInternalServerError(body='Storlet execution failed')
+            self.logger.exception('Internal server error')
+            raise HTTPInternalServerError(body='Internal server error')
 
 
 def filter_factory(global_conf, **local_conf):

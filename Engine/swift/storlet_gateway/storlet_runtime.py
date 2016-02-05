@@ -17,11 +17,13 @@ import os
 import select
 import stat
 import subprocess
+import sys
 import time
 
 import eventlet
-from eventlet.timeout import Timeout
 import json
+
+from swift.common.constraints import MAX_META_OVERALL_SIZE
 
 from SBusPythonFacade.SBus import SBus
 from SBusPythonFacade.SBusDatagram import SBusDatagram
@@ -31,8 +33,8 @@ from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL, \
     SBUS_CMD_DAEMON_STATUS, SBUS_CMD_EXECUTE, SBUS_CMD_PING, \
     SBUS_CMD_START_DAEMON, SBUS_CMD_STOP_DAEMON
-from storlet_middleware.storlet_common import StorletLogger
-from swift.common.constraints import MAX_META_OVERALL_SIZE
+from storlet_middleware.storlet_common import StorletLogger, \
+    StorletRuntimeException, StorletTimeout
 
 eventlet.monkey_patch()
 
@@ -226,6 +228,9 @@ class RunTimeSandbox(object):
             return -1
 
         reply = os.read(read_fd, 10)
+
+        # TODO(takashi): Theses fds may not get closed when timeout happens
+        #                outside
         os.close(read_fd)
         os.close(write_fd)
 
@@ -235,26 +240,30 @@ class RunTimeSandbox(object):
         return 0
 
     def wait(self):
+        """
+        Wait while account's sandbox is starting
+
+        :raises StorletTimeout: the sandbox has not started in
+                                sandbox_wait_timeout
+        """
         try:
-            with Timeout(self.sandbox_wait_timeout):
+            with StorletTimeout(self.sandbox_wait_timeout):
                 while True:
                     rc = self.ping()
                     if (rc != 1):
                         time.sleep(self.sandbox_ping_interval)
                         continue
                     else:
-                        return 1
-        except Timeout:
-            self.logger.info("wait for sandbox %s timedout" % self.account)
-
-        return 0
+                        return
+        except StorletTimeout:
+            self.logger.exception("wait for sandbox %s timedout"
+                                  % self.account)
+            raise
 
     def restart(self):
         """
         Restarts the account's sandbox
 
-        :returns: True - If the sandbox was started successfully
-                  False - Otherwise
         """
         # Extract the account's ID from the account
         if self.account.lower().startswith('auth_'):
@@ -279,9 +288,12 @@ class RunTimeSandbox(object):
                storlet_mount]
 
         subprocess.call(cmd)
-        return self.wait()
+        self.wait()
 
     def start_storlet_daemon(self, spath, storlet_id):
+        """
+        Start SDaemon process in the account's sandbox
+        """
         prms = {}
         prms['daemon_language'] = 'java'
         prms['storlet_path'] = spath
@@ -297,6 +309,7 @@ class RunTimeSandbox(object):
 
         pipe_path = self.paths.host_factory_pipe()
         rc = SBus.send(pipe_path, dtg)
+        # TODO(takashi): Why we should rond rc into -1?
         if (rc < 0):
             return -1
         reply = os.read(read_fd, 10)
@@ -309,6 +322,9 @@ class RunTimeSandbox(object):
         return 0
 
     def stop_storlet_daemon(self, storlet_id):
+        """
+        Stop SDaemon process in the account's sandbox
+        """
         read_fd, write_fd = os.pipe()
         dtg = SBusDatagram.create_service_datagram(SBUS_CMD_STOP_DAEMON,
                                                    write_fd)
@@ -330,6 +346,9 @@ class RunTimeSandbox(object):
         return 0
 
     def get_storlet_daemon_status(self, storlet_id):
+        """
+        Get the status of SDaemon process in the account's sandbox
+        """
         read_fd, write_fd = os.pipe()
         dtg = SBusDatagram.create_service_datagram(SBUS_CMD_DAEMON_STATUS,
                                                    write_fd)
@@ -358,9 +377,11 @@ class RunTimeSandbox(object):
             # Best we can do is execute the container.
             self.logger.debug('Failed to check Storlet daemon status, '
                               'restart Docker container')
-            res = self.restart()
-            if (res != 1):
-                raise Exception('Docker container is not responsive')
+            try:
+                self.restart()
+            except StorletTimeout:
+                raise StorletRuntimeException('Docker container is '
+                                              'not responsive')
             storlet_daemon_status = 0
 
         if (cache_updated is True and storlet_daemon_status == 1):
@@ -371,9 +392,11 @@ class RunTimeSandbox(object):
             res = \
                 self.stop_storlet_daemon(invocation_data['storlet_main_class'])
             if res != 1:
-                res = self.restart()
-                if (res != 1):
-                    raise Exception('Docker container is not responsive')
+                try:
+                    self.restart()
+                except StorletTimeout:
+                    raise StorletRuntimeException('Docker container is '
+                                                  'not responsive')
             else:
                 self.logger.debug('Deamon stopped')
             storlet_daemon_status = 0
@@ -397,7 +420,7 @@ class RunTimeSandbox(object):
             if daemon_status != 1:
                 self.logger.error('Daemon start Failed, returned code is %d' %
                                   daemon_status)
-                raise Exception('Daemon start failed')
+                raise StorletRuntimeException('Daemon start failed')
             else:
                 self.logger.debug('Daemon started')
 
@@ -414,7 +437,6 @@ protocol
 class StorletInvocationProtocol(object):
 
     def _add_input_stream(self, appendFd):
-        # self.fds.append(self.srequest.stream
         self.fds.append(appendFd)
         # TODO(Break request metadata and systemmetadata)
         md = dict()
@@ -473,7 +495,7 @@ class StorletInvocationProtocol(object):
         dtg.set_task_id(self.task_id)
         rc = SBus.send(self.storlet_pipe_path, dtg)
         if (rc < 0):
-            return -1
+            raise StorletRuntimeException('Failed to cancel task')
 
         os.read(read_fd, 10)
         os.close(read_fd)
@@ -488,7 +510,7 @@ class StorletInvocationProtocol(object):
         rc = SBus.send(self.storlet_pipe_path, dtg)
 
         if (rc < 0):
-            raise Exception("Failed to send execute command")
+            raise StorletRuntimeException("Failed to send execute command")
 
         self._wait_for_read_with_timeout(self.execution_str_read_fd)
         self.task_id = os.read(self.execution_str_read_fd, 10)
@@ -518,22 +540,44 @@ class StorletInvocationProtocol(object):
             os.makedirs(storlet_logger_path)
 
     def _wait_for_read_with_timeout(self, fd):
+        """
+        Wait while the read file descriptor gets ready
+
+        :param fd: File descriptor
+        :raises StorletTimeout: Exception raised when it time out to cancel the
+                                existing task
+        :raises StorletRuntimeException: Exception raised when it fail to
+                                         cancel the existing task
+        """
         try:
-            with Timeout(self.timeout):
+            with StorletTimeout(self.timeout):
                 r, w, e = select.select([fd], [], [])
-        except Timeout:
+        except StorletTimeout:
+            exc_type, exc_value, exc_traceback = sys.exec_info()
+
+            # When there is a task already running, we should cancel it.
             if self.task_id:
-                self._cancel()
-            raise
-        if fd in r:
-            return
+                try:
+                    self._cancel()
+                except StorletRuntimeException:
+                    self.logger.warning(
+                        'Task %s timed out, but failed to get canceled'
+                        % self.task_id)
+                    pass
+
+            # TODO(takashi): this should be replaced by six.rerase
+            #                when supporting py3
+            raise exc_type, exc_value, exc_traceback
+        if fd not in r:
+            raise StorletRuntimeException('Read fd is not ready')
 
     def _read_metadata(self):
         self._wait_for_read_with_timeout(self.metadata_read_fd)
         flat_json = os.read(self.metadata_read_fd, MAX_META_OVERALL_SIZE)
-        if flat_json is not None:
-            md = json.loads(flat_json)
-        return md
+        if flat_json is None:
+            return None
+        # TODO(takashi): We should validate json format
+        return json.loads(flat_json)
 
 
 class StorletInvocationGETProtocol(StorletInvocationProtocol):
@@ -554,8 +598,6 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
         self._prepare_invocation_descriptors()
         try:
             self._invoke()
-        except Exception as e:
-            raise e
         finally:
             self._close_remote_side_descriptors()
             self.storlet_logger.close()
@@ -584,16 +626,16 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
                                                     self.input_data_read_fd)
 
     def _wait_for_write_with_timeout(self, fd):
-        with Timeout(self.timeout):
+        with StorletTimeout(self.timeout):
             r, w, e = select.select([], [fd], [])
-        if fd in w:
-            return
+        if fd not in w:
+            raise StorletRuntimeException('Write fd is not ready')
 
     def _write_with_timeout(self, writer, chunk):
         try:
-            with Timeout(self.timeout):
+            with StorletTimeout(self.timeout):
                 writer.write(chunk)
-        except Timeout:
+        except StorletTimeout:
             writer.close()
             raise
 
@@ -605,8 +647,6 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
         self._prepare_invocation_descriptors()
         try:
             self._invoke()
-        except Exception:
-            raise
         finally:
             self._close_remote_side_descriptors()
             self.storlet_logger.close()
@@ -670,8 +710,6 @@ class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
     def _write_input_data(self):
         writer = os.fdopen(self.input_data_write_fd, 'w')
         reader = self.srequest.stream
-        # print >> sys.stdout, ' type of reader %s'% (type(reader))
         for chunk in reader:
             self._write_with_timeout(writer, chunk)
-            # print >> sys.stderr,  'next SLO chunk...%d'% len(chunk)
         writer.close()
