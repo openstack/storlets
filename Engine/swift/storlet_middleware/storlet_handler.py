@@ -19,7 +19,7 @@ Created on Feb 18, 2014
 import ConfigParser
 import urllib
 from eventlet import Timeout
-from storlet_common import StorletException, StorletTimeout
+from storlet_common import StorletTimeout
 from swift.common.exceptions import ConnectionTimeout
 from swift.common.swob import HTTPBadRequest, HTTPException, \
     HTTPInternalServerError, HTTPMethodNotAllowed, wsgify
@@ -349,14 +349,16 @@ class StorletHandlerMiddleware(object):
         try:
             return request_handler.handle_request()
 
-        except (StorletTimeout, ConnectionTimeout, Timeout) as e:
-            StorletException.handle(self.logger, e)
+        except (StorletTimeout, ConnectionTimeout, Timeout):
+            self.logger.exception('Storlet execution timed out')
             raise HTTPInternalServerError(body='Storlet execution timed out')
-        except HTTPException as e:
-            StorletException.handle(self.logger, e)
+        except HTTPException:
+            # TODO(takashi): Shoud we generate this log for all error?
+            #                (ex. 404 when the object is not found)
+            self.logger.exception('Storlet execution failed')
             raise
-        except Exception as e:
-            StorletException.handle(self.logger, e)
+        except Exception:
+            self.logger.exception('Storlet execution failed')
             raise HTTPInternalServerError(body='Storlet execution failed')
 
 

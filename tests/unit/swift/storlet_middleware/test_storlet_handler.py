@@ -20,6 +20,7 @@ from storlet_middleware import storlet_handler
 from swift.common.swob import Request
 from swift.common.swob import Response
 import unittest
+from tests.unit.swift import FakeLogger
 
 
 # TODO(takashi): take these values from config file
@@ -43,7 +44,10 @@ class TestStorletsHandler(unittest.TestCase):
         pass
 
     def get_app(self, app, global_conf, **local_conf):
-        factory = storlet_handler.filter_factory(global_conf, **local_conf)
+        with mock.patch('storlet_middleware.storlet_handler.get_logger') as \
+            get_fake_logger:
+            get_fake_logger.return_value = FakeLogger()
+            factory = storlet_handler.filter_factory(global_conf, **local_conf)
         return factory(app)
 
     def start_response(self, status, headers):
