@@ -82,16 +82,16 @@ class BaseStorletHandler(object):
 
     def is_slo_response(self, resp):
         _, account, container, obj = self.get_vaco()
-        self.logger.info(
+        self.logger.debug(
             'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
                 account, container, obj))
         is_slo = 'X-Static-Large-Object' in resp.headers
         if is_slo:
-            self.logger.info('{0}/{1}/{2} is indeed an SLO assembly '
-                             'object'.format(account, container, obj))
+            self.logger.debug('{0}/{1}/{2} is indeed an SLO assembly '
+                              'object'.format(account, container, obj))
         else:
-            self.logger.info('{0}/{1}/{2} is NOT an SLO assembly object'.
-                             format(account, container, obj))
+            self.logger.debug('{0}/{1}/{2} is NOT an SLO assembly object'.
+                              format(account, container, obj))
         return is_slo
 
     def _update_storlet_parameters_from_headers(self):
@@ -141,7 +141,7 @@ class StorletProxyHandler(BaseStorletHandler):
             storlets_enabled = account_meta.get('storlet-enabled',
                                                 'False')
             if not config_true_value(storlets_enabled):
-                self.logger.info('Account disabled for storlets')
+                self.logger.debug('Account disabled for storlets')
                 raise HTTPBadRequest('Account disabled for storlets',
                                      request=self.request)
 

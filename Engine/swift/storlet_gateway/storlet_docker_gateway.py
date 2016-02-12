@@ -194,7 +194,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             raise HTTPBadRequest('Storlet name is incorrect', request=req)
 
     def _validate_dependency_upload(self, req):
-        self.logger.info('PUT method for storlet dependency. Sanity check')
+        self.logger.debug('PUT method for storlet dependency. Sanity check')
         mandatory_md = ['X-Object-Meta-Storlet-Dependency-Version']
         self._validate_mandatory_headers(req, mandatory_md)
 
@@ -320,9 +320,9 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def _verify_access(self, req, version, account, container, object):
-        self.logger.info('Verify access to {0}/{1}/{2}'.format(account,
-                                                               container,
-                                                               object))
+        self.logger.debug('Verify access to {0}/{1}/{2}'.format(account,
+                                                                container,
+                                                                object))
         new_env = dict(req.environ)
         if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
             del new_env['HTTP_TRANSFER_ENCODING']
