@@ -17,8 +17,9 @@ import copy
 import mock
 from os.path import join
 from storlet_middleware import storlet_handler
-from swift.common.swob import Request
-from swift.common.swob import Response
+from storlet_middleware.storlet_handler import (
+    StorletProxyHandler, StorletObjectHandler, BaseStorletHandler)
+from swift.common.swob import Request, Response
 import unittest
 
 
@@ -33,7 +34,7 @@ DEFAULT_CONFIG = {
     'execution_server': 'proxy'}
 
 
-class TestStorletsHandler(unittest.TestCase):
+class TestStorletMiddleware(unittest.TestCase):
     def setUp(self):
         self.got_statuses = []
         self.got_headers = []
@@ -64,9 +65,9 @@ class TestStorletsHandler(unittest.TestCase):
             self.fail('Application loading got an error')
 
 
-class TestStorletHandlerProxy(TestStorletsHandler):
+class TestStorletMiddlewareProxy(TestStorletMiddleware):
     def setUp(self):
-        super(TestStorletHandlerProxy, self).setUp()
+        super(TestStorletMiddlewareProxy, self).setUp()
         self.conf['execution_server'] = 'proxy'
 
     def test_GET_without_storlets(self):
@@ -402,9 +403,9 @@ class TestStorletHandlerProxy(TestStorletsHandler):
             get('/v1/AUTH_a/dependency/dependency')
 
 
-class TestStorletHandlerObject(TestStorletsHandler):
+class TestStorletMiddlewareObject(TestStorletMiddleware):
     def setUp(self):
-        super(TestStorletHandlerObject, self).setUp()
+        super(TestStorletMiddlewareObject, self).setUp()
         self.conf['execution_server'] = 'object'
 
     def test_call_unsupported_method(self):
@@ -526,6 +527,120 @@ class TestStorletHandlerObject(TestStorletsHandler):
             self.assertEqual(resp, ['FAKE APP'])
 
         get('/sda1/p/AUTH_a/c/o')
+
+
+class TestStorletBaseHandler(unittest.TestCase):
+    def test_init_failed_via_base_handler(self):
+        def assert_not_implemented(method, path, headers):
+            req = Request.blank(
+                path, environ={'REQUEST_METHOD': method},
+                headers=headers)
+            try:
+                BaseStorletHandler(
+                    req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+            except NotImplementedError:
+                pass
+            except Exception as e:
+                self.fail('Unexpected Error: %s raised with %s, %s, %s' %
+                          (repr(e), path, method, headers))
+
+        for method in ('PUT', 'GET', 'POST'):
+            for path in ('', '/v1', '/v1/a', '/v1/a/c', '/v1/a/c/o'):
+                for headers in ({}, {'X-Run-Storlet': 'Storlet-1.0.jar'}):
+                    assert_not_implemented(method, path, headers)
+
+
+class TestStorletProxyHandler(unittest.TestCase):
+    def setUp(self):
+        self.handler_class = StorletProxyHandler
+
+    def test_init_handler(self):
+        req = Request.blank(
+            '/v1/acc/cont/obj', environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        # TODO(takashi): make the validation method and change this with
+        #                the validation mock
+        with mock.patch('storlet_middleware.storlet_handler.get_account_info',
+                        return_value={'meta': {'storlet-enabled': 'true'}}):
+            handler = self.handler_class(
+                req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+
+        self.assertEqual('/v1/acc/cont/obj', handler.request.path)
+        self.assertEqual('v1', handler.api_version)
+        self.assertEqual('acc', handler.account)
+        self.assertEqual('cont', handler.container)
+        self.assertEqual('obj', handler.obj)
+
+        # overwrite the request
+        # TODO(kota_): is it good to raise an error immediately?
+        #              or re-validate the req again?
+        req = Request.blank(
+            '/v2/acc2/cont2/obj2', environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        handler.request = req
+        self.assertEqual('/v2/acc2/cont2/obj2', handler.request.path)
+        self.assertEqual('v2', handler.api_version)
+        self.assertEqual('acc2', handler.account)
+        self.assertEqual('cont2', handler.container)
+        self.assertEqual('obj2', handler.obj)
+
+        # no direct assignment allowed
+        with self.assertRaises(AttributeError):
+            handler.api_version = '1'
+
+        with self.assertRaises(AttributeError):
+            handler.account = 'acc'
+
+        with self.assertRaises(AttributeError):
+            handler.container = 'cont'
+
+        with self.assertRaises(AttributeError):
+            handler.obj = 'obj'
+
+
+class TestStorletObjectHandler(unittest.TestCase):
+    def setUp(self):
+        self.handler_class = StorletObjectHandler
+
+    def test_init_handler(self):
+        req = Request.blank(
+            '/dev/part/acc/cont/obj', environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        handler = self.handler_class(
+            req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+        # FIXME: stil hold api version 0 at ObjectHandler but will be
+        #        deprecated if it's never used.
+        self.assertEqual('0', handler.api_version)
+        self.assertEqual('acc', handler.account)
+        self.assertEqual('cont', handler.container)
+        self.assertEqual('obj', handler.obj)
+
+        req = Request.blank(
+            '/dev/part/acc2/cont2/obj2', environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        handler.request = req
+        self.assertEqual('/dev/part/acc2/cont2/obj2', handler.request.path)
+        self.assertEqual('0', handler.api_version)
+        self.assertEqual('acc2', handler.account)
+        self.assertEqual('cont2', handler.container)
+        self.assertEqual('obj2', handler.obj)
+
+        # no direct assignment allowed
+        with self.assertRaises(AttributeError):
+            handler.api_version = '1'
+
+        with self.assertRaises(AttributeError):
+            handler.account = 'acc'
+
+        with self.assertRaises(AttributeError):
+            handler.container = 'cont'
+
+        with self.assertRaises(AttributeError):
+            handler.obj = 'obj'
 
 
 if __name__ == '__main__':
