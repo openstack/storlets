@@ -80,15 +80,29 @@ class TestStorletGatewayDocker(unittest.TestCase):
         else:
             self.fail("HTTPException is not raised")
 
-    def test_validate_mandatory_headers_for_storlet(self):
+    def test_validate_mandatory_headers(self):
         a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
-        c = 'storlet'
+        c = self.sconf['storlet_container']
         o = 'storlet-1.0.jar'
         path = '/'.join(['/v1', a, c, o])
+        headers = {'keyA': 'valueA',
+                   'keyB': 'valueB'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
+        gw._validate_mandatory_headers(req, ['keyA', 'keyB'])
 
-        # sufficient headers
+        self.assertRaisesWithStatus(
+            400, gw._validate_mandatory_headers, req, ['keyA', 'KeyC'])
+
+    def test_validate_storlet_upload(self):
+        a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
+        c = self.sconf['storlet_container']
+
+        # correct name and headers
+        o = 'storlet-1.0.jar'
+        path = '/'.join(['/v1', a, c, o])
         headers = {'x-object-meta-storlet-language': 'java',
                    'x-object-meta-storlet-interface-version': '1.0',
                    'x-object-meta-storlet-dependency': 'dep_file',
@@ -96,48 +110,22 @@ class TestStorletGatewayDocker(unittest.TestCase):
                    'x-object-meta-storlet-main': 'path.to.storlet.class'}
         req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
                             headers=headers)
-        gw._validate_mandatory_headers(req)
+        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
+                                  a, c, o)
+        gw._validate_storlet_upload(req)
 
-        # insufficient headers
+        # some header keys are missing
+        o = 'storlet-1.0.jar'
+        path = '/'.join(['/v1', a, c, o])
         headers = {'x-object-meta-storlet-language': 'java',
                    'x-object-meta-storlet-interface-version': '1.0',
                    'x-object-meta-storlet-dependency': 'dep_file',
                    'x-object-meta-storlet-object-metadata': 'no'}
         req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
                             headers=headers)
-        self.assertRaisesWithStatus(400, gw._validate_mandatory_headers, req)
-
-    def test_validate_mandatory_headers_for_dependency(self):
-        a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
-        c = 'dependency'
-        o = 'dep_file'
-        path = '/'.join(['/v1', a, c, o])
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
-
-        # sufficient headers
-        headers = {'x-object-meta-storlet-dependency-version': '1.0'}
-        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
-                            headers=headers)
-        gw._validate_mandatory_headers(req)
-
-        # insufficient headers
-        headers = {}
-        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
-                            headers=headers)
-        self.assertRaisesWithStatus(400, gw._validate_mandatory_headers, req)
-
-    def test_validate_storlet_upload(self):
-        a = 'AUTH_xxxxxxxxxxxxxxxxxxxx'
-        c = self.sconf['storlet_container']
-
-        # correct name
-        o = 'storlet-1.0.jar'
-        path = '/'.join(['/v1', a, c, o])
-        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
-        gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
-                                  a, c, o)
-        gw._validate_storlet_upload(req)
+        self.assertRaisesWithStatus(400, gw._validate_storlet_upload, req)
 
         # wrong name
         o = 'storlet.jar'
@@ -154,42 +142,48 @@ class TestStorletGatewayDocker(unittest.TestCase):
         path = '/'.join(['/v1', a, c, o])
 
         # w/o dependency parameter
-        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'})
+        headers = {'x-object-meta-storlet-dependency-version': '1.0'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         gw._validate_dependency_upload(req)
 
         # w/ correct dependency parameter
-        req = Request.blank(
-            path,
-            environ={'REQUEST_METHOD': 'PUT'},
-            headers={'x-object-meta-storlet-dependency-permissions': '755'})
+        headers = {
+            'x-object-meta-storlet-dependency-permissions': '755',
+            'x-object-meta-storlet-dependency-version': '1.0'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         gw._validate_dependency_upload(req)
 
         # w/ wrong dependency parameter
-        req = Request.blank(
-            path,
-            environ={'REQUEST_METHOD': 'PUT'},
-            headers={'x-object-meta-storlet-dependency-permissions': '400'})
+        headers = {
+            'x-object-meta-storlet-dependency-permissions': '400',
+            'x-object-meta-storlet-dependency-version': '1.0'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)
 
         # w/ invalid dependency parameter
-        req = Request.blank(
-            path,
-            environ={'REQUEST_METHOD': 'PUT'},
-            headers={'x-object-meta-storlet-dependency-permissions': 'foo'})
+        headers = {
+            'x-object-meta-storlet-dependency-permissions': 'foo',
+            'x-object-meta-storlet-dependency-version': '1.0'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)
 
-        req = Request.blank(
-            path,
-            environ={'REQUEST_METHOD': 'PUT'},
-            headers={'x-object-meta-storlet-dependency-permissions': '888'})
+        headers = {
+            'x-object-meta-storlet-dependency-permissions': '888',
+            'x-object-meta-storlet-dependency-version': '1.0'}
+        req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                            headers=headers)
         gw = StorletGatewayDocker(self.sconf, self.logger, FakeApp(), 'v1',
                                   a, c, o)
         self.assertRaisesWithStatus(400, gw._validate_dependency_upload, req)

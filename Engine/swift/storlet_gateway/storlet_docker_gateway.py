@@ -182,10 +182,22 @@ class StorletGatewayDocker(StorletGatewayBase):
             self.close()
 
     def _validate_storlet_upload(self, req):
+        self.logger.info('PUT method for storlet container. Sanity check')
+        mandatory_md = ['X-Object-Meta-Storlet-Language',
+                        'X-Object-Meta-Storlet-Interface-Version',
+                        'X-Object-Meta-Storlet-Dependency',
+                        'X-Object-Meta-Storlet-Object-Metadata',
+                        'X-Object-Meta-Storlet-Main']
+        self._validate_mandatory_headers(req, mandatory_md)
+
         if (self.obj.find('-') < 0 or self.obj.find('.') < 0):
             raise HTTPBadRequest('Storlet name is incorrect', request=req)
 
     def _validate_dependency_upload(self, req):
+        self.logger.info('PUT method for storlet dependency. Sanity check')
+        mandatory_md = ['X-Object-Meta-Storlet-Dependency-Version']
+        self._validate_mandatory_headers(req, mandatory_md)
+
         perm = req.headers. \
             get('X-Object-Meta-Storlet-Dependency-Permissions')
         if perm is not None:
@@ -199,8 +211,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                      request=req)
 
     def validateStorletUpload(self, req):
-        self._validate_mandatory_headers(req)
-
         if (self.container == self.sconf['storlet_container']):
             self._validate_storlet_upload(req)
         elif (self.container == self.sconf['storlet_dependency']):
@@ -336,26 +346,13 @@ class StorletGatewayDocker(StorletGatewayBase):
                                    request=req)
         return resp.headers
 
-    def _validate_mandatory_headers(self, req):
-        mandatory_md = None
-        if self.container in [self.sconf['storlet_container']]:
-            self.logger.info('PUT method for storlet container. Sanity check')
-            mandatory_md = ['X-Object-Meta-Storlet-Language',
-                            'X-Object-Meta-Storlet-Interface-Version',
-                            'X-Object-Meta-Storlet-Dependency',
-                            'X-Object-Meta-Storlet-Object-Metadata',
-                            'X-Object-Meta-Storlet-Main']
-        elif self.container in [self.sconf['storlet_dependency']]:
-            self.logger.info('PUT method for storlet dependency. Sanity check')
-            mandatory_md = ['X-Object-Meta-Storlet-Dependency-Version']
-
-        if mandatory_md is not None:
-            for md in mandatory_md:
-                if md not in req.headers:
-                    self.logger.info('Mandatory header ' +
-                                     'is missing: {0}'.format(md))
-                    raise HTTPBadRequest('Mandatory header is missing'
-                                         ': {0}'.format(md))
+    def _validate_mandatory_headers(self, req, mandatory_md):
+        for md in mandatory_md:
+            if md not in req.headers:
+                self.logger.info('Mandatory header ' +
+                                 'is missing: {0}'.format(md))
+                raise HTTPBadRequest('Mandatory header is missing'
+                                     ': {0}'.format(md))
 
     def _fix_request_headers(self, req):
         # add to request the storlet metadata to be used in case the request
