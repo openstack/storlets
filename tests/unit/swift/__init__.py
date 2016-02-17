@@ -29,3 +29,6 @@ class FakeLogger(object):
 
     def error(self, msg):
         pass
+
+    def exception(self, msg):
+        pass

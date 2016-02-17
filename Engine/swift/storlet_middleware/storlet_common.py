@@ -19,8 +19,6 @@ Created on Feb 18, 2014
 @author: gilv
 '''
 import os
-import sys
-import traceback
 
 
 class StorletTimeout(Exception):
@@ -46,15 +44,3 @@ class StorletLogger(object):
 
     def fobj(self):
         return open(self.full_path, 'r')
-
-
-class StorletException(object):
-
-    # Print details about the code line which caused the exception
-    @staticmethod
-    def handle(logger, exc):
-        logger.info('-' * 60)
-        logger.info(exc)
-        # logging.exception()
-        traceback.print_exc(file=sys.stdout)
-        logger.info('-' * 60)
