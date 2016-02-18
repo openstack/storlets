@@ -1,4 +1,4 @@
-'''-------------------------------------------------------------------------
+"""-------------------------------------------------------------------------
 Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,13 +11,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
--------------------------------------------------------------------------'''
+-------------------------------------------------------------------------"""
 
-'''
+"""
 Created on Feb 10, 2015
 
 @author: eranr
-'''
+"""
 
 import os
 import select
@@ -42,9 +42,9 @@ from swift.common.constraints import MAX_META_OVERALL_SIZE
 
 eventlet.monkey_patch()
 
-'''---------------------------------------------------------------------------
+"""---------------------------------------------------------------------------
 Sandbox API
-'''
+"""
 
 
 class RunTimePaths(object):
@@ -169,11 +169,11 @@ class RunTimePaths(object):
         return os.path.join(self.host_cache_root, self.scope,
                             self.storlet_dependency)
 
-'''---------------------------------------------------------------------------
+"""---------------------------------------------------------------------------
 Docker Stateful Container API
 The RunTimeSandbox serve as an API between the Docker Gateway and
 a re-usable per account sandbox
----------------------------------------------------------------------------'''
+---------------------------------------------------------------------------"""
 
 
 class RunTimeSandbox(object):
@@ -407,14 +407,14 @@ class RunTimeSandbox(object):
             else:
                 self.logger.debug('Daemon started')
 
-'''---------------------------------------------------------------------------
+"""---------------------------------------------------------------------------
 Storlet Daemon API
 The StorletInvocationGETProtocol, StorletInvocationPUTProtocol,
 StorletInvocationSLOProtocol
 server as an API between the Docker Gateway and the Storlet Daemon which
 runs inside the Docker container. These classes implement the Storlet execution
 protocol
----------------------------------------------------------------------------'''
+---------------------------------------------------------------------------"""
 
 
 class StorletInvocationProtocol(object):

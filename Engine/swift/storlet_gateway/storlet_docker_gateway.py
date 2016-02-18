@@ -1,4 +1,4 @@
-'''-------------------------------------------------------------------------
+"""-------------------------------------------------------------------------
 Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,13 +11,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
--------------------------------------------------------------------------'''
+-------------------------------------------------------------------------"""
 
-'''
+"""
 Created on Mar 24, 2015
 
 @author: Yosef Moatti
-'''
+"""
 
 import os
 import select
@@ -37,7 +37,7 @@ from swift.common.wsgi import make_subrequest
 CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
                     'IF_UNMODIFIED_SINCE']
 
-'''---------------------------------------------------------------------------
+"""---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
 (1) The classes StorletGETRequest, StorletPUTRequest. These encapsulate
@@ -54,7 +54,7 @@ The API is made of:
 (3) parse_gateway_conf parses the docker gateway specific configuration. While
     it is part of the API, it is implemented as a static method as the parsing
     of the configuration takes place before the StorletGateway is instantiated
----------------------------------------------------------------------------'''
+---------------------------------------------------------------------------"""
 
 
 class DockerStorletRequest(object):
