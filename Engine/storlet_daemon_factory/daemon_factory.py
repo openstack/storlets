@@ -1,5 +1,5 @@
 #!/usr/bin/python
-'''-------------------------------------------------------------------------
+"""-------------------------------------------------------------------------
 Copyright IBM Corp. 2015, 2015 All Rights Reserved
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,13 +12,13 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
--------------------------------------------------------------------------'''
+-------------------------------------------------------------------------"""
 
-'''===========================================================================
+"""===========================================================================
 XX-XXX-2014    eranr      Initial implementation.
 01-Sep-2014    evgenyl    Code refactoring.
 01-Dec-2014    evgenyl    Dropping multi-threaded monitoring
-==========================================================================='''
+==========================================================================="""
 
 import errno
 import logging
@@ -40,23 +40,21 @@ from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_START_DAEMON
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMON
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMONS
 
-'''========================================================================'''
-
 
 class daemon_factory(object):
-    '''This class acts as the manager for storlet daemons.
+    """
+    This class acts as the manager for storlet daemons.
 
-       It listens to commands and reacts on them in an internal loop.
-       As for now (01-Dec-2014) it is a single thread, synchronous
-       processing.
-    '''
+    It listens to commands and reacts on them in an internal loop.
+    As for now (01-Dec-2014) it is a single thread, synchronous
+    processing.
+    """
 
     def __init__(self, path, logger):
-        '''params
-
-        path: Path to the pipe file internal SBus listens to
-        logger: Logger to dump the information to
-        '''
+        """
+        :param path: Path to the pipe file internal SBus listens to
+        :param logger: Logger to dump the information to
+        """
 
         self.logger = logger
         self.pipe_path = path
@@ -67,43 +65,27 @@ class daemon_factory(object):
 
         self.NUM_OF_TRIES_PINGING_STARTING_DAEMON = 10
 
-    def get_jvm_args(self,
-                     daemon_language,
-                     storlet_path,
-                     storlet_name,
-                     pool_size,
-                     uds_path,
-                     log_level,
-                     container_id):
-        '''@summary:               get_jvm_args
+    def get_jvm_args(self, daemon_language, storlet_path, storlet_name,
+                     pool_size, uds_path, log_level, container_id):
+        """
+        Check the input parameters, produce the list
+        of arguments for JVM process launch
 
-                                Check the input parameters, produce the list
-                                of arguments for JVM process launch
-
-        @param daemon_language: Language the storlet is written on.
+        :param daemon_language: Language the storlet is written on.
                                 Now (01-Dec-2014) only Java is supported.
-        @type  daemon_language: String, 'java'
-        @param storlet_path:    Path to the folder where storlet JRE file is
-        @type  storlet_path:    String
-        @param storlet_name:    Storlet main class name
-        @type  storlet_name:    String
-        @param pool_size:       Number of threads that storlet daemon's
-                                thread pool provides
-        @type  pool_size:       Integer
-        @param uds_path:        Path to pipe daemon is going to listen to
-        @type  uds_path:        String
-        @param log_level:       Logger verbosity level
-        @type  log_level:       String
-        @param container_id:    container id
-        @type  container_id:    String
+        :param storlet_path: Path to the folder where storlet JRE file is
+        :param storlet_name: Storlet main class name
+        :param pool_size: Number of threads that storlet daemon's thread
+                          pool provides
+        :param uds_path: Path to pipe daemon is going to listen to
+        :param log_level: Logger verbosity level
+        :param container_id: container id
 
-        @return:                Error code, 0 if successful
-        @rtype:                 Integer
-        @return                 Error description
-        @rtype:                 String
-        @return:                A list of the JVM arguments
-        @rtype:                 List
-        '''
+        :returns: A tuple including the following three elements
+                  - Error code, 0 if successful
+                  - Error description
+                  - A list of the JVM arguments
+        """
 
         str_library_path = "/opt/ibm"
         str_prfx = "/opt/ibm/"
@@ -160,19 +142,13 @@ class daemon_factory(object):
 
         return n_error_id, error_text, pargs
 
-    '''--------------------------------------------------------------------'''
-
     def spawn_subprocess(self, pargs):
-        '''@summary:     spawn_subprocess
+        """
+        Launch a JVM process for some storlet daemon
 
-                      Launch a JVM process for some storlet daemon
-
-        @param pargs: Arguments for the JVM
-        @type  pargs: List of strings
-
-        @return:      Status
-        @rtype:       Boolean
-        '''
+        :param pargs: Arguments for the JVM
+        :returns: (Status, Description text of possible error)
+        """
         b_status = True
         error_text = ''
         try:
@@ -217,25 +193,19 @@ class daemon_factory(object):
             self.logger.error(error_text)
             self.logger.error('Exception is %s' % str(e))
 
+        # TODO(takashi): Now we return error text in tuple, but I think we had
+        #                better make this raise Exception including message
         return b_status, error_text
 
-    '''--------------------------------------------------------------------'''
-
     def wait_for_daemon_to_initialize(self, storlet_name):
-        '''@summary:            wait_for_daemon_to_initialize
+        """
+        Send a Ping service datagram. Validate that
+        Daemon response is correct. Give up after the
+        predefined number of attempts (5)
 
-                             Send a Ping service datagram. Validate that
-                             Daemon response is correct. Give up after the
-                             predefined number of attempts (5)
-
-        @param storlet_name: Storlet name we are checking the daemon for
-        @type  storlet_name: String
-
-        @return:             Status
-        @rtype:              Boolean
-        @return:             Description text of possible error
-        @rtype:              String
-        '''
+        :param storlet_name: Storlet name we are checking the daemon for
+        :returns: (Status, Description text of possible error)
+        """
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send PING command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
@@ -256,32 +226,23 @@ class daemon_factory(object):
         os.close(write_fd)
         return b_status, error_text
 
-    '''--------------------------------------------------------------------'''
+    def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
+                             pool_size, uds_path, log_level, container_id):
+        """
+        Start storlet daemon process
 
-    def process_start_daemon(self,
-                             daemon_language,
-                             storlet_path,
-                             storlet_name,
-                             pool_size,
-                             uds_path,
-                             log_level,
-                             container_id):
-        '''@summary: process_start_daemon
+        :param daemon_language: Language the storlet is written on.
+                                Now (01-Dec-2014) only Java is supported.
+        :param storlet_path: Path to the folder where storlet JRE file is
+        :param storlet_name: Storlet main class name
+        :param pool_size: Number of threads that storlet daemon's thread
+                          pool provides
+        :param uds_path: Path to pipe daemon is going to listen to
+        :param log_level: Logger verbosity level
+        :param container_id: container id
 
-                  Start storlet daemon process
-
-        @see:     get_jvm_args for the list of parameters
-
-        @return:  Status
-        @rtype:   Boolean
-
-        '''
-        # java -Djava.library.path=/root/workspace/nemo_storlet/bin
-        # -Djava.class.path=/root/workspace/nemo_storlet/bin
-        # com.ibm.storlet.daemon.StorletDaemon
-        # storlet.test.TestStorlet
-        # /tmp/aaa FINE 5
-
+        :returns: (Status, Description text of possible error)
+        """
         b_status = True
         error_text = ''
         pargs = []
@@ -316,21 +277,13 @@ class daemon_factory(object):
 
         return b_status, error_text
 
-    '''--------------------------------------------------------------------'''
-
     def get_process_status_by_name(self, storlet_name):
-        '''@summary:            get_process_status_by_name
+        """
+        Check if the daemon runs for the specific storlet
 
-                             Check if the daemon runs for the specific storlet
-
-        @param storlet_name: Storlet name we are checking the daemon for
-        @type  storlet_name: String
-
-        @return:             Status
-        @rtype:              Boolean
-        @return:             Description text of possible error
-        @rtype:              String
-        '''
+        :param storlet_name: Storlet name we are checking the daemon for
+        :returns: (Status, Description text of possible error)
+        """
         self.logger.debug('Current storlet name is: {0}'.format(storlet_name))
         self.logger.debug('storlet_name_to_pid has {0}'.
                           format(str(self.storlet_name_to_pid.keys())))
@@ -349,23 +302,14 @@ class daemon_factory(object):
 
         return b_status, error_text
 
-    '''--------------------------------------------------------------------'''
-
     def get_process_status_by_pid(self, daemon_pid, storlet_name):
-        '''@summary:            get_process_status_by_pid
+        """
+        Check if a process with specific ID runs
 
-                             Check if a process with specific ID runs
-
-        @param daemon_pid:   Storlet daemon process ID
-        @type  daemon_pid:   Integer
-        @param storlet_name: Storlet name we are checking the daemon for
-        @type  storlet_name: String
-
-        @return:             Status
-        @rtype:              Boolean
-        @return:             Description text of possible error
-        @rtype:              String
-        '''
+        :param daemon_pid:   Storlet daemon process ID
+        :param storlet_name: Storlet name we are checking the daemon for
+        :returns: (Status, Description text of possible error)
+        """
         b_status = False
         error_text = ''
         obtained_pid = 0
@@ -392,22 +336,14 @@ class daemon_factory(object):
             self.logger.debug(error_text)
         return b_status, error_text
 
-    '''--------------------------------------------------------------------'''
-
     def process_kill(self, storlet_name):
-        '''@summary:            process_kill
+        """
+        Kill the storlet daemon immediately
+        (kill -9 $DMN_PID)
 
-                             Kill the storlet daemon immediately
-                             (kill -9 $DMN_PID)
-
-        @param storlet_name: Storlet name we are checking the daemon for
-        @type  storlet_name: String
-
-        @return:             Status
-        @rtype:              Boolean
-        @return:             Description text of possible error
-        @rtype:              String
-        '''
+        :param storlet_name: Storlet name we are checking the daemon for
+        :returns: (Status, Description text of possible error)
+        """
         self.logger.debug('Current storlet name is: {0}'.format(storlet_name))
         b_success = True
         error_text = ''
@@ -429,29 +365,23 @@ class daemon_factory(object):
 
         return b_success, error_text
 
-    '''--------------------------------------------------------------------'''
-
     def process_kill_all(self):
-        '''@summary: process_kill_all Iterate through storlet daemons.
+        """
+        Kill every one.
 
-            Kill every one.
-
-        @return:  Status (True)
-        @rtype:   Boolean
-        @return:  Description text of possible error ('OK')
-        @rtype:   String
-        '''
+        :returns: (Status (True),
+                   Description text of possible error ('OK'))
+        """
         for storlet_name in self.storlet_name_to_pid.keys():
             self.process_kill(storlet_name)
         return True, 'OK'
 
-    '''--------------------------------------------------------------------'''
-
     def shutdown_all_processes(self):
-        '''@summary: shutdown_all_processes
+        """
+        send HALT command to every spawned process
 
-                  send HALT command to every spawned process
-        '''
+        :returns: (Status, Termination message)
+        """
         answer = ''
         for storlet_name in self.storlet_name_to_pid.keys():
             self.shutdown_process(storlet_name)
@@ -460,20 +390,13 @@ class daemon_factory(object):
         self.logger.info(answer)
         return True, answer
 
-    '''--------------------------------------------------------------------'''
-
     def shutdown_process(self, storlet_name):
-        '''@summary:            send HALT command to storlet daemon
+        """
+        send HALT command to storlet daemon
 
-        @param storlet_name: Storlet name we are checking the daemon for
-        @type  storlet_name: String
-
-        @return:             Status
-        @rtype:              Boolean
-        @return:             Description text of possible error
-        @rtype:              String
-        '''
-
+        :param storlet_name: Storlet name we are checking the daemon for
+        :returns: Status
+        """
         b_status = False
         self.logger.debug('Inside shutdown_process {0}'.format(storlet_name))
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
@@ -492,26 +415,17 @@ class daemon_factory(object):
             b_status = True
         return b_status
 
-    '''--------------------------------------------------------------------'''
-
     def dispatch_command(self, dtg, container_id):
-        '''@summary:   dispatch_command
+        """
+        Parse datagram. React on the request.
 
-                    Parse datagram. React on the request.
+        :param dtg: Datagram to process
+        :param container_id: container id
 
-        @param dtg: Datagram to process
-        @type  dtg: SBus python facade Datagram
-        @param container_id: container id
-        @type  container_id: String
-
-        @return:    Status
-        @rtype:     Boolean
-        @return:    Description text of possible error
-        @rtype:     String
-        @return:    Flag - whether we need to continue operating
-        @rtype:     Boolean
-        '''
-
+        :returns: The following tuple
+                  (Status, Descrion text of possible error,
+                   Whether we need to continue operation)
+        """
         b_status = False
         error_text = ''
         b_iterate = True
@@ -566,14 +480,11 @@ class daemon_factory(object):
         self.logger.debug('Done')
         return b_status, error_text, b_iterate
 
-    '''--------------------------------------------------------------------'''
-
     def main_loop(self, container_id):
-        '''@summary: main_loop
-
-                  The 'internal' loop. Listen to SBus, receive datagram,
-                  dispatch command, report back.
-        '''
+        """
+        The 'internal' loop. Listen to SBus, receive datagram,
+        dispatch command, report back.
+        """
 
         # Create SBus. Listen and process requests
         sbus = SBus()
@@ -616,23 +527,14 @@ class daemon_factory(object):
         # We left the main loop for some reason. Terminating.
         self.logger.debug('Leaving main loop')
 
-    '''--------------------------------------------------------------------'''
-
     def log_and_report(self, outfd, b_status, error_text):
-        '''@summary:       log_and_report
+        """
+        Send result result description message back to swift middleware
 
-                           Send the result description message
-                           back to swift middlewear
-
-        @param outfd:      Output channel to send the message to
-        @type  outfd:      File descriptor
-        @param b_status:   Flag, whether the operation was successful
-        @type:             Boolean
-        @param error_text: The result description
-        @type error_text:  String
-
-        @rtype:            void
-        '''
+        :param outfd : Output channel to send the message to
+        :param b_status : Flag, whether the operation was successful
+        :param error_text: The result description
+        """
         answer = str(b_status) + ': ' + error_text
         self.logger.debug(' Just processed command')
         self.logger.debug(' Going to answer: %s' % answer)
@@ -642,24 +544,15 @@ class daemon_factory(object):
         except Exception:
             self.logger.debug('Problem while writing response %s' % answer)
 
-'''======================= END OF daemon_factory CLASS ===================='''
-
-'''------------------------------------------------------------------------'''
-
 
 def start_logger(logger_name, log_level, container_id):
-    '''@summary:           start_logger
+    """
 
-                        Initialize logging of this process.
-                        Set the logger format.
+    Initialize logging of this process and set logger format
 
-    @param logger_name: The name to report with
-    @type  logger_name: String
-    @param log_level:   The verbosity level
-    @type  log_level:   String
-
-    @rtype:             void
-    '''
+    :param logger_name: The name to report with
+    :param log_level: The verbosity level. This should be selected
+    """
     logging.raiseExceptions = False
     log_level = log_level.upper()
 
@@ -700,31 +593,20 @@ def start_logger(logger_name, log_level, container_id):
     logger.addHandler(sysLogh)
     return logger
 
-'''------------------------------------------------------------------------'''
-
 
 def usage():
-    '''@summary: usage
-
-              Print the expected command line arguments.
-
-    @rtype:   void
-    '''
+    """
+    Print the expected command line arguments.
+    """
     print("daemon_factory <path> <log level> <container_id>")
-
-'''------------------------------------------------------------------------'''
 
 
 def main(argv):
-    '''@summary: main
+    """
+    The entry point of daemon_factory process
 
-              The entry point.
-              - Initialize logger,
-              - impersonate to swift user,
-              - create an instance of daemon_factory,
-              - start the main loop.
-    '''
-
+    :param argv: parameters given from command line
+    """
     if (len(argv) != 3):
         usage()
         return
@@ -732,6 +614,8 @@ def main(argv):
     pipe_path = argv[0]
     log_level = argv[1]
     container_id = argv[2]
+
+    # Initialize logger
     logger = start_logger("daemon_factory", log_level, container_id)
     logger.debug("Daemon factory started")
     SBus.start_logger("DEBUG", container_id=container_id)
@@ -741,11 +625,12 @@ def main(argv):
     os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
+    # create an instance of daemon_factory
     factory = daemon_factory(pipe_path, logger)
+
+    # Start the main loop
     factory.main_loop(container_id)
 
-'''------------------------------------------------------------------------'''
+
 if __name__ == "__main__":
     main(sys.argv[1:])
-
-'''============================ END OF FILE ==============================='''
