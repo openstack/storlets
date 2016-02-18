@@ -32,10 +32,33 @@ class NotStorletRequest(Exception):
     pass
 
 
+def _request_instance_property():
+    """
+    Set and retrieve the request instance.
+    This works to force to tie the consistency between the request path and
+    self.vars (i.e. api_version, account, container, obj) even if unexpectedly
+    (separately) assigned.
+    """
+    def getter(self):
+        return self._request
+
+    def setter(self, request):
+        self._request = request
+        try:
+            self._extract_vaco()
+        except ValueError:
+            raise NotStorletRequest()
+
+    return property(getter, setter,
+                    doc="Force to tie the request to acc/con/obj vars")
+
+
 class BaseStorletHandler(object):
     """
     This is an abstract handler for Proxy/Object Server middleware
     """
+    request = _request_instance_property()
+
     def __init__(self, request, conf, app, logger):
         """
         :param request: swob.Request instance
@@ -49,25 +72,52 @@ class BaseStorletHandler(object):
         self.conf = conf
 
     def _setup_gateway(self):
-        ver, acc, cont, obj = self.get_vaco()
         gateway_class = self.conf['gateway_module']
         self.gateway = gateway_class(
-            self.conf, self.logger, self.app, ver, acc, cont, obj)
+            self.conf, self.logger, self.app, self.api_version,
+            self.account, self.container, self.obj)
         self._update_storlet_parameters_from_headers()
 
-    def get_vaco(self):
+    def _extract_vaco(self):
+        """
+        Set version, account, container, obj vars from self._parse_vaco result
+
+        :raises ValueError: if self._parse_vaco raises ValueError while
+                            parsing, this method doesn't care and raise it to
+                            upper caller.
+        """
+        self._api_version, self._account, self._container, self._obj = \
+            self._parse_vaco()
+
+    @property
+    def api_version(self):
+        return self._api_version
+
+    @property
+    def account(self):
+        return self._account
+
+    @property
+    def container(self):
+        return self._container
+
+    @property
+    def obj(self):
+        return self._obj
+
+    def _parse_vaco(self):
         """
         Parse method of path from self.request which depends on child class
         (Proxy or Object)
         :return tuple: a string tuple of (version, account, container, object)
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def handle_request(self):
         """
         Run storlet
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     @property
     def is_storlet_execution(self):
@@ -81,17 +131,18 @@ class BaseStorletHandler(object):
         return 'Range' in self.request.headers
 
     def is_slo_response(self, resp):
-        _, account, container, obj = self.get_vaco()
         self.logger.debug(
             'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
-                account, container, obj))
+                self.account, self.container, self.obj))
         is_slo = 'X-Static-Large-Object' in resp.headers
         if is_slo:
-            self.logger.debug('{0}/{1}/{2} is indeed an SLO assembly '
-                              'object'.format(account, container, obj))
+            self.logger.debug(
+                '{0}/{1}/{2} is indeed an SLO assembly '
+                'object'.format(self.account, self.container, self.obj))
         else:
-            self.logger.debug('{0}/{1}/{2} is NOT an SLO assembly object'.
-                              format(account, container, obj))
+            self.logger.debug(
+                '{0}/{1}/{2} is NOT an SLO assembly object'.format(
+                    self.account, self.container, self.obj))
         return is_slo
 
     def _update_storlet_parameters_from_headers(self):
@@ -114,7 +165,7 @@ class BaseStorletHandler(object):
         Call gateway module to get result of storlet execution
         in GET flow
         """
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def apply_storlet(self, resp):
         outmd, app_iter = self._call_gateway(resp)
@@ -150,7 +201,7 @@ class StorletProxyHandler(BaseStorletHandler):
             # others are not storlet request
             raise NotStorletRequest()
 
-    def get_vaco(self):
+    def _parse_vaco(self):
         return self.request.split_path(4, 4, rest_with_last=True)
 
     def is_proxy_runnable(self, resp):
@@ -163,8 +214,7 @@ class StorletProxyHandler(BaseStorletHandler):
 
     @property
     def is_storlet_object_put(self):
-        _, _, container, obj = self.get_vaco()
-        return (container in self.storlet_containers and obj
+        return (self.container in self.storlet_containers and self.obj
                 and self.request.method == 'PUT')
 
     def handle_request(self):
@@ -179,9 +229,8 @@ class StorletProxyHandler(BaseStorletHandler):
                 raise HTTPMethodNotAllowed(req=self.request)
 
     def _call_gateway(self, resp):
-        _, _, container, obj = self.get_vaco()
         return self.gateway.gatewayProxyGetFlow(
-            self.request, container, obj, resp)
+            self.request, self.container, self.obj, resp)
 
     def GET(self):
         """
@@ -230,9 +279,9 @@ class StorletProxyHandler(BaseStorletHandler):
         """
         self.gateway.authorizeStorletExecution(self.request)
         self.gateway.augmentStorletRequest(self.request)
-        _, _, container, obj = self.get_vaco()
         (out_md, app_iter) = \
-            self.gateway.gatewayProxyPutFlow(self.request, container, obj)
+            self.gateway.gatewayProxyPutFlow(self.request,
+                                             self.container, self.obj)
         self.request.environ['wsgi.input'] = app_iter
         if 'CONTENT_LENGTH' in self.request.environ:
             self.request.environ.pop('CONTENT_LENGTH')
@@ -250,7 +299,7 @@ class StorletObjectHandler(BaseStorletHandler):
         else:
             raise NotStorletRequest()
 
-    def get_vaco(self):
+    def _parse_vaco(self):
         _, _, acc, cont, obj = self.request.split_path(
             5, 5, rest_with_last=True)
         # TODO(kota_): make sure why object server api version is 0?
@@ -272,9 +321,8 @@ class StorletObjectHandler(BaseStorletHandler):
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
-        _, _, container, obj = self.get_vaco()
         return self.gateway.gatewayObjectGetFlow(
-            self.request, container, obj, resp)
+            self.request, self.container, self.obj, resp)
 
     def GET(self):
         self.logger.debug('GET. Run storlet')
@@ -282,8 +330,6 @@ class StorletObjectHandler(BaseStorletHandler):
 
         if not is_success(orig_resp.status_int):
             return orig_resp
-
-        _, account, container, obj = self.get_vaco()
 
         # TODO(takashi): not sure manifest file should not be run with storlet
         not_runnable = any(
@@ -296,14 +342,14 @@ class StorletObjectHandler(BaseStorletHandler):
             # This is either an SLO or we are in proxy only mode
             self.logger.debug('storlet_handler: invocation '
                               'over %s/%s/%s %s' %
-                              (account, container, obj,
+                              (self.account, self.container, self.obj,
                                'to be executed on proxy'))
             return orig_resp
         else:
             # We apply here the Storlet:
             self.logger.debug('storlet_handler: invocation '
                               'over %s/%s/%s %s' %
-                              (account, container, obj,
+                              (self.account, self.container, self.obj,
                                'to be executed locally'))
             return self.apply_storlet(orig_resp)
 
@@ -338,12 +384,12 @@ class StorletHandlerMiddleware(object):
         try:
             request_handler = self.handler_class(
                 req, self.gateway_conf, self.app, self.logger)
-            _, account, container, obj = request_handler.get_vaco()
             self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
-                              (self.exec_server, account, container, obj))
+                              (self.exec_server, request_handler.account,
+                               request_handler.container, request_handler.obj))
         except HTTPException:
             raise
-        except (ValueError, NotStorletRequest):
+        except NotStorletRequest:
             return req.get_response(self.app)
 
         try:
