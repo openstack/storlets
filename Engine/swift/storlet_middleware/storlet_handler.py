@@ -62,6 +62,8 @@ class BaseStorletHandler(object):
         """
         :param request: swob.Request instance
         :param conf: gatway conf dict
+        :param app: wsgi Application
+        :param logger: logger instance
         """
         self.request = request
         self.storlet_containers = [conf.get('storlet_container'),
@@ -71,6 +73,10 @@ class BaseStorletHandler(object):
         self.conf = conf
 
     def _setup_gateway(self):
+        """
+        Setup gateway instance
+
+        """
         gateway_class = self.conf['gateway_module']
         self.gateway = gateway_class(
             self.conf, self.logger, self.app, self.api_version,
@@ -108,24 +114,33 @@ class BaseStorletHandler(object):
         """
         Parse method of path from self.request which depends on child class
         (Proxy or Object)
-        :return tuple: a string tuple of (version, account, container, object)
+
+        :return: a string tuple of (version, account, container, object)
         """
         raise NotImplementedError()
 
     def handle_request(self):
         """
         Run storlet
+
         """
         raise NotImplementedError()
 
     @property
     def is_storlet_execution(self):
+        """
+        Check if the request requires storlet execution
+
+        :return: Whether storlet should be executed
+        """
         return 'X-Run-Storlet' in self.request.headers
 
     @property
     def is_range_request(self):
         """
         Determines whether the request is a byte-range request
+
+        :return: Whether the request is a byte-range request
         """
         return 'Range' in self.request.headers
 
@@ -134,6 +149,12 @@ class BaseStorletHandler(object):
         return 'X-Storlet-Range' in self.request.headers
 
     def is_slo_response(self, resp):
+        """
+        Determins whether the response is a slo one
+
+        :param resp: swob.Response instance
+        :return: Whenther the response is a slo one
+        """
         self.logger.debug(
             'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
                 self.account, self.container, self.obj))
@@ -167,10 +188,18 @@ class BaseStorletHandler(object):
         """
         Call gateway module to get result of storlet execution
         in GET flow
+
+        :param resp: swob.Response instance
         """
         raise NotImplementedError()
 
     def apply_storlet(self, resp):
+        """
+        Apply storlet on response
+
+        :param resp: swob.Response instance
+        :return: processed reponse
+        """
         outmd, app_iter = self._call_gateway(resp)
 
         new_headers = resp.headers.copy()
@@ -216,6 +245,12 @@ class StorletProxyHandler(BaseStorletHandler):
         return self.request.split_path(4, 4, rest_with_last=True)
 
     def is_proxy_runnable(self, resp):
+        """
+        Check if the storlet should be executed at proxy server
+
+        :param resp: swob.Response instance
+        :return: Whether we should execute the storlet at proxy
+        """
         # SLO / proxy only case:
         # storlet to be invoked now at proxy side:
         runnable = any(
@@ -487,6 +522,13 @@ class StorletHandlerMiddleware(object):
         self.gateway_conf = storlet_conf
 
     def _get_handler(self, exec_server):
+        """
+        Generate Handler class based on execution_server parameter
+
+        :param exec_server: Where this storlet_middleware is running.
+                            This should value shoud be 'proxy' or 'object'
+        :raise ValueError: If exec_server is invalid
+        """
         if exec_server == 'proxy':
             return StorletProxyHandler
         elif exec_server == 'object':
