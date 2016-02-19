@@ -89,6 +89,8 @@ class daemon_factory(object):
 
         str_library_path = "/opt/ibm"
         str_prfx = "/opt/ibm/"
+
+        # TODO(takashi): refactor this with using ':'.join
         str_dmn_clspth = str_prfx + ':'
         str_dmn_clspth = str_dmn_clspth + str_prfx + \
             'logback-classic-1.1.2.jar:'
@@ -154,6 +156,9 @@ class daemon_factory(object):
         try:
             self.logger.debug('START_DAEMON: actual invocation')
             self.logger.debug('The arguments are: {0}'.format(str(pargs)))
+            # TODO(takashi): We had better use contextmanager
+            # TODO(takashi): Where is this closed?
+            # TODO(takashi): Should we really use this?
             dn = open('/dev/null', 'w')
             daemon_p = subprocess.Popen(pargs,
                                         stdout=dn,
@@ -184,6 +189,8 @@ class daemon_factory(object):
                 b_status, error_text = \
                     self.wait_for_daemon_to_initialize(storlet_name)
                 if not b_status:
+                    # TODO(takashi): We shoudn't use String as Exception
+                    #                (This usage is deprecated)
                     raise 'No response from Daemon'
             self.logger.debug('START_DAEMON: just occurred')
             error_text = 'OK'
@@ -209,6 +216,7 @@ class daemon_factory(object):
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send PING command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
+        # TODO(takashi): We had better use contextmanager
         read_fd, write_fd = os.pipe()
         dtg = SBusDatagram.create_service_datagram(SBUS_CMD_PING, write_fd)
         b_status = False
@@ -374,6 +382,7 @@ class daemon_factory(object):
         """
         for storlet_name in self.storlet_name_to_pid.keys():
             self.process_kill(storlet_name)
+        # TODO(takashi): Can we really always return True?
         return True, 'OK'
 
     def shutdown_all_processes(self):
@@ -388,6 +397,7 @@ class daemon_factory(object):
             answer += storlet_name + ': terminated; '
         self.logger.info('All the processes terminated')
         self.logger.info(answer)
+        # TODO(takashi): Can we really always return True?
         return True, answer
 
     def shutdown_process(self, storlet_name):
@@ -402,6 +412,7 @@ class daemon_factory(object):
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send HALT command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
+        # TODO(takashi): We had better use contextmanager
         read_fd, write_fd = os.pipe()
         dtg = SBusDatagram.create_service_datagram(SBUS_CMD_HALT, write_fd)
         SBus.send(storlet_pipe_name, dtg)
@@ -441,6 +452,7 @@ class daemon_factory(object):
             self.logger.debug("Received command {0}".format(command))
 
         prms = dtg.get_exec_params()
+        # TODO(takashi): refactor this
         if command == SBUS_CMD_START_DAEMON:
             self.logger.debug('Do SBUS_CMD_START_DAEMON')
             self.logger.debug('prms = %s' % str(prms))
@@ -510,6 +522,7 @@ class daemon_factory(object):
                 return
 
             try:
+                # TODO(takashi): We had better use contextmanager
                 outfd = dtg.get_first_file_of_type(SBUS_FD_OUTPUT_OBJECT)
             except Exception:
                 self.logger.error("Received message does not have outfd."
@@ -609,6 +622,7 @@ def main(argv):
     """
     if (len(argv) != 3):
         usage()
+        # TODO(takashi): returning non-zero value is better?
         return
 
     pipe_path = argv[0]
