@@ -102,7 +102,7 @@
 		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
-			<arg value="hosts"/>
+			<arg value="deploy/hosts"/>
 			<arg value="host_storlet_engine.yml"/>
 		</exec>
 	</target>
@@ -111,7 +111,7 @@
 		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
-			<arg value="hosts"/>
+			<arg value="deploy/hosts"/>
 			<arg value="container_storlet_engine.yml"/>
 		</exec>
 	</target>
