@@ -649,6 +649,22 @@ class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):
         writer.close()
 
 
+class StorletInvocationCOPYProtocol(StorletInvocationProxyProtocol):
+
+    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
+                 timeout):
+        StorletInvocationProxyProtocol.__init__(self, srequest,
+                                                storlet_pipe_path,
+                                                storlet_logger_path, timeout)
+
+    def _write_input_data(self):
+        writer = os.fdopen(self.input_data_write_fd, 'w')
+        reader = self.srequest.stream
+        for chunk in reader:
+            self._write_with_timeout(writer, chunk)
+        writer.close()
+
+
 class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
 
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,

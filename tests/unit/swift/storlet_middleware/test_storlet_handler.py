@@ -18,7 +18,8 @@ import mock
 import unittest
 
 from contextlib import contextmanager
-from swift.common.swob import Request, HTTPOk, HTTPCreated, HTTPNotFound
+from swift.common.swob import Request, HTTPOk, HTTPCreated, HTTPNotFound, \
+    HTTPBadRequest
 from storlet_middleware import storlet_handler
 from storlet_middleware.storlet_handler import StorletProxyHandler, \
     StorletObjectHandler, BaseStorletHandler
@@ -80,6 +81,14 @@ def storlet_enabled():
     acc_info = {'meta': {'storlet-enabled': 'true'}}
     with fake_acc_info(acc_info):
         yield
+
+
+@contextmanager
+def authorize_storlet_execution():
+    with mock.patch(
+            'storlet_gateway.storlet_stub_gateway.StorletGatewayStub.'
+            'authorizeStorletExecution') as ase:
+        yield ase
 
 
 class TestStorletMiddlewareProxy(TestStorletMiddleware):
@@ -198,7 +207,7 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
                 headers={'X-Run-Storlet': 'Storlet-1.0.jar'})
             app = self.get_app(self.app, self.conf)
             resp = app(req.environ, self.start_response)
-            self.assertEqual(resp.read(), 'DUMMY_CONTENT')
+            self.assertEqual(resp.read(), 'FAKE APP')
 
         with storlet_enabled():
             get(target)
@@ -212,13 +221,11 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             self.assertEqual('201 Created', self.got_statuses[-1])
             self.app.reset_all()
 
-        with mock.patch(
-                'storlet_gateway.storlet_stub_gateway.StorletGatewayStub.'
-                'authorizeStorletExecution') as m:
+        with authorize_storlet_execution() as ase:
             for target in ('AUTH_a', 'AUTH_a/c', 'AUTH_a/c/o'):
                 path = '/'.join(['', 'v1', target])
                 basic_put(path)
-            self.assertEqual(0, m.call_count)
+            self.assertEqual(0, ase.call_count)
 
     def test_PUT_with_storlets(self):
         target = '/v1/AUTH_a/c/o'
@@ -236,10 +243,124 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             self.assertEqual('201 Created', self.got_statuses[-1])
             put_calls = self.app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
-            self.assertEqual(put_calls[-1][3], 'DUMMY_CONTENT')
+            self.assertEqual(put_calls[-1][3], 'FAKE APP')
 
         with storlet_enabled():
             put(target)
+
+    def test_PUT_copy_without_storlets(self):
+        target = '/v1/AUTH_a/c/to'
+        copy_from = 'c/so'
+        self.app.register('PUT', target, HTTPCreated)
+
+        def copy():
+            req = Request.blank(target, environ={'REQUEST_METHOD': 'PUT'},
+                                headers={'X-Copy-From': copy_from,
+                                         'X-Backend-Storage-Policy-Index': 0})
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+
+        with authorize_storlet_execution() as ase:
+            copy()
+            self.assertEqual(0, ase.call_count)
+
+    def test_PUT_copy_with_storlets(self):
+        source = '/v1/AUTH_a/c/so'
+        target = '/v1/AUTH_a/c/to'
+        copy_from = 'c/so'
+        self.app.register('GET', source, HTTPOk, body='source body')
+        self.app.register('PUT', target, HTTPCreated)
+        # TODO(eranr): should uncomment this after refactoring
+        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
+        # self.app.register('GET', storlet, HTTPOk, 'jar binary')
+
+        def copy(target, source, copy_from):
+            req = Request.blank(target, environ={'REQUEST_METHOD': 'PUT'},
+                                headers={'X-Copy-From': copy_from,
+                                         'X-Run-Storlet': 'Storlet-1.0.jar',
+                                         'X-Backend-Storage-Policy-Index': 0})
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+            get_calls = self.app.get_calls('GET', source)
+            self.assertEqual(len(get_calls), 1)
+            self.assertEqual(get_calls[-1][3], '')
+            self.assertEqual(get_calls[-1][1], source)
+            put_calls = self.app.get_calls('PUT', target)
+            self.assertEqual(len(put_calls), 1)
+            self.assertEqual(put_calls[-1][3], 'source body')
+        with storlet_enabled():
+            copy(target, source, copy_from)
+
+    def test_COPY_verb_without_storlets(self):
+        source = '/v1/AUTH_a/c/so'
+        destination = 'c/to'
+        self.app.register('COPY', source, HTTPCreated)
+
+        def copy():
+            req = Request.blank(source, environ={'REQUEST_METHOD': 'COPY'},
+                                headers={'Destination': destination,
+                                         'X-Backend-Storage-Policy-Index': 0})
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+
+        with mock.patch(
+                'storlet_gateway.storlet_stub_gateway.StorletGatewayStub.'
+                'authorizeStorletExecution') as m:
+            copy()
+            self.assertEqual(0, m.call_count)
+
+    def test_COPY_verb_with_storlets(self):
+        source = '/v1/AUTH_a/c/so'
+        target = '/v1/AUTH_a/c/to'
+        destination = 'c/to'
+        self.app.register('GET', source, HTTPOk, body='source body')
+        self.app.register('PUT', target, HTTPCreated)
+        # TODO(eranr): should uncomment this after refactoring
+        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
+        # self.app.register('GET', storlet, HTTPOk, 'jar binary')
+
+        def copy(target, source, destination):
+            req = Request.blank(source, environ={'REQUEST_METHOD': 'COPY'},
+                                headers={'Destination': destination,
+                                         'X-Run-Storlet': 'Storlet-1.0.jar',
+                                         'X-Backend-Storage-Policy-Index': 0})
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('201 Created', self.got_statuses[-1])
+            get_calls = self.app.get_calls('GET', source)
+            self.assertEqual(len(get_calls), 1)
+            self.assertEqual(get_calls[-1][3], '')
+            self.assertEqual(get_calls[-1][1], source)
+            put_calls = self.app.get_calls('PUT', target)
+            self.assertEqual(len(put_calls), 1)
+            self.assertEqual(put_calls[-1][3], 'source body')
+        with storlet_enabled():
+            copy(target, source, destination)
+
+    def test_copy_with_unsupported_headers(self):
+        target = '/v1/AUTH_a/c/o'
+
+        def copy(method, copy_header):
+            base_headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                            'X-Backend-Storage-Policy-Index': 0}
+            base_headers.update(copy_header)
+            req = Request.blank(target, environ={'REQUEST_METHOD': method},
+                                headers=base_headers)
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+
+        with storlet_enabled():
+            self.assertRaises(HTTPBadRequest,
+                              copy('COPY', {'Destination-Account': 'a'}))
+            self.assertRaises(HTTPBadRequest,
+                              copy('COPY', {'x-fresh-metadata': ''}))
+            self.assertRaises(HTTPBadRequest,
+                              copy('PUT', {'X-Copy-From-Account': 'a'}))
+            self.assertRaises(HTTPBadRequest,
+                              copy('PUT', {'x-fresh-metadata': ''}))
 
     def test_PUT_storlet(self):
         target = '/v1/AUTH_a/storlet/storlet-1.0.jar'
@@ -385,7 +506,7 @@ class TestStorletMiddlewareObject(TestStorletMiddleware):
             app = self.get_app(self.app, self.conf)
             resp = app(req.environ, self.start_response)
             self.assertEqual('200 OK', self.got_statuses[-1])
-            self.assertEqual(resp.read(), 'DUMMY_CONTENT')
+            self.assertEqual(resp.read(), 'FAKE APP')
 
         get(target)
 

@@ -16,13 +16,18 @@ Created on Feb 18, 2014
 @author: Gil Vernik
 '''
 
+
 import ConfigParser
 import urllib
 from eventlet import Timeout
+from six.moves.urllib.parse import quote
 from storlet_common import StorletTimeout
+from swift.common.constraints import check_copy_from_header, \
+    check_destination_header
 from swift.common.exceptions import ConnectionTimeout
 from swift.common.swob import HTTPBadRequest, HTTPException, \
-    HTTPInternalServerError, HTTPMethodNotAllowed, wsgify
+    HTTPInternalServerError, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
+    wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
@@ -185,7 +190,7 @@ class StorletProxyHandler(BaseStorletHandler):
 
         # proxy need the gateway module both execution and storlet object
         if (self.is_storlet_execution or self.is_storlet_object_put):
-            # In proxy server, stolet handler validate if storlet enabled
+            # In proxy server, storlet handler validate if storlet enabled
             # at the account, anyway
             account_meta = get_account_info(self.request.environ,
                                             self.app)['meta']
@@ -216,6 +221,10 @@ class StorletProxyHandler(BaseStorletHandler):
     def is_storlet_object_put(self):
         return (self.container in self.storlet_containers and self.obj
                 and self.request.method == 'PUT')
+
+    @property
+    def is_put_copy_request(self):
+        return 'X-Copy-From' in self.request.headers
 
     def handle_request(self):
         if self.is_storlet_object_put:
@@ -273,20 +282,102 @@ class StorletProxyHandler(BaseStorletHandler):
             # response
             return original_resp
 
+    def _validate_copy_request(self):
+        # We currently block copy from account
+        unsupported_headers = ['X-Copy-From-Account',
+                               'Destination-Account',
+                               'X-Fresh-Metadata']
+
+        for header in unsupported_headers:
+            if self.request.headers.get(header):
+                raise HTTPBadRequest(
+                    'Storlet on copy with %s is not supported' %
+                    header)
+
+    def handle_put_copy_response(self, out_md, app_iter):
+        self.request.environ['wsgi.input'] = app_iter
+        if 'CONTENT_LENGTH' in self.request.environ:
+            self.request.environ.pop('CONTENT_LENGTH')
+        self.request.headers['Transfer-Encoding'] = 'chunked'
+        return self.request.get_response(self.app)
+
+    def base_handle_copy_request(self, src_container, src_obj,
+                                 dest_container, dest_object):
+        """
+        Unified path for:
+        PUT verb with X-Copy-From and
+        COPY verb with Destination
+        """
+        # Get an iterator over the source object
+        source_path = '/%s/%s/%s/%s' % (self.api_version, self.account,
+                                        src_container, src_obj)
+        source_req = self.request.copy_get()
+        source_req.headers.pop('X-Backend-Storage-Policy-Index', None)
+        source_req.headers.pop('X-Run-Storlet', None)
+        source_req.path_info = source_path
+        source_req.headers['X-Newest'] = 'true'
+
+        source_resp = source_req.get_response(self.app)
+
+        # Do proxy copy flow
+        (out_md, app_iter) = self.gateway.gatewayProxyCopyFlow(self.request,
+                                                               dest_container,
+                                                               dest_object,
+                                                               source_resp)
+
+        resp = self.handle_put_copy_response(out_md, app_iter)
+        acct, path = source_resp.environ['PATH_INFO'].split('/', 3)[2:4]
+        resp.headers['X-Storlet-Generated-From-Account'] = quote(acct)
+        resp.headers['X-Storlet-Generated-From'] = quote(path)
+        if 'last-modified' in source_resp.headers:
+            resp.headers['X-Storlet-Generated-From-Last-Modified'] = \
+                source_resp.headers['last-modified']
+        return resp
+
     def PUT(self):
         """
         PUT handler on Proxy
         """
         self.gateway.authorizeStorletExecution(self.request)
         self.gateway.augmentStorletRequest(self.request)
+        if self.is_put_copy_request:
+            self. _validate_copy_request()
+            src_container, src_obj = check_copy_from_header(self.request)
+            dest_container = self.container
+            dest_object = self.obj
+            self.request.headers.pop('X-Copy-From', None)
+            return self.base_handle_copy_request(src_container, src_obj,
+                                                 dest_container, dest_object)
+
         (out_md, app_iter) = \
             self.gateway.gatewayProxyPutFlow(self.request,
                                              self.container, self.obj)
-        self.request.environ['wsgi.input'] = app_iter
-        if 'CONTENT_LENGTH' in self.request.environ:
-            self.request.environ.pop('CONTENT_LENGTH')
-        self.request.headers['Transfer-Encoding'] = 'chunked'
-        return self.request.get_response(self.app)
+        return self.handle_put_copy_response(out_md, app_iter)
+
+    def COPY(self):
+        """
+        COPY handler on Proxy
+        """
+        if not self.request.headers.get('Destination'):
+            return HTTPPreconditionFailed(request=self.request,
+                                          body='Destination header required')
+
+        self.gateway.authorizeStorletExecution(self.request)
+        self.gateway.augmentStorletRequest(self.request)
+        self._validate_copy_request()
+        dest_container, dest_object = check_destination_header(self.request)
+
+        # re-write the existing request as a PUT instead of creating a new one
+        # TODO(eranr): do we want a new sub_request or re-write existing one as
+        # we do below. See proxy obj controller COPY.
+        self.request.method = 'PUT'
+        self.request.path_info = '/v1/%s/%s/%s' % \
+                                 (self.account, dest_container, dest_object)
+        self.request.headers['Content-Length'] = 0
+        del self.request.headers['Destination']
+
+        return self.base_handle_copy_request(self.container, self.obj,
+                                             dest_container, dest_object)
 
 
 class StorletObjectHandler(BaseStorletHandler):

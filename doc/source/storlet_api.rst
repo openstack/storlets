@@ -100,7 +100,7 @@ Storlets Invocation
 ===================
 
 Once the storlet and its dependencies are deployed the storlet is ready for invocation.
-Storlets can be invoked in 2 ways:
+Storlets can be invoked in 3 ways:
 
 #. Invocation upon GET.
 	In this case the user gets a transformation of the object residing in the store (as opposed to the actual object).
@@ -113,7 +113,11 @@ Storlets can be invoked in 2 ways:
 	A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data
 	and adds it as Swift metadata.
 
-Invocation involves adding an extra header ('X-Run-Storlet') to the Swift original PUT/GET requests.
+#. Invocation upon COPY.
+        In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
+        thumbnail extraction from an existing jpg.
+
+Invocation involves adding an extra header ('X-Run-Storlet') to the Swift original PUT/GET/COPY requests.
 Additional details and examples can be found in <https://github.com/openstack/storlets/blob/master/doc/source/invoking_storlets.rst>.
 
 Invoke a storlet upon object download
@@ -159,3 +163,31 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
 
 As with the invocation upon download, one may provide parameters to the storlet either through the URL query string or through
 the request headers.
+
+Invoke a storlet upon object copy
+---------------------------------
+
+Object copy in Swift can be done using both the PUT and the COPY verbs as shown below
+
+::
+
+ [PUT] /v1/{account}/{container}/{object}
+   'X-Copy-From': {source container}/{source object}
+
+ [COPY] /v1/{account}/{container}/{object}
+   'Destination': {dest container}/{dest object}
+
+An additional header ('X-Run-Storlet') must be provided to inform the system to run a storlet.
+
+::
+
+    'X-Run-Storlet': {storlet_name}
+    'X-Auth-Token': {authorization_token}
+
+In the PUT case the storlet acts upon the object appearing in the 'X-Copy-From' header, creating the object appearing in the request path.
+In the COPY case the storlet acts upon the object appeairng in the requets path, crating the object appearing in the 'Destination' header.
+
+Specifying any of the headers below while invoking a storlet upon copy will result in '400 Bad Request'
+ - 'X-Copy-From-Account'
+ - 'Destination-Account'
+ - 'X-Fresh-Metadata'

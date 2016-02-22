@@ -28,6 +28,9 @@ class StorletGatewayBase(object):
     def gatewayProxyPutFlow(self, orig_request, container, obj):
         raise NotImplementedError("Not implemented: gatewayProxyPutFlow")
 
+    def gatewayProxyCopyFlow(self, orig_request, container, obj, src_response):
+        raise NotImplementedError("Not implemented: gatewayProxyCopyFlow")
+
     def gatewayProxyGetFlow(self, request, container, obj, original_response):
         raise NotImplementedError("Not implemented: gatewayProxySloFlow")
 

@@ -1,0 +1,47 @@
+<!-- 
+  Copyright IBM Corp. 2015, 2015 All Rights Reserved
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  Limitations under the License.
+-->
+
+<project>
+
+	<target name="clean">
+		<delete dir="bin" />
+	</target>
+
+	<target name="java">
+		<mkdir dir="bin" />
+		<javac srcdir="src" destdir="bin" includeantruntime="false">
+			<classpath>
+				<pathelement path="../../Engine/SCommon/bin/SCommon.jar"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="jar" depends="java">
+		<jar destfile="thumbnail-1.0.jar" basedir="bin">
+			<manifest>
+				<attribute name="Main-Class" 
+					       value="com.ibm.storlet.Thumbnail" />
+			</manifest>
+		</jar>
+		<move file="thumbnail-1.0.jar" todir="bin" />
+	</target>
+
+	<target name="jpg">
+		<copy file="sample.jpg" toFile="bin/sample.jpg" />
+	</target>
+
+	<target name="build" depends="jar,jpg">
+	</target>
+</project>
