@@ -177,7 +177,7 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         with storlet_enabled():
             get(target)
 
-    def test_GET_with_storlets_and_range(self):
+    def test_GET_with_storlets_and_http_range(self):
         target = '/v1/AUTH_a/c/o'
 
         def get(path):
@@ -188,6 +188,33 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             app = self.get_app(self.app, self.conf)
             app(req.environ, self.start_response)
             self.assertEqual('400 Bad Request', self.got_statuses[-1])
+
+        with storlet_enabled():
+            get(target)
+
+    def test_GET_with_storlets_and_storlet_range(self):
+        target = '/v1/AUTH_a/c/o'
+        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+
+        def get(path):
+            req_range = 'bytes=1-6'
+            req = Request.blank(
+                path, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                         'X-Storlet-Range': req_range})
+            app = self.get_app(self.app, self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual('200 OK', self.got_statuses[-1])
+            self.assertEqual(resp.read(), 'AKE AP')
+
+            resp_headers = dict(self.got_headers[-1])
+            self.assertFalse('Content-Range' in resp_headers)
+            self.assertEqual(resp_headers['Storlet-Input-Range'],
+                             'bytes 1-6/8')
+
+            raw_req = self.app.get_calls('GET', path)[0]
+            for key in ['Range', 'X-Storlet-Range']:
+                self.assertEqual(raw_req[2][key], req_range)
 
         with storlet_enabled():
             get(target)
@@ -525,7 +552,7 @@ class TestStorletMiddlewareObject(TestStorletMiddleware):
 
         get(target)
 
-    def test_GET_with_storlets_and_range(self):
+    def test_GET_with_storlets_and_http_range(self):
         target = '/sda1/p/AUTH_a/c/o'
         self.app.register('GET', target, HTTPOk, body='FAKE APP')
 
@@ -539,6 +566,25 @@ class TestStorletMiddlewareObject(TestStorletMiddleware):
             app(req.environ, self.start_response)
             self.assertEqual('416 Requested Range Not Satisfiable',
                              self.got_statuses[-1])
+
+        get(target)
+
+    def test_GET_with_storlets_and_storlet_range(self):
+        target = '/sda1/p/AUTH_a/c/o'
+        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+
+        def get(path):
+            req = Request.blank(
+                path, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Backend-Storlet-Policy-Index': '0',
+                         'X-Run-Storlet': 'Storlet-1.0.jar',
+                         'X-Storlet-Range': 'bytes=1-6',
+                         'Range': 'bytes=1-6'})
+            app = self.get_app(self.app, self.conf)
+            resp = app(req.environ, self.start_response)
+            self.assertEqual('206 Partial Content',
+                             self.got_statuses[-1])
+            self.assertEqual(resp, ['AKE AP'])
 
         get(target)
 
