@@ -27,8 +27,6 @@ class StorletGatewayStub(StorletGatewayBase):
         self.container = container
         self.obj = obj
         self.storlet_conf = storlet_conf
-        self.dummy_content = self.storlet_conf.get('dummy_content',
-                                                   'DUMMY_CONTENT')
 
     def validateStorletUpload(self, req):
         self.logger.debug("Storlet request validated")
@@ -38,18 +36,21 @@ class StorletGatewayStub(StorletGatewayBase):
         self.logger.debug("Storlet execution is authorized")
         return True
 
-    def dummy_invocation(self):
-        self.logger.debug("Dummy invocation is called")
-        return {}, BytesIO(self.dummy_content)
+    def indentity_invocation(self, content):
+        self.logger.debug("Identity invocation is called")
+        return {}, BytesIO(content)
 
     def augmentStorletRequest(self, request):
         pass
 
     def gatewayProxyPutFlow(self, orig_request, container, obj):
-        return self.dummy_invocation()
+        return self.indentity_invocation(orig_request.body)
+
+    def gatewayProxyCopyFlow(self, orig_request, container, obj, source_resp):
+        return self.indentity_invocation(source_resp.body)
 
     def gatewayProxyGetFlow(self, request, container, obj, original_response):
-        return self.dummy_invocation()
+        return self.indentity_invocation(original_response.body)
 
     def gatewayObjectGetFlow(self, request, container, obj, original_response):
-        return self.dummy_invocation()
+        return self.indentity_invocation(original_response.body)

@@ -31,16 +31,20 @@ class StorletFunctionalTest(unittest.TestCase):
     def setUp(self):
         conf = ClusterConfig(CONFIG_FILE).get_conf()
         self.url, self.token = storlet_get_auth(conf)
-        path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS, self.storlet_dir,
-                                       BIN_DIR)
+        self.acct = self.url.split('/')[4]
+        self.path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS, self.storlet_dir,
+                                            BIN_DIR)
         self.deps = []
         for d in self.dep_names:
-            self.deps.append('%s/%s' % (path_to_bundle, d))
-        storlet = '%s/%s' % (path_to_bundle, self.storlet_name)
+            self.deps.append('%s/%s' % (self.path_to_bundle, d))
+        storlet = '%s/%s' % (self.path_to_bundle, self.storlet_name)
 
         deploy_storlet(self.url, self.token,
                        storlet, self.storlet_main,
                        self.deps)
         if self.storlet_file:
-            put_local_file(self.url, self.token, self.container,
-                           path_to_bundle, self.storlet_file, self.headers)
+            put_local_file(self.url, self.token,
+                           self.container,
+                           self.path_to_bundle,
+                           self.storlet_file,
+                           self.headers)

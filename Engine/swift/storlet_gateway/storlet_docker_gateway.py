@@ -27,7 +27,7 @@ from eventlet import Timeout
 from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 from storlet_runtime import RunTimePaths, RunTimeSandbox, \
     StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
-    StorletInvocationSLOProtocol
+    StorletInvocationCOPYProtocol, StorletInvocationSLOProtocol
 from swift.common.internal_client import InternalClient as ic
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized
 from swift.common.utils import config_true_value
@@ -50,6 +50,7 @@ The API is made of:
     augmentStorletRequest
     gatewayObjectGetFlow
     gatewayProxyPutFlow
+    gatewayProxyCopyFlow
     gatewayProxyGetFlow
 (3) parse_gateway_conf parses the docker gateway specific configuration. While
     it is part of the API, it is implemented as a static method as the parsing
@@ -108,6 +109,12 @@ class StorletSLORequest(DockerStorletRequest):
         DockerStorletRequest.__init__(self, account, orig_resp, params)
         self.stream = orig_resp.app_iter
         return
+
+
+class StorletCopyRequest(DockerStorletRequest):
+    def __init__(self, account, request, src_resp):
+        DockerStorletRequest.__init__(self, account, request, request.params)
+        self.stream = iter(src_resp.app_iter)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -182,7 +189,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             self.close()
 
     def _validate_storlet_upload(self, req):
-        self.logger.info('PUT method for storlet container. Sanity check')
+        self.logger.debug('PUT method for storlet container. Sanity check')
         mandatory_md = ['X-Object-Meta-Storlet-Language',
                         'X-Object-Meta-Storlet-Interface-Version',
                         'X-Object-Meta-Storlet-Dependency',
@@ -229,8 +236,8 @@ class StorletGatewayDocker(StorletGatewayBase):
         if self.storlet_metadata:
             self._fix_request_headers(req)
 
-    def gatewayProxyPutFlow(self, orig_req, container, obj):
-        sreq = StorletPUTRequest(self.account, orig_req)
+    def gateway_proxy_put_copy_flow(self, sreq,
+                                    container, obj):
         req = sreq._getInitialRequest()
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
@@ -249,10 +256,17 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self. \
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationPUTProtocol(sreq,
-                                                 storlet_pipe_path,
-                                                 slog_path,
-                                                 self.storlet_timeout)
+        if isinstance(sreq, StorletCopyRequest):
+            sprotocol = StorletInvocationCOPYProtocol(sreq,
+                                                      storlet_pipe_path,
+                                                      slog_path,
+                                                      self.storlet_timeout)
+        else:
+            sprotocol = StorletInvocationPUTProtocol(sreq,
+                                                     storlet_pipe_path,
+                                                     slog_path,
+                                                     self.storlet_timeout)
+
         out_md, self.data_read_fd = sprotocol.communicate()
 
         self._set_metadata_in_headers(req.headers, out_md)
@@ -261,6 +275,18 @@ class StorletGatewayDocker(StorletGatewayBase):
         return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
+
+    def gatewayProxyPutFlow(self, orig_req, container, obj):
+        sreq = StorletPUTRequest(self.account, orig_req)
+        return self.gateway_proxy_put_copy_flow(sreq,
+                                                container,
+                                                obj)
+
+    def gatewayProxyCopyFlow(self, orig_req, container, obj, src_response):
+        sreq = StorletCopyRequest(self.account, orig_req, src_response)
+        return self.gateway_proxy_put_copy_flow(sreq,
+                                                container,
+                                                obj)
 
     def gatewayProxyGetFlow(self, req, container, obj, orig_resp):
         # Flow for running the GET computation on the proxy

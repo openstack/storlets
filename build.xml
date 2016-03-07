@@ -73,6 +73,7 @@
 				<fileset dir="StorletSamples/TestMetadataStorlet" includes="build.xml" />
 				<fileset dir="StorletSamples/HalfStorlet" includes="build.xml" />
 				<fileset dir="StorletSamples/CompressStorlet" includes="build.xml" />
+                                <fileset dir="StorletSamples/ThumbnailStorlet" includes="build.xml" />
 			</subant>
 		</sequential>
 	</macrodef>
