@@ -37,6 +37,10 @@
   ignore_errors: True
   when: "'0' in lxc_docker.stdout_lines[0]"
   
+- name: Install Apt Transport HTTPS
+  apt: name=apt-transport-https state=present update-cache=yes force=yes
+  when: "'0' in lxc_docker.stdout_lines[0]"
+
 - name: Add Docker Apt repository
   apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
   when: "'0' in lxc_docker.stdout_lines[0]"
