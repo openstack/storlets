@@ -138,6 +138,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             self.obj_data = obj_data
             self.timeout = timeout
             self.cancel_func = cancel_func
+            self.buf = b''
 
         def __iter__(self):
             return self
@@ -154,33 +155,82 @@ class StorletGatewayDocker(StorletGatewayBase):
             except Exception:
                 self.close()
                 raise
-
             return chunk
 
         def next(self, size=64 * 1024):
-            chunk = None
-            r, w, e = select.select([self.obj_data], [], [], self.timeout)
-            if len(r) == 0:
-                self.close()
-            if self.obj_data in r:
-                chunk = self.read_with_timeout(size)
-                if chunk == '':
-                    raise StopIteration('Stopped iterator ex')
+            if len(self.buf) < size:
+                r, w, e = select.select([self.obj_data], [], [], self.timeout)
+                if len(r) == 0:
+                    self.close()
+
+                if self.obj_data in r:
+                    self.buf += self.read_with_timeout(size - len(self.buf))
+                    if self.buf == b'':
+                        raise StopIteration('Stopped iterator ex')
                 else:
-                    return chunk
-            raise StopIteration('Stopped iterator ex')
+                    raise StopIteration('Stopped iterator ex')
+
+            if len(self.buf) > size:
+                data = self.buf[:size]
+                self.buf = self.buf[size:]
+            else:
+                data = self.buf
+                self.buf = b''
+            return data
+
+        def _close_check(self):
+            if self.closed:
+                raise ValueError('I/O operation on closed file')
 
         def read(self, size=64 * 1024):
+            self._close_check()
             return self.next(size)
 
         def readline(self, size=-1):
-            return ''
+            self._close_check()
+
+            # read data into self.buf if there is not enough data
+            while b'\n' not in self.buf and \
+                  (size < 0 or len(self.buf) < size):
+                if size < 0:
+                    chunk = self.read()
+                else:
+                    chunk = self.read(size - len(self.buf))
+                if not chunk:
+                    break
+                self.buf += chunk
+
+            # Retrieve one line from buf
+            data, sep, rest = self.buf.partition(b'\n')
+            data += sep
+            self.buf = rest
+
+            # cut out size from retrieved line
+            if size >= 0 and len(data) > size:
+                self.buf = data[size:] + self.buf
+                data = data[:size]
+
+            return data
 
         def readlines(self, sizehint=-1):
-            pass
+            self._close_check()
+            lines = []
+            try:
+                while True:
+                    line = self.readline(sizehint)
+                    if not line:
+                        break
+                    lines.append(line)
+                    if sizehint >= 0:
+                        sizehint -= len(line)
+                        if sizehint <= 0:
+                            break
+            except StopIteration:
+                pass
+            return lines
 
         def close(self):
-            if self.closed is True:
+            if self.closed:
                 return
             self.closed = True
             os.close(self.obj_data)
