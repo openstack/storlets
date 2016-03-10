@@ -13,11 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 
-"""
-Created on Feb 18, 2014
-
-@author: gilv
-"""
 import os
 
 

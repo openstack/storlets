@@ -13,12 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 
-"""
-Created on Mar 24, 2015
-
-@author: Yosef Moatti
-"""
-
 import os
 import select
 import shutil

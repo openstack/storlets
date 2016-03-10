@@ -13,10 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-'''
-@author: gilv / cdoron / evgenyl
-'''
-
 import unittest
 from common.cluster_config_parser import ClusterConfig
 from common.utils import storlet_get_auth, deploy_storlet,\
