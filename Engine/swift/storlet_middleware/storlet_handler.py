@@ -25,7 +25,7 @@ from storlet_common import StorletTimeout
 from swift.common.constraints import check_copy_from_header, \
     check_destination_header
 from swift.common.exceptions import ConnectionTimeout
-from swift.common.swob import HTTPException, \
+from swift.common.swob import HTTPException, Response, \
     HTTPBadRequest, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
     HTTPRequestedRangeNotSatisfiable, HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
@@ -135,6 +135,10 @@ class BaseStorletHandler(object):
         """
         return 'Range' in self.request.headers
 
+    @property
+    def is_storlet_range_request(self):
+        return 'X-Storlet-Range' in self.request.headers
+
     def is_slo_response(self, resp):
         self.logger.debug(
             'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
@@ -175,12 +179,20 @@ class BaseStorletHandler(object):
     def apply_storlet(self, resp):
         outmd, app_iter = self._call_gateway(resp)
 
-        if 'Content-Length' in resp.headers:
-            resp.headers.pop('Content-Length')
-        if 'Transfer-Encoding' in resp.headers:
-            resp.headers.pop('Transfer-Encoding')
-        resp.app_iter = app_iter
-        return resp
+        new_headers = resp.headers.copy()
+
+        if 'Content-Length' in new_headers:
+            new_headers.pop('Content-Length')
+        if 'Transfer-Encoding' in new_headers:
+            new_headers.pop('Transfer-Encoding')
+
+        # Range response(206) should be replaced by 200
+        if 'Content-Range' in resp.headers:
+            new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
+            new_headers.pop('Content-Range')
+
+        return Response(headers=new_headers, app_iter=app_iter,
+                        reuqest=self.request)
 
 
 class StorletProxyHandler(BaseStorletHandler):
@@ -213,7 +225,7 @@ class StorletProxyHandler(BaseStorletHandler):
         # SLO / proxy only case:
         # storlet to be invoked now at proxy side:
         runnable = any(
-            [self.is_slo_response(resp),
+            [self.is_storlet_range_request, self.is_slo_response(resp),
              self.conf['storlet_execute_on_proxy_only']])
         return runnable
 
@@ -265,6 +277,11 @@ class StorletProxyHandler(BaseStorletHandler):
         # full object to detect if we are in SLO case,
         # and invoke Storlet only if in SLO case.
         self.gateway.augmentStorletRequest(self.request)
+
+        if self.is_storlet_range_request:
+            self.request.headers['Range'] = \
+                self.request.headers['X-Storlet-Range']
+
         original_resp = self.request.get_response(self.app)
 
         if original_resp.is_success:
@@ -425,7 +442,7 @@ class StorletObjectHandler(BaseStorletHandler):
         """
         self.logger.debug('GET. Run storlet')
 
-        if self.is_range_request:
+        if self.is_range_request and not self.is_storlet_range_request:
             raise HTTPRequestedRangeNotSatisfiable(
                 'Storlet execution with range header is not supported',
                 request=self.request)
@@ -437,13 +454,15 @@ class StorletObjectHandler(BaseStorletHandler):
 
         # TODO(takashi): not sure manifest file should not be run with storlet
         not_runnable = any(
-            [self.is_slo_get_request,
+            [self.is_storlet_range_request, self.is_slo_get_request,
              self.conf['storlet_execute_on_proxy_only'],
              self.is_slo_response(orig_resp)])
 
         if not_runnable:
-            # No need to invoke Storlet in the object server
-            # This is either an SLO or we are in proxy only mode
+            # Storlet must be invoked on proxy as it is:
+            # either an SLO
+            # or storlet-range-request
+            # or proxy only mode
             self.logger.debug('storlet_handler: invocation '
                               'over %s/%s/%s %s' %
                               (self.account, self.container, self.obj,

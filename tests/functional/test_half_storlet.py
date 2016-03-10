@@ -106,7 +106,8 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
         res = self.invoke_storlet('GET')
         self.assertEqual(res, 'acegikmn')
 
-#   TODO(takashi): We should re-add this tests after implementing input range
-#    def test_get_range(self):
-#        res = self.invoke_storlet('GET', headers={'range': 'bytes=5-10'})
-#        self.assertEqual(res, 'fhj')
+    def test_get_range(self):
+        res = self.invoke_storlet(
+            'GET',
+            headers={'X-Storlet-Range': 'bytes=5-10'})
+        self.assertEqual(res, 'fhj')
