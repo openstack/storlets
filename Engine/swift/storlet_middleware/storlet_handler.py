@@ -25,9 +25,9 @@ from storlet_common import StorletTimeout
 from swift.common.constraints import check_copy_from_header, \
     check_destination_header
 from swift.common.exceptions import ConnectionTimeout
-from swift.common.swob import HTTPBadRequest, HTTPException, \
-    HTTPInternalServerError, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
-    wsgify
+from swift.common.swob import HTTPException, \
+    HTTPBadRequest, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
+    HTTPRequestedRangeNotSatisfiable, HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.proxy.controllers.base import get_account_info
@@ -213,7 +213,7 @@ class StorletProxyHandler(BaseStorletHandler):
         # SLO / proxy only case:
         # storlet to be invoked now at proxy side:
         runnable = any(
-            [self.is_range_request, self.is_slo_response(resp),
+            [self.is_slo_response(resp),
              self.conf['storlet_execute_on_proxy_only']])
         return runnable
 
@@ -245,6 +245,10 @@ class StorletProxyHandler(BaseStorletHandler):
         """
         GET handler on Proxy
         """
+        if self.is_range_request:
+            raise HTTPBadRequest('Storlet execution with range header is not'
+                                 ' supported', request=self.request)
+
         self.gateway.authorizeStorletExecution(self.request)
 
         # The get request may be a SLO object GET request.
@@ -416,7 +420,16 @@ class StorletObjectHandler(BaseStorletHandler):
             self.request, self.container, self.obj, resp)
 
     def GET(self):
+        """
+        GET handler on object-server
+        """
         self.logger.debug('GET. Run storlet')
+
+        if self.is_range_request:
+            raise HTTPRequestedRangeNotSatisfiable(
+                'Storlet execution with range header is not supported',
+                request=self.request)
+
         orig_resp = self.request.get_response(self.app)
 
         if not is_success(orig_resp.status_int):
@@ -424,7 +437,7 @@ class StorletObjectHandler(BaseStorletHandler):
 
         # TODO(takashi): not sure manifest file should not be run with storlet
         not_runnable = any(
-            [self.is_range_request, self.is_slo_get_request,
+            [self.is_slo_get_request,
              self.conf['storlet_execute_on_proxy_only'],
              self.is_slo_response(orig_resp)])
 
