@@ -18,8 +18,8 @@ import mock
 import unittest
 
 from contextlib import contextmanager
-from swift.common.swob import Request, HTTPOk, HTTPCreated, HTTPNotFound, \
-    HTTPBadRequest
+from swift.common.swob import Request, HTTPOk, HTTPCreated, HTTPAccepted, \
+    HTTPBadRequest, HTTPNotFound
 from storlet_middleware import storlet_handler
 from storlet_middleware.storlet_handler import StorletProxyHandler, \
     StorletObjectHandler, BaseStorletHandler
@@ -381,6 +381,25 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         with storlet_enabled():
             put(target)
 
+    def test_POST_storlet(self):
+        target = '/v1/AUTH_a/storlet/storlet-1.0.jar'
+        self.app.register('POST', target, HTTPAccepted)
+
+        def post(path):
+            sheaders = {'X-Object-Meta-Storlet-Language': 'Java',
+                        'X-Object-Meta-Storlet-Interface-Version': '1.0',
+                        'X-Object-Meta-Storlet-Dependency': 'dependency',
+                        'X-Object-Meta-Storlet-Main':
+                            'org.openstack.storlet.Storlet'}
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'POST'},
+                                headers=sheaders)
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('202 Accepted', self.got_statuses[-1])
+
+        with storlet_enabled():
+            post(target)
+
     def test_GET_storlet(self):
         target = '/v1/AUTH_a/storlet/storlet-1.0.jar'
         sheaders = {'X-Object-Meta-Storlet-Language': 'Java',
@@ -419,6 +438,22 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
 
         with storlet_enabled():
             put(target)
+
+    def test_POST_dependency(self):
+        target = '/v1/AUTH_a/dependency/dependency'
+        self.app.register('POST', target, HTTPAccepted)
+
+        def post(path):
+            sheaders = {'X-Object-Meta-Storlet-Dependency-Version': '1',
+                        'X-Object-Meta-Storlet-Dependency-Permissions': '0755'}
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'POST'},
+                                headers=sheaders)
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('202 Accepted', self.got_statuses[-1])
+
+        with storlet_enabled():
+            post(target)
 
     def test_GET_dependency(self):
         target = '/v1/AUTH_a/dependency/dependency'

@@ -189,7 +189,7 @@ class StorletProxyHandler(BaseStorletHandler):
             request, conf, app, logger)
 
         # proxy need the gateway module both execution and storlet object
-        if (self.is_storlet_execution or self.is_storlet_object_put):
+        if (self.is_storlet_execution or self.is_storlet_object_update):
             # In proxy server, storlet handler validate if storlet enabled
             # at the account, anyway
             account_meta = get_account_info(self.request.environ,
@@ -218,16 +218,17 @@ class StorletProxyHandler(BaseStorletHandler):
         return runnable
 
     @property
-    def is_storlet_object_put(self):
+    def is_storlet_object_update(self):
         return (self.container in self.storlet_containers and self.obj
-                and self.request.method == 'PUT')
+                and self.request.method in ['PUT', 'POST'])
 
     @property
     def is_put_copy_request(self):
         return 'X-Copy-From' in self.request.headers
 
     def handle_request(self):
-        if self.is_storlet_object_put:
+        if self.is_storlet_object_update:
+            # TODO(takashi): We have to validate metadata in COPY case
             self.gateway.validateStorletUpload(self.request)
             return self.request.get_response(self.app)
         else:
