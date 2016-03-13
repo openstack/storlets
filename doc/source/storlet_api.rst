@@ -147,6 +147,15 @@ One may also provide parameters to the storlet. There are two ways to send param
 
 Parameters that start with 'storlet\_' are not allowed. The 'storlet\_' prefix is reserved for internal system use.
 
+To invoke a storlet on a range of an object use the 'X-Storlet-Range' header. For instance:
+
+    ::
+
+        'X-Storlet-Range': 'bytes=1-6'
+
+'X-Storlet-Range' can take any value that Swift can take for the HTTP 'Range' header as described in <http://developer.openstack.org/api-ref-objectstorage-v1.html>.
+Specifying HTTP 'Range' header together with 'X-Run-Storlet' is not allowed, and results in '400 Bad Request'
+
 Invoke a storlet upon object upload
 -----------------------------------
 
