@@ -16,8 +16,15 @@ Limitations under the License.
 
 class StorletGatewayBase(object):
 
-    def validateStorletUpload(self, request):
-        raise NotImplementedError("Not implemented: validateStorletUpload")
+    @classmethod
+    def validate_storlet_registration(cls, params, obj):
+        raise NotImplementedError("Not implemented: "
+                                  "validate_storlet_registration")
+
+    @classmethod
+    def validate_dependency_registration(cls, params, obj):
+        raise NotImplementedError("Not implemented: "
+                                  "validate_dependency_registration")
 
     def authorizeStorletExecution(self, request):
         raise NotImplementedError("Not implemented: authorizeStorletExecution")

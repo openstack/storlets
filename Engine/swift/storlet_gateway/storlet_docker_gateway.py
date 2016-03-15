@@ -18,7 +18,7 @@ import select
 import shutil
 
 from swift.common.internal_client import InternalClient as ic
-from swift.common.swob import HTTPBadRequest, HTTPUnauthorized
+from swift.common.swob import HTTPUnauthorized
 from swift.common.utils import config_true_value
 from swift.common.wsgi import make_subrequest
 from storlet_middleware.storlet_common import StorletConfigError, \
@@ -40,7 +40,8 @@ The API is made of:
     DockerStorletRequest
 
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
-    validateStorletUpload
+    validate_storlet_registration
+    validate_dependency_registration
     authorizeStorletExecution
     augmentStorletRequest
     gatewayObjectGetFlow
@@ -234,40 +235,35 @@ class StorletGatewayDocker(StorletGatewayBase):
         def __del__(self):
             self.close()
 
-    def _validate_storlet_upload(self, req):
-        self.logger.debug('PUT method for storlet container. Sanity check')
-        mandatory_md = ['X-Object-Meta-Storlet-Language',
-                        'X-Object-Meta-Storlet-Interface-Version',
-                        'X-Object-Meta-Storlet-Dependency',
-                        'X-Object-Meta-Storlet-Object-Metadata',
-                        'X-Object-Meta-Storlet-Main']
-        self._validate_mandatory_headers(req, mandatory_md)
+    @classmethod
+    def validate_storlet_registration(cls, params, name):
+        mandatory = ['Language', 'Interface-Version', 'Dependency',
+                     'Object-Metadata', 'Main']
+        StorletGatewayDocker._check_mandatory_params(params, mandatory)
 
-        if (self.obj.find('-') < 0 or self.obj.find('.') < 0):
-            raise HTTPBadRequest('Storlet name is incorrect', request=req)
+        if '-' not in name or '.' not in name:
+            raise ValueError('Storlet name is incorrect')
 
-    def _validate_dependency_upload(self, req):
-        self.logger.debug('PUT method for storlet dependency. Sanity check')
-        mandatory_md = ['X-Object-Meta-Storlet-Dependency-Version']
-        self._validate_mandatory_headers(req, mandatory_md)
+    @classmethod
+    def validate_dependency_registration(cls, params, name):
+        mandatory = ['Dependency-Version']
+        StorletGatewayDocker._check_mandatory_params(params, mandatory)
 
-        perm = req.headers. \
-            get('X-Object-Meta-Storlet-Dependency-Permissions')
+        perm = params.get('Dependency-Permissions')
         if perm is not None:
             try:
                 perm_int = int(perm, 8)
             except ValueError:
-                raise HTTPBadRequest('Dependency permission is incorrect',
-                                     request=req)
+                raise ValueError('Dependency permission is incorrect')
             if (perm_int & int('600', 8)) != int('600', 8):
-                raise HTTPBadRequest('The owner hould have rw permission',
-                                     request=req)
+                raise ValueError('The owner hould have rw permission')
 
-    def validateStorletUpload(self, req):
-        if (self.container == self.sconf['storlet_container']):
-            self._validate_storlet_upload(req)
-        elif (self.container == self.sconf['storlet_dependency']):
-            self._validate_dependency_upload(req)
+    @classmethod
+    def _check_mandatory_params(cls, params, mandatory):
+        for md in mandatory:
+            if md not in params:
+                raise ValueError('Mandatory parameter is missing'
+                                 ': {0}'.format(md))
 
     def authorizeStorletExecution(self, req):
         # keep the storlets headers for later use.
@@ -417,14 +413,6 @@ class StorletGatewayDocker(StorletGatewayBase):
             raise HTTPUnauthorized('Account disabled for storlets',
                                    request=req)
         return resp.headers
-
-    def _validate_mandatory_headers(self, req, mandatory_md):
-        for md in mandatory_md:
-            if md not in req.headers:
-                self.logger.info('Mandatory header ' +
-                                 'is missing: {0}'.format(md))
-                raise HTTPBadRequest('Mandatory header is missing'
-                                     ': {0}'.format(md))
 
     def _fix_request_headers(self, req):
         # add to request the storlet metadata to be used in case the request

@@ -212,95 +212,79 @@ class TestStorletGatewayDocker(unittest.TestCase):
             yield
             self.assertEqual(e.status_int, status)
 
-    def test_validate_mandatory_headers(self):
-        self.container = self.storlet_container
-        headers = {'keyA': 'valueA',
-                   'keyB': 'valueB',
-                   'keyC': 'valueC'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
+    def test_check_mandatory_params(self):
+        params = {'keyA': 'valueA',
+                  'keyB': 'valueB',
+                  'keyC': 'valueC'}
 
         # all mandatory headers are included
-        gw._validate_mandatory_headers(req, ['keyA', 'keyB'])
+        StorletGatewayDocker._check_mandatory_params(
+            params, ['keyA', 'keyB'])
 
         # some of mandatory headers are missing
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_mandatory_headers(req, ['keyA', 'KeyD'])
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker._check_mandatory_params(
+                params, ['keyA', 'KeyD'])
 
-    def test_validate_storlet_upload(self):
-        self.container = self.storlet_container
-
+    def test_validate_storlet_registration(self):
         # correct name and headers
-        self.obj = 'storlet-1.0.jar'
-        headers = {'x-object-meta-storlet-language': 'java',
-                   'x-object-meta-storlet-interface-version': '1.0',
-                   'x-object-meta-storlet-dependency': 'dep_file',
-                   'x-object-meta-storlet-object-metadata': 'no',
-                   'x-object-meta-storlet-main': 'path.to.storlet.class'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        gw._validate_storlet_upload(req)
+        obj = 'storlet-1.0.jar'
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        StorletGatewayDocker.validate_storlet_registration(params, obj)
 
         # some header keys are missing
-        self.obj = 'storlet-1.0.jar'
-        headers = {'x-object-meta-storlet-language': 'java',
-                   'x-object-meta-storlet-interface-version': '1.0',
-                   'x-object-meta-storlet-dependency': 'dep_file',
-                   'x-object-meta-storlet-object-metadata': 'no'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_storlet_upload(req)
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
 
         # wrong name
-        self.obj = 'storlet.jar'
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_storlet_upload(req)
+        obj = 'storlet.jar'
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
 
-    def test_validate_dependency_upload(self):
-        self.container = self.storlet_dependency
-
+    def test_validate_dependency_registration(self):
         # w/o dependency parameter
-        headers = {'x-object-meta-storlet-dependency-version': '1.0'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        gw._validate_dependency_upload(req)
+        obj = 'dep_file'
+        params = {'Dependency-Version': '1.0'}
+        StorletGatewayDocker.validate_dependency_registration(params, obj)
 
         # w/ correct dependency parameter
-        headers = {
-            'x-object-meta-storlet-dependency-permissions': '755',
-            'x-object-meta-storlet-dependency-version': '1.0'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        gw._validate_dependency_upload(req)
+        params = {
+            'Dependency-Permissions': '755',
+            'Dependency-Version': '1.0'}
+        StorletGatewayDocker.validate_dependency_registration(params, obj)
 
         # w/ wrong dependency parameter
-        headers = {
-            'x-object-meta-storlet-dependency-permissions': '400',
-            'x-object-meta-storlet-dependency-version': '1.0'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_dependency_upload(req)
+        params = {
+            'Dependency-Permissions': '400',
+            'Dependency-Version': '1.0'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_dependency_registration(params, obj)
 
         # w/ invalid dependency parameter
-        headers = {
-            'x-object-meta-storlet-dependency-permissions': 'foo',
-            'x-object-meta-storlet-dependency-version': '1.0'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_dependency_upload(req)
+        params = {
+            'Dependency-Permissions': 'foo',
+            'Dependency-Version': '1.0'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_dependency_registration(params, obj)
 
-        headers = {
-            'x-object-meta-storlet-dependency-permissions': '888',
-            'x-object-meta-storlet-dependency-version': '1.0'}
-        req = self._create_req('PUT', headers=headers)
-        gw = self._create_gateway()
-        with self.assertRaisesHttpStatus(400):
-            gw._validate_dependency_upload(req)
+        params = {
+            'Dependency-Permissions': '888',
+            'Dependency-Version': '1.0'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_dependency_registration(params, obj)
 
     def test_authorizeStorletExecution(self):
         sheaders = {
