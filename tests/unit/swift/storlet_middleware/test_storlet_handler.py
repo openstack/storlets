@@ -83,14 +83,6 @@ def storlet_enabled():
         yield
 
 
-@contextmanager
-def authorize_storlet_execution():
-    with mock.patch(
-            'storlet_gateway.storlet_stub_gateway.StorletGatewayStub.'
-            'authorizeStorletExecution') as ase:
-        yield ase
-
-
 class TestStorletMiddlewareProxy(TestStorletMiddleware):
     def setUp(self):
         super(TestStorletMiddlewareProxy, self).setUp()
@@ -115,12 +107,9 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         # TODO(takashi): decide request path based on config value
         target = '/v1/AUTH_a/c/o'
         self.app.register('GET', target, HTTPOk, body='FAKE RESULT')
-        # TODO(kota->takashi): This will be needed after refactor
-        # because, right now, we can not test the existence HEAD
-        # request with stub gateway. In my idea, we could move the
-        # validation from gateway into handler in storlet_middleware
-        # storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, body='jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, headers={},
+                          body='jar binary')
 
         def get(path):
             req = Request.blank(
@@ -162,9 +151,8 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
     def test_GET_with_storlets_object_404(self):
         target = '/v1/AUTH_a/c/o'
         self.app.register('GET', target, HTTPNotFound)
-        # TODO(takashi): should uncomment this after refactoring
-        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, body='jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def get(path):
             req = Request.blank(
@@ -195,6 +183,8 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
     def test_GET_with_storlets_and_storlet_range(self):
         target = '/v1/AUTH_a/c/o'
         self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def get(path):
             req_range = 'bytes=1-6'
@@ -239,9 +229,8 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         self.app.register('GET', target, HTTPOk,
                           headers={'x-static-large-object': 'True'},
                           body='FAKE APP')
-        # TODO(takashi): should uncomment this after refactoring
-        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, body='jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def get(path):
             req = Request.blank(
@@ -249,6 +238,7 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
                 headers={'X-Run-Storlet': 'Storlet-1.0.jar'})
             app = self.get_app(self.app, self.conf)
             resp = app(req.environ, self.start_response)
+            self.assertEqual('200 OK', self.got_statuses[-1])
             self.assertEqual(resp.read(), 'FAKE APP')
 
         with storlet_enabled():
@@ -263,18 +253,15 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             self.assertEqual('201 Created', self.got_statuses[-1])
             self.app.reset_all()
 
-        with authorize_storlet_execution() as ase:
-            for target in ('AUTH_a', 'AUTH_a/c', 'AUTH_a/c/o'):
-                path = '/'.join(['', 'v1', target])
-                basic_put(path)
-            self.assertEqual(0, ase.call_count)
+        for target in ('AUTH_a', 'AUTH_a/c', 'AUTH_a/c/o'):
+            path = '/'.join(['', 'v1', target])
+            basic_put(path)
 
     def test_PUT_with_storlets(self):
         target = '/v1/AUTH_a/c/o'
         self.app.register('PUT', target, HTTPCreated)
-        # TODO(takashi): should uncomment this after refactoring
-        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, 'jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def put(path):
             req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
@@ -303,9 +290,7 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             app(req.environ, self.start_response)
             self.assertEqual('201 Created', self.got_statuses[-1])
 
-        with authorize_storlet_execution() as ase:
-            copy()
-            self.assertEqual(0, ase.call_count)
+        copy()
 
     def test_PUT_copy_with_storlets(self):
         source = '/v1/AUTH_a/c/so'
@@ -313,9 +298,8 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         copy_from = 'c/so'
         self.app.register('GET', source, HTTPOk, body='source body')
         self.app.register('PUT', target, HTTPCreated)
-        # TODO(eranr): should uncomment this after refactoring
-        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, 'jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def copy(target, source, copy_from):
             req = Request.blank(target, environ={'REQUEST_METHOD': 'PUT'},
@@ -348,11 +332,7 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
             app(req.environ, self.start_response)
             self.assertEqual('201 Created', self.got_statuses[-1])
 
-        with mock.patch(
-                'storlet_gateway.storlet_stub_gateway.StorletGatewayStub.'
-                'authorizeStorletExecution') as m:
-            copy()
-            self.assertEqual(0, m.call_count)
+        copy()
 
     def test_COPY_verb_with_storlets(self):
         source = '/v1/AUTH_a/c/so'
@@ -360,9 +340,8 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         destination = 'c/to'
         self.app.register('GET', source, HTTPOk, body='source body')
         self.app.register('PUT', target, HTTPCreated)
-        # TODO(eranr): should uncomment this after refactoring
-        # storlet = '/v1/AUTH_a/storlets/Storlet-1.0.jar'
-        # self.app.register('GET', storlet, HTTPOk, 'jar binary')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
 
         def copy(target, source, destination):
             req = Request.blank(source, environ={'REQUEST_METHOD': 'COPY'},

@@ -26,10 +26,7 @@ class StorletGatewayBase(object):
         raise NotImplementedError("Not implemented: "
                                   "validate_dependency_registration")
 
-    def authorizeStorletExecution(self, request):
-        raise NotImplementedError("Not implemented: authorizeStorletExecution")
-
-    def augmentStorletRequest(self, request):
+    def augmentStorletRequest(self, request, headers):
         raise NotImplementedError("Not implemented: augmentStorletRequest")
 
     def gatewayProxyPutFlow(self, orig_request, container, obj):
