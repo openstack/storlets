@@ -486,19 +486,18 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     def _upload_storlet_logs(self, slog_path):
         if (config_true_value(self.idata['generate_log'])):
-            logfile = open(slog_path, 'r')
-            client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
-            try:
-                headers = dict()
-                headers['CONTENT_TYPE'] = 'text/html'
-                log_obj_name = '%s.log' % \
-                    self.idata['storlet_name'][:self.idata['storlet_name'].
-                                               find('-')]
+            with open(slog_path, 'r') as logfile:
+                client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
+                # TODO(takashi): Is it really html?
+                #                (I suppose it should be text/plain)
+                headers = {'CONTENT_TYPE': 'text/html'}
+                storlet_name = self.idata['storlet_name'].split('-')[0]
+                log_obj_name = '%s.log' % storlet_name
+                # TODO(takashi): we had better retrieve required values from
+                #                sconf in __init__
                 client.upload_object(logfile, self.account,
                                      self.sconf['storlet_logcontainer'],
                                      log_obj_name, headers)
-            except Exception as e:
-                raise e
 
     def bring_from_cache(self, obj_name, is_storlet):
         """
@@ -563,9 +562,9 @@ class StorletGatewayDocker(StorletGatewayBase):
                                     obj_name)
             self.logger.debug('Invoking ic on path %s' % path)
             resp = client.make_request('GET', path, {'PATH_INFO': path}, [200])
-            fn = open(cache_target_path, 'w')
-            fn.write(resp.body)
-            fn.close()
+
+            with open(cache_target_path, 'w') as fn:
+                fn.write(resp.body)
 
             if not is_storlet:
                 expected_perm = resp.headers. \
