@@ -470,6 +470,18 @@ class StorletInvocationProtocol(object):
         md['type'] = SBUS_FD_LOGGER
         self.fdmd.append(md)
 
+    @contextmanager
+    def _activate_invocation_descriptors(self):
+        """
+        Contextmanager about file descriptors used in storlet invocation
+
+        NOTE: This context manager now only closes remote side fds,
+              so you should close local side fds
+        """
+        self._prepare_invocation_descriptors()
+        yield
+        self._close_remote_side_descriptors()
+
     def _prepare_invocation_descriptors(self):
         # Add the input stream
         self._add_input_stream()
@@ -484,12 +496,13 @@ class StorletInvocationProtocol(object):
         self._add_logger_stream()
 
     def _close_remote_side_descriptors(self):
-        if self.data_write_fd:
-            os.close(self.data_write_fd)
-        if self.metadata_write_fd:
-            os.close(self.metadata_write_fd)
-        if self.execution_str_write_fd:
-            os.close(self.execution_str_write_fd)
+        def safe_close(fd):
+            if fd:
+                os.close(fd)
+
+        safe_close(self.data_write_fd)
+        safe_close(self.metadata_write_fd)
+        safe_close(self.execution_str_write_fd)
 
     def _cancel(self):
         with _open_pipe() as (read_fd, write_fd):
@@ -594,12 +607,9 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
                                            storlet_logger_path, timeout)
 
     def communicate(self):
-        with self.storlet_logger.activate():
-            self._prepare_invocation_descriptors()
-            try:
-                self._invoke()
-            finally:
-                self._close_remote_side_descriptors()
+        with self.storlet_logger.activate(), \
+            self._activate_invocation_descriptors():
+            self._invoke()
 
         out_md = self._read_metadata()
         os.close(self.metadata_read_fd)
@@ -639,12 +649,9 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
             raise
 
     def communicate(self):
-        with self.storlet_logger.activate():
-            self._prepare_invocation_descriptors()
-            try:
-                self._invoke()
-            finally:
-                self._close_remote_side_descriptors()
+        with self.storlet_logger.activate(), \
+            self._activate_invocation_descriptors():
+            self._invoke()
 
         self._wait_for_write_with_timeout(self.input_data_write_fd)
         # We do the writing in a different thread.
