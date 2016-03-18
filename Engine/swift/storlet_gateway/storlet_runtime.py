@@ -22,6 +22,7 @@ import time
 
 import eventlet
 import json
+from contextlib import contextmanager
 
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
@@ -37,6 +38,18 @@ from storlet_middleware.storlet_common import StorletLogger, \
     StorletRuntimeException, StorletTimeout
 
 eventlet.monkey_patch()
+
+
+@contextmanager
+def _open_pipe():
+    """
+    Context manager for os.pipe
+    """
+    read_fd, write_fd = os.pipe()
+    yield (read_fd, write_fd)
+    os.close(read_fd)
+    os.close(write_fd)
+
 
 """---------------------------------------------------------------------------
 Sandbox API
@@ -221,18 +234,13 @@ class RunTimeSandbox(object):
     def ping(self):
         pipe_path = self.paths.host_factory_pipe()
 
-        read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_PING, write_fd)
-        rc = SBus.send(pipe_path, dtg)
-        if (rc < 0):
-            return -1
+        with _open_pipe() as (read_fd, write_fd):
+            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_PING, write_fd)
+            rc = SBus.send(pipe_path, dtg)
+            if (rc < 0):
+                return -1
 
-        reply = os.read(read_fd, 10)
-
-        # TODO(takashi): Theses fds may not get closed when timeout happens
-        #                outside
-        os.close(read_fd)
-        os.close(write_fd)
+            reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
@@ -302,19 +310,17 @@ class RunTimeSandbox(object):
         prms['log_level'] = self.storlet_daemon_debug_level
         prms['pool_size'] = self.storlet_daemon_thread_pool_size
 
-        read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_START_DAEMON,
-                                                   write_fd)
-        dtg.set_exec_params(prms)
+        with _open_pipe() as (read_fd, write_fd):
+            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_START_DAEMON,
+                                                       write_fd)
+            dtg.set_exec_params(prms)
 
-        pipe_path = self.paths.host_factory_pipe()
-        rc = SBus.send(pipe_path, dtg)
-        # TODO(takashi): Why we should rond rc into -1?
-        if (rc < 0):
-            return -1
-        reply = os.read(read_fd, 10)
-        os.close(read_fd)
-        os.close(write_fd)
+            pipe_path = self.paths.host_factory_pipe()
+            rc = SBus.send(pipe_path, dtg)
+            # TODO(takashi): Why we should rond rc into -1?
+            if (rc < 0):
+                return -1
+            reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
@@ -325,20 +331,18 @@ class RunTimeSandbox(object):
         """
         Stop SDaemon process in the account's sandbox
         """
-        read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_STOP_DAEMON,
-                                                   write_fd)
-        dtg.add_exec_param('storlet_name', storlet_id)
-        pipe_path = self.paths.host_factory_pipe()
-        rc = SBus.send(pipe_path, dtg)
-        if (rc < 0):
-            self.logger.info("Failed to send status command to %s %s" %
-                             (self.account, storlet_id))
-            return -1
+        with _open_pipe() as (read_fd, write_fd):
+            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_STOP_DAEMON,
+                                                       write_fd)
+            dtg.add_exec_param('storlet_name', storlet_id)
+            pipe_path = self.paths.host_factory_pipe()
+            rc = SBus.send(pipe_path, dtg)
+            if (rc < 0):
+                self.logger.info("Failed to send status command to %s %s" %
+                                 (self.account, storlet_id))
+                return -1
 
-        reply = os.read(read_fd, 10)
-        os.close(read_fd)
-        os.close(write_fd)
+            reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
@@ -349,19 +353,17 @@ class RunTimeSandbox(object):
         """
         Get the status of SDaemon process in the account's sandbox
         """
-        read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_DAEMON_STATUS,
-                                                   write_fd)
-        dtg.add_exec_param('storlet_name', storlet_id)
-        pipe_path = self.paths.host_factory_pipe()
-        rc = SBus.send(pipe_path, dtg)
-        if (rc < 0):
-            self.logger.info("Failed to send status command to %s %s" %
-                             (self.account, storlet_id))
-            return -1
-        reply = os.read(read_fd, 10)
-        os.close(read_fd)
-        os.close(write_fd)
+        with _open_pipe() as (read_fd, write_fd):
+            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_DAEMON_STATUS,
+                                                       write_fd)
+            dtg.add_exec_param('storlet_name', storlet_id)
+            pipe_path = self.paths.host_factory_pipe()
+            rc = SBus.send(pipe_path, dtg)
+            if (rc < 0):
+                self.logger.info("Failed to send status command to %s %s" %
+                                 (self.account, storlet_id))
+                return -1
+            reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
@@ -490,16 +492,15 @@ class StorletInvocationProtocol(object):
             os.close(self.execution_str_write_fd)
 
     def _cancel(self):
-        read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_CANCEL, write_fd)
-        dtg.set_task_id(self.task_id)
-        rc = SBus.send(self.storlet_pipe_path, dtg)
-        if (rc < 0):
-            raise StorletRuntimeException('Failed to cancel task')
+        with _open_pipe() as (read_fd, write_fd):
+            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_CANCEL,
+                                                       write_fd)
+            dtg.set_task_id(self.task_id)
+            rc = SBus.send(self.storlet_pipe_path, dtg)
+            if (rc < 0):
+                raise StorletRuntimeException('Failed to cancel task')
 
-        os.read(read_fd, 10)
-        os.close(read_fd)
-        os.close(write_fd)
+            os.read(read_fd, 10)
 
     def _invoke(self):
         dtg = SBusDatagram()
