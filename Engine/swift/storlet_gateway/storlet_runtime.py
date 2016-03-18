@@ -22,6 +22,7 @@ import time
 
 import eventlet
 import json
+from contextlib import contextmanager
 
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
@@ -666,6 +667,12 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
 
         return out_md, self.data_read_fd
 
+    @contextmanager
+    def _open_writer(self):
+        writer = os.fdopen(self.input_data_write_fd, 'w')
+        yield writer
+        writer.close()
+
 
 class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):
 
@@ -676,11 +683,10 @@ class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):
                                                 storlet_logger_path, timeout)
 
     def _write_input_data(self):
-        writer = os.fdopen(self.input_data_write_fd, 'w')
-        reader = self.srequest.stream
-        for chunk in iter(lambda: reader(65536), ''):
-            self._write_with_timeout(writer, chunk)
-        writer.close()
+        with self._open_writer() as writer:
+            reader = self.srequest.stream
+            for chunk in iter(lambda: reader(65536), ''):
+                self._write_with_timeout(writer, chunk)
 
 
 class StorletInvocationCOPYProtocol(StorletInvocationProxyProtocol):
@@ -692,11 +698,10 @@ class StorletInvocationCOPYProtocol(StorletInvocationProxyProtocol):
                                                 storlet_logger_path, timeout)
 
     def _write_input_data(self):
-        writer = os.fdopen(self.input_data_write_fd, 'w')
-        reader = self.srequest.stream
-        for chunk in reader:
-            self._write_with_timeout(writer, chunk)
-        writer.close()
+        with self._open_writer() as writer:
+            reader = self.srequest.stream
+            for chunk in reader:
+                self._write_with_timeout(writer, chunk)
 
 
 class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
@@ -708,8 +713,7 @@ class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
                                                 storlet_logger_path, timeout)
 
     def _write_input_data(self):
-        writer = os.fdopen(self.input_data_write_fd, 'w')
-        reader = self.srequest.stream
-        for chunk in reader:
-            self._write_with_timeout(writer, chunk)
-        writer.close()
+        with self._open_writer() as writer:
+            reader = self.srequest.stream
+            for chunk in reader:
+                self._write_with_timeout(writer, chunk)
