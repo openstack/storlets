@@ -37,7 +37,7 @@ class FakeApp(object):
             headers = HeaderKeyDict(raw_headers)
         except KeyError:
             if req_method == 'HEAD' and ('GET', req_path) in self._responses:
-                resp_cls, raw_headers, _ = self._responses('GET', req_path)
+                resp_cls, raw_headers, _ = self._responses[('GET', req_path)]
                 body = None
                 headers = HeaderKeyDict(raw_headers)
             else:
