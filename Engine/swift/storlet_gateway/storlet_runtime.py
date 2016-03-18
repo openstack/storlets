@@ -521,6 +521,8 @@ class StorletInvocationProtocol(object):
         self.srequest = srequest
         self.storlet_pipe_path = storlet_pipe_path
         self.storlet_logger_path = storlet_logger_path
+        self.storlet_logger = StorletLogger(self.storlet_logger_path,
+                                            'storlet_invoke')
         self.timeout = timeout
 
         # remote side file descriptors and their metadata lists
@@ -592,16 +594,12 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
                                            storlet_logger_path, timeout)
 
     def communicate(self):
-        self.storlet_logger = StorletLogger(self.storlet_logger_path,
-                                            'storlet_invoke')
-        self.storlet_logger.open()
-
-        self._prepare_invocation_descriptors()
-        try:
-            self._invoke()
-        finally:
-            self._close_remote_side_descriptors()
-            self.storlet_logger.close()
+        with self.storlet_logger.activate():
+            self._prepare_invocation_descriptors()
+            try:
+                self._invoke()
+            finally:
+                self._close_remote_side_descriptors()
 
         out_md = self._read_metadata()
         os.close(self.metadata_read_fd)
@@ -641,16 +639,12 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
             raise
 
     def communicate(self):
-        self.storlet_logger = StorletLogger(self.storlet_logger_path,
-                                            'storlet_invoke')
-        self.storlet_logger.open()
-
-        self._prepare_invocation_descriptors()
-        try:
-            self._invoke()
-        finally:
-            self._close_remote_side_descriptors()
-            self.storlet_logger.close()
+        with self.storlet_logger.activate():
+            self._prepare_invocation_descriptors()
+            try:
+                self._invoke()
+            finally:
+                self._close_remote_side_descriptors()
 
         self._wait_for_write_with_timeout(self.input_data_write_fd)
         # We do the writing in a different thread.

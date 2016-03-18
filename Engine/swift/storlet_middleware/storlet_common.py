@@ -14,6 +14,7 @@ Limitations under the License.
 -------------------------------------------------------------------------"""
 
 import os
+from contextlib import contextmanager
 from eventlet import Timeout
 
 
@@ -35,17 +36,20 @@ class StorletLogger(object):
         self.full_path = os.path.join(path, '%s.log' % name)
 
     def open(self):
-        self.file = open(self.full_path, 'a')
+        self._file = open(self.full_path, 'a')
 
     def getfd(self):
-        return self.file.fileno()
+        return self._file.fileno()
 
     def getsize(self):
         statinfo = os.stat(self.full_path)
         return statinfo.st_size
 
     def close(self):
-        self.file.close()
+        self._file.close()
 
-    def fobj(self):
-        return open(self.full_path, 'r')
+    @contextmanager
+    def activate(self):
+        self.open()
+        yield
+        self.close()
