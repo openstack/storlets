@@ -495,14 +495,26 @@ class StorletInvocationProtocol(object):
         # Add the logger
         self._add_logger_stream()
 
-    def _close_remote_side_descriptors(self):
-        def safe_close(fd):
+    def _safe_close(self, fds):
+        for fd in fds:
             if fd:
-                os.close(fd)
+                try:
+                    os.close(fd)
+                except OSError:
+                    # TODO(kota_): fd might be closed already, so if already
+                    # closed, OSError will be raised. we need more refactor to
+                    # keep clean the file discriptors.
+                    pass
 
-        safe_close(self.data_write_fd)
-        safe_close(self.metadata_write_fd)
-        safe_close(self.execution_str_write_fd)
+    def _close_remote_side_descriptors(self):
+        fds = [self.data_write_fd, self.metadata_write_fd,
+               self.execution_str_write_fd]
+        self._safe_close(fds)
+
+    def _close_local_side_descriptors(self):
+        fds = [self.data_read_fd, self.metadata_read_fd,
+               self.execution_str_read_fd]
+        self._safe_close(fds)
 
     def _cancel(self):
         with _open_pipe() as (read_fd, write_fd):
@@ -607,16 +619,20 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
                                            storlet_logger_path, timeout)
 
     def communicate(self):
-        with self.storlet_logger.activate(), \
-            self._activate_invocation_descriptors():
-            self._invoke()
+        try:
+            with self.storlet_logger.activate(), \
+                self._activate_invocation_descriptors():
+                self._invoke()
 
-        out_md = self._read_metadata()
-        os.close(self.metadata_read_fd)
-        self._wait_for_read_with_timeout(self.data_read_fd)
-        os.close(self.execution_str_read_fd)
+            out_md = self._read_metadata()
+            os.close(self.metadata_read_fd)
+            self._wait_for_read_with_timeout(self.data_read_fd)
+            os.close(self.execution_str_read_fd)
 
-        return out_md, self.data_read_fd
+            return out_md, self.data_read_fd
+        except Exception:
+            self._close_local_side_descriptors()
+            raise
 
 
 class StorletInvocationProxyProtocol(StorletInvocationProtocol):
@@ -648,25 +664,34 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
             writer.close()
             raise
 
+    def _close_input_data_descriptors(self):
+        fds = [self.input_data_read_fd, self.input_data_write_fd]
+        self._safe_close(fds)
+
     def communicate(self):
-        with self.storlet_logger.activate(), \
-            self._activate_invocation_descriptors():
-            self._invoke()
+        try:
+            with self.storlet_logger.activate(), \
+                self._activate_invocation_descriptors():
+                self._invoke()
 
-        self._wait_for_write_with_timeout(self.input_data_write_fd)
-        # We do the writing in a different thread.
-        # Otherwise, we can run into the following deadlock
-        # 1. middleware writes to Storlet
-        # 2. Storlet reads and starts to write metadata and then data
-        # 3. middleware continues writing
-        # 4. Storlet continues writing and gets stuck as middleware
-        #    is busy writing, but still not consuming the reader end
-        #    of the Storlet writer.
-        eventlet.spawn_n(self._write_input_data)
-        out_md = self._read_metadata()
-        self._wait_for_read_with_timeout(self.data_read_fd)
+            self._wait_for_write_with_timeout(self.input_data_write_fd)
+            # We do the writing in a different thread.
+            # Otherwise, we can run into the following deadlock
+            # 1. middleware writes to Storlet
+            # 2. Storlet reads and starts to write metadata and then data
+            # 3. middleware continues writing
+            # 4. Storlet continues writing and gets stuck as middleware
+            #    is busy writing, but still not consuming the reader end
+            #    of the Storlet writer.
+            eventlet.spawn_n(self._write_input_data)
+            out_md = self._read_metadata()
+            self._wait_for_read_with_timeout(self.data_read_fd)
 
-        return out_md, self.data_read_fd
+            return out_md, self.data_read_fd
+        except Exception:
+            self._close_local_side_descriptors()
+            self._close_input_data_descriptors()
+            raise
 
     @contextmanager
     def _open_writer(self):
