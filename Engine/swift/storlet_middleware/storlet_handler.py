@@ -31,6 +31,10 @@ class NotStorletRequest(Exception):
     pass
 
 
+class NotStorletExecution(NotStorletRequest):
+    pass
+
+
 def _request_instance_property():
     """
     Set and retrieve the request instance.
@@ -66,19 +70,17 @@ class BaseStorletHandler(object):
         :param logger: logger instance
         """
         self.request = request
-        self.storlet_containers = [conf.get('storlet_container'),
-                                   conf.get('storlet_dependency')]
         self.app = app
         self.logger = logger
         self.conf = conf
+        self.gateway_class = self.conf['gateway_module']
 
     def _setup_gateway(self):
         """
         Setup gateway instance
 
         """
-        gateway_class = self.conf['gateway_module']
-        self.gateway = gateway_class(
+        self.gateway = self.gateway_class(
             self.conf, self.logger, self.app, self.api_version,
             self.account, self.container, self.obj)
         self._update_storlet_parameters_from_headers()
@@ -222,24 +224,33 @@ class StorletProxyHandler(BaseStorletHandler):
     def __init__(self, request, conf, app, logger):
         super(StorletProxyHandler, self).__init__(
             request, conf, app, logger)
+        self.storlet_container = conf.get('storlet_container')
+        self.storlet_dependency = conf.get('storlet_dependency')
+        self.storlet_containers = [self.storlet_container,
+                                   self.storlet_dependency]
 
-        # proxy need the gateway module both execution and storlet object
-        if (self.is_storlet_execution or self.is_storlet_object_update):
-            # In proxy server, storlet handler validate if storlet enabled
-            # at the account, anyway
-            account_meta = get_account_info(self.request.environ,
-                                            self.app)['meta']
-            storlets_enabled = account_meta.get('storlet-enabled',
-                                                'False')
-            if not config_true_value(storlets_enabled):
-                self.logger.debug('Account disabled for storlets')
-                raise HTTPBadRequest('Account disabled for storlets',
-                                     request=self.request)
-
-            self._setup_gateway()
-        else:
-            # others are not storlet request
+        if not self.is_storlet_request:
+            # This is not storlet-related request, so pass it
             raise NotStorletRequest()
+
+        # In proxy server, storlet handler validate if storlet enabled
+        # at the account, anyway
+        account_meta = get_account_info(self.request.environ,
+                                        self.app)['meta']
+        storlets_enabled = account_meta.get('storlet-enabled',
+                                            'False')
+        if not config_true_value(storlets_enabled):
+            self.logger.debug('Account disabled for storlets')
+            raise HTTPBadRequest('Account disabled for storlets',
+                                 request=self.request)
+
+        if self.is_storlet_object_update:
+            # TODO(takashi): We have to validate metadata in COPY case
+            self._validate_registration(self.request)
+            raise NotStorletExecution()
+        else:
+            # if self.is_storlet_execution
+            self._setup_gateway()
 
     def _parse_vaco(self):
         return self.request.split_path(4, 4, rest_with_last=True)
@@ -259,6 +270,10 @@ class StorletProxyHandler(BaseStorletHandler):
         return runnable
 
     @property
+    def is_storlet_request(self):
+        return self.is_storlet_execution or self.is_storlet_object_update
+
+    @property
     def is_storlet_object_update(self):
         return (self.container in self.storlet_containers and self.obj
                 and self.request.method in ['PUT', 'POST'])
@@ -267,17 +282,36 @@ class StorletProxyHandler(BaseStorletHandler):
     def is_put_copy_request(self):
         return 'X-Copy-From' in self.request.headers
 
-    def handle_request(self):
-        if self.is_storlet_object_update:
-            # TODO(takashi): We have to validate metadata in COPY case
-            self.gateway.validateStorletUpload(self.request)
-            return self.request.get_response(self.app)
-        else:
-            if hasattr(self, self.request.method):
-                resp = getattr(self, self.request.method)()
-                return resp
+    def _parse_storlet_params(self, headers):
+        params = dict()
+        for key in headers:
+            if key.startswith('X-Object-Meta-Storlet'):
+                params[key[len('X-Object-Meta-Storlet-'):]] = headers[key]
+        return params
+
+    def _validate_registration(self, req):
+        params = self._parse_storlet_params(req.headers)
+        try:
+            if self.container == self.storlet_container:
+                self.logger.debug('updating object in storlet container. '
+                                  'Sanity check')
+                self.gateway_class.validate_storlet_registration(
+                    params, self.obj)
             else:
-                raise HTTPMethodNotAllowed(req=self.request)
+                self.logger.debug('updating object in storlet dependency. '
+                                  'Sanity check')
+                self.gateway_class.validate_dependency_registration(
+                    params, self.obj)
+        except ValueError as e:
+            self.logger.exception('Bad parameter')
+            raise HTTPBadRequest(e)
+
+    def handle_request(self):
+        if hasattr(self, self.request.method):
+            resp = getattr(self, self.request.method)()
+            return resp
+        else:
+            raise HTTPMethodNotAllowed(req=self.request)
 
     def _call_gateway(self, resp):
         return self.gateway.gatewayProxyGetFlow(

@@ -28,9 +28,13 @@ class StorletGatewayStub(StorletGatewayBase):
         self.obj = obj
         self.storlet_conf = storlet_conf
 
-    def validateStorletUpload(self, req):
-        self.logger.debug("Storlet request validated")
-        return True
+    @classmethod
+    def validate_storlet_registration(cls, params, obj):
+        pass
+
+    @classmethod
+    def validate_dependency_registration(cls, params, obj):
+        pass
 
     def authorizeStorletExecution(self, req):
         self.logger.debug("Storlet execution is authorized")
