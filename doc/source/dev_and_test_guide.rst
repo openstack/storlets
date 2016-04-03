@@ -34,8 +34,8 @@ Deploying
 
 Two additional tasks of interest in our build.xml are the deploy_host_engine and deploy_container_engine. These tasks are based on the Ansible installation scripts and do the following:
 
-#. deploy_host_engine would get all the code that is relevant to the host side (python middleware and SBus) and deploy it on the hosts, as described in Deploy/playbook/hosts file
-#. deploy_container_engine, would create an updated image of the tenant defined in Deploy/playbook/common.yml and distribute it to all nodes as defined in Deploy/playbook/hosts. Typically, the hosts file will describe an all-in-one type of installation.
+#. deploy_host_engine would get all the code that is relevant to the host side (python middleware and SBus) and deploy it on the hosts, as described in install/storlets/hosts file
+#. deploy_container_engine, would create an updated image of the tenant defined in install/storlets/common.yml and distribute it to all nodes as defined in install/storlets/hosts. Typically, the hosts file will describe an all-in-one type of installation.
 
 Running the Tests
 =================

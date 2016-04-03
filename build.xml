@@ -100,7 +100,7 @@
 	     (2) hosts file configured
 	-->
 	<target name="deploy_host_engine" depends="build_engine">
-		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
+		<exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
 			<arg value="deploy/hosts"/>
@@ -109,7 +109,7 @@
 	</target>
 	  
 	<target name="deploy_container_engine" depends="build_engine">
-		<exec executable="ansible-playbook" dir="Deploy/playbook" failonerror="true">
+		<exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
 			<arg value="deploy/hosts"/>

@@ -21,29 +21,31 @@ ant build
 ssh-keygen -q -t rsa -f /home/$USER/.ssh/id_rsa -N ""
 cp /home/$USER/.ssh/id_rsa.pub /home/$USER/.ssh/authorized_keys
 
+# Install Swift
 ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
 
 cd /tmp/swift_install/swift-install
 sudo sed -i 's/<Set Me!>/'$USER'/g' localhost_config.json
 ansible-playbook -s -i inventory/vagrant/localhost_dynamic_inventory.py main-install.yml
 
+# Install Storlets
 cd -
-sudo mkdir Deploy/playbook/deploy
+sudo mkdir install/storlets/deploy
 echo "Copying vars and hosts file to deploy directory"
-sudo cp Deploy/playbook/common.yml-sample Deploy/playbook/deploy/common.yml
-sudo cp Deploy/playbook/hosts-sample Deploy/playbook/deploy/hosts
-sudo chown -R $USER:$USER Deploy/playbook/deploy
-sed -i 's/<Set Me!>/127.0.0.1/g' Deploy/playbook/deploy/common.yml
-sed -i 's/<Set Me!>/'$USER'/g' Deploy/playbook/deploy/hosts
-sed -i '/ansible_ssh_pass/d' Deploy/playbook/deploy/hosts
+sudo cp install/storlets/common.yml-sample install/storlets/deploy/common.yml
+sudo cp install/storlets/hosts-sample install/storlets/deploy/hosts
+sudo chown -R $USER:$USER install/storlets/deploy
+sed -i 's/<Set Me!>/127.0.0.1/g' install/storlets/deploy/common.yml
+sed -i 's/<Set Me!>/'$USER'/g' install/storlets/deploy/hosts
+sed -i '/ansible_ssh_pass/d' install/storlets/deploy/hosts
 # If no arguments are supplied, assume we are under jenkins job, and
 # we need to edit common.yml to set the appropriate source dir
 if [ -z "$1" ]
   then
-    sed -i 's/~\/storlets/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' Deploy/playbook/deploy/common.yml
+    sed -i 's/~\/storlets/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' install/storlets/deploy/common.yml
 fi
 
-cd Deploy/playbook
+cd install/storlets
 echo "Running hosts cluster_check playbook"
 ansible-playbook -s -i deploy/hosts cluster_check.yml
 echo "Running docker_repository playbook"

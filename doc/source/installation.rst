@@ -25,7 +25,7 @@ The installation scripts take two input files:
    #. storlet-storage. The list of the Swift cluster object servers
    #. root or a sudoer credentials Ansible can use to ssh the machines. In the below example we assume all nodes have the same credentials.
 
-#. An Ansible var file with various inputs, such as the Keystone IP and credentials, the Storlet management account information, etc. The file is located in Deploy/playbook/common.yml, and we give below the entries of interest that may need editing.
+#. An Ansible var file with various inputs, such as the Keystone IP and credentials, the Storlet management account information, etc. The file is located in install/storlets/common.yml, and we give below the entries of interest that may need editing.
 
 At a high level the installation consists of the following steps:
 
@@ -113,9 +113,9 @@ Install
 to perform the installation follow these steps:
 
 #. Create a hosts file as described above
-#. Edit the file Deploy/playbook/common.yml according to the above
+#. Edit the file install/storlets/common.yml according to the above
 #. Under the root dir of the repo run 'ant build'
-#. Under Deploy/playbook/ run 'ansible-playbook -i <hosts file> storlet.yml'
+#. Under install/storlets run 'ansible-playbook -i <hosts file> storlet.yml'
    in case the hosts file has credentials of a sudoer user, you will need to run:  'ansible-playbook -s -i <hosts file> storlet.yml'
 
 Tip: you might want to "export ANSIBLE_HOST_KEY_CHECKING=False" before running the playbook in case the hosts are not in known_hosts.
