@@ -18,8 +18,8 @@ sudo apt-get install -y python-setuptools
 
 ant build
 
-ssh-keygen -q -t rsa -f /home/$USER/.ssh/id_rsa -N ""
-cp /home/$USER/.ssh/id_rsa.pub /home/$USER/.ssh/authorized_keys
+ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
+cp ~/.ssh/id_rsa.pub ~/.ssh/authorized_keys
 
 # Install Swift
 ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
