@@ -29,6 +29,6 @@
 
 - name: clone openstack ansible libraries (for keystone configuration)
   git: repo=https://github.com/openstack-ansible/openstack-ansible-modules.git
-       dest={{ installation_dir }}/{{ swift_install_repo_name }}/openstack-ansible-modules
+       dest={{ installation_dir }}/{{ swift_install_repo_name }}/provisioning/openstack-ansible-modules
 
 - command: chmod 1777 "{{ installation_dir }}/{{swift_install_repo_name}}"

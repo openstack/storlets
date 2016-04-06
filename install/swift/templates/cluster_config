@@ -29,10 +29,15 @@
     "keystone" : {
         "vars": {
             "keystone_endpoint_host": "127.0.0.1",
+            "keystone_endpoint_port": "35357",
+            "keystone_auth_protocol": "http",
             "keystone_internal_url": "http://127.0.0.1:5000/v2.0",
             "keystone_admin_url": "http://127.0.0.1:35357/v2.0",
             "keystone_public_url": "http://127.0.0.1:5000/v2.0",
             "keystone_admin_token": "ADMIN",
+            "keystone_admin_user": "admin",
+            "keystone_admin_tenant": "admin",
+            "keystone_admin_password": "admin",
             "swift_identity_password": "passw0rd",
             "openstack_region" : "1",
             "swift_public_endpoint": "127.0.0.1",
