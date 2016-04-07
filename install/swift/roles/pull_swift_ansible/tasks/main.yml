@@ -13,22 +13,26 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- stat: path="{{ installation_dir }}"
+- stat: path="{{ swift_install_reop_dir }}"
   register: inst_dir
-- command: mkdir -p {{ installation_dir }}
+- command: mkdir -p {{ swift_install_reop_dir }}
   when: not inst_dir.stat.exists
 
 - name: clone swift_install repo
-  stat: path="{{ installation_dir }}/{{swift_install_repo_name}}"
+  stat: path="{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
   register: repo_dir
 
 - git: repo={{ swift_install_repo_url }}
-       dest={{ installation_dir }}/{{ swift_install_repo_name }}
+       dest={{ swift_install_reop_dir }}/{{ swift_install_repo_name }}
        version={{  swift_install_repo_branch }}
   when: not repo_dir.stat.exists
 
 - name: clone openstack ansible libraries (for keystone configuration)
   git: repo=https://github.com/openstack-ansible/openstack-ansible-modules.git
-       dest={{ installation_dir }}/{{ swift_install_repo_name }}/provisioning/openstack-ansible-modules
+       dest={{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/openstack-ansible-modules
 
-- command: chmod 1777 "{{ installation_dir }}/{{swift_install_repo_name}}"
+- name: Copy cluster_config.json to the swift install location
+  copy: src="{{ playbook_dir }}/cluster_config.json" dest="{{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/cluster_config.json"
+
+- command: chmod 1777 "{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
+

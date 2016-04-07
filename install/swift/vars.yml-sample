@@ -13,8 +13,8 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
            
-installation_dir: /tmp/swift_install/
+swift_install_reop_dir: <set dir!>
 swift_install_repo_url: https://github.com/Open-I-Beam/swift-install.git
 swift_install_repo_name: swift-install
 swift_install_repo_branch: storlet-swift-install
-swift_device: <set me!>
+swift_device: <set device!>
