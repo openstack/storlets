@@ -16,11 +16,62 @@
 import mock
 import os
 import unittest
+import tempfile
 from contextlib import contextmanager
+from six import StringIO
 
 from storlet_middleware.storlet_common import StorletRuntimeException
+from storlet_gateway.storlet_docker_gateway import DockerStorletRequest
 import storlet_gateway.storlet_runtime
+from swift.common.swob import Request
 from tests.unit.swift import FakeLogger
+
+
+@contextmanager
+def _mock_sbus(send_status=0):
+    with mock.patch('storlet_gateway.storlet_runtime.'
+                    'SBusDatagram.create_service_datagram'), \
+        mock.patch('storlet_gateway.storlet_runtime.'
+                   'SBus.send') as fake_send:
+        fake_send.return_value = send_status
+        yield
+
+
+@contextmanager
+def _mock_os_pipe(bufs):
+    class FakeFd(object):
+        def __init__(self, rbuf=''):
+            self.rbuf = rbuf
+            self.closed = False
+
+        def read(self, size):
+            size = min(len(self.rbuf), size)
+            ret = self.rbuf[:size]
+            self.rbuf = self.rbuf[size:]
+            return ret
+
+        def close(self):
+            self.closed = True
+
+    def fake_os_read(fd, size):
+        return fd.read(size)
+
+    def fake_os_close(fd):
+        fd.close()
+
+    pipes = []
+    for buf in bufs:
+        pipe = (FakeFd(buf), FakeFd())
+        pipes.append(pipe)
+
+    with mock.patch('storlet_gateway.storlet_runtime.os.pipe') as \
+        fake_os_pipe, \
+        mock.patch('storlet_gateway.storlet_runtime.os.read',
+                   fake_os_read) as fake_os_read,\
+        mock.patch('storlet_gateway.storlet_runtime.os.close',
+                   fake_os_close) as fake_os_close:
+        fake_os_pipe.side_effect = pipes
+        yield pipes
 
 
 class TestRuntimePaths(unittest.TestCase):
@@ -183,76 +234,29 @@ class TestRunTimeSandbox(unittest.TestCase):
         self.assertFalse(status)
         self.assertEqual(msg, 'message')
 
-    @contextmanager
-    def _mock_os_pipe(self, bufs):
-        class FakeFd(object):
-            def __init__(self, rbuf=''):
-                self.rbuf = rbuf
-                self.closed = False
-
-            def read(self, size):
-                size = min(len(self.rbuf), size)
-                ret = self.rbuf[:size]
-                self.rbuf = self.rbuf[size:]
-                return ret
-
-            def close(self):
-                self.closed = True
-
-        def fake_os_read(fd, size):
-            return fd.read(size)
-
-        def fake_os_close(fd):
-            fd.close()
-
-        pipes = []
-        for buf in bufs:
-            pipe = (FakeFd(buf), FakeFd())
-            pipes.append(pipe)
-
-        with mock.patch('storlet_gateway.storlet_runtime.os.pipe') as \
-            fake_os_pipe, \
-            mock.patch('storlet_gateway.storlet_runtime.os.read',
-                       fake_os_read) as fake_os_read,\
-            mock.patch('storlet_gateway.storlet_runtime.os.close',
-                       fake_os_close) as fake_os_close:
-            fake_os_pipe.side_effect = pipes
-            yield pipes
-
-    @contextmanager
-    def _mock_sbus(self, send_status=0):
-        with mock.patch('storlet_gateway.storlet_runtime.'
-                        'SBusDatagram.create_service_datagram'), \
-            mock.patch('storlet_gateway.storlet_runtime.'
-                       'SBus.send') as fake_send:
-            fake_send.return_value = send_status
-            yield
-
     def _check_all_pipese_closed(self, pipes):
         for _pipe in pipes:
             self.assertTrue(_pipe[0].closed)
             self.assertTrue(_pipe[1].closed)
 
     def test_ping(self):
-        with self._mock_os_pipe(['True:OK']) as pipes, \
-            self._mock_sbus(0):
+        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0):
             self.assertEqual(self.sbox.ping(), 1)
             self._check_all_pipese_closed(pipes)
 
-        with self._mock_os_pipe(['False:ERROR']) as pipes, \
-            self._mock_sbus(-1):
+        with _mock_os_pipe(['False:ERROR']) as pipes, _mock_sbus(-1):
             self.assertEqual(self.sbox.ping(), -1)
             self._check_all_pipese_closed(pipes)
 
     def test_wait(self):
-        with self._mock_os_pipe(['True:OK']) as pipes, self._mock_sbus(0), \
+        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0), \
             mock.patch('storlet_gateway.storlet_runtime.time.sleep') as _s:
             self.sbox.wait()
             self.assertEqual(_s.call_count, 0)
             self._check_all_pipese_closed(pipes)
 
-        with self._mock_os_pipe(['False:ERROR', 'True:OK']) as pipes, \
-            self._mock_sbus(0), \
+        with _mock_os_pipe(['False:ERROR', 'True:OK']) as pipes, \
+            _mock_sbus(0), \
             mock.patch('storlet_gateway.storlet_runtime.time.sleep') as _s:
             self.sbox.wait()
             self.assertEqual(_s.call_count, 1)
@@ -286,6 +290,63 @@ class TestRunTimeSandbox(unittest.TestCase):
                 self.sbox.restart()
             self.sbox.wait = _wait
 
+
+class TestStorletInvocationProtocol(unittest.TestCase):
+    def setUp(self):
+        self.pipe_path = tempfile.mktemp()
+        self.log_file = tempfile.mktemp()
+
+        storlet_request = DockerStorletRequest(
+            'test_account', Request.blank('/'), {})
+        # TODO(kota_): need better way
+        # NOTE: StorletRequest.stream variable can take a vaious type
+        #       of instances depends on child class implementation
+        #       (e.g. fd number for StorletGETRequest, wsgi.input.read for
+        #        StorletPUTRequest) For now, I set StringIO which can be used
+        #       as both iterator and file like but this might break the syntax
+        #       of StorletGETRequest. This odd thing will be fixed in the
+        #       future work.
+        storlet_request.stream = StringIO()
+        self.protocol = \
+            storlet_gateway.storlet_runtime.StorletInvocationProtocol(
+                storlet_request, self.pipe_path, self.log_file, 1)
+
+    def tearDown(self):
+        for path in [self.pipe_path, self.log_file]:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+
+    def test_invocation_protocol(self):
+        # os.pipe will be called 3 times
+        pipe_called = 3
+
+        with _mock_sbus(0), _mock_os_pipe([''] * pipe_called) as pipes:
+            with mock.patch.object(
+                    self.protocol, '_wait_for_read_with_timeout'):
+                with self.protocol.storlet_logger.activate(), \
+                        self.protocol._activate_invocation_descriptors():
+                    self.protocol._invoke()
+
+            pipes = iter(pipes)
+            # data write is closed but data read is still open
+            data_read_fd, data_write_fd = next(pipes)
+            self.assertFalse(data_read_fd.closed)
+            self.assertTrue(data_write_fd.closed)
+
+            # both execution str fds are closed
+            execution_read_fd, execution_write_fd = next(pipes)
+            self.assertTrue(execution_read_fd.closed)
+            self.assertTrue(execution_write_fd.closed)
+
+            # metadata write fd is closed, metadata read fd is still open.
+            metadata_read_fd, metadata_write_fd = next(pipes)
+            self.assertFalse(metadata_read_fd.closed)
+            self.assertTrue(metadata_write_fd.closed)
+
+            # sanity
+            self.assertRaises(StopIteration, next, pipes)
 
 if __name__ == '__main__':
     unittest.main()
