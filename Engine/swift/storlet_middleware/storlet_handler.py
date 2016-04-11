@@ -304,7 +304,7 @@ class StorletProxyHandler(BaseStorletHandler):
                     params, self.obj)
         except ValueError as e:
             self.logger.exception('Bad parameter')
-            raise HTTPBadRequest(e)
+            raise HTTPBadRequest(e.message)
 
     def handle_request(self):
         if hasattr(self, self.request.method):

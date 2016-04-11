@@ -423,6 +423,37 @@ class TestStorletMiddlewareProxy(TestStorletMiddleware):
         with storlet_enabled():
             put(target)
 
+    def test_PUT_storlet_mandatory_parameter_fails(self):
+        target = '/v1/AUTH_a/storlet/storlet-1.0.jar'
+        self.app.register('PUT', target, HTTPCreated)
+
+        drop_headers = [
+            ('X-Object-Meta-Storlet-Language', 'Language'),
+            ('X-Object-Meta-Storlet-Interface-Version', 'Interface-Version'),
+            ('X-Object-Meta-Storlet-Dependency', 'Dependency'),
+            ('X-Object-Meta-Storlet-Main', 'Main'),
+        ]
+
+        def put(path, header, assertion):
+            sheaders = {'X-Object-Meta-Storlet-Language': 'Java',
+                        'X-Object-Meta-Storlet-Interface-Version': '1.0',
+                        'X-Object-Meta-Storlet-Dependency': 'dependency',
+                        'X-Object-Meta-Storlet-Main':
+                            'org.openstack.storlet.Storlet'}
+            del sheaders[header]
+            req = Request.blank(path, environ={'REQUEST_METHOD': 'PUT'},
+                                headers=sheaders)
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            # FIXME(kota_): Unfortunately, we can not test yet here because
+            # the validation is not in stub gateway but in docker gateway so
+            # need more refactor to parse the functionality to be easy testing
+            # self.assertEqual('400 BadRequest', self.got_statuses[-1])
+
+        for header, assertion in drop_headers:
+            with storlet_enabled():
+                put(target, header, assertion)
+
     def test_POST_storlet(self):
         target = '/v1/AUTH_a/storlet/storlet-1.0.jar'
         self.app.register('POST', target, HTTPAccepted)
