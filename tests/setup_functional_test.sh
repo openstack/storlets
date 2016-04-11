@@ -11,8 +11,8 @@ sudo apt-get install -y ansible
 sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
 sudo echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
-sudo apt-get install -y oracle-java8-installer
-sudo apt-get install -y oracle-java8-set-default
+sudo apt-get install --force-yes -y oracle-java8-installer
+sudo apt-get install --force-yes -y oracle-java8-set-default
 sudo apt-get install -y python
 sudo apt-get install -y python-setuptools
 
@@ -20,6 +20,8 @@ ant build
 
 ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
 cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+ssh-keygen -R localhost -f ~/.ssh/known_hosts
+ssh-keyscan -H localhost >> ~/.ssh/known_hosts
 
 # Install Swift
 ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
