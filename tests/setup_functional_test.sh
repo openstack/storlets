@@ -68,4 +68,6 @@ ansible-playbook -i deploy/hosts create_default_tenant.yml
 
 cd -
 cp cluster_config.json-sample cluster_config.json
-sudo chown $USER:$USER cluster_config.json 
+sudo chown $USER:$USER cluster_config.json
+echo "export OS_USERNAME=swift; export OS_PASSWORD=passw0rd;" >> ~/.bashrc
+echo "export OS_TENANT_NAME=service; export OS_AUTH_URL=http://localhost:5000/v2.0" >> ~/.bashrc
