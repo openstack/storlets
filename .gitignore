@@ -19,12 +19,19 @@ develop-eggs
 lib
 lib64
 
+# Ansible
+*.retry
+
 # Installer logs
 pip-log.txt
 
 # auto created for deploy
-Deploy/plabook/deploy/
+install/storlets/deploy/
+install/swift/vars.yml
 cluster_config.json
+
+# auto created on build
+Engine/dependencies/
 
 # Unit test / coverage reports
 .coverage

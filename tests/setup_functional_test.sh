@@ -1,13 +1,48 @@
 #!/bin/bash
 
-sudo apt-get install -y ant
-sudo apt-get install -y gcc
+# Make sure hostname is resolvable
+grep -q -F ${HOSTNAME} /etc/hosts || sudo sed -i '1i127.0.0.1\t'"$HOSTNAME"'' /etc/hosts
 
+# Install Ansible. Current scripts rely on
+# features which are not in ubuntu repo Ansible
 sudo apt-get install -y software-properties-common
 sudo apt-add-repository -y ppa:ansible/ansible
 sudo apt-get update
 sudo apt-get install -y ansible
 
+# Allow Ansible to ssh locally as the current user without a password
+# While at it, take care of host key verification.
+# This involves:
+# 1. Generate an rsa key for the current user if necessary
+if [ ! -f ~/.ssh/id_rsa.pub ];
+then
+    ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
+fi
+# 2. Add the key to the user's authorized keys
+grep -s -F ${USER} ~/.ssh/authorized_keys || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+# 3. Take care of host key verification for the current user
+ssh-keygen -R localhost -f ~/.ssh/known_hosts
+ssh-keyscan -H localhost >> ~/.ssh/known_hosts
+ssh-keyscan -H 127.0.0.1 >> ~/.ssh/known_hosts
+
+# Allow Ansible to ssh locally as root without a password
+sudo mkdir -p /root/.ssh
+sudo grep -s -F ${USER} /root/.ssh/authorized_keys || sudo sh -c 'cat ~/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys'
+sudo sh -c 'echo "" >> /etc/ssh/sshd_config'
+sudo sh -c 'echo "# allow ansible connections from local host" >> /etc/ssh/sshd_config'
+sudo sh -c 'echo "Match Address 127.0.0.1" >> /etc/ssh/sshd_config'
+sudo sh -c 'echo "\tPermitRootLogin without-password" >> /etc/ssh/sshd_config'
+sudo service ssh restart
+
+# Install Swift
+# TODO: move gcc to swift-installation
+sudo apt-get install -y gcc
+cd install/swift
+./install_swift.sh
+cd -
+
+# Install Storlets prerequisite
+sudo apt-get install -y ant
 sudo add-apt-repository -y ppa:webupd8team/java
 sudo apt-get update
 sudo echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
@@ -16,22 +51,10 @@ sudo apt-get install --force-yes -y oracle-java8-set-default
 sudo apt-get install -y python
 sudo apt-get install -y python-setuptools
 
+# Build Storlets
 ant build
 
-ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
-cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-ssh-keygen -R localhost -f ~/.ssh/known_hosts
-ssh-keyscan -H localhost >> ~/.ssh/known_hosts
-
-# Install Swift
-ansible-playbook -s -i tests/swift_install/hosts tests/swift_install/swift_install.yml
-
-cd /tmp/swift_install/swift-install
-sudo sed -i 's/<Set Me!>/'$USER'/g' localhost_config.json
-ansible-playbook -s -i inventory/vagrant/localhost_dynamic_inventory.py main-install.yml
-
 # Install Storlets
-cd -
 sudo mkdir install/storlets/deploy
 echo "Copying vars and hosts file to deploy directory"
 sudo cp install/storlets/common.yml-sample install/storlets/deploy/common.yml
@@ -43,7 +66,7 @@ sed -i '/ansible_ssh_pass/d' install/storlets/deploy/hosts
 # If no arguments are supplied, assume we are under jenkins job, and
 # we need to edit common.yml to set the appropriate source dir
 if [ -z "$1" ]
-  then
+then
     sed -i 's/~\/storlets/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' install/storlets/deploy/common.yml
 fi
 

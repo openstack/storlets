@@ -30,17 +30,17 @@ else
     exit
 fi
 
-REPODIR='\/tmp'
+REPODIR='/tmp'
+REPODIR_REPLACE='\/tmp'
 
 echo "$DEVICE will be used as a block device for Swift"
 if [ ! -e vars.yml ]; then
     cp vars.yml-sample vars.yml
     sudo sed -i 's/<set device!>/'$DEVICE'/g' vars.yml
-    sudo sed -i 's/<set dir!>/'$REPODIR'/g' vars.yml
+    sudo sed -i 's/<set dir!>/'$REPODIR_REPLACE'/g' vars.yml
 fi
 
-ansible-playbook -i hosts prepare_swift_install.yml 
+ansible-playbook -i hosts prepare_swift_install.yml
 
-#cd $REPODIR/swift-install/provisioning
-#ansible-playbook -s -i swift_dynamic_inventory main-install
-
+cd $REPODIR/swift-install/provisioning
+ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml
