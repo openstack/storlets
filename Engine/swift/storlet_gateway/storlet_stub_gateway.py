@@ -43,18 +43,18 @@ class StorletGatewayStub(StorletGatewayBase):
     def augmentStorletRequest(self, request, headers):
         pass
 
-    def gatewayProxyPutFlow(self, orig_request, container, obj):
+    def gatewayProxyPutFlow(self, orig_request):
         return self.indentity_invocation(orig_request.headers,
                                          orig_request.body)
 
-    def gatewayProxyCopyFlow(self, orig_request, container, obj, source_resp):
+    def gatewayProxyCopyFlow(self, orig_request, source_resp):
         return self.indentity_invocation(source_resp.headers,
                                          source_resp.body)
 
-    def gatewayProxyGetFlow(self, request, container, obj, original_response):
+    def gatewayProxyGetFlow(self, request, original_response):
         return self.indentity_invocation(original_response.headers,
                                          original_response.body)
 
-    def gatewayObjectGetFlow(self, request, container, obj, original_response):
+    def gatewayObjectGetFlow(self, request, original_response):
         return self.indentity_invocation(original_response.headers,
                                          original_response.body)
