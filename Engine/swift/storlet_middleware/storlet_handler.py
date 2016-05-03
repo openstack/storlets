@@ -368,8 +368,7 @@ class StorletProxyHandler(BaseStorletHandler):
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
-        return self.gateway.gatewayProxyGetFlow(
-            self.request, self.container, self.obj, resp)
+        return self.gateway.gatewayProxyGetFlow(self.request, resp)
 
     def GET(self):
         """
@@ -460,8 +459,6 @@ class StorletProxyHandler(BaseStorletHandler):
 
         # Do proxy copy flow
         (out_md, app_iter) = self.gateway.gatewayProxyCopyFlow(self.request,
-                                                               dest_container,
-                                                               dest_object,
                                                                source_resp)
 
         resp = self.handle_put_copy_response(out_md, app_iter)
@@ -490,8 +487,7 @@ class StorletProxyHandler(BaseStorletHandler):
                                                  dest_container, dest_object)
 
         (out_md, app_iter) = \
-            self.gateway.gatewayProxyPutFlow(self.request,
-                                             self.container, self.obj)
+            self.gateway.gatewayProxyPutFlow(self.request)
         return self.handle_put_copy_response(out_md, app_iter)
 
     def COPY(self):
@@ -553,7 +549,7 @@ class StorletObjectHandler(BaseStorletHandler):
 
     def _call_gateway(self, resp):
         return self.gateway.gatewayObjectGetFlow(
-            self.request, self.container, self.obj, resp)
+            self.request, resp)
 
     def GET(self):
         """

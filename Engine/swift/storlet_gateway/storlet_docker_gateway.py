@@ -268,8 +268,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         for key, val in params.iteritems():
             req.headers['X-Storlet-' + key] = val
 
-    def gateway_proxy_put_copy_flow(self, sreq,
-                                    container, obj):
+    def gateway_proxy_put_copy_flow(self, sreq):
         req = sreq._getInitialRequest()
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
@@ -308,19 +307,15 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
 
-    def gatewayProxyPutFlow(self, orig_req, container, obj):
+    def gatewayProxyPutFlow(self, orig_req):
         sreq = StorletPUTRequest(self.account, orig_req)
-        return self.gateway_proxy_put_copy_flow(sreq,
-                                                container,
-                                                obj)
+        return self.gateway_proxy_put_copy_flow(sreq)
 
-    def gatewayProxyCopyFlow(self, orig_req, container, obj, src_response):
+    def gatewayProxyCopyFlow(self, orig_req, src_response):
         sreq = StorletCopyRequest(self.account, orig_req, src_response)
-        return self.gateway_proxy_put_copy_flow(sreq,
-                                                container,
-                                                obj)
+        return self.gateway_proxy_put_copy_flow(sreq)
 
-    def gatewayProxyGetFlow(self, req, container, obj, orig_resp):
+    def gatewayProxyGetFlow(self, req, orig_resp):
         # Flow for running the GET computation on the proxy
         sreq = StorletSLORequest(self.account, orig_resp, req.params)
 
@@ -349,7 +344,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
 
-    def gatewayObjectGetFlow(self, req, container, obj, orig_resp):
+    def gatewayObjectGetFlow(self, req, orig_resp):
         sreq = StorletGETRequest(self.account, orig_resp, req.params)
 
         self.idata = self._get_storlet_invocation_data(req)
