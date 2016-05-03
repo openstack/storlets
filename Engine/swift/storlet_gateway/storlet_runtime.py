@@ -482,9 +482,13 @@ class StorletInvocationProtocol(object):
         yield
         self._close_remote_side_descriptors()
 
+    @property
+    def input_stream(self):
+        return self.srequest.stream
+
     def _prepare_invocation_descriptors(self):
         # Add the input stream
-        self._add_input_stream()
+        self._add_input_stream(self.input_stream)
 
         # Add the output stream
         self.data_read_fd, self.data_write_fd = os.pipe()
@@ -540,6 +544,7 @@ class StorletInvocationProtocol(object):
 
         self._wait_for_read_with_timeout(self.execution_str_read_fd)
         self.task_id = os.read(self.execution_str_read_fd, 10)
+        os.close(self.execution_str_read_fd)
 
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
                  timeout):
@@ -581,7 +586,7 @@ class StorletInvocationProtocol(object):
             with StorletTimeout(self.timeout):
                 r, w, e = select.select([fd], [], [])
         except StorletTimeout:
-            exc_type, exc_value, exc_traceback = sys.exec_info()
+            exc_type, exc_value, exc_traceback = sys.exc_info()
 
             # When there is a task already running, we should cancel it.
             if self.task_id:
@@ -610,9 +615,6 @@ class StorletInvocationProtocol(object):
 
 class StorletInvocationGETProtocol(StorletInvocationProtocol):
 
-    def _add_input_stream(self):
-        StorletInvocationProtocol._add_input_stream(self, self.srequest.stream)
-
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
                  timeout):
         StorletInvocationProtocol.__init__(self, srequest, storlet_pipe_path,
@@ -627,7 +629,6 @@ class StorletInvocationGETProtocol(StorletInvocationProtocol):
             out_md = self._read_metadata()
             os.close(self.metadata_read_fd)
             self._wait_for_read_with_timeout(self.data_read_fd)
-            os.close(self.execution_str_read_fd)
 
             return out_md, self.data_read_fd
         except Exception:
@@ -646,9 +647,9 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
         # input_data_write_fd
         # YM the write side stays with us, the read side is sent to storlet
 
-    def _add_input_stream(self):
-        StorletInvocationProtocol._add_input_stream(self,
-                                                    self.input_data_read_fd)
+    @property
+    def input_stream(self):
+        return self.input_data_read_fd
 
     def _wait_for_write_with_timeout(self, fd):
         with StorletTimeout(self.timeout):

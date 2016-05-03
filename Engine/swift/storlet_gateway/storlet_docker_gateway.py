@@ -84,7 +84,6 @@ class DockerStorletRequest(object):
         self.params = params
         self.account = account
         self.request = request
-        pass
 
 
 class StorletGETRequest(DockerStorletRequest):
