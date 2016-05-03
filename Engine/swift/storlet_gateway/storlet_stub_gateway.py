@@ -36,15 +36,11 @@ class StorletGatewayStub(StorletGatewayBase):
     def validate_dependency_registration(cls, params, obj):
         pass
 
-    def authorizeStorletExecution(self, req):
-        self.logger.debug("Storlet execution is authorized")
-        return True
-
     def indentity_invocation(self, headers, body):
         self.logger.debug("Identity invocation is called")
         return headers, BytesIO(body)
 
-    def augmentStorletRequest(self, request):
+    def augmentStorletRequest(self, request, headers):
         pass
 
     def gatewayProxyPutFlow(self, orig_request, container, obj):

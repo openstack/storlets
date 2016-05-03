@@ -18,8 +18,7 @@ import mock
 import os
 import tempfile
 import unittest
-from swift.common.swob import HTTPException, HTTPNoContent, \
-    HTTPUnauthorized, HTTPNotFound, Request
+from swift.common.swob import HTTPException, Request
 from tests.unit.swift import FakeLogger
 from tests.unit.swift.storlet_middleware import FakeApp
 from storlet_gateway.storlet_docker_gateway import DockerStorletRequest, \
@@ -285,87 +284,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
             'Dependency-Version': '1.0'}
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_dependency_registration(params, obj)
-
-    def test_authorizeStorletExecution(self):
-        sheaders = {
-            'X-Object-Meta-Storlet-Language': 'java',
-            'X-Object-Meta-Storlet-Interface-Version': '1.0',
-            'X-Object-Meta-Storlet-Dependency': 'dep_file',
-            'X-Object-Meta-Storlet-Object-Metadata': 'no'}
-        self.app.register('HEAD', self.storlet_path, HTTPNoContent, sheaders)
-        gw = self._create_gateway()
-        req = self._create_storlet_req('GET')
-        gw.authorizeStorletExecution(req)
-        for key in sheaders.keys():
-            self.assertEqual(sheaders[key], gw.storlet_metadata[key])
-        self.assertEqual(len(self.app.get_calls()), 1)
-
-    def test_augmentStorletExcecution(self):
-        # Metadata specific to Storlet
-        sheaders = {
-            'X-Object-Meta-Storlet-Language': 'java',
-            'X-Object-Meta-Storlet-Interface-Version': '1.0',
-            'X-Object-Meta-Storlet-Dependency': 'dep_file',
-            'X-Object-Meta-Storlet-Object-Metadata': 'no'}
-
-        # Normal Metadata about object
-        oheaders = {'X-Timestamp': '1450000000.000',
-                    'Content-Length': '1024',
-                    'X-Object-Meta-Key': 'Value'}
-        oheaders.update(sheaders)
-
-        self.app.register('HEAD', self.storlet_path, HTTPNoContent, oheaders)
-        gw = self._create_gateway()
-        req = self._create_storlet_req('GET')
-
-        # Set storlet_metadata
-        gw.authorizeStorletExecution(req)
-
-        gw.augmentStorletRequest(req)
-
-        for key in sheaders:
-            self.assertEqual(req.headers[key], sheaders[key])
-        self.assertEqual(req.headers['X-Storlet-X-Timestamp'],
-                         '1450000000.000')
-        self.assertEqual(req.headers['X-Storlet-Content-Length'],
-                         '1024')
-
-    def test_verify_access(self):
-        sheaders = {
-            'X-Object-Meta-Storlet-Language': 'java',
-            'X-Object-Meta-Storlet-Interface-Version': '1.0',
-            'X-Object-Meta-Storlet-Dependency': 'dep_file',
-            'X-Object-Meta-Storlet-Object-Metadata': 'no'}
-
-        # If we get 204 when heading storlet object
-        self.app.register('HEAD', self.storlet_path, HTTPNoContent, sheaders)
-        gw = self._create_gateway()
-        req = self._create_storlet_req('GET')
-        headers = gw._verify_access(req, self.version, self.account,
-                                    self.storlet_container, self.sobj)
-        for key in sheaders.keys():
-            self.assertEqual(sheaders[key], headers[key])
-        self.assertEqual(len(self.app.get_calls()), 1)
-        self.app.reset_all()
-
-        # If we get 401 when heading storlet object
-        self.app.register('HEAD', self.storlet_path, HTTPUnauthorized)
-        gw = self._create_gateway()
-        req = self._create_storlet_req('GET')
-        with self.assertRaisesHttpStatus(401):
-            gw._verify_access(req, self.version, self.account,
-                              self.storlet_container, self.sobj)
-        self.assertEqual(len(self.app.get_calls()), 1)
-        self.app.reset_all()
-
-        # If we get 404 when heading storlet object
-        self.app.register('HEAD', self.storlet_path, HTTPNotFound)
-        gw = self._create_gateway()
-        req = self._create_storlet_req('GET')
-        with self.assertRaisesHttpStatus(401):
-            gw._verify_access(req, self.version, self.account,
-                              self.storlet_container, self.sobj)
-        self.assertEqual(len(self.app.get_calls()), 1)
 
     def test_clean_storlet_stuff_from_request(self):
         headers = {'X-Storlet-Key1': 'Value1',

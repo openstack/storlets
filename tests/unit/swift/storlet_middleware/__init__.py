@@ -29,7 +29,6 @@ class FakeApp(object):
         req_path = req.path
         req_headers = req.headers
         req_body = req.body
-
         self._calls.append((req_method, req_path, req_headers, req_body))
         try:
             resp_cls, raw_headers, body = \
@@ -42,7 +41,6 @@ class FakeApp(object):
                 headers = HeaderKeyDict(raw_headers)
             else:
                 raise
-
         resp = resp_cls(req=req, headers=headers, body=body,
                         conditional_response=True)
         return resp(env, start_response)

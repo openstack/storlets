@@ -18,9 +18,7 @@ import select
 import shutil
 
 from swift.common.internal_client import InternalClient as ic
-from swift.common.swob import HTTPUnauthorized
 from swift.common.utils import config_true_value
-from swift.common.wsgi import make_subrequest
 from storlet_middleware.storlet_common import StorletConfigError, \
     StorletTimeout
 from storlet_gateway.storlet_base_gateway import StorletGatewayBase
@@ -42,7 +40,6 @@ The API is made of:
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
     validate_storlet_registration
     validate_dependency_registration
-    authorizeStorletExecution
     augmentStorletRequest
     gatewayObjectGetFlow
     gatewayProxyPutFlow
@@ -124,7 +121,6 @@ class StorletGatewayDocker(StorletGatewayBase):
         self.container = container
         self.obj = obj
         self.sconf = sconf
-        self.storlet_metadata = None
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
         self.paths = RunTimePaths(account, sconf)
 
@@ -264,18 +260,13 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
-    def authorizeStorletExecution(self, req):
-        # keep the storlets headers for later use.
-        self.storlet_metadata = self._verify_access(
-            req,
-            self.version,
-            self.account,
-            self.sconf['storlet_container'],
-            req.headers['X-Run-Storlet'])
-
-    def augmentStorletRequest(self, req):
-        if self.storlet_metadata:
-            self._fix_request_headers(req)
+    def augmentStorletRequest(self, req, params):
+        """
+        Add to request the storlet parameters to be used in case the request
+        is forwarded to the data node (GET case)
+        """
+        for key, val in params.iteritems():
+            req.headers['X-Storlet-' + key] = val
 
     def gateway_proxy_put_copy_flow(self, sreq,
                                     container, obj):
@@ -386,42 +377,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      self.storlet_timeout,
                                                      sprotocol._cancel)
 
-    def _verify_access(self, req, version, account, container, object):
-        self.logger.debug('Verify access to {0}/{1}/{2}'.format(account,
-                                                                container,
-                                                                object))
-        new_env = dict(req.environ)
-        if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
-            del new_env['HTTP_TRANSFER_ENCODING']
-        for key in CONDITIONAL_KEYS:
-            env_key = 'HTTP_' + key
-            if env_key in new_env.keys():
-                del new_env[env_key]
-
-        path = os.path.join('/' + version, account,
-                            container, object)
-        storlet_req = make_subrequest(
-            new_env, 'HEAD', path,
-            headers={'X-Auth-Token': req.headers.get('X-Auth-Token')},
-            swift_source='SE')
-
-        resp = storlet_req.get_response(self.app)
-        if not resp.is_success:
-            # TODO(takashi): Can we make this message more clear
-            #                to tell what's happening?
-            raise HTTPUnauthorized('Account disabled for storlets',
-                                   request=req)
-        return resp.headers
-
-    def _fix_request_headers(self, req):
-        # add to request the storlet metadata to be used in case the request
-        # is forwarded to the data node (GET case)
-        for key, val in self.storlet_metadata.iteritems():
-            if key.startswith('X-Object-Meta-Storlet'):
-                req.headers[key] = val
-            elif key in ['X-Timestamp', 'Content-Length']:
-                req.headers['X-Storlet-' + key] = val
-
     def _add_system_params(self, params):
         """
         Adds Storlet engine specific parameters to the invocation
@@ -454,7 +409,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                               'storlet_original_size':
                               data['storlet_original_size']}
         data['storlet_main_class'] = req.headers. \
-            get('X-Object-Meta-Storlet-Main')
+            get('X-Storlet-Main')
 
         scope = self.account
         data['scope'] = scope
@@ -462,7 +417,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             data['scope'] = data['scope'][:data['scope'].rfind(':')]
 
         data['storlet_dependency'] = req.headers. \
-            get('X-Object-Meta-Storlet-Dependency')
+            get('X-Storlet-Dependency')
         data['request_params'] = req.params
         return data
 

@@ -18,13 +18,19 @@ from six.moves.urllib.parse import quote
 from swift.common.constraints import check_copy_from_header, \
     check_destination_header
 from swift.common.swob import HTTPException, Response, \
-    HTTPBadRequest, HTTPMethodNotAllowed, HTTPPreconditionFailed, \
-    HTTPRequestedRangeNotSatisfiable, HTTPInternalServerError, wsgify
+    HTTPBadRequest, HTTPUnauthorized, HTTPMethodNotAllowed, \
+    HTTPPreconditionFailed, HTTPRequestedRangeNotSatisfiable, \
+    HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
+from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from storlet_middleware.storlet_common import StorletRuntimeException, \
     StorletTimeout
+
+
+CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
+                    'IF_UNMODIFIED_SINCE']
 
 
 class NotStorletRequest(Exception):
@@ -283,6 +289,11 @@ class StorletProxyHandler(BaseStorletHandler):
         return 'X-Copy-From' in self.request.headers
 
     def _parse_storlet_params(self, headers):
+        """
+        Parse storlet parameters from storlet/dependency object metadata
+
+        :returns: dict of storlet parameters
+        """
         params = dict()
         for key in headers:
             if key.startswith('X-Object-Meta-Storlet'):
@@ -290,6 +301,12 @@ class StorletProxyHandler(BaseStorletHandler):
         return params
 
     def _validate_registration(self, req):
+        """
+        Validate parameters about storlet/dependency object when registrating
+
+        :params req: swob.Request instance
+        :raises ValueError: If some parameters are wrong
+        """
         params = self._parse_storlet_params(req.headers)
         try:
             if self.container == self.storlet_container:
@@ -306,12 +323,49 @@ class StorletProxyHandler(BaseStorletHandler):
             self.logger.exception('Bad parameter')
             raise HTTPBadRequest(e.message)
 
+    def verify_access_to_storlet(self):
+        """
+        Verify access to the storlet object
+
+        :return: storlet parameters
+        :raises HTTPUnauthorized: If it fails to verify access
+        """
+        sobj = self.request.headers.get('X-Run-Storlet')
+        spath = '/'.join(['', self.api_version, self.account,
+                          self.storlet_container, sobj])
+        self.logger.debug('Verify access to %s' % spath)
+
+        new_env = dict(self.request.environ)
+        if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
+            del new_env['HTTP_TRANSFER_ENCODING']
+
+        for key in CONDITIONAL_KEYS:
+            env_key = 'HTTP_' + key
+            if env_key in new_env.keys():
+                del new_env[env_key]
+
+        auth_token = self.request.headers.get('X-Auth-Token')
+        storlet_req = make_subrequest(
+            new_env, 'HEAD', spath,
+            headers={'X-Auth-Token': auth_token},
+            swift_source='SE')
+
+        resp = storlet_req.get_response(self.app)
+        if not resp.is_success:
+            raise HTTPUnauthorized('Failed to verify access to the storlet',
+                                   request=self.request)
+
+        params = self._parse_storlet_params(resp.headers)
+        for key in ['Content-Length', 'X-Timestamp']:
+            params[key] = resp.headers[key]
+        return params
+
     def handle_request(self):
         if hasattr(self, self.request.method):
             resp = getattr(self, self.request.method)()
             return resp
         else:
-            raise HTTPMethodNotAllowed(req=self.request)
+            raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
         return self.gateway.gatewayProxyGetFlow(
@@ -325,7 +379,7 @@ class StorletProxyHandler(BaseStorletHandler):
             raise HTTPBadRequest('Storlet execution with range header is not'
                                  ' supported', request=self.request)
 
-        self.gateway.authorizeStorletExecution(self.request)
+        params = self.verify_access_to_storlet()
 
         # The get request may be a SLO object GET request.
         # Simplest solution would be to invoke a HEAD
@@ -340,7 +394,7 @@ class StorletProxyHandler(BaseStorletHandler):
         # Back at proxy side, we test if test received
         # full object to detect if we are in SLO case,
         # and invoke Storlet only if in SLO case.
-        self.gateway.augmentStorletRequest(self.request)
+        self.gateway.augmentStorletRequest(self.request, params)
 
         if self.is_storlet_range_request:
             self.request.headers['Range'] = \
@@ -423,8 +477,9 @@ class StorletProxyHandler(BaseStorletHandler):
         """
         PUT handler on Proxy
         """
-        self.gateway.authorizeStorletExecution(self.request)
-        self.gateway.augmentStorletRequest(self.request)
+
+        params = self.verify_access_to_storlet()
+        self.gateway.augmentStorletRequest(self.request, params)
         if self.is_put_copy_request:
             self. _validate_copy_request()
             src_container, src_obj = check_copy_from_header(self.request)
@@ -447,8 +502,8 @@ class StorletProxyHandler(BaseStorletHandler):
             return HTTPPreconditionFailed(request=self.request,
                                           body='Destination header required')
 
-        self.gateway.authorizeStorletExecution(self.request)
-        self.gateway.augmentStorletRequest(self.request)
+        params = self.verify_access_to_storlet()
+        self.gateway.augmentStorletRequest(self.request, params)
         self._validate_copy_request()
         dest_container, dest_object = check_destination_header(self.request)
 
