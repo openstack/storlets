@@ -84,15 +84,17 @@ class TestRuntimePaths(unittest.TestCase):
     def _initialize(self):
         # TODO(takashi): take these values from config file
         base_dir = '/home/docker_device'
+        self.script_dir = os.path.join(base_dir, 'scripts')
+        self.pipes_dir = os.path.join(base_dir, 'pipes', 'scopes')
+        self.storlets_dir = os.path.join(base_dir, 'storlets', 'scopes')
+        self.log_dir = os.path.join(base_dir, 'logs', 'scopes')
+        self.cache_dir = os.path.join(base_dir, 'cache', 'scopes')
+
         self.conf = {
-            'script_dir': os.path.join(base_dir, 'scripts'),
-            'pipes_dir': os.path.join(base_dir, 'pipes', 'scopes'),
-            'storlets_dir': os.path.join(base_dir, 'storlets', 'scopes'),
-            'log_dir': os.path.join(base_dir, 'logs', 'scopes'),
-            'cache_dir': os.path.join(base_dir, 'cache', 'scopes'),
             'reseller_prefix': 'AUTH',
             'storlet_container': 'storlet',
             'storlet_dependency': 'dependency'}
+
         self.storlet_id = 'org.openstack.storlet.mystorlet'
         self.paths = storlet_gateway.storlet_runtime.RunTimePaths(
             self.account, self.conf)
@@ -103,7 +105,7 @@ class TestRuntimePaths(unittest.TestCase):
     def test_host_pipe_prefix(self):
         self.assertEqual(
             self.paths.host_pipe_prefix(),
-            os.path.join(self.conf['pipes_dir'], self.scope))
+            os.path.join(self.pipes_dir, self.scope))
 
     def test_create_host_pipe_prefix(self):
         pipedir = self.paths.host_pipe_prefix()
@@ -133,14 +135,12 @@ class TestRuntimePaths(unittest.TestCase):
     def test_host_factory_pipe(self):
         self.assertEqual(
             self.paths.host_factory_pipe(),
-            os.path.join(self.conf['pipes_dir'], self.scope,
-                         'factory_pipe'))
+            os.path.join(self.pipes_dir, self.scope, 'factory_pipe'))
 
     def test_host_storlet_pipe(self):
         self.assertEqual(
             self.paths.host_storlet_pipe(self.storlet_id),
-            os.path.join(self.conf['pipes_dir'], self.scope,
-                         self.storlet_id))
+            os.path.join(self.pipes_dir, self.scope, self.storlet_id))
 
     def test_sbox_storlet_pipe(self):
         self.assertEqual(
@@ -155,12 +155,12 @@ class TestRuntimePaths(unittest.TestCase):
     def test_host_storlet_prefix(self):
         self.assertEqual(
             self.paths.host_storlet_prefix(),
-            os.path.join(self.conf['storlets_dir'], self.scope))
+            os.path.join(self.storlets_dir, self.scope))
 
     def test_host_storlet(self):
         self.assertEqual(
             self.paths.host_storlet(self.storlet_id),
-            os.path.join(self.conf['storlets_dir'], self.scope,
+            os.path.join(self.storlets_dir, self.scope,
                          self.storlet_id))
 
     def test_slog_path(self):
@@ -168,7 +168,7 @@ class TestRuntimePaths(unittest.TestCase):
             mock.patch('os.makedirs') as m:
             self.assertEqual(
                 self.paths.slog_path(self.storlet_id),
-                os.path.join(self.conf['log_dir'], self.scope,
+                os.path.join(self.log_dir, self.scope,
                              self.storlet_id))
             self.assertEqual(m.call_count, 0)
 
@@ -176,20 +176,20 @@ class TestRuntimePaths(unittest.TestCase):
             mock.patch('os.makedirs') as m:
             self.assertEqual(
                 self.paths.slog_path(self.storlet_id),
-                os.path.join(self.conf['log_dir'], self.scope,
+                os.path.join(self.log_dir, self.scope,
                              self.storlet_id))
             self.assertEqual(m.call_count, 1)
 
     def test_get_host_storlet_cache_dir(self):
         self.assertEqual(
             self.paths.get_host_storlet_cache_dir(),
-            os.path.join(self.conf['cache_dir'], self.scope,
+            os.path.join(self.cache_dir, self.scope,
                          self.conf['storlet_container']))
 
     def test_get_host_dependency_cache_dir(self):
         self.assertEqual(
             self.paths.get_host_dependency_cache_dir(),
-            os.path.join(self.conf['cache_dir'], self.scope,
+            os.path.join(self.cache_dir, self.scope,
                          self.conf['storlet_dependency']))
 
 
@@ -206,13 +206,7 @@ class TestRunTimeSandbox(unittest.TestCase):
     def setUp(self):
         self.logger = FakeLogger()
         # TODO(takashi): take these values from config file
-        base_dir = '/home/docker_device'
         self.conf = {
-            'script_dir': os.path.join(base_dir, 'scripts'),
-            'pipes_dir': os.path.join(base_dir, 'pipes', 'scopes'),
-            'storlets_dir': os.path.join(base_dir, 'storlets', 'scopes'),
-            'log_dir': os.path.join(base_dir, 'logs', 'scopes'),
-            'cache_dir': os.path.join(base_dir, 'cache', 'scopes'),
             'reseller_prefix': 'AUTH',
             'storlet_container': 'storlet',
             'storlet_dependency': 'dependency',

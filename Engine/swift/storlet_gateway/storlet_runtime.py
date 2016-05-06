@@ -116,15 +116,28 @@ class RunTimePaths(object):
         self.account = account
         self.reseller_prefix = conf['reseller_prefix']
         self.scope = self._get_scope(account, self.reseller_prefix)
-        self.host_restart_script_dir = conf['script_dir']
-        self.host_pipe_root = conf['pipes_dir']
         self.factory_pipe_suffix = 'factory_pipe'
         self.sandbox_pipe_prefix = '/mnt/channels'
         self.storlet_pipe_suffix = '_storlet_pipe'
+
         self.sandbox_storlet_dir_prefix = '/home/swift'
-        self.host_storlet_root = conf['storlets_dir']
-        self.host_log_path_root = conf['log_dir']
-        self.host_cache_root = conf['cache_dir']
+        self.host_root = conf.get('host_root', '/home/docker_device')
+        self.host_pipe_root = \
+            conf.get('pipes_dir',
+                     os.path.join(self.host_root, 'pipes', 'scopes'))
+        self.host_storlet_root = \
+            conf.get('storlets_dir',
+                     os.path.join(self.host_root, 'storlets', 'scopes'))
+        self.host_log_path_root = \
+            conf.get('log_dir',
+                     os.path.join(self.host_root, 'logs', 'scopes'))
+        self.host_cache_root = \
+            conf.get('cache_dir',
+                     os.path.join(self.host_root, 'cache', 'scopes'))
+        self.host_restart_script_dir = \
+            conf.get('script_dir',
+                     os.path.join(self.host_root, 'scripts'))
+
         self.storlet_container = conf['storlet_container']
         self.storlet_dependency = conf['storlet_dependency']
 
