@@ -188,8 +188,7 @@ class TestStorletGatewayDocker(unittest.TestCase):
 
     def _create_gateway(self):
         return StorletGatewayDocker(
-            self.sconf, self.logger, self.app,
-            self.version, self.account, self.container, self.obj)
+            self.sconf, self.logger, self.app, self.account)
 
     def _create_proxy_path(self, version, account, container, obj):
         return '/'.join(['', version, account, container, obj])

@@ -87,8 +87,7 @@ class BaseStorletHandler(object):
 
         """
         self.gateway = self.gateway_class(
-            self.conf, self.logger, self.app, self.api_version,
-            self.account, self.container, self.obj)
+            self.conf, self.logger, self.app, self.account)
         self._update_storlet_parameters_from_headers()
 
     def _extract_vaco(self):

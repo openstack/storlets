@@ -18,15 +18,11 @@ from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 
 class StorletGatewayStub(StorletGatewayBase):
 
-    def __init__(self, storlet_conf, logger, app, version, account,
-                 container, obj):
+    def __init__(self, sconf, logger, app, account):
         self.logger = logger
         self.app = app
-        self.version = version
         self.account = account
-        self.container = container
-        self.obj = obj
-        self.storlet_conf = storlet_conf
+        self.sconf = sconf
 
     @classmethod
     def validate_storlet_registration(cls, params, obj):

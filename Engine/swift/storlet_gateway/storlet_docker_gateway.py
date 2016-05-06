@@ -111,15 +111,11 @@ class StorletCopyRequest(DockerStorletRequest):
 
 class StorletGatewayDocker(StorletGatewayBase):
 
-    def __init__(self, sconf, logger, app, version, account, container,
-                 obj):
+    def __init__(self, sconf, logger, app, account):
         self.logger = logger
         # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
         self.app = app
-        self.version = version
         self.account = account
-        self.container = container
-        self.obj = obj
         self.sconf = sconf
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
         self.paths = RunTimePaths(account, sconf)
