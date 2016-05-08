@@ -46,9 +46,11 @@ def _open_pipe():
     Context manager for os.pipe
     """
     read_fd, write_fd = os.pipe()
-    yield (read_fd, write_fd)
-    os.close(read_fd)
-    os.close(write_fd)
+    try:
+        yield (read_fd, write_fd)
+    finally:
+        os.close(read_fd)
+        os.close(write_fd)
 
 
 """---------------------------------------------------------------------------
@@ -492,8 +494,10 @@ class StorletInvocationProtocol(object):
               so you should close local side fds
         """
         self._prepare_invocation_descriptors()
-        yield
-        self._close_remote_side_descriptors()
+        try:
+            yield
+        finally:
+            self._close_remote_side_descriptors()
 
     @property
     def input_stream(self):
@@ -710,8 +714,10 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
     @contextmanager
     def _open_writer(self):
         writer = os.fdopen(self.input_data_write_fd, 'w')
-        yield writer
-        writer.close()
+        try:
+            yield writer
+        finally:
+            writer.close()
 
 
 class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):

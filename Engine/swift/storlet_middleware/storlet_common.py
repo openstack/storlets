@@ -51,5 +51,7 @@ class StorletLogger(object):
     @contextmanager
     def activate(self):
         self.open()
-        yield
-        self.close()
+        try:
+            yield
+        finally:
+            self.close()
