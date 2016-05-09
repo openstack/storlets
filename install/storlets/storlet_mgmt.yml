@@ -14,10 +14,7 @@
 #---------------------------------------------------------------------------
 
 - hosts: storlet-mgmt
-  vars_files: 
-    - [ deploy/common.yml ]
-    
   roles:
-#  - role: docker_client
+  - role: docker_client
   - role: swift_storlet_management 
   - role: ansible_storlet_management

@@ -44,11 +44,12 @@
     user: "{{ storlet_management_admin_username }}"
     role: admin
     
-- name: copy cluster information file
-  copy: 
-    src="{{ inventory_file }}" 
-    dest="/tmp/{{ storlet_management_swift_topology_object }}"
-  
+- name: Create the cluster information object
+  command: python storlets_dynamic_inventory.py
+           --inventory "{{ playbook_dir }}/deploy/temp_{{ storlet_management_swift_topology_object }}"
+  args:
+    chdir: "{{ playbook_dir }}"
+
 - name: Create the cluster information container
   command: swift 
            --os-auth-url="{{ keystone_public_url }}" 
@@ -60,17 +61,18 @@
            --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
            --meta "{{ storlets_enabled_attribute_name }}:true"
 
-- name: Create the cluster information object
+- name: Upload the cluster information object
   command: swift
            --os-auth-url="{{ keystone_public_url }}" 
            --os-username="{{ storlet_management_admin_username }}"
            --os-password="{{ storlet_manager_admin_password }}"
            --os-tenant-name="{{ storlet_management_account }}"
-           upload "{{ storlet_management_swift_topology_container }}" "{{ storlet_management_swift_topology_object }}" 
+           upload "{{ storlet_management_swift_topology_container }}" "temp_{{ storlet_management_swift_topology_object }}"
+           --object-name "{{ storlet_management_swift_topology_object }}"
   args:
-    chdir: /tmp/
+    chdir: "{{ playbook_dir }}/deploy"
 
 - name: delete cluster information file
   file: 
-    path="/tmp/{{ storlet_management_swift_topology_object }}"
+    path="{{ playbook_dir }}/deploy/temp_{{ storlet_management_swift_topology_object }}"
     state=absent

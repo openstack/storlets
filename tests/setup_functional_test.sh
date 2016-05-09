@@ -60,7 +60,7 @@ cd install/storlets
 cd -
 
 # TODO: this is for tests. Deal accordingly.
-cp cluster_config.json-sample cluster_config.json
+cp install/storlets/deploy/cluster_config.json .
 sudo chown $USER:$USER cluster_config.json
 
 echo "export OS_USERNAME=swift; export OS_PASSWORD=passw0rd;" >> ~/.bashrc

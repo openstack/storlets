@@ -15,6 +15,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
+import os
 import sys
 import select
 import subprocess
@@ -39,9 +40,10 @@ def get_hosts_object():
                             response_dict=response,
                             headers=None)
     assert(response.get('status') == 200)
-    f = open("{{ storlet_management_ansible_dir }}/swift_cluster_nodes", "w")
+    f = open("{{ storlet_management_ansible_dir }}/deploy/{{ storlet_management_swift_topology_object }}", "w")
     f.write(content)
     f.close()
+    os.chmod("{{ storlet_management_ansible_dir }}/deploy/{{ storlet_management_swift_topology_object }}", 0666)
 
 
 def monitor_playbook_execution(p):

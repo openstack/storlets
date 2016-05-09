@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # Limitations under the License.
 #---------------------------------------------------------------------------
-
-
-- hosts: storlet-mgmt
-
-  vars_files:
-   - {{ storlet_management_ansible_dir }}/common.yml
-
-  roles:
-   - add_new_tenant
+           
+ansible_ssh_user: <ANSIBLE_USER>
+storlets_management_user: <MGMT_USER>
+keystone_endpoint_host: 127.0.0.1
+keystone_admin_token: ADMIN
+keystone_admin_password: passw0rd
+swift_endpoint_host: 127.0.0.1
+swift_endpoint_port: 80
