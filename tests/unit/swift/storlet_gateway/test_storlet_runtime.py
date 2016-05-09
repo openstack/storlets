@@ -291,16 +291,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         self.log_file = tempfile.mktemp()
 
         storlet_request = DockerStorletRequest(
-            'test_account', Request.blank('/'), {})
-        # TODO(kota_): need better way
-        # NOTE: StorletRequest.stream variable can take a vaious type
-        #       of instances depends on child class implementation
-        #       (e.g. fd number for StorletGETRequest, wsgi.input.read for
-        #        StorletPUTRequest) For now, I set StringIO which can be used
-        #       as both iterator and file like but this might break the syntax
-        #       of StorletGETRequest. This odd thing will be fixed in the
-        #       future work.
-        storlet_request.stream = StringIO()
+            'test_account', Request.blank('/'), {}, iter(StringIO()))
         self.protocol = \
             storlet_gateway.storlet_runtime.StorletInvocationProtocol(
                 storlet_request, self.pipe_path, self.log_file, 1)
@@ -313,8 +304,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
                 pass
 
     def test_invocation_protocol(self):
-        # os.pipe will be called 3 times
-        pipe_called = 3
+        # os.pipe will be called 4 times
+        pipe_called = 4
 
         with _mock_sbus(0), _mock_os_pipe([''] * pipe_called) as pipes:
             with mock.patch.object(
@@ -323,7 +314,15 @@ class TestStorletInvocationProtocol(unittest.TestCase):
                         self.protocol._activate_invocation_descriptors():
                     self.protocol._invoke()
 
+            self.assertEqual(pipe_called, len(pipes))
             pipes = iter(pipes)
+
+            # data write is not directly closed
+            # data read is closed by remote
+            input_data_read_fd, input_data_write_fd = next(pipes)
+            self.assertFalse(input_data_read_fd.closed)
+            self.assertFalse(input_data_write_fd.closed)
+
             # data write is closed but data read is still open
             data_read_fd, data_write_fd = next(pipes)
             self.assertFalse(data_read_fd.closed)

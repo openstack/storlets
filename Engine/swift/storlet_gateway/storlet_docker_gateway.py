@@ -23,8 +23,7 @@ from storlet_middleware.storlet_common import StorletConfigError, \
     StorletTimeout
 from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 from storlet_runtime import RunTimePaths, RunTimeSandbox, \
-    StorletInvocationGETProtocol, StorletInvocationPUTProtocol, \
-    StorletInvocationSLOProtocol, StorletInvocationCOPYProtocol
+    StorletInvocationProtocol
 
 
 CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
@@ -33,7 +32,7 @@ CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
 """---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
-(1) The classes StorletGETRequest, StorletPUTRequest. These encapsulate
+(1) The classes StorletGetRequest, StorletPutRequest. These encapsulate
     what goes in and comes out of the gateway. Both share a mutual parent:
     DockerStorletRequest
 
@@ -73,7 +72,7 @@ class DockerStorletRequest(object):
     def _getInitialRequest(self):
         return self.request
 
-    def __init__(self, account, request, params):
+    def __init__(self, account, request, params, stream):
         self.generate_log = request.headers.get('X-Storlet-Generate-Log',
                                                 False)
         self.storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
@@ -81,32 +80,34 @@ class DockerStorletRequest(object):
         self.params = params
         self.account = account
         self.request = request
+        self.stream = stream
 
 
-class StorletGETRequest(DockerStorletRequest):
+class StorletGetRequest(DockerStorletRequest):
     def __init__(self, account, orig_resp, params):
-        DockerStorletRequest.__init__(self, account, orig_resp, params)
-        self.stream = orig_resp.app_iter._fp.fileno()
+        super(StorletGetRequest, self).__init__(
+            account, orig_resp, params, orig_resp.app_iter)
 
 
-class StorletPUTRequest(DockerStorletRequest):
+class StorletPutRequest(DockerStorletRequest):
     def __init__(self, account, request):
-        DockerStorletRequest.__init__(self, account, request, request.params)
-        self.stream = request.environ['wsgi.input'].read
-        return
+        reader = request.environ['wsgi.input'].read
+        # TODO(takashi): chunk size should be configurable
+        stream = iter(lambda: reader(65536), '')
+        super(StorletPutRequest, self).__init__(
+            account, request, request.params, stream)
 
 
-class StorletSLORequest(DockerStorletRequest):
+class StorletSloRequest(DockerStorletRequest):
     def __init__(self, account, orig_resp, params):
-        DockerStorletRequest.__init__(self, account, orig_resp, params)
-        self.stream = orig_resp.app_iter
-        return
+        super(StorletSloRequest, self).__init__(
+            account, orig_resp, params, orig_resp.app_iter)
 
 
 class StorletCopyRequest(DockerStorletRequest):
     def __init__(self, account, request, src_resp):
-        DockerStorletRequest.__init__(self, account, request, request.params)
-        self.stream = iter(src_resp.app_iter)
+        super(StorletCopyRequest, self).__init__(
+            account, request, request.params, src_resp.app_iter)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -283,16 +284,10 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self. \
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        if isinstance(sreq, StorletCopyRequest):
-            sprotocol = StorletInvocationCOPYProtocol(sreq,
-                                                      storlet_pipe_path,
-                                                      slog_path,
-                                                      self.storlet_timeout)
-        else:
-            sprotocol = StorletInvocationPUTProtocol(sreq,
-                                                     storlet_pipe_path,
-                                                     slog_path,
-                                                     self.storlet_timeout)
+        sprotocol = StorletInvocationProtocol(sreq,
+                                              storlet_pipe_path,
+                                              slog_path,
+                                              self.storlet_timeout)
 
         out_md, self.data_read_fd = sprotocol.communicate()
 
@@ -304,7 +299,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def gatewayProxyPutFlow(self, orig_req):
-        sreq = StorletPUTRequest(self.account, orig_req)
+        sreq = StorletPutRequest(self.account, orig_req)
         return self.gateway_proxy_put_copy_flow(sreq)
 
     def gatewayProxyCopyFlow(self, orig_req, src_response):
@@ -313,7 +308,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     def gatewayProxyGetFlow(self, req, orig_resp):
         # Flow for running the GET computation on the proxy
-        sreq = StorletSLORequest(self.account, orig_resp, req.params)
+        sreq = StorletSloRequest(self.account, orig_resp, req.params)
 
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
@@ -327,10 +322,10 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self. \
             paths.host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationSLOProtocol(sreq,
-                                                 storlet_pipe_path,
-                                                 slog_path,
-                                                 self.storlet_timeout)
+        sprotocol = StorletInvocationProtocol(sreq,
+                                              storlet_pipe_path,
+                                              slog_path,
+                                              self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
         self._set_metadata_in_headers(orig_resp.headers, out_md)
@@ -341,7 +336,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def gatewayObjectGetFlow(self, req, orig_resp):
-        sreq = StorletGETRequest(self.account, orig_resp, req.params)
+        sreq = StorletGetRequest(self.account, orig_resp, req.params)
 
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
@@ -355,9 +350,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         storlet_pipe_path = self.paths. \
             host_storlet_pipe(self.idata['storlet_main_class'])
 
-        sprotocol = StorletInvocationGETProtocol(sreq, storlet_pipe_path,
-                                                 slog_path,
-                                                 self.storlet_timeout)
+        sprotocol = StorletInvocationProtocol(sreq, storlet_pipe_path,
+                                              slog_path,
+                                              self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
         orig_resp = sreq._getInitialRequest()
