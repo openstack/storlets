@@ -14,9 +14,5 @@
 #---------------------------------------------------------------------------
 
 - hosts: storlet-mgmt
-
-  vars_files:
-   - {{ storlet_management_ansible_dir }}/common.yml
-
   roles:
    - push_tenant_image

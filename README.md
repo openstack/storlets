@@ -13,7 +13,9 @@ Quick Installation Guide
     sudo apt-get install python-tox python-nose git
     git clone https://github.com/openstack/storlets.git
     cd storlets
-    ./s2aio.sh
+    ./s2aio.sh 1
+
+Note the extra parameter being passed to s2aio.sh, it is important!
 
 Browse through the StorletSamples directory so see storlet code examples,
 and through the SystemTests to see samples of deploying and invoking a storlet

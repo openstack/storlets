@@ -17,4 +17,4 @@
   assert:
     that:
     - "ansible_distribution == 'Ubuntu'"
-    - "ansible_distribution_version >= '13.04'"
+    - "ansible_distribution_version >= '14.04'"

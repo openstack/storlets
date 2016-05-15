@@ -22,7 +22,6 @@
   - "docker pull ubuntu:14.04"
   - "docker tag ubuntu:14.04 {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
   - "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
-  tags: ubuntu_14.04_jre8
   when: "'0' in ubuntu_image.stdout_lines[0]"
   
 - name: Create Repository for building the image
@@ -34,7 +33,6 @@
     state: directory
     mode: 0755
     owner: root
-  tags: ubuntu_14.04_jre8
   when: not st0.stat.exists
     
 - name: Download necessary Java dependencies
@@ -45,7 +43,6 @@
     - https://json-simple.googlecode.com/files/json_simple-1.1.jar
     - http://www.slf4j.org/dist/slf4j-1.7.7.tar.gz
     - http://logback.qos.ch/dist/logback-1.1.2.tar.gz
-  tags: ubuntu_14.04_jre8
     
 - name: Untar downloaded dependencies
   command: "{{ item }}"
@@ -59,7 +56,6 @@
     - "mv logback-1.1.2/logback-core-1.1.2.jar ."
     - "mv logback-1.1.2/logback-classic-1.1.2.jar ."
     - "rm -fr logback-1.1.2/ logback-1.1.2.tar.gz"
-  tags: ubuntu_14.04_jre8
     
 - name: Copy additional resources
   copy:
@@ -67,6 +63,5 @@
     dest: /data/registry/repositories/ubuntu_14.04_jre8
   with_items:
     - logback.xml
-  tags: ubuntu_14.04_jre8
  
-- include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8 tags=jre8
+- include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8

@@ -27,6 +27,7 @@ pip-log.txt
 
 # auto created for deploy
 install/storlets/deploy/
+install/storlets/prepare_vars.yml
 install/swift/vars.yml
 cluster_config.json
 

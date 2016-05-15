@@ -14,7 +14,13 @@
 #---------------------------------------------------------------------------
 
 - name: Invoke the Create Storlet enabled Tenant script
-  command: python /opt/ibm/add_new_tenant.py "{{ storlets_default_tenant_name }}" "{{storlets_default_tenant_user_name }}" "{{ storlets_default_tenant_user_password }}"
+  command: python add_new_tenant.py "{{ storlets_default_tenant_name }}" "{{storlets_default_tenant_user_name }}" "{{ storlets_default_tenant_user_password }}" chdir=/opt/ibm/
+  register: command_result
+
+- debug: var=command_result.stdout_lines
 
 - name: Invoke the Deploy image script
-  command: python /opt/ibm/deploy_image.py "{{ storlets_default_tenant_name }}" "{{ base_os_image }}_jre8_storlets.tar" "{{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ base_os_image }}_jre8_storlets"
+  command: python deploy_image.py "{{ storlets_default_tenant_name }}" "{{ base_os_image }}_jre8_storlets.tar" "{{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ base_os_image }}_jre8_storlets" chdir=/opt/ibm/
+  register: command_result
+
+- debug: var=command_result.stdout_lines

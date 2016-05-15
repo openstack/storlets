@@ -1,0 +1,53 @@
+{
+    "groups" : {
+        "storlet-mgmt": [ "127.0.0.1" ],
+        "storlet-proxy": [ "127.0.0.1" ],
+        "storlet-storage": [ "127.0.0.1" ],
+        "docker": [ "127.0.0.1" ]
+    },
+    "127.0.0.1" : {
+        "ansible_ssh_user" : "{{ ansible_ssh_user }}"
+    },
+    "all" : {
+        "ibm_container_install_dir": "opt/ibm",
+        "lxc_device": "/home/docker_device",
+        "storlet_source_dir": "~/storlets",
+        "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
+        "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
+        "keystone_endpoint_host": "{{ keystone_endpoint_host }}",
+        "keystone_admin_url": "http://{{ keystone_endpoint_host }}:35357/v2.0",
+        "keystone_public_url": "http://{{ keystone_endpoint_host }}:5000/v2.0",
+        "keystone_admin_token": "{{ keystone_admin_token }}",
+        "keystone_admin_password": "{{ keystone_admin_password }}",
+        "swift_endpoint_host": "{{ swift_endpoint_host }}",
+        "swift_public_url": "http://{{ swift_endpoint_host }}:{{ swift_endpoint_port }}/v1",
+        "storlets_management_user": "{{ storlets_management_user }}",
+        "storlet_management_account": "storlet_management",
+        "storlet_management_admin_username": "storlet_manager",
+        "storlet_manager_admin_password": "storlet_manager",
+        "storlet_management_swift_topology_container": "swift_cluster",
+        "storlet_management_swift_topology_object": "cluster_config.json",
+        "storlet_management_ansible_dir": "/opt/ibm/ansible/playbook",
+        "storlet_management_install_dir": "/opt/ibm",
+        "storlets_enabled_attribute_name": "storlet-enabled",
+        "docker_registry_random_string": "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ1234",
+        "docker_registry_port": "5001",
+        "storlets_default_tenant_name": "service",
+        "storlets_default_tenant_user_name": "swift",
+        "storlets_default_tenant_user_password": "passw0rd",
+        "base_image_maintainer": "root",
+        "base_os_image": "ubuntu_14.04",
+        "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",
+        "swift_user_id": "1003",
+        "swift_group_id": "1003",
+        "storlet_middleware": "storlet_handler",
+        "storlet_container": "storlet",
+        "storlet_dependency": "dependency",
+        "storlet_log": "storletlog",
+        "storlet_images": "docker_images",
+        "storlet_timeout": "40",
+        "storlet_gateway_module": "storlet_gateway.storlet_docker_gateway:StorletGatewayDocker",
+        "storlet_execute_on_proxy_only": "false",
+        "restart_linux_container_timeout": "3"
+    }
+}

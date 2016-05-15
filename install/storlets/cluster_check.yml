@@ -14,13 +14,8 @@
 #---------------------------------------------------------------------------
 
 - hosts: storlet-proxy:storlet-storage:docker
-  vars_files: 
-    - [ deploy/common.yml ]
-    
   roles:
   - role: test_os_version
-  
   tasks:
     - name: create lxc_device directory
-      shell: mkdir -p {{ lxc_device }} creates={{ lxc_device }}
-    - shell: chmod 777 {{ lxc_device }}
+      file: path={{ lxc_device }} state=directory mode=0777 recurse=yes

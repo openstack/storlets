@@ -1,5 +1,5 @@
 #---------------------------------------------------------------------------
-# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Copyright IBM Corp. 2015, 2016 All Rights Reserved
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,22 +13,15 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-[docker]
-localhost
+- name: cluster_config.json from template
+  hosts: s2aio
+  vars_files:
+  - [ deploy/prepare_vars.yml ]
+  tasks:
+    - stat: path="{{ playbook_dir }}/deploy/cluster_config.json"
+      register: st0
 
-[storlet-proxy]
-localhost
-
-[storlet-storage]
-localhost
-
-[storlet-mgmt]
-localhost
-
-[storlet-proxy:vars]
-ansible_ssh_user = <Set Me!>
-ansible_ssh_pass = passw0rd
-
-[storlet-storage:vars]
-ansible_ssh_user = <Set Me!>
-ansible_ssh_pass = passw0rd
+    - template:
+        src: templates/cluster_config
+        dest: "{{ playbook_dir }}/deploy/cluster_config.json"
+      when: not st0.stat.exists

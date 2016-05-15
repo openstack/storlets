@@ -14,9 +14,5 @@
 #---------------------------------------------------------------------------
 
 - hosts: storlet-proxy:storlet-storage
-
-  vars_files:
-   - {{ storlet_management_ansible_dir }}/common.yml
-
   roles:
    - pull_tenant_image

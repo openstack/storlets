@@ -13,15 +13,7 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- hosts: docker
-  roles:
-  - role: docker_client
 
-- hosts: docker # TODO: This patch probably needs to propegate to all clients on all nodes. 
-  tasks:
-    - include: roles/docker_registry/tasks/patch_docker_configs.yml 
-    
-- hosts: docker
+- hosts: storlet-mgmt
   roles:
-  - role: docker_registry
-
+   - add_new_tenant

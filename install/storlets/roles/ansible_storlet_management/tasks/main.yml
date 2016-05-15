@@ -43,34 +43,10 @@
     - "{{ storlet_management_ansible_dir }}/roles/pull_tenant_image/tasks" 
     - "{{ storlet_management_ansible_dir }}/roles/push_tenant_image/tasks"
     - "{{ storlet_management_ansible_dir }}/roles/push_tenant_image/templates" 
+    - "{{ storlet_management_ansible_dir }}/deploy"
 
-- name: create storlet management var file
-  template: 
-    src: "var_yml_file"
-    dest: "{{ storlet_management_ansible_dir }}/common.yml"
-    owner: root
-    mode: 0644
-    
-- name: create storlets_add_new_tenant.yml file
-  template: 
-    src: "storlets_add_new_tenant_yml_file"
-    dest: "{{ storlet_management_ansible_dir }}/storlets_add_new_tenant.yml"
-    owner: root
-    mode: 0644
-
-- name: create pull_tenant_image.yml file
-  template: 
-    src: "pull_tenant_image_yml_file"
-    dest: "{{ storlet_management_ansible_dir }}/pull_tenant_image.yml"
-    owner: root
-    mode: 0644
-
-- name: create push_tenant_image.yml file
-  template: 
-    src: "push_tenant_image_yml_file"
-    dest: "{{ storlet_management_ansible_dir }}/push_tenant_image.yml"
-    owner: root
-    mode: 0644
+- name: copy dynamic inventory file
+  copy: src="{{ inventory_file }}" dest="{{ storlet_management_ansible_dir }}/storlets_mgmt_dynamic_inventory.py" mode=0755
 
 - name: create storlet_mgmt_common.py file
   template:
@@ -92,6 +68,13 @@
     dest: "{{ storlet_management_install_dir }}/deploy_image.py"
     owner: root
     mode: 0755
+
+- copy: src={{item}} dest={{ storlet_management_ansible_dir }}/{{ item }}
+  with_items:
+    - pull_tenant_image.yml
+    - push_tenant_image.yml
+    - storlets_add_new_tenant.yml
+    - ansible_storlet_management_vars.py
 
 - copy: src=add_new_tenant_main.yml dest={{ storlet_management_ansible_dir }}/roles/add_new_tenant/tasks/main.yml
 
