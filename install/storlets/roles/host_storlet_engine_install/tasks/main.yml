@@ -1,0 +1,47 @@
+# Copyright (c) 2016 OpenStack Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+- name: install python facade on host
+  copy: src={{ SBusPythonFacade_dir }}/dist/{{ SBusPythonFacade_egg_dist }} dest=/tmp
+
+- command: "tar -x --no-overwrite-dir --owner=root --group=root --mode=0755 --directory=/ --file=/tmp/{{ SBusPythonFacade_egg_dist }}"
+- shell: rm /tmp/{{ SBusPythonFacade_egg_dist }}
+
+- name: install sbus transport layer on host
+  copy: src={{ SBusTransportLayer_dir }}/{{ sbus_so }} dest=/{{python_dist_packages_dir}} owner=root group=root mode=0755
+
+
+- name: install swift middleware on host
+  copy: src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }} dest=/tmp
+
+- command: "tar -x --no-overwrite-dir --owner=root --group=root --mode=0755 --directory=/ --file=/tmp/{{ swift_middleware_egg_dist }}"
+- shell: rm /tmp/{{ swift_middleware_egg_dist }}
+
+- stat: path={{ lxc_device }}/scripts
+  register: st
+- name: Create scripts directory
+  file: path="{{ lxc_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
+  when: not st.stat.exists
+
+- name: install runtime scripts used by swift middleware
+  copy:
+    src: "{{ storlet_source_dir }}/{{ item }}"
+    dest: "{{ lxc_device }}/scripts/"
+    mode: "04755"
+    owner: root
+    group: root
+  with_items:
+    - "Engine/SMScripts/bin/restart_docker_container"
+    - "Engine/SMScripts/send_halt_cmd_to_daemon_factory.py"

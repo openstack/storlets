@@ -14,7 +14,9 @@
 #---------------------------------------------------------------------------
            
 swift_install_reop_dir: <set dir!>
-swift_install_repo_url: https://github.com/Open-I-Beam/swift-install.git
+#swift_install_repo_url: https://github.com/Open-I-Beam/swift-install.git
+swift_install_repo_url: https://github.com/eranr/storlets-swift-install.git
 swift_install_repo_name: swift-install
-swift_install_repo_branch: storlet-swift-install
+#swift_install_repo_branch: storlet-swift-install
+swift_install_repo_branch: master
 swift_device: <set device!>

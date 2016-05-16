@@ -28,17 +28,17 @@ RUN apt-get update && \
     apt-get install oracle-java8-installer -y && \
     apt-get clean
 
-COPY logback-classic-1.1.2.jar	/opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/logback-classic-1.1.2.jar"]
+COPY logback-classic-1.1.2.jar	/opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/logback-classic-1.1.2.jar"]
 
-COPY logback-core-1.1.2.jar	/opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/logback-core-1.1.2.jar"]
+COPY logback-core-1.1.2.jar	/opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/logback-core-1.1.2.jar"]
 
-COPY logback.xml	/opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/logback.xml"]
+COPY logback.xml	/opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
 
-COPY slf4j-api-1.7.7.jar	/opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/slf4j-api-1.7.7.jar"]
+COPY slf4j-api-1.7.7.jar	/opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/slf4j-api-1.7.7.jar"]
 
-COPY json_simple-1.1.jar	/opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/json_simple-1.1.jar"]
+COPY json_simple-1.1.jar	/opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/json_simple-1.1.jar"]

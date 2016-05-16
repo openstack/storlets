@@ -20,14 +20,14 @@
   shell: docker ps -a -q
   register: docker
   when: st.stat.exists
-      
+
 - shell: docker stop {{ docker.stdout_lines[0] }}
-  when: st.stat.exists and docker is defined and stdout_lines in docker 
-  
-- name: Delete all running containers 
+  when: st.stat.exists and docker is defined and stdout_lines in docker
+
+- name: Delete all running containers
   shell: docker rm "{{ docker.stdout_lines[0] }}"
   when: st.stat.exists and docker is defined and stdout_lines in docker
-  
+
 - name: stop the docker service
   service: name=docker state=stopped
   when: st.stat.exists
@@ -35,11 +35,11 @@
 - name: uninstall docker
   apt: name=lxc-docker state=absent purge=yes
   when: st.stat.exists
-  
+
 - name: make sure all docker stuff is removed
   shell: apt-get -y autoremove
   when: st.stat.exists
-  
+
 - name: cleanup docker runtime
   stat: path="{{ lxc_device }}/docker"
   register: p
@@ -50,20 +50,19 @@
   register: p
 - shell: rm -fr /var/lib/docker
   when: p.stat.exists
-  
+
 - name: cleanup conf files
   stat: path=/etc/default/docker
   register: p
 - shell: rm -f /etc/default/docker
   when: p.stat.exists
-  
+
 - stat: path=/etc/init/docker.conf
   register: p
 - shell: rm -f /etc/init/docker.conf
   when: p.stat.exists
-  
+
 - stat: path=/etc/init.d/docker
   register: p
 - shell: rm -f /etc/init.d/docker
   when: p.stat.exists
-  

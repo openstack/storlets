@@ -26,15 +26,17 @@
 	    	verbose="true"
 	    	usetimestamp="true"/>
 		<get src="http://central.maven.org/maven2/ch/qos/logback/logback-core/1.1.2/logback-core-1.1.2.jar" 
-	    	dest="Engine/dependencies/logback-core-1.1.2.jar" 
+	    	dest="Engine/dependencies/logback-core-1.1.2.jar"
 	    	verbose="true"
 	    	usetimestamp="true"/>
-		<get src="http://central.maven.org/maven2/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar" 
-	    	dest="Engine/dependencies/slf4j-api-1.7.7.jar" 
+		<get src="http://central.maven.org/maven2/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar"
+	    	dest="Engine/dependencies/slf4j-api-1.7.7.jar"
 	    	verbose="true"
 	    	usetimestamp="true"/>
+                <copy file="install/storlets/roles/docker_base_jre_image/files/logback.xml" 
+		tofile="Engine/dependencies/logback.xml"/>
 	</target>
-	
+
 	<!-- Storlets Engine build -->
 	<macrodef name="iterate_engine">
 		<attribute name="target" />
@@ -51,17 +53,17 @@
 			</subant>
 		</sequential>
 	</macrodef>
-	
+
 	<target name="build_engine" depends="dependencies">
 		<iterate_engine target="build" />
 	</target>
-	
+
 	<target name="clean_engine">
 		<iterate_engine target="clean" />
                 <delete dir="Engine/dependencies" />
 	</target>
 	<!-- Storlets Engine build /-->
-	
+
 	<!-- Storlets Samples build -->
 	<macrodef name="iterate_storlets">
 		<attribute name="target" />
@@ -81,19 +83,18 @@
 	<target name="build_storlets">
 		<iterate_storlets target="build" />
 	</target>
-	
+
 	<target name="clean_storlets">
 		<iterate_storlets target="clean" />
 	</target>
-	
-	
+
 	<target name="build" depends="build_engine, build_storlets" />
 	<target name="clean" depends="clean_engine, clean_storlets">
 		<delete dir="bin" />
         </target>
-	
+
 	<!-- Storlets Samples build /-->
-	
+
 	<!--			Deploy			-->
 	<!-- To execute the below tasks you must have:
 	     (1) ansible installed
@@ -107,7 +108,7 @@
 			<arg value="host_storlet_engine.yml"/>
 		</exec>
 	</target>
-	  
+
 	<target name="deploy_container_engine" depends="build_engine">
 		<exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
 			<arg value="-s"/>
@@ -118,5 +119,5 @@
 	</target>
 
 	<target name="deploy" depends="deploy_host_engine, deploy_container_engine"/>
-	
+
 </project>

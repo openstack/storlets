@@ -16,17 +16,18 @@
 - name: Get the defaut tenant id from Keystone
   shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ storlets_default_tenant_name }} | awk '{print $2}'
   register: tenant_id
-  
-- debug: var=tenant_id
+
+- name: Print the tenant id whose container we are processing
+  debug: msg="{{ tenant_id.stdout_lines[0] }}"
 
 - name: Enable the default tenant for storlets
-  command: swift 
-           --os-auth-url="{{ keystone_public_url }}" 
+  command: swift
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ storlets_default_tenant_user_name }}"
            --os-password="{{ storlets_default_tenant_user_password }}"
            --os-tenant-name="{{ storlets_default_tenant_name }}"
            post
-           --meta "{{ storlets_enabled_attribute_name }}:true"
+           --meta "Storlet-Enabled:True"
 
 - name: Create Repository for building the image
   file:
@@ -39,27 +40,74 @@
   stat: path=/data/registry/repositories/default_tenant_image/Dockerfile
   register: st0
 
-- template: 
+- template:
     src: "default_tenant_image_Dockerfile"
     dest: "/data/registry/repositories/default_tenant_image/Dockerfile"
     owner: root
     mode: 0644
   when: not st0.stat.exists
-  
-- name: Build the image "{{ tenant_id.stdout_lines[0] }}"
-  shell: docker images | grep "{{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}" | wc -l
-  register: tenant_image
 
-- command: "docker build -t {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
+- shell: echo zzz
+  register: image_id
+- name: Find the default tenant image id
+  shell: docker images | grep "{{ tenant_id.stdout_lines[0] }}" | awk '{print $3}'
+  register: image_id
+
+- name: Image id found is
+  debug: msg="{{image_id}}"
+
+# Init tenant_container_running to 0
+- shell: echo 0
+  register: tenant_container_running
+
+# If the image id exists, update tenant_container_running
+# according to the docker ps output
+- name: Test if the default tenant container is running
+  shell: docker ps | grep "{{ image_id.stdout_lines[0] }}" | wc -l
+  register: tenant_container_running
+  when: "not 'zzz' in image_id.stdout_lines[0]"
+
+- name: Container running state is
+  debug: msg="{{tenant_container_running.stdout_lines[0]}}"
+
+# Init tenant_container_exists 0
+- shell: echo 0
+  register: tenant_container_exists
+
+# If the image id exists, update tenant_container_exists
+# according to the docker ps -a output
+- name: Test if the default tenant container exists
+  shell: docker ps -a | grep "{{ image_id.stdout }}" | wc -l
+  register: tenant_container_exists
+  when: "not 'zzz' in image_id.stdout_lines[0]"
+
+- name: Container existance state is
+  debug: msg="{{tenant_container_exists}}"
+
+# If tenant_container_exists get its id
+- name: Get the container id
+  shell: docker ps -a | grep "{{ image_id.stdout }}" | awk 'print $2'
+  register: container_id
+  when: "'1' in tenant_container_exists.stdout_lines[0]"
+
+- name: Stop the default tenant container
+  command: docker stop -t 1 "{{ container_id.stdout_lines[0] }}"
+  when: "'1' in tenant_container_running.stdout_lines[0]"
+
+- name: Remove the default tenant container
+  command: docker rm "{{ container_id.stdout_lines[0] }}"
+  when: "'1' in tenant_container_exists.stdout_lines[0]"
+
+- name: Remove the default tenant container image
+  command: "docker rmi {{image_id.stdout_lines[0]}}"
+  when: "not 'zzz' in image_id.stdout_lines[0]"
+
+- name: Build the new default tenant container image
+  command: "docker build -t {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
   args:
     chdir: "/data/registry/repositories/default_tenant_image"
   register: command_result
   failed_when: "'Successfully built' not in command_result.stdout"
-  when: "'0' in tenant_image.stdout_lines[0]"  
 
 - name: Push the default_tenant_image into the repository
   command: "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"
-  
-- name: Stop the running container
-  command: docker stop -t 1 tenant_{{ tenant_id.stdout_lines[0] }}
-  ignore_errors: yes

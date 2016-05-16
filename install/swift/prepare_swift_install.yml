@@ -14,28 +14,28 @@
 #---------------------------------------------------------------------------
 
 - name: prepare loop device
-  hosts: s2aio 
+  hosts: s2aio
   vars_files:
-  - [ vars.yml ]
+  - [vars.yml]
   roles:
-  - { role: prepare_loop_device, when: "swift_device  == 'loop0'" }
+  - {role: prepare_loop_device, when: "swift_device  == 'loop0'"}
 
 - name: cluster_config.json from template
   hosts: s2aio
   vars_files:
-  - [ vars.yml ]
+  - [vars.yml]
   tasks:
-    - stat: path="{{ playbook_dir }}/cluster_config.json"
-      register: st0
+  - stat: path="{{playbook_dir}}/cluster_config.json"
+    register: st0
 
-    - template:
-        src: templates/cluster_config
-        dest: "{{ playbook_dir }}/cluster_config.json"
-      when: not st0.stat.exists
+  - template:
+      src: templates/cluster_config
+      dest: "{{ playbook_dir }}/cluster_config.json"
+    when: not st0.stat.exists
 
 - name: pull Swift installation scripts
-  hosts: s2aio 
+  hosts: s2aio
   vars_files:
-  - [ vars.yml ]
+  - [vars.yml]
   roles:
   - role: pull_swift_ansible

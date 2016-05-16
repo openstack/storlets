@@ -1,24 +1,18 @@
 #!/usr/bin/python
-"""-------------------------------------------------------------------------
-Copyright IBM Corp. 2015, 2015 All Rights Reserved
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-Limitations under the License.
--------------------------------------------------------------------------"""
-
-"""===========================================================================
-XX-XXX-2014    eranr      Initial implementation.
-01-Sep-2014    evgenyl    Code refactoring.
-01-Dec-2014    evgenyl    Dropping multi-threaded monitoring
-==========================================================================="""
+# Copyright (c) 2015-2016 OpenStack Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import errno
 import logging
@@ -87,20 +81,17 @@ class daemon_factory(object):
                   - A list of the JVM arguments
         """
 
-        str_library_path = "/opt/ibm"
-        str_prfx = "/opt/ibm/"
+        str_prfx = "/opt/storlets/"
 
-        # TODO(takashi): refactor this with using ':'.join
-        str_dmn_clspth = str_prfx + ':'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + \
-            'logback-classic-1.1.2.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'logback-core-1.1.2.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'slf4j-api-1.7.7.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'json_simple-1.1.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'SBusJavaFacade.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'SCommon.jar:'
-        str_dmn_clspth = str_dmn_clspth + str_prfx + 'SDaemon.jar:'
-
+        jar_deps = ['logback-classic-1.1.2.jar',
+                    'logback-core-1.1.2.jar',
+                    'slf4j-api-1.7.7.jar',
+                    'json_simple-1.1.jar',
+                    'SBusJavaFacade.jar',
+                    'SCommon.jar',
+                    'SDaemon.jar']
+        jar_deps = ['%s%s:' % (str_prfx, x) for x in jar_deps]
+        str_dmn_clspth = ''.join(jar_deps)
         str_dmn_clspth = str_dmn_clspth + storlet_path
 
         self.logger.debug('START_DAEMON: daemon lang = %s' % daemon_language)
@@ -125,7 +116,9 @@ class daemon_factory(object):
                     + str_dmn_clspth
             if os.environ.get('LD_LIBRARY_PATH'):
                 str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' \
-                    + str_library_path
+                    + str_prfx
+            else:
+                str_library_path = str_prfx
             os.environ['CLASSPATH'] = str_dmn_clspth
             os.environ['LD_LIBRARY_PATH'] = str_library_path
             pargs = [str('/usr/bin/java'),

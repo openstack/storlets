@@ -17,7 +17,7 @@
 # all other flavors)
 common:
     # Set a random string here
-    secret_key: {{ docker_registry_random_string }}
+    secret_key: "{{ docker_registry_random_string }}"
     standalone: true
  # This is the default configuration when no flavor is specified
 dev:

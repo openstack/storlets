@@ -21,24 +21,23 @@
 
 - name: install sbus transport layer on host
   copy: src={{ SBusTransportLayer_dir }}/{{ sbus_so }} dest=/{{python_dist_packages_dir}} owner=root group=root mode=0755
-        
 
 - name: install swift middleware on host
   copy: src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }} dest=/tmp
 
 - command: "tar -x --no-overwrite-dir --owner=root --group=root --mode=0755 --directory=/ --file=/tmp/{{ swift_middleware_egg_dist }}"
 - shell: rm /tmp/{{ swift_middleware_egg_dist }}
-             
+
 - stat: path={{ lxc_device }}/scripts
   register: st
 - name: Create scripts directory
   file: path="{{ lxc_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
   when: not st.stat.exists
-  
-- name:  install runtime scripts used by swift middleware
+
+- name: install runtime scripts used by swift middleware
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest:  "{{ lxc_device }}/scripts/"
+    dest: "{{ lxc_device }}/scripts/"
     mode: "04755"
     owner: root
     group: root
@@ -49,7 +48,7 @@
   shell: mkdir -p {{ engine_install_dir  }} creates={{ engine_install_dir  }}
 
 - name: Copy Swift middleware conf template
-  template: 
+  template:
     src: ../../common_templates/swift_middleware_conf
     dest: "{{ engine_install_dir  }}"
     owner: "{{ swift_run_time_user }}"
@@ -60,15 +59,15 @@
 - name: copy install script
   copy: src="{{ item }}" dest={{ engine_install_dir  }}
   with_items:
-   - ../../common_files/swift_config.py
-   
+    - ../../common_files/swift_config.py
+
 - name: Copy gateway conf template
-  template: 
-    src: ../../common_templates/storlet-docker-gateway.conf-sample
-    dest: "{{ storlet_gateway_conf_file }}"
-    owner: "{{ swift_run_time_user }}"
-    group: "{{ swift_run_time_group }}"
-    mode: 0644
+  template:
+  src: ../../common_templates/storlet-docker-gateway.conf-sample
+  dest: "{{ storlet_gateway_conf_file }}"
+  owner: "{{ swift_run_time_user }}"
+  group: "{{ swift_run_time_group }}"
+  mode: 0644
 
 - name: configure swift
   shell: chdir={{ engine_install_dir  }}

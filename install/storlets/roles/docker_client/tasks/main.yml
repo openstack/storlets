@@ -13,7 +13,6 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-  
 - name: Test for missing packages
   shell: dpkg --get-selections | grep aufs-tools | wc -l
   register: aufs
@@ -36,7 +35,7 @@
   apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=36A1D7869245C8950F966E92D8576A8BA88D21E9 state=present
   ignore_errors: True
   when: "'0' in lxc_docker.stdout_lines[0]"
-  
+
 - name: Install Apt Transport HTTPS
   apt: name=apt-transport-https state=present update-cache=yes force=yes
   when: "'0' in lxc_docker.stdout_lines[0]"
@@ -44,7 +43,7 @@
 - name: Add Docker Apt repository
   apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
   when: "'0' in lxc_docker.stdout_lines[0]"
-      
+
 - name: Install Docker Client
   apt: name=lxc-docker state=present update-cache=yes force=yes
   when: "'0' in lxc_docker.stdout_lines[0]"
@@ -57,26 +56,26 @@
 - stat: path=/etc/default/docker
   register: st1
 - shell: grep {{ lxc_device }} /etc/default/docker | wc -l
-  register: edited 
+  register: edited
 - name: Configure the Docker client to use the LXC block device.
-  lineinfile: 
+  lineinfile:
     dest: /etc/default/docker
     regexp: "^DOCKER_OPTS.*"
     line: DOCKER_OPTS="-g {{ lxc_device }}/docker --insecure-registry {{ groups['docker'][0]}}:{{ docker_registry_port }}"
     backup: yes
     state: present
-  when: st1.stat.exists and '0' in edited.stdout 
+  when: st1.stat.exists and '0' in edited.stdout
 
 # Hack to overcome installation problem where no conf files are installed
 - stat: path=/etc/default/docker
-  register: st2 
+  register: st2
 - name: Install docker defaults from template
   template: src=etc_default_docker dest=/etc/default/docker owner=root mode=0644
   when: not st2.stat.exists
 
 # Hack to overcome installation problem where no conf files are installed
 - stat: path=/etc/init/docker.conf
-  register: st3 
+  register: st3
 - name: Install service config file from template
   template: src=etc_init_docker.conf dest=/etc/init/docker.conf owner=root mode=0755
   when: not st3.stat.exists
@@ -85,8 +84,20 @@
 - stat: path=/etc/init.d/docker
   register: st4
 - name: Install initd config from template
-  template: src=etc_init.d_docker dest=/etc/init.d/docker owner=root mode=0755 
+  template: src=etc_init.d_docker dest=/etc/init.d/docker owner=root mode=0755
   when: not st4.stat.exists
+
+# Patch the docker config files to use the insecure registry
+- name: ADD --insecure {{ groups['docker'][0] }}:{{ docker_registry_port }} to docker daemon defaults
+  shell: grep DOCKER_OPTS /etc/default/docker | wc -l
+  register: opt_lines_count
+
+- lineinfile:
+    dest: /etc/default/docker
+    state: present
+    line: DOCKER_OPTS="$DOCKER_OPTS --insecure-registry {{ groups['docker'][0] }}:{{ docker_registry_port }}"
+    insertafter: "^DOCKER_OPTS="
+  when: "'2' in opt_lines_count.stdout"
 
 - name: Restart Docker Daemon
   shell: service docker stop ; sleep 1 ; service docker start

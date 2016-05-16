@@ -19,7 +19,7 @@
     state: directory
     mode: 0755
     owner: root
-    
+
 - name: Copy SBus resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
@@ -50,7 +50,7 @@
     dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
   with_items:
     - "Engine/storlet_daemon_factory/dist/storlet_daemon_factory-1.0.linux-x86_64.tar.gz"
-  
+
 - name: Copy Init Container Script
   copy:
     src: init_container.sh

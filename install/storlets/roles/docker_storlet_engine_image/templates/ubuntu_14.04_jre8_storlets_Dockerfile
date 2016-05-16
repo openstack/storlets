@@ -26,23 +26,23 @@ RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/SBusPythonFacade*
 COPY sbus.so                                            /usr/local/lib/python2.7/dist-packages/
 RUN ["chmod", "0755", "/usr/local/lib/python2.7/dist-packages/sbus.so"]
 
-COPY SBusJavaFacade.jar                                 /opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/SBusJavaFacade.jar"]
+COPY SBusJavaFacade.jar                                 /opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/SBusJavaFacade.jar"]
 
-COPY libjsbus.so                                        /opt/ibm/
-RUN ["chmod", "0755", "/opt/ibm/libjsbus.so"]
+COPY libjsbus.so                                        /opt/storlets/
+RUN ["chmod", "0755", "/opt/storlets/libjsbus.so"]
 
-COPY SDaemon.jar                                        /opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/SDaemon.jar"]
+COPY SDaemon.jar                                        /opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/SDaemon.jar"]
 
-COPY SCommon.jar                                        /opt/ibm/
-RUN ["chmod", "0744", "/opt/ibm/SCommon.jar"]
+COPY SCommon.jar                                        /opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/SCommon.jar"]
 
 ADD storlet_daemon_factory-1.0.linux-x86_64.tar.gz      /
 RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/storlet_daemon_factory*
 
-COPY init_container.sh                                  /opt/ibm/
-RUN ["chmod", "0755", "/opt/ibm/init_container.sh"]
+COPY init_container.sh                                  /opt/storlets/
+RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]
 
 CMD ["prod", "/mnt/channels/factory_pipe","DEBUG"]
-ENTRYPOINT ["/opt/ibm/init_container.sh"]
+ENTRYPOINT ["/opt/storlets/init_container.sh"]

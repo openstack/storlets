@@ -1,24 +1,20 @@
 {
     "groups" : {
-        "storlet-mgmt": [ "127.0.0.1" ],
-        "storlet-proxy": [ "127.0.0.1" ],
-        "storlet-storage": [ "127.0.0.1" ],
-        "docker": [ "127.0.0.1" ]
-    },
-    "127.0.0.1" : {
-        "ansible_ssh_user" : "{{ ansible_ssh_user }}"
+        "storlet-mgmt": {{ mgmt_group | to_json }},
+        "storlet-proxy": {{ proxy_group | to_json }},
+        "storlet-storage": {{ storage_group | to_json }},
+        "docker": {{ docker_group | to_json }}
     },
     "all" : {
-        "ibm_container_install_dir": "opt/ibm",
-        "lxc_device": "/home/docker_device",
-        "storlet_source_dir": "~/storlets",
+        "ansible_ssh_user" : "{{ ansible_ssh_user }}",
+        "lxc_device": "{{ lxc_device }}",
+        "storlet_source_dir": "{{ repo_root }}",
         "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
         "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
         "keystone_endpoint_host": "{{ keystone_endpoint_host }}",
         "keystone_admin_url": "http://{{ keystone_endpoint_host }}:35357/v2.0",
         "keystone_public_url": "http://{{ keystone_endpoint_host }}:5000/v2.0",
         "keystone_admin_token": "{{ keystone_admin_token }}",
-        "keystone_admin_password": "{{ keystone_admin_password }}",
         "swift_endpoint_host": "{{ swift_endpoint_host }}",
         "swift_public_url": "http://{{ swift_endpoint_host }}:{{ swift_endpoint_port }}/v1",
         "swift_run_time_user" : "{{ swift_run_time_user }}",
@@ -34,9 +30,10 @@
         "storlets_enabled_attribute_name": "storlet-enabled",
         "docker_registry_random_string": "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ1234",
         "docker_registry_port": "5001",
-        "storlets_default_tenant_name": "service",
-        "storlets_default_tenant_user_name": "swift",
-        "storlets_default_tenant_user_password": "passw0rd",
+        "container_install_dir": "/opt/storlets",
+        "storlets_default_tenant_name": "test",
+        "storlets_default_tenant_user_name": "tester",
+        "storlets_default_tenant_user_password": "testing",
         "base_image_maintainer": "root",
         "base_os_image": "ubuntu_14.04",
         "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",

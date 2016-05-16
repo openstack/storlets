@@ -14,18 +14,18 @@
 #---------------------------------------------------------------------------
 
 - name: Create {{ dockerfile_prefix }} Docker file
-  template: 
+  template:
     src: "{{ dockerfile_prefix }}_Dockerfile"
     dest: "/data/registry/repositories/{{ base_os_image }}_{{ layer_suffix }}/Dockerfile"
     owner: root
     mode: 0644
-  
+
 - name: Build the image {{ layer_suffix }}
   command: "docker build -q -t {{ inventory_hostname }}:{{ docker_registry_port }}/{{ base_os_image }}_{{ layer_suffix }} ."
   args:
     chdir: "/data/registry/repositories/{{ base_os_image }}_{{ layer_suffix }}"
   register: command_result
   failed_when: "'Successfully built' not in command_result.stdout"
-    
+
 - name: Push the Image {{ layer_suffix }} in the repository
   command: "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/{{ base_os_image }}_{{ layer_suffix }}"

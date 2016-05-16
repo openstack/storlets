@@ -1,0 +1,17 @@
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+
+- hosts: storlet-proxy:storlet-storage
+  vars_files:
+    - [deploy/common.yml]
+  tasks:
+    - replace: dest=/etc/swift/proxy-server.conf regexp='^storlet_execute_on_proxy_only.*$' replace='storlet_execute_on_proxy_only = {{ run_on_proxy }}' owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=644
+    - replace: dest=/etc/swift/object-server.conf regexp='^storlet_execute_on_proxy_only.*$' replace='storlet_execute_on_proxy_only = {{ run_on_proxy }}' owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=644
+    - shell: swift-init all restart

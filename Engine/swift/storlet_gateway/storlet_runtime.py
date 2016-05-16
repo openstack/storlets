@@ -299,7 +299,10 @@ class RunTimeSandbox(object):
 
         docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
                                            account_id)
-        docker_image_name = '%s/%s' % (self.docker_repo, account_id)
+        if self.docker_repo:
+            docker_image_name = '%s/%s' % (self.docker_repo, account_id)
+        else:
+            docker_image_name = account_id
         pipe_mount = '%s:%s' % (self.paths.host_pipe_prefix(),
                                 self.paths.sandbox_pipe_prefix)
 

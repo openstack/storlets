@@ -13,5 +13,7 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- include: docker_storlet_engine_image.yml
-- include: deploy_default_tenant.yml
+- hosts: docker
+  roles:
+  - role: docker_storlet_engine_image
+  - role: deploy_default_tenant

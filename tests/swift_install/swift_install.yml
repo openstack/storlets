@@ -15,7 +15,7 @@
 
 - hosts: deploy
   vars_files:
-  - [ vars.yml ]
+  - [vars.yml]
   roles:
   - role: prepare_loop_device
   - role: pull_swift_ansible

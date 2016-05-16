@@ -14,35 +14,35 @@
 #---------------------------------------------------------------------------
 
 - name: Install dependencies
-  apt: 
+  apt:
     pkg: "{{ item }}"
   with_items:
-    - git 
+    - git
     - build-essential
     - libevent-dev
-    - libssl-dev 
-    - liblzma-dev 
+    - libssl-dev
+    - liblzma-dev
     - python-dev
-    
+
 - stat: path=/usr/bin/pip
   register: p
 - shell: wget https://raw.githubusercontent.com/pypa/pip/5d927de5cdc7c05b1afbdd78ae0d1b127c04d9d0/contrib/get-pip.py
-  when: not p.stat.exists 
+  when: not p.stat.exists
 - shell: python get-pip.py
-  when: not p.stat.exists 
+  when: not p.stat.exists
 - shell: ln -s /usr/local/bin/pip /usr/bin/pip
-  when: not p.stat.exists 
+  when: not p.stat.exists
 
 
 - name: Git clone and checkout the Docker repository service code
   stat: path=/opt/docker-registry
   register: p
-- git: 
-    repo: https://github.com/dotcloud/docker-registry.git 
+- git:
+    repo: https://github.com/dotcloud/docker-registry.git
     dest: /opt/docker-registry
     version: 0.6.3
   when: not p.stat.exists
-  
+
 - shell: chdir=/opt/docker-registry
          /bin/sed -i '/keystoneclient/d' requirements.txt
 
@@ -59,21 +59,16 @@
   pip:
     chdir: /opt/docker-registry
     requirements: requirements.txt
-    
-#- name: Hack to resolve repository dependencies bug
-#  pip:
-#    name: Jinja2
-#    version: 2.7.3
 
 - name: Create log dir
-  file: 
+  file:
     path: /var/log/docker-registry
-    state: directory 
+    state: directory
     mode: 0755
     owner: root
 
 - name: Create data dir
-  file: 
+  file:
     path: /data/registry
     state: directory
     mode: 0755
@@ -83,7 +78,7 @@
   stat: path=/opt/docker-registry/config/config.yml
   register: st0
 
-- template: 
+- template:
     src: opt/docker-registry/config/config.yml
     dest: /opt/docker-registry/config/config.yml
     owner: root
@@ -94,7 +89,7 @@
   stat: path=/etc/init/docker-registry.conf
   register: st1
 
-- template: 
+- template:
     src: etc/init/docker-registry.conf
     dest: /etc/init/docker-registry.conf
     owner: root
@@ -105,7 +100,7 @@
   service:
     name: docker-registry
     state: stopped
-  ignore_errors: yes 
+  ignore_errors: yes
 
 - name: Start Docker repository service
   service:

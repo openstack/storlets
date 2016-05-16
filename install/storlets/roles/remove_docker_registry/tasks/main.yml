@@ -27,7 +27,7 @@
     requirements: requirements.txt
     state: absent
   when: st.stat.exists
-    
+
 - name: Remove log dir
   stat: path=/var/log/docker-registry
   register: p

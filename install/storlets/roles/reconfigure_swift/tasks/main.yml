@@ -20,17 +20,17 @@
   copy: src="{{ item }}" dest={{ engine_install_dir  }}
   with_items:
    - ../../common_files/swift_config.py
-   
+
 - name: Copy middleware conf template
-  template: 
-    src: ../../common_templates/swift_middleware_conf
-    dest: "{{ engine_install_dir  }}"
-    owner: root
-    mode: 0644
+  template:
+  src: ../../common_templates/swift_middleware_conf
+  dest: "{{ engine_install_dir  }}"
+  owner: root
+  mode: 0644
 
 - name: configure swift
   shell: chdir={{ engine_install_dir  }}
          python swift_config.py remove swift_middleware_conf "{{ swift_run_time_user }}"
-   
+
 - name: restart swift
   shell: swift-init all restart

@@ -1,0 +1,30 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+           
+ansible_ssh_user: <ANSIBLE_USER>
+repo_root: <STORLETS_REPO_ROOT>
+mgmt_group: [ "127.0.0.1" ]
+proxy_group: [ "127.0.0.1" ]
+storage_group: [ "127.0.0.1" ]
+docker_group: [ "127.0.0.1" ]
+storlets_management_user: <MGMT_USER>
+keystone_endpoint_host: 127.0.0.1
+keystone_admin_token: ADMIN
+keystone_admin_password: passw0rd
+swift_endpoint_host: 127.0.0.1
+swift_endpoint_port: 80
+swift_run_time_user: <SWIFT_RUNTIME_USER>
+swift_run_time_group: <SWIFT_RUNTIME_GROUP>
+lxc_device: /home/docker_device 

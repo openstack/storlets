@@ -16,12 +16,11 @@
 - name: cluster_config.json from template
   hosts: s2aio
   vars_files:
-  - [ deploy/prepare_vars.yml ]
+  - [deploy/installation_vars.yml]
   tasks:
-    - stat: path="{{ playbook_dir }}/deploy/cluster_config.json"
-      register: st0
-
-    - template:
-        src: templates/cluster_config
-        dest: "{{ playbook_dir }}/deploy/cluster_config.json"
-      when: not st0.stat.exists
+  - stat: path="{{ playbook_dir }}/deploy/cluster_config.json"
+    register: st0
+  - template:
+      src: templates/cluster_config
+      dest: "{{ playbook_dir }}/deploy/cluster_config.json"
+    when: not st0.stat.exists

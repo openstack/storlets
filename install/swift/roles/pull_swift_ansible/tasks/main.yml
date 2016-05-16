@@ -35,4 +35,3 @@
   copy: src="{{ playbook_dir }}/cluster_config.json" dest="{{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/cluster_config.json"
 
 - command: chmod 1777 "{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
-

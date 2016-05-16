@@ -26,6 +26,7 @@ lib64
 pip-log.txt
 
 # auto created for deploy
+install/storlets/prepare_host
 install/storlets/deploy/
 install/storlets/prepare_vars.yml
 install/swift/vars.yml
