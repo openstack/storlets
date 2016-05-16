@@ -37,7 +37,7 @@ def main():
     if len(sys.argv) != 2:
         usage()
         sys.exit(-1)
-    conf = ClusterConfig(sys.argv[1]).get_conf()
+    conf = ClusterConfig(sys.argv[1])
     url, token = storlet_get_auth(conf)
     sys.stdout.write("Enter absolute path to storlet jar file: ")
     storlet_jar = sys.stdin.readline().rstrip()

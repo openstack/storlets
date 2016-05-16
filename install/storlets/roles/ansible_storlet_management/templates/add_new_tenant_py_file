@@ -21,13 +21,13 @@ from storlet_mgmt_common import get_hosts_object, monitor_playbook_execution
 
 
 def add_new_tenant(tenant_name, user_name, user_password):
-    p = subprocess.Popen(['ansible-playbook', '-vvvv' , '-s',
+    p = subprocess.Popen(['ansible-playbook', '-s',
                     '-i', 'storlets_mgmt_dynamic_inventory.py',
                     'storlets_add_new_tenant.yml',
                     '-e', 'tenant_name=' + tenant_name,
                     '-e', 'user_name=' + user_name,
                     '-e', 'user_password=' + user_password,
-                    '-e', 'storlets_image_name_suffix=' + 
+                    '-e', 'storlets_image_name_suffix=' +
                         '{{ storlets_image_name_suffix }}'],
                     env={"ANSIBLE_HOST_KEY_CHECKING" : "False"},
                     stdout=subprocess.PIPE,

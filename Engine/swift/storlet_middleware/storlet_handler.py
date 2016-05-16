@@ -689,7 +689,12 @@ def filter_factory(global_conf, **local_conf):
     for key, val in additional_items:
         storlet_conf[key] = val
 
-    swift_info = {}
+    # TODO(eranr): Add supported storlets languages and
+    #  supported storlet API version
+    swift_info = {'storlet_container': storlet_conf['storlet_container'],
+                  'storlet_dependency': storlet_conf['storlet_dependency'],
+                  'storlet_gateway_class': cl}
+
     storlet_conf["gateway_module"] = the_class
     register_swift_info('storlet_handler', False, **swift_info)
 

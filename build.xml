@@ -103,7 +103,7 @@
 		<exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
-			<arg value="deploy/hosts"/>
+			<arg value="storlets_dynamic_inventory.py"/>
 			<arg value="host_storlet_engine.yml"/>
 		</exec>
 	</target>
@@ -112,7 +112,7 @@
 		<exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
 			<arg value="-s"/>
 			<arg value="-i"/>
-			<arg value="deploy/hosts"/>
+			<arg value="storlets_dynamic_inventory.py"/>
 			<arg value="container_storlet_engine.yml"/>
 		</exec>
 	</target>

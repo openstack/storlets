@@ -71,15 +71,15 @@ def deploy_storlet(url, token, storlet_jar,
 
 
 def storlet_get_auth(conf):
-    auth_url = conf['all']['keystone_public_url']
-    account = conf['all']['storlets_default_tenant_name']
-    user = conf['all']['storlets_default_tenant_user_name']
-    passwd = conf['all']['storlets_default_tenant_user_password']
-    os_options = {'tenant_name': account}
-    os_options['region_name'] = conf['all'].get('region', '')
+    auth_url = conf.auth_uri
+    tenant = conf.tenant_name
+    user = conf.user
+    passwd = conf.password
+    os_options = {'tenant_name': tenant}
+    os_options['region_name'] = conf.region
     url, token = c.get_auth(auth_url,
-                            account + ':' + user,
+                            tenant + ':' + user,
                             passwd,
                             os_options=os_options,
-                            auth_version='2.0')
+                            auth_version=conf.auth_version)
     return url, token
