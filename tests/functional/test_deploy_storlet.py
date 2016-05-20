@@ -13,37 +13,38 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-import unittest
 import pexpect
-from __init__ import PATH_TO_STORLETS, BIN_DIR
-
-DEPLOY_STORLET_PATH = '../../common/deploy_storlet.py'
-CONF_PATH = '../../cluster_config.json'
-EXECDEP_STORLET_PATH = '%s/%s/%s' % (PATH_TO_STORLETS,
-                                     'ExecDepStorlet',
-                                     BIN_DIR)
-EXECDEP_STORLET_PATH = '%s/%s' % (EXECDEP_STORLET_PATH,
-                                  'execdepstorlet-1.0.jar')
-EXECDEP_STORLET_DEP_PATH = '%s/%s' % (EXECDEP_STORLET_PATH,
-                                      'get42')
+from __init__ import StorletBaseFunctionalTest
 
 
-class TestExecDepStorlet(unittest.TestCase):
+class TestExecDepStorlet(StorletBaseFunctionalTest):
+    def setUp(self):
+        super(TestExecDepStorlet, self).setUp()
+        self.deploy_storlet_path = '../../common/deploy_storlet.py'
+        self.execdep_storlet_path = '%s/%s/%s' % (self.path_to_storlets,
+                                                  'ExecDepStorlet',
+                                                  self.bin_dir)
+        self.execdep_storlet_jar_file = '%s/%s' % (self.execdep_storlet_path,
+                                                   'execdepstorlet-1.0.jar')
+        self.execdep_storlet_dep_file = '%s/%s' % (self.execdep_storlet_path,
+                                                   'get42')
+
+        self.timeout = 2
 
     def test_deploy_storlet_util(self):
-        child = pexpect.spawn('python %s %s' % (DEPLOY_STORLET_PATH,
-                                                CONF_PATH))
+        child = pexpect.spawn('python %s %s' % (self.deploy_storlet_path,
+                                                self.conf_file))
         try:
             child.expect('Enter absolute path to storlet jar file.*:',
-                         timeout=1)
-            child.sendline(EXECDEP_STORLET_PATH)
+                         timeout=self.timeout)
+            child.sendline(self.execdep_storlet_jar_file)
             child.expect('com.ibm.storlet.execdep.ExecDepStorlet',
-                         timeout=1)
+                         timeout=self.timeout)
             child.expect('Please enter fully qualified storlet main class.*',
-                         timeout=1)
+                         timeout=self.timeout)
             child.sendline('com.ibm.storlet.execdep.ExecDepStorlet')
-            child.expect('Please enter dependency.*', timeout=1)
-            child.sendline(EXECDEP_STORLET_DEP_PATH)
+            child.expect('Please enter dependency.*', timeout=2)
+            child.sendline(self.execdep_storlet_dep_file)
             child.expect('\n')
         except Exception as err:
             self.fail('Unexpected exception %s' % err)

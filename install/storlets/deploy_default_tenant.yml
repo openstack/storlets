@@ -14,16 +14,9 @@
 #---------------------------------------------------------------------------
 
 - hosts: docker
-  vars_files: 
-    - [ deploy/common.yml ]
-    
   roles:
   - role: deploy_default_tenant
   
 - hosts: storlet-proxy:storlet-storage
-  vars_files: 
-    - [ deploy/common.yml ]
-    
   roles:
   - role: pull_default_tenant
-  

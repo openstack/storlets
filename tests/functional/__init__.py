@@ -23,10 +23,19 @@ PATH_TO_STORLETS = '../../StorletSamples'
 BIN_DIR = 'bin'
 
 
-class StorletFunctionalTest(unittest.TestCase):
+class StorletBaseFunctionalTest(unittest.TestCase):
     def setUp(self):
-        conf = ClusterConfig(CONFIG_FILE).get_conf()
-        self.url, self.token = storlet_get_auth(conf)
+        self.conf_file = CONFIG_FILE
+        self.conf = ClusterConfig(CONFIG_FILE)
+        self.path_to_storlets = PATH_TO_STORLETS
+        self.bin_dir = BIN_DIR
+        super(StorletBaseFunctionalTest, self).setUp()
+
+
+class StorletFunctionalTest(StorletBaseFunctionalTest):
+    def setUp(self):
+        super(StorletFunctionalTest, self).setUp()
+        self.url, self.token = storlet_get_auth(self.conf)
         self.acct = self.url.split('/')[4]
         self.path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS, self.storlet_dir,
                                             BIN_DIR)

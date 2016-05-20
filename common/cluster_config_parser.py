@@ -31,6 +31,33 @@ class ClusterConfig(object):
     def __init__(self, config_path):
         conf_string = open(config_path, 'r').read()
         self.conf = json.loads(conf_string)
+        self._auth_version = '2.0'
 
+    # TODO(eran) get rid of returning raw conf
     def get_conf(self):
         return self.conf
+
+    @property
+    def auth_uri(self):
+        return self.conf['all']['keystone_public_url']
+
+    @property
+    def tenant_name(self):
+        return self.conf['all']['storlets_default_tenant_name']
+
+    @property
+    def user(self):
+        return self.conf['all']['storlets_default_tenant_user_name']
+
+    @property
+    def password(self):
+        return self.conf['all']['storlets_default_tenant_user_password']
+
+    @property
+    def region(self):
+        return self.conf['all'].get('region', '')
+
+    # TODO(eranr) move to cluster_config
+    @property
+    def auth_version(self):
+        return self._auth_version
