@@ -20,7 +20,7 @@ import tempfile
 from contextlib import contextmanager
 from six import StringIO
 
-from storlet_middleware.storlet_common import StorletRuntimeException
+from storlet_gateway.common.exceptions import StorletRuntimeException
 from storlet_gateway.storlet_docker_gateway import DockerStorletRequest
 import storlet_gateway.storlet_runtime
 from swift.common.swob import Request

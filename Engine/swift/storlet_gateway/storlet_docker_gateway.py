@@ -19,7 +19,7 @@ import shutil
 
 from swift.common.internal_client import InternalClient as ic
 from swift.common.utils import config_true_value
-from storlet_middleware.storlet_common import StorletConfigError, \
+from storlet_gateway.common.exceptions import StorletConfigError, \
     StorletTimeout
 from storlet_gateway.storlet_base_gateway import StorletGatewayBase
 from storlet_runtime import RunTimePaths, RunTimeSandbox, \

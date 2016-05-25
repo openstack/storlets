@@ -25,7 +25,7 @@ from swift.common.utils import config_true_value, get_logger, is_success, \
     register_swift_info
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
-from storlet_middleware.storlet_common import StorletRuntimeException, \
+from storlet_gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 
 

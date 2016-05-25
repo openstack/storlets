@@ -34,8 +34,9 @@ from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL, \
     SBUS_CMD_DAEMON_STATUS, SBUS_CMD_EXECUTE, SBUS_CMD_PING, \
     SBUS_CMD_START_DAEMON, SBUS_CMD_STOP_DAEMON
-from storlet_middleware.storlet_common import StorletLogger, \
-    StorletRuntimeException, StorletTimeout
+from storlet_gateway.common.exceptions import StorletRuntimeException, \
+    StorletTimeout
+from storlet_gateway.common.logger import StorletLogger
 
 eventlet.monkey_patch()
 

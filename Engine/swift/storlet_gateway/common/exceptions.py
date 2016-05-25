@@ -12,12 +12,17 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
-from setuptools import setup, find_packages
-paste_factory = ['storlet_handler = '
-                 'storlet_middleware.storlet_handler:filter_factory']
 
-setup(name='storlets',
-      version='1.0',
-      packages=find_packages(),
-      entry_points={'paste.filter_factory': paste_factory}
-      )
+from eventlet import Timeout
+
+
+class StorletRuntimeException(Exception):
+    pass
+
+
+class StorletTimeout(Timeout, StorletRuntimeException):
+    pass
+
+
+class StorletConfigError(Exception):
+    pass
