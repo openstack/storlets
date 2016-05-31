@@ -20,9 +20,12 @@ import pwd
 import shutil
 import sys
 
+swift_run_time_user = None
+
 
 def _chown_to_swift(path):
-    uc = pwd.getpwnam('swift')
+    global swift_run_time_user
+    uc = pwd.getpwnam(swift_run_time_user)
     os.chown(path, uc.pw_uid, uc.pw_gid)
 
 
@@ -201,16 +204,20 @@ def install(conf):
 
 
 def usage(argv):
-    print("Usage: " + argv[0] + " install/remove conf_file")
+    print("Usage: %s %s %s" % (argv[0],
+                               "install/remove conf_file",
+                               "swift_run_time_user"))
 
 
 def main(argv):
-    if len(argv) != 3:
+    if len(argv) != 4:
         usage(argv)
         exit(-1)
 
     conf = ConfigParser.ConfigParser()
     conf.read(argv[2])
+    global swift_run_time_user
+    swift_run_time_user = argv[3]
 
     if argv[1] == 'install':
         install(conf)

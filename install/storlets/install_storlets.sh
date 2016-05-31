@@ -4,6 +4,8 @@ fi
 cp prepare_vars.yml-sample deploy/prepare_vars.yml
 sed -i 's/<ANSIBLE_USER>/'$USER'/g' deploy/prepare_vars.yml
 sed -i 's/<MGMT_USER>/'$USER'/g' deploy/prepare_vars.yml
+sed -i 's/<SWIFT_RUNTIME_USER>/swift/g' deploy/prepare_vars.yml
+sed -i 's/<SWIFT_RUNTIME_GROUP>/swift/g' deploy/prepare_vars.yml
 ansible-playbook -i prepare_host prepare_storlets_install.yml
 
 #echo "Copying vars and hosts file to deploy directory"

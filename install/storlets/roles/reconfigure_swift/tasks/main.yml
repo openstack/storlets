@@ -30,7 +30,7 @@
 
 - name: configure swift
   shell: chdir={{ engine_install_dir  }}
-         python swift_config.py remove swift_middleware_conf
+         python swift_config.py remove swift_middleware_conf "{{ swift_run_time_user }}"
    
 - name: restart swift
   shell: swift-init all restart

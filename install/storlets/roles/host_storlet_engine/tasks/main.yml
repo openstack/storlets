@@ -32,7 +32,7 @@
 - stat: path={{ lxc_device }}/scripts
   register: st
 - name: Create scripts directory
-  file: path="{{ lxc_device }}/scripts/" state=directory owner=swift group=swift mode=0755
+  file: path="{{ lxc_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
   when: not st.stat.exists
   
 - name:  install runtime scripts used by swift middleware
@@ -52,8 +52,8 @@
   template: 
     src: ../../common_templates/swift_middleware_conf
     dest: "{{ engine_install_dir  }}"
-    owner: swift
-    group: swift
+    owner: "{{ swift_run_time_user }}"
+    group: "{{ swift_run_time_group }}"
     mode: 0644
 
 
@@ -66,13 +66,13 @@
   template: 
     src: ../../common_templates/storlet-docker-gateway.conf-sample
     dest: "{{ storlet_gateway_conf_file }}"
-    owner: swift
-    group: swift
+    owner: "{{ swift_run_time_user }}"
+    group: "{{ swift_run_time_group }}"
     mode: 0644
 
 - name: configure swift
   shell: chdir={{ engine_install_dir  }}
-         python swift_config.py install swift_middleware_conf
+         python swift_config.py install swift_middleware_conf "{{ swift_run_time_user  }}"
 
 - name: restart swift
   shell: swift-init all restart
