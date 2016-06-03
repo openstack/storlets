@@ -32,9 +32,8 @@ CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
 """---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
-(1) The classes StorletGetRequest, StorletPutRequest. These encapsulate
-    what goes in and comes out of the gateway. Both share a mutual parent:
-    DockerStorletRequest
+(1) The classes DockerStorletRequest. This encapsulates what goes in and comes
+    out of the gateway
 
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
     validate_storlet_registration
@@ -52,7 +51,7 @@ The API is made of:
 
 class DockerStorletRequest(object):
     """
-    The StorletRequest class represents a request to be processed by the
+    The DockerStorletRequest class represents a request to be processed by the
     storlet the request is derived from the Swift request and
     essentially consists of:
     1. A data stream to be processed
@@ -81,33 +80,6 @@ class DockerStorletRequest(object):
         self.account = account
         self.request = request
         self.stream = stream
-
-
-class StorletGetRequest(DockerStorletRequest):
-    def __init__(self, account, orig_resp, params):
-        super(StorletGetRequest, self).__init__(
-            account, orig_resp, params, orig_resp.app_iter)
-
-
-class StorletPutRequest(DockerStorletRequest):
-    def __init__(self, account, request):
-        reader = request.environ['wsgi.input'].read
-        # TODO(takashi): chunk size should be configurable
-        stream = iter(lambda: reader(65536), '')
-        super(StorletPutRequest, self).__init__(
-            account, request, request.params, stream)
-
-
-class StorletSloRequest(DockerStorletRequest):
-    def __init__(self, account, orig_resp, params):
-        super(StorletSloRequest, self).__init__(
-            account, orig_resp, params, orig_resp.app_iter)
-
-
-class StorletCopyRequest(DockerStorletRequest):
-    def __init__(self, account, request, src_resp):
-        super(StorletCopyRequest, self).__init__(
-            account, request, request.params, src_resp.app_iter)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -299,16 +271,22 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def gatewayProxyPutFlow(self, orig_req):
-        sreq = StorletPutRequest(self.account, orig_req)
+        # TODO(takashi): chunk size should be configurable
+        reader = orig_req.environ['wsgi.input'].read
+        body_iter = iter(lambda: reader(65536), '')
+        sreq = DockerStorletRequest(self.account, orig_req, orig_req.params,
+                                    body_iter)
         return self.gateway_proxy_put_copy_flow(sreq)
 
-    def gatewayProxyCopyFlow(self, orig_req, src_response):
-        sreq = StorletCopyRequest(self.account, orig_req, src_response)
+    def gatewayProxyCopyFlow(self, orig_req, src_resp):
+        sreq = DockerStorletRequest(self.account, orig_req, orig_req.params,
+                                    src_resp.app_iter)
         return self.gateway_proxy_put_copy_flow(sreq)
 
     def gatewayProxyGetFlow(self, req, orig_resp):
         # Flow for running the GET computation on the proxy
-        sreq = StorletSloRequest(self.account, orig_resp, req.params)
+        sreq = DockerStorletRequest(self.account, orig_resp, req.params,
+                                    orig_resp.app_iter)
 
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
@@ -336,7 +314,8 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def gatewayObjectGetFlow(self, req, orig_resp):
-        sreq = StorletGetRequest(self.account, orig_resp, req.params)
+        sreq = DockerStorletRequest(self.account, orig_resp, req.params,
+                                    orig_resp.app_iter)
 
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
