@@ -71,7 +71,8 @@ class DockerStorletRequest(object):
     def _getInitialRequest(self):
         return self.request
 
-    def __init__(self, account, request, params, stream):
+    def __init__(self, account, request, params, data_iter=None,
+                 data_fd=None):
         self.generate_log = request.headers.get('X-Storlet-Generate-Log',
                                                 False)
         self.storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
@@ -79,7 +80,16 @@ class DockerStorletRequest(object):
         self.params = params
         self.account = account
         self.request = request
-        self.stream = stream
+
+        if data_iter is None and data_fd is None:
+            raise ValueError('Either of data_iter or data_fd should not be '
+                             'None')
+        self.data_iter = data_iter
+        self.data_fd = data_fd
+
+    @property
+    def has_fd(self):
+        return self.data_fd is not None
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -314,8 +324,9 @@ class StorletGatewayDocker(StorletGatewayBase):
                                                      sprotocol._cancel)
 
     def gatewayObjectGetFlow(self, req, orig_resp):
+        # TODO(takashi): should check if _fp is available
         sreq = DockerStorletRequest(self.account, orig_resp, req.params,
-                                    orig_resp.app_iter)
+                                    data_fd=orig_resp.app_iter._fp.fileno())
 
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
