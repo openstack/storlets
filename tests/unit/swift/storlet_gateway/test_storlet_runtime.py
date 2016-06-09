@@ -291,7 +291,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         self.log_file = tempfile.mktemp()
 
         storlet_request = DockerStorletRequest(
-            'test_account', Request.blank('/'), {}, iter(StringIO()))
+            Request.blank('/'), {}, iter(StringIO()))
         self.protocol = \
             storlet_gateway.storlet_runtime.StorletInvocationProtocol(
                 storlet_request, self.pipe_path, self.log_file, 1)

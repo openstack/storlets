@@ -29,7 +29,6 @@ from storlet_gateway.storlet_docker_gateway import DockerStorletRequest, \
 class TestDockerStorletRequest(unittest.TestCase):
 
     def test_init(self):
-        account = 'a'
         headers = {'X-Object-Meta-Storlet-Main': 'main',
                    'X-Storlet-Key0': 'Value0',
                    'x-storlet-key1': 'Value1',
@@ -40,14 +39,13 @@ class TestDockerStorletRequest(unittest.TestCase):
         params = {'Param6': 'Value6',
                   'Param7': 'Value7'}
         req = Request.blank('', headers=headers)
-        dsreq = DockerStorletRequest(account, req, params, iter(StringIO()))
+        dsreq = DockerStorletRequest(req, params, iter(StringIO()))
 
         self.assertEqual(dsreq.generate_log, False)
         self.assertEqual(dsreq.storlet_id, 'main')
         self.assertEqual(dsreq.user_metadata,
                          {'Key4': 'Value4',
                           'Key5': 'Value5'})
-        self.assertEqual(dsreq.account, account)
 
 
 class TestIterLike(unittest.TestCase):

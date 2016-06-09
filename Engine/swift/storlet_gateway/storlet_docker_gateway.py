@@ -68,18 +68,14 @@ class DockerStorletRequest(object):
                 metadata[short_key] = headers[key]
         return metadata
 
-    def _getInitialRequest(self):
-        return self.request
-
-    def __init__(self, account, request, params, data_iter=None,
-                 data_fd=None):
+    def __init__(self, request, params, data_iter=None, data_fd=None):
+        # TODO(takashi): These parameters should be parsed outside gateway,
+        #                because this parsing is specific to swift
         self.generate_log = request.headers.get('X-Storlet-Generate-Log',
                                                 False)
         self.storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
         self.user_metadata = self._get_user_metadata(request.headers)
         self.params = params
-        self.account = account
-        self.request = request
 
         if data_iter is None and data_fd is None:
             raise ValueError('Either of data_iter or data_fd should not be '
@@ -98,6 +94,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         self.logger = logger
         # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
         self.app = app
+        # TODO(takashi): We should use scope instead of account in gateway
         self.account = account
         self.sconf = sconf
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
@@ -203,8 +200,8 @@ class StorletGatewayDocker(StorletGatewayBase):
         def close(self):
             if self.closed:
                 return
-            self.closed = True
             os.close(self.obj_data)
+            self.closed = True
 
         def __del__(self):
             self.close()
@@ -247,8 +244,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         for key, val in params.iteritems():
             req.headers['X-Storlet-' + key] = val
 
-    def gateway_proxy_put_copy_flow(self, sreq):
-        req = sreq._getInitialRequest()
+    def gateway_proxy_put_copy_flow(self, sreq, req):
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache()
@@ -284,18 +280,18 @@ class StorletGatewayDocker(StorletGatewayBase):
         # TODO(takashi): chunk size should be configurable
         reader = orig_req.environ['wsgi.input'].read
         body_iter = iter(lambda: reader(65536), '')
-        sreq = DockerStorletRequest(self.account, orig_req, orig_req.params,
+        sreq = DockerStorletRequest(orig_req, orig_req.params,
                                     body_iter)
-        return self.gateway_proxy_put_copy_flow(sreq)
+        return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyCopyFlow(self, orig_req, src_resp):
-        sreq = DockerStorletRequest(self.account, orig_req, orig_req.params,
+        sreq = DockerStorletRequest(orig_req, orig_req.params,
                                     src_resp.app_iter)
-        return self.gateway_proxy_put_copy_flow(sreq)
+        return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyGetFlow(self, req, orig_resp):
         # Flow for running the GET computation on the proxy
-        sreq = DockerStorletRequest(self.account, orig_resp, req.params,
+        sreq = DockerStorletRequest(orig_resp, req.params,
                                     orig_resp.app_iter)
 
         self.idata = self._get_storlet_invocation_data(req)
@@ -325,7 +321,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     def gatewayObjectGetFlow(self, req, orig_resp):
         # TODO(takashi): should check if _fp is available
-        sreq = DockerStorletRequest(self.account, orig_resp, req.params,
+        sreq = DockerStorletRequest(orig_resp, req.params,
                                     data_fd=orig_resp.app_iter._fp.fileno())
 
         self.idata = self._get_storlet_invocation_data(req)
@@ -345,7 +341,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
-        orig_resp = sreq._getInitialRequest()
         self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
