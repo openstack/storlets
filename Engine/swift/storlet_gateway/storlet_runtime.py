@@ -454,6 +454,13 @@ protocol
 class StorletInvocationProtocol(object):
 
     @property
+    def input_data_read_fd(self):
+        if self.srequest.has_fd:
+            return self.srequest.data_fd
+        else:
+            return self._input_data_read_fd
+
+    @property
     def remote_fds(self):
         return [self.input_data_read_fd,
                 self.execution_str_write_fd,
@@ -491,7 +498,8 @@ class StorletInvocationProtocol(object):
         """
         Create all pipse used for Storlet execution
         """
-        self.input_data_read_fd, self.input_data_write_fd = os.pipe()
+        if not self.srequest.has_fd:
+            self._input_data_read_fd, self._input_data_write_fd = os.pipe()
         self.data_read_fd, self.data_write_fd = os.pipe()
         self.execution_str_read_fd, self.execution_str_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
@@ -619,7 +627,7 @@ class StorletInvocationProtocol(object):
             raise
 
     def _close_input_data_descriptors(self):
-        fds = [self.input_data_read_fd, self.input_data_write_fd]
+        fds = [self._input_data_read_fd, self._input_data_write_fd]
         self._safe_close(fds)
 
     def communicate(self):
@@ -628,28 +636,32 @@ class StorletInvocationProtocol(object):
                 self._activate_invocation_descriptors():
                 self._invoke()
 
-            self._wait_for_write_with_timeout(self.input_data_write_fd)
-            # We do the writing in a different thread.
-            # Otherwise, we can run into the following deadlock
-            # 1. middleware writes to Storlet
-            # 2. Storlet reads and starts to write metadata and then data
-            # 3. middleware continues writing
-            # 4. Storlet continues writing and gets stuck as middleware
-            #    is busy writing, but still not consuming the reader end
-            #    of the Storlet writer.
-            eventlet.spawn_n(self._write_input_data)
+            if not self.srequest.has_fd:
+                self._wait_for_write_with_timeout(self._input_data_write_fd)
+
+                # We do the writing in a different thread.
+                # Otherwise, we can run into the following deadlock
+                # 1. middleware writes to Storlet
+                # 2. Storlet reads and starts to write metadata and then data
+                # 3. middleware continues writing
+                # 4. Storlet continues writing and gets stuck as middleware
+                #    is busy writing, but still not consuming the reader end
+                #    of the Storlet writer.
+                eventlet.spawn_n(self._write_input_data)
+
             out_md = self._read_metadata()
             self._wait_for_read_with_timeout(self.data_read_fd)
 
             return out_md, self.data_read_fd
         except Exception:
             self._close_local_side_descriptors()
-            self._close_input_data_descriptors()
+            if not self.srequest.has_fd:
+                self._close_input_data_descriptors()
             raise
 
     @contextmanager
     def _open_writer(self):
-        writer = os.fdopen(self.input_data_write_fd, 'w')
+        writer = os.fdopen(self._input_data_write_fd, 'w')
         try:
             yield writer
         finally:
@@ -659,5 +671,5 @@ class StorletInvocationProtocol(object):
 
     def _write_input_data(self):
         with self._open_writer() as writer:
-            for chunk in self.srequest.stream:
+            for chunk in self.srequest.data_iter:
                 self._write_with_timeout(writer, chunk)
