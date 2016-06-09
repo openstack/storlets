@@ -453,37 +453,25 @@ protocol
 
 class StorletInvocationProtocol(object):
 
-    def _add_input_stream(self):
-        self.fds.append(self.input_data_read_fd)
-        # TODO(Break request metadata and systemmetadata)
-        md = dict()
-        md['type'] = SBUS_FD_INPUT_OBJECT
-        if self.srequest.user_metadata is not None:
+    @property
+    def remote_fds(self):
+        return [self.input_data_read_fd,
+                self.execution_str_write_fd,
+                self.data_write_fd,
+                self.metadata_write_fd,
+                self.storlet_logger.getfd()]
+
+    @property
+    def remote_fds_metadata(self):
+        input_fd_metadata = {'type': SBUS_FD_INPUT_OBJECT}
+        if self.srequest.user_metadata:
             for key, val in self.srequest.user_metadata.iteritems():
-                md[key] = val
-        self.fdmd.append(md)
-
-    def _add_output_stream(self):
-        self.fds.append(self.execution_str_write_fd)
-        md = dict()
-        md['type'] = SBUS_FD_OUTPUT_TASK_ID
-        self.fdmd.append(md)
-
-        self.fds.append(self.data_write_fd)
-        md = dict()
-        md['type'] = SBUS_FD_OUTPUT_OBJECT
-        self.fdmd.append(md)
-
-        self.fds.append(self.metadata_write_fd)
-        md = dict()
-        md['type'] = SBUS_FD_OUTPUT_OBJECT_METADATA
-        self.fdmd.append(md)
-
-    def _add_logger_stream(self):
-        self.fds.append(self.storlet_logger.getfd())
-        md = dict()
-        md['type'] = SBUS_FD_LOGGER
-        self.fdmd.append(md)
+                input_fd_metadata[key] = val
+        return [input_fd_metadata,
+                {'type': SBUS_FD_OUTPUT_TASK_ID},
+                {'type': SBUS_FD_OUTPUT_OBJECT},
+                {'type': SBUS_FD_OUTPUT_OBJECT_METADATA},
+                {'type': SBUS_FD_LOGGER}]
 
     @contextmanager
     def _activate_invocation_descriptors(self):
@@ -500,18 +488,13 @@ class StorletInvocationProtocol(object):
             self._close_remote_side_descriptors()
 
     def _prepare_invocation_descriptors(self):
-        # Add the input stream
+        """
+        Create all pipse used for Storlet execution
+        """
         self.input_data_read_fd, self.input_data_write_fd = os.pipe()
-        self._add_input_stream()
-
-        # Add the output stream
         self.data_read_fd, self.data_write_fd = os.pipe()
         self.execution_str_read_fd, self.execution_str_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
-        self._add_output_stream()
-
-        # Add the logger
-        self._add_logger_stream()
 
     def _safe_close(self, fds):
         for fd in fds:
@@ -547,8 +530,8 @@ class StorletInvocationProtocol(object):
 
     def _invoke(self):
         dtg = SBusDatagram()
-        dtg.set_files(self.fds)
-        dtg.set_metadata(self.fdmd)
+        dtg.set_files(self.remote_fds)
+        dtg.set_metadata(self.remote_fds_metadata)
         dtg.set_exec_params(self.srequest.params)
         dtg.set_command(SBUS_CMD_EXECUTE)
         rc = SBus.send(self.storlet_pipe_path, dtg)
@@ -568,11 +551,6 @@ class StorletInvocationProtocol(object):
         self.storlet_logger = StorletLogger(self.storlet_logger_path,
                                             'storlet_invoke')
         self.timeout = timeout
-
-        # remote side file descriptors and their metadata lists
-        # to be sent as part of invocation
-        self.fds = list()
-        self.fdmd = list()
 
         # local side file descriptors
         self.data_read_fd = None
