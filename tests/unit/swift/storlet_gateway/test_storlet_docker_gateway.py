@@ -18,6 +18,7 @@ import mock
 import os
 import tempfile
 import unittest
+from six import StringIO
 from swift.common.swob import HTTPException, Request
 from tests.unit.swift import FakeLogger
 from tests.unit.swift.storlet_middleware import FakeApp
@@ -39,7 +40,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         params = {'Param6': 'Value6',
                   'Param7': 'Value7'}
         req = Request.blank('', headers=headers)
-        dsreq = DockerStorletRequest(account, req, params)
+        dsreq = DockerStorletRequest(account, req, params, iter(StringIO()))
 
         self.assertEqual(dsreq.generate_log, False)
         self.assertEqual(dsreq.storlet_id, 'main')

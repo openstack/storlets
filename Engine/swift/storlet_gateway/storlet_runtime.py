@@ -444,8 +444,7 @@ class RunTimeSandbox(object):
 
 """---------------------------------------------------------------------------
 Storlet Daemon API
-The StorletInvocationGETProtocol, StorletInvocationPUTProtocol,
-StorletInvocationSLOProtocol
+StorletInvocationProtocol
 server as an API between the Docker Gateway and the Storlet Daemon which
 runs inside the Docker container. These classes implement the Storlet execution
 protocol
@@ -454,8 +453,8 @@ protocol
 
 class StorletInvocationProtocol(object):
 
-    def _add_input_stream(self, appendFd):
-        self.fds.append(appendFd)
+    def _add_input_stream(self):
+        self.fds.append(self.input_data_read_fd)
         # TODO(Break request metadata and systemmetadata)
         md = dict()
         md['type'] = SBUS_FD_INPUT_OBJECT
@@ -500,13 +499,10 @@ class StorletInvocationProtocol(object):
         finally:
             self._close_remote_side_descriptors()
 
-    @property
-    def input_stream(self):
-        return self.srequest.stream
-
     def _prepare_invocation_descriptors(self):
         # Add the input stream
-        self._add_input_stream(self.input_stream)
+        self.input_data_read_fd, self.input_data_write_fd = os.pipe()
+        self._add_input_stream()
 
         # Add the output stream
         self.data_read_fd, self.data_write_fd = os.pipe()
@@ -630,45 +626,6 @@ class StorletInvocationProtocol(object):
         # TODO(takashi): We should validate json format
         return json.loads(flat_json)
 
-
-class StorletInvocationGETProtocol(StorletInvocationProtocol):
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        StorletInvocationProtocol.__init__(self, srequest, storlet_pipe_path,
-                                           storlet_logger_path, timeout)
-
-    def communicate(self):
-        try:
-            with self.storlet_logger.activate(), \
-                self._activate_invocation_descriptors():
-                self._invoke()
-
-            out_md = self._read_metadata()
-            os.close(self.metadata_read_fd)
-            self._wait_for_read_with_timeout(self.data_read_fd)
-
-            return out_md, self.data_read_fd
-        except Exception:
-            self._close_local_side_descriptors()
-            raise
-
-
-class StorletInvocationProxyProtocol(StorletInvocationProtocol):
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        StorletInvocationProtocol.__init__(self, srequest, storlet_pipe_path,
-                                           storlet_logger_path, timeout)
-        self.input_data_read_fd, self.input_data_write_fd = os.pipe()
-        # YM this pipe permits to take data from srequest.stream to
-        # input_data_write_fd
-        # YM the write side stays with us, the read side is sent to storlet
-
-    @property
-    def input_stream(self):
-        return self.input_data_read_fd
-
     def _wait_for_write_with_timeout(self, fd):
         with StorletTimeout(self.timeout):
             r, w, e = select.select([], [fd], [])
@@ -719,48 +676,10 @@ class StorletInvocationProxyProtocol(StorletInvocationProtocol):
             yield writer
         finally:
             writer.close()
-
-
-class StorletInvocationPUTProtocol(StorletInvocationProxyProtocol):
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        StorletInvocationProxyProtocol.__init__(self, srequest,
-                                                storlet_pipe_path,
-                                                storlet_logger_path, timeout)
+        # NOTE(takashi): writer.close() also closes fd, so we don't have to
+        #                close fd again.
 
     def _write_input_data(self):
         with self._open_writer() as writer:
-            reader = self.srequest.stream
-            for chunk in iter(lambda: reader(65536), ''):
-                self._write_with_timeout(writer, chunk)
-
-
-class StorletInvocationCOPYProtocol(StorletInvocationProxyProtocol):
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        StorletInvocationProxyProtocol.__init__(self, srequest,
-                                                storlet_pipe_path,
-                                                storlet_logger_path, timeout)
-
-    def _write_input_data(self):
-        with self._open_writer() as writer:
-            reader = self.srequest.stream
-            for chunk in reader:
-                self._write_with_timeout(writer, chunk)
-
-
-class StorletInvocationSLOProtocol(StorletInvocationProxyProtocol):
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        StorletInvocationProxyProtocol.__init__(self, srequest,
-                                                storlet_pipe_path,
-                                                storlet_logger_path, timeout)
-
-    def _write_input_data(self):
-        with self._open_writer() as writer:
-            reader = self.srequest.stream
-            for chunk in reader:
+            for chunk in self.srequest.stream:
                 self._write_with_timeout(writer, chunk)
