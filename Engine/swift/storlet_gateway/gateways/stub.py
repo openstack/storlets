@@ -13,7 +13,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 from six import BytesIO
-from storlet_gateway.storlet_base_gateway import StorletGatewayBase
+from storlet_gateway.gateways.base import StorletGatewayBase
 
 
 class StorletGatewayStub(StorletGatewayBase):

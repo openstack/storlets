@@ -20,18 +20,19 @@ import tempfile
 from contextlib import contextmanager
 from six import StringIO
 
-from storlet_gateway.common.exceptions import StorletRuntimeException
-from storlet_gateway.storlet_docker_gateway import DockerStorletRequest
-import storlet_gateway.storlet_runtime
 from swift.common.swob import Request
+from storlet_gateway.common.exceptions import StorletRuntimeException
+from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
+from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
+    RunTimePaths, StorletInvocationProtocol
 from tests.unit.swift import FakeLogger
 
 
 @contextmanager
 def _mock_sbus(send_status=0):
-    with mock.patch('storlet_gateway.storlet_runtime.'
+    with mock.patch('storlet_gateway.gateways.docker.runtime.'
                     'SBusDatagram.create_service_datagram'), \
-        mock.patch('storlet_gateway.storlet_runtime.'
+        mock.patch('storlet_gateway.gateways.docker.runtime.'
                    'SBus.send') as fake_send:
         fake_send.return_value = send_status
         yield
@@ -64,11 +65,11 @@ def _mock_os_pipe(bufs):
         pipe = (FakeFd(buf), FakeFd())
         pipes.append(pipe)
 
-    with mock.patch('storlet_gateway.storlet_runtime.os.pipe') as \
+    with mock.patch('storlet_gateway.gateways.docker.runtime.os.pipe') as \
         fake_os_pipe, \
-        mock.patch('storlet_gateway.storlet_runtime.os.read',
+        mock.patch('storlet_gateway.gateways.docker.runtime.os.read',
                    fake_os_read) as fake_os_read,\
-        mock.patch('storlet_gateway.storlet_runtime.os.close',
+        mock.patch('storlet_gateway.gateways.docker.runtime.os.close',
                    fake_os_close) as fake_os_close:
         fake_os_pipe.side_effect = pipes
         yield pipes
@@ -96,8 +97,7 @@ class TestRuntimePaths(unittest.TestCase):
             'storlet_dependency': 'dependency'}
 
         self.storlet_id = 'org.openstack.storlet.mystorlet'
-        self.paths = storlet_gateway.storlet_runtime.RunTimePaths(
-            self.account, self.conf)
+        self.paths = RunTimePaths(self.account, self.conf)
 
     def tearDown(self):
         pass
@@ -213,8 +213,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             'restart_linux_container_timeout': 3,
             'docker_repo': 'localhost:5001'}
         self.account = 'AUTH_0123456789abcdefghijklmnopqrstuv'
-        self.sbox = storlet_gateway.storlet_runtime.RunTimeSandbox(
-            self.account, self.conf, self.logger)
+        self.sbox = RunTimeSandbox(self.account, self.conf, self.logger)
 
     def tearDown(self):
         pass
@@ -244,14 +243,16 @@ class TestRunTimeSandbox(unittest.TestCase):
 
     def test_wait(self):
         with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0), \
-            mock.patch('storlet_gateway.storlet_runtime.time.sleep') as _s:
+            mock.patch('storlet_gateway.gateways.docker.runtime.'
+                       'time.sleep') as _s:
             self.sbox.wait()
             self.assertEqual(_s.call_count, 0)
             self._check_all_pipese_closed(pipes)
 
         with _mock_os_pipe(['False:ERROR', 'True:OK']) as pipes, \
             _mock_sbus(0), \
-            mock.patch('storlet_gateway.storlet_runtime.time.sleep') as _s:
+            mock.patch('storlet_gateway.gateways.docker.runtime.'
+                       'time.sleep') as _s:
             self.sbox.wait()
             self.assertEqual(_s.call_count, 1)
             self._check_all_pipese_closed(pipes)
@@ -259,9 +260,10 @@ class TestRunTimeSandbox(unittest.TestCase):
         # TODO(takashi): should test timeout case
 
     def test_restart(self):
-        with mock.patch('storlet_gateway.storlet_runtime.'
+        with mock.patch('storlet_gateway.gateways.docker.runtime.'
                         'RunTimePaths.create_host_pipe_prefix'), \
-            mock.patch('storlet_gateway.storlet_runtime.subprocess.call'):
+            mock.patch('storlet_gateway.gateways.docker.runtime.'
+                       'subprocess.call'):
             _wait = self.sbox.wait
 
             def dummy_wait_success(*args, **kwargs):
@@ -271,9 +273,10 @@ class TestRunTimeSandbox(unittest.TestCase):
             self.sbox.restart()
             self.sbox.wait = _wait
 
-        with mock.patch('storlet_gateway.storlet_runtime.'
+        with mock.patch('storlet_gateway.gateways.docker.runtime.'
                         'RunTimePaths.create_host_pipe_prefix'), \
-            mock.patch('storlet_gateway.storlet_runtime.subprocess.call'):
+            mock.patch('storlet_gateway.gateways.docker.runtime.'
+                       'subprocess.call'):
             _wait = self.sbox.wait
 
             def dummy_wait_failure(*args, **kwargs):
@@ -292,9 +295,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
 
         storlet_request = DockerStorletRequest(
             Request.blank('/'), {}, iter(StringIO()))
-        self.protocol = \
-            storlet_gateway.storlet_runtime.StorletInvocationProtocol(
-                storlet_request, self.pipe_path, self.log_file, 1)
+        self.protocol = StorletInvocationProtocol(
+            storlet_request, self.pipe_path, self.log_file, 1)
 
     def tearDown(self):
         for path in [self.pipe_path, self.log_file]:

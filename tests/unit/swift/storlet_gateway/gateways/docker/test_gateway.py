@@ -22,7 +22,7 @@ from six import StringIO
 from swift.common.swob import HTTPException, Request
 from tests.unit.swift import FakeLogger
 from tests.unit.swift.storlet_middleware import FakeApp
-from storlet_gateway.storlet_docker_gateway import DockerStorletRequest, \
+from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
     StorletGatewayDocker
 
 
@@ -75,7 +75,8 @@ class TestIterLike(unittest.TestCase):
     @contextmanager
     def _mock_select(self):
         # TODO(takashi): This is needed to avoid PermissionError in UT
-        with mock.patch('storlet_gateway.storlet_docker_gateway.select.select',
+        with mock.patch('storlet_gateway.gateways.docker.gateway.'
+                        'select.select',
                         self._fake_select):
             yield
 
