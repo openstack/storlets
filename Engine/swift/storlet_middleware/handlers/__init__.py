@@ -13,13 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+from storlet_middleware.handlers.base import StorletBaseHandler
+from storlet_middleware.handlers.proxy import StorletProxyHandler
+from storlet_middleware.handlers.obj import StorletObjectHandler
 
 
-class TestStorletHandlerMiddleware(unittest.TestCase):
-    # TODO(takashi): should implemente some unit test cases
-    pass
-
-
-if __name__ == '__main__':
-    unittest.main()
+__all__ = [
+    'StorletBaseHandler',
+    'StorletProxyHandler',
+    'StorletObjectHandler',
+]
