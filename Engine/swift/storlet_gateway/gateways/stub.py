@@ -36,9 +36,6 @@ class StorletGatewayStub(StorletGatewayBase):
         self.logger.debug("Identity invocation is called")
         return headers, BytesIO(body)
 
-    def augmentStorletRequest(self, request, headers):
-        pass
-
     def gatewayProxyPutFlow(self, orig_request):
         return self.indentity_invocation(orig_request.headers,
                                          orig_request.body)

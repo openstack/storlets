@@ -38,7 +38,6 @@ The API is made of:
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
     validate_storlet_registration
     validate_dependency_registration
-    augmentStorletRequest
     gatewayObjectGetFlow
     gatewayProxyPutFlow
     gatewayProxyCopyFlow
@@ -235,14 +234,6 @@ class StorletGatewayDocker(StorletGatewayBase):
             if md not in params:
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
-
-    def augmentStorletRequest(self, req, params):
-        """
-        Add to request the storlet parameters to be used in case the request
-        is forwarded to the data node (GET case)
-        """
-        for key, val in params.iteritems():
-            req.headers['X-Storlet-' + key] = val
 
     def gateway_proxy_put_copy_flow(self, sreq, req):
         self.idata = self._get_storlet_invocation_data(req)

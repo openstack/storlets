@@ -178,6 +178,16 @@ class StorletProxyHandler(StorletBaseHandler):
     def _call_gateway(self, resp):
         return self.gateway.gatewayProxyGetFlow(self.request, resp)
 
+    def augment_storlet_request(self, params):
+        """
+        Add to request the storlet parameters to be used in case the request
+        is forwarded to the data node (GET case)
+
+        :param params: paramegers to be augmented to request
+        """
+        for key, val in params.iteritems():
+            self.request.headers['X-Storlet-' + key] = val
+
     @public
     def GET(self):
         """
@@ -188,21 +198,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                  ' supported', request=self.request)
 
         params = self.verify_access_to_storlet()
-
-        # The get request may be a SLO object GET request.
-        # Simplest solution would be to invoke a HEAD
-        # for every GET request to test if we are in SLO case.
-        # In order to save the HEAD overhead we implemented
-        # a slightly more involved flow:
-        # At proxy side, we augment request with Storlet stuff
-        # and let the request flow.
-        # At object side, we invoke the plain (non Storlet)
-        # request and test if we are in SLO case.
-        # and invoke Storlet only if non SLO case.
-        # Back at proxy side, we test if test received
-        # full object to detect if we are in SLO case,
-        # and invoke Storlet only if in SLO case.
-        self.gateway.augmentStorletRequest(self.request, params)
+        self.augment_storlet_request(params)
 
         if self.is_storlet_range_request:
             self.request.headers['Range'] = \
@@ -211,6 +207,19 @@ class StorletProxyHandler(StorletBaseHandler):
         original_resp = self.request.get_response(self.app)
 
         if original_resp.is_success:
+            # The get request may be a SLO object GET request.
+            # Simplest solution would be to invoke a HEAD
+            # for every GET request to test if we are in SLO case.
+            # In order to save the HEAD overhead we implemented
+            # a slightly more involved flow:
+            # At proxy side, we augment request with Storlet stuff
+            # and let the request flow.
+            # At object side, we invoke the plain (non Storlet)
+            # request and test if we are in SLO case.
+            # and invoke Storlet only if non SLO case.
+            # Back at proxy side, we test if test received
+            # full object to detect if we are in SLO case,
+            # and invoke Storlet only if in SLO case.
             if self.is_proxy_runnable(original_resp):
                 return self.apply_storlet(original_resp)
             else:
@@ -286,7 +295,7 @@ class StorletProxyHandler(StorletBaseHandler):
         """
 
         params = self.verify_access_to_storlet()
-        self.gateway.augmentStorletRequest(self.request, params)
+        self.augment_storlet_request(params)
         if self.is_put_copy_request:
             self. _validate_copy_request()
             src_container, src_obj = check_copy_from_header(self.request)
@@ -310,7 +319,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                           body='Destination header required')
 
         params = self.verify_access_to_storlet()
-        self.gateway.augmentStorletRequest(self.request, params)
+        self.augment_storlet_request(params)
         self._validate_copy_request()
         dest_container, dest_object = check_destination_header(self.request)
 
