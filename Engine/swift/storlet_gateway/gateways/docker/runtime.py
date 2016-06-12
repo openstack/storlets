@@ -37,6 +37,7 @@ from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL, \
 from storlet_gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlet_gateway.common.logger import StorletLogger
+from storlet_gateway.common.stob import StorletResponse
 
 eventlet.monkey_patch()
 
@@ -655,7 +656,8 @@ class StorletInvocationProtocol(object):
             out_md = self._read_metadata()
             self._wait_for_read_with_timeout(self.data_read_fd)
 
-            return out_md, self.data_read_fd
+            return StorletResponse(out_md, data_fd=self.data_read_fd,
+                                   cancel=self._cancel)
         except Exception:
             self._close_local_side_descriptors()
             if not self.srequest.has_fd:

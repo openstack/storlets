@@ -210,7 +210,7 @@ class StorletBaseHandler(object):
         :param resp: swob.Response instance
         :return: processed reponse
         """
-        outmd, app_iter = self._call_gateway(resp)
+        sresp = self._call_gateway(resp)
 
         new_headers = resp.headers.copy()
 
@@ -224,7 +224,7 @@ class StorletBaseHandler(object):
             new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
             new_headers.pop('Content-Range')
 
-        self._set_metadata_in_headers(new_headers, outmd)
+        self._set_metadata_in_headers(new_headers, sresp.user_metadata)
 
-        return Response(headers=new_headers, app_iter=app_iter,
+        return Response(headers=new_headers, app_iter=sresp.data_iter,
                         reuqest=self.request)

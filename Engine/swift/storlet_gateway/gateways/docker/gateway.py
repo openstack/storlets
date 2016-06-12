@@ -14,13 +14,12 @@ Limitations under the License.
 -------------------------------------------------------------------------"""
 
 import os
-import select
 import shutil
 
 from swift.common.internal_client import InternalClient as ic
 from swift.common.utils import config_true_value
-from storlet_gateway.common.exceptions import StorletConfigError, \
-    StorletTimeout
+from storlet_gateway.common.exceptions import StorletConfigError
+from storlet_gateway.common.stob import StorletRequest
 from storlet_gateway.gateways.base import StorletGatewayBase
 from storlet_gateway.gateways.docker.runtime import RunTimePaths, \
     RunTimeSandbox, StorletInvocationProtocol
@@ -48,7 +47,7 @@ The API is made of:
 ---------------------------------------------------------------------------"""
 
 
-class DockerStorletRequest(object):
+class DockerStorletRequest(StorletRequest):
     """
     The DockerStorletRequest class represents a request to be processed by the
     storlet the request is derived from the Swift request and
@@ -72,19 +71,10 @@ class DockerStorletRequest(object):
         #                because this parsing is specific to swift
         self.generate_log = request.headers.get('X-Storlet-Generate-Log',
                                                 False)
-        self.storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
-        self.user_metadata = self._get_user_metadata(request.headers)
-        self.params = params
-
-        if data_iter is None and data_fd is None:
-            raise ValueError('Either of data_iter or data_fd should not be '
-                             'None')
-        self.data_iter = data_iter
-        self.data_fd = data_fd
-
-    @property
-    def has_fd(self):
-        return self.data_fd is not None
+        storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
+        user_metadata = self._get_user_metadata(request.headers)
+        super(DockerStorletRequest, self).__init__(
+            storlet_id, params, user_metadata, data_iter, data_fd)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -98,112 +88,6 @@ class StorletGatewayDocker(StorletGatewayBase):
         self.sconf = sconf
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
         self.paths = RunTimePaths(account, sconf)
-
-    class IterLike(object):
-        def __init__(self, obj_data, timeout, cancel_func):
-            self.closed = False
-            self.obj_data = obj_data
-            self.timeout = timeout
-            self.cancel_func = cancel_func
-            self.buf = b''
-
-        def __iter__(self):
-            return self
-
-        def read_with_timeout(self, size):
-            try:
-                with StorletTimeout(self.timeout):
-                    chunk = os.read(self.obj_data, size)
-            except StorletTimeout:
-                if self.cancel_func:
-                    self.cancel_func()
-                self.close()
-                raise
-            except Exception:
-                self.close()
-                raise
-            return chunk
-
-        def next(self, size=64 * 1024):
-            if len(self.buf) < size:
-                r, w, e = select.select([self.obj_data], [], [], self.timeout)
-                if len(r) == 0:
-                    self.close()
-
-                if self.obj_data in r:
-                    self.buf += self.read_with_timeout(size - len(self.buf))
-                    if self.buf == b'':
-                        raise StopIteration('Stopped iterator ex')
-                else:
-                    raise StopIteration('Stopped iterator ex')
-
-            if len(self.buf) > size:
-                data = self.buf[:size]
-                self.buf = self.buf[size:]
-            else:
-                data = self.buf
-                self.buf = b''
-            return data
-
-        def _close_check(self):
-            if self.closed:
-                raise ValueError('I/O operation on closed file')
-
-        def read(self, size=64 * 1024):
-            self._close_check()
-            return self.next(size)
-
-        def readline(self, size=-1):
-            self._close_check()
-
-            # read data into self.buf if there is not enough data
-            while b'\n' not in self.buf and \
-                  (size < 0 or len(self.buf) < size):
-                if size < 0:
-                    chunk = self.read()
-                else:
-                    chunk = self.read(size - len(self.buf))
-                if not chunk:
-                    break
-                self.buf += chunk
-
-            # Retrieve one line from buf
-            data, sep, rest = self.buf.partition(b'\n')
-            data += sep
-            self.buf = rest
-
-            # cut out size from retrieved line
-            if size >= 0 and len(data) > size:
-                self.buf = data[size:] + self.buf
-                data = data[:size]
-
-            return data
-
-        def readlines(self, sizehint=-1):
-            self._close_check()
-            lines = []
-            try:
-                while True:
-                    line = self.readline(sizehint)
-                    if not line:
-                        break
-                    lines.append(line)
-                    if sizehint >= 0:
-                        sizehint -= len(line)
-                        if sizehint <= 0:
-                            break
-            except StopIteration:
-                pass
-            return lines
-
-        def close(self):
-            if self.closed:
-                return
-            os.close(self.obj_data)
-            self.closed = True
-
-        def __del__(self):
-            self.close()
 
     @classmethod
     def validate_storlet_registration(cls, params, name):
@@ -258,13 +142,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               slog_path,
                                               self.storlet_timeout)
 
-        out_md, self.data_read_fd = sprotocol.communicate()
+        sresp = sprotocol.communicate()
 
         self._upload_storlet_logs(slog_path)
 
-        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
-                                                     self.storlet_timeout,
-                                                     sprotocol._cancel)
+        return sresp
 
     def gatewayProxyPutFlow(self, orig_req):
         # TODO(takashi): chunk size should be configurable
@@ -300,13 +182,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               storlet_pipe_path,
                                               slog_path,
                                               self.storlet_timeout)
-        out_md, self.data_read_fd = sprotocol.communicate()
+        sresp = sprotocol.communicate()
 
         self._upload_storlet_logs(slog_path)
 
-        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
-                                                     self.storlet_timeout,
-                                                     sprotocol._cancel)
+        return sresp
 
     def gatewayObjectGetFlow(self, req, orig_resp):
         # TODO(takashi): should check if _fp is available
@@ -328,13 +208,11 @@ class StorletGatewayDocker(StorletGatewayBase):
         sprotocol = StorletInvocationProtocol(sreq, storlet_pipe_path,
                                               slog_path,
                                               self.storlet_timeout)
-        out_md, self.data_read_fd = sprotocol.communicate()
+        sresp = sprotocol.communicate()
 
         self._upload_storlet_logs(slog_path)
 
-        return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
-                                                     self.storlet_timeout,
-                                                     sprotocol._cancel)
+        return sresp
 
     def _add_system_params(self, params):
         """

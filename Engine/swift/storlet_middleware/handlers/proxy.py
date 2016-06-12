@@ -277,11 +277,12 @@ class StorletProxyHandler(StorletBaseHandler):
         source_resp = source_req.get_response(self.app)
 
         # Do proxy copy flow
-        (out_md, app_iter) = self.gateway.gatewayProxyCopyFlow(self.request,
-                                                               source_resp)
-        self._set_metadata_in_headers(self.request.headers, out_md)
+        sresp = self.gateway.gatewayProxyCopyFlow(self.request, source_resp)
+        self._set_metadata_in_headers(self.request.headers,
+                                      sresp.user_metadata)
 
-        resp = self.handle_put_copy_response(out_md, app_iter)
+        resp = self.handle_put_copy_response(sresp.user_metadata,
+                                             sresp.data_iter)
         acct, path = source_resp.environ['PATH_INFO'].split('/', 3)[2:4]
         resp.headers['X-Storlet-Generated-From-Account'] = quote(acct)
         resp.headers['X-Storlet-Generated-From'] = quote(path)
@@ -307,10 +308,11 @@ class StorletProxyHandler(StorletBaseHandler):
             return self.base_handle_copy_request(src_container, src_obj,
                                                  dest_container, dest_object)
 
-        (out_md, app_iter) = \
-            self.gateway.gatewayProxyPutFlow(self.request)
-        self._set_metadata_in_headers(self.request.headers, out_md)
-        return self.handle_put_copy_response(out_md, app_iter)
+        sresp = self.gateway.gatewayProxyPutFlow(self.request)
+        self._set_metadata_in_headers(self.request.headers,
+                                      sresp.user_metadata)
+        return self.handle_put_copy_response(sresp.user_metadata,
+                                             sresp.data_iter)
 
     @public
     def COPY(self):

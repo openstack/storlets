@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 from six import BytesIO
+from storlet_gateway.common.stob import StorletResponse
 from storlet_gateway.gateways.base import StorletGatewayBase
 
 
@@ -32,9 +33,9 @@ class StorletGatewayStub(StorletGatewayBase):
     def validate_dependency_registration(cls, params, obj):
         pass
 
-    def indentity_invocation(self, headers, body):
+    def indentity_invocation(self, user_metadata, body):
         self.logger.debug("Identity invocation is called")
-        return headers, BytesIO(body)
+        return StorletResponse(user_metadata, data_iter=BytesIO(body))
 
     def gatewayProxyPutFlow(self, orig_request):
         return self.indentity_invocation(orig_request.headers,

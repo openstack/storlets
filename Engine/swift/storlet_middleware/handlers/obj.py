@@ -58,8 +58,7 @@ class StorletObjectHandler(StorletBaseHandler):
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
-        return self.gateway.gatewayObjectGetFlow(
-            self.request, resp)
+        return self.gateway.gatewayObjectGetFlow(self.request, resp)
 
     @public
     def GET(self):
