@@ -175,6 +175,11 @@ class StorletBaseHandler(object):
                 parameters[key] = value
         self.request.params.update(parameters)
 
+    def _set_metadata_in_headers(self, headers, user_metadata):
+        if user_metadata:
+            for key, val in user_metadata.iteritems():
+                headers['X-Object-Meta-%s' % key] = val
+
     def _call_gateway(self, resp):
         """
         Call gateway module to get result of storlet execution
@@ -204,6 +209,8 @@ class StorletBaseHandler(object):
         if 'Content-Range' in resp.headers:
             new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
             new_headers.pop('Content-Range')
+
+        self._set_metadata_in_headers(new_headers, outmd)
 
         return Response(headers=new_headers, app_iter=app_iter,
                         reuqest=self.request)

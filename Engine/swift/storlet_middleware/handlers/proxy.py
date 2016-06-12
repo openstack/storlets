@@ -278,6 +278,7 @@ class StorletProxyHandler(StorletBaseHandler):
         # Do proxy copy flow
         (out_md, app_iter) = self.gateway.gatewayProxyCopyFlow(self.request,
                                                                source_resp)
+        self._set_metadata_in_headers(self.request.headers, out_md)
 
         resp = self.handle_put_copy_response(out_md, app_iter)
         acct, path = source_resp.environ['PATH_INFO'].split('/', 3)[2:4]
@@ -307,6 +308,7 @@ class StorletProxyHandler(StorletBaseHandler):
 
         (out_md, app_iter) = \
             self.gateway.gatewayProxyPutFlow(self.request)
+        self._set_metadata_in_headers(self.request.headers, out_md)
         return self.handle_put_copy_response(out_md, app_iter)
 
     @public

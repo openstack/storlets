@@ -298,19 +298,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
         self.assertFalse('X-Object-Meta-Storlet-Key3' in req.headers)
         self.assertEqual(req.headers['X-Object-Meta-Key4'], 'Value4')
 
-    def test_set_metadata_in_headers(self):
-        gw = self._create_gateway()
-
-        headers = {'HeaderKey1': 'HeaderValue1'}
-        gw._set_metadata_in_headers(headers, {})
-        self.assertEqual(headers, {'HeaderKey1': 'HeaderValue1'})
-
-        md = {'MetaKey1': 'MetaValue1'}
-        gw._set_metadata_in_headers(headers, md)
-        self.assertEqual(headers,
-                         {'HeaderKey1': 'HeaderValue1',
-                          'X-Object-Meta-MetaKey1': 'MetaValue1'})
-
 
 if __name__ == '__main__':
     unittest.main()

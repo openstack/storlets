@@ -260,7 +260,6 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         out_md, self.data_read_fd = sprotocol.communicate()
 
-        self._set_metadata_in_headers(req.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
         return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
@@ -303,7 +302,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
-        self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
         return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
@@ -332,7 +330,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               self.storlet_timeout)
         out_md, self.data_read_fd = sprotocol.communicate()
 
-        self._set_metadata_in_headers(orig_resp.headers, out_md)
         self._upload_storlet_logs(slog_path)
 
         return out_md, StorletGatewayDocker.IterLike(self.data_read_fd,
@@ -382,11 +379,6 @@ class StorletGatewayDocker(StorletGatewayBase):
             get('X-Storlet-Dependency')
         data['request_params'] = req.params
         return data
-
-    def _set_metadata_in_headers(self, headers, md):
-        if md:
-            for key, val in md.iteritems():
-                headers['X-Object-Meta-%s' % key] = val
 
     def _upload_storlet_logs(self, slog_path):
         if (config_true_value(self.idata['generate_log'])):
