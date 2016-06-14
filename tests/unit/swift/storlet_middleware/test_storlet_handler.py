@@ -497,6 +497,15 @@ class TestStorletMiddlewareProxy(_TestStorletMiddleware):
             for key in sheaders:
                 self.assertEqual(resp_headers[key], sheaders[key])
 
+    def test_storlets_with_invalid_method(self):
+        with storlet_enabled():
+            req = Request.blank(
+                '/v1/AUTH_a/c/o', environ={'REQUEST_METHOD': '_parse_vaco'},
+                headers={'X-Run-Storlet': 'Storlet-1.0.jar'})
+            app = self.get_app(self.app, self.conf)
+            app(req.environ, self.start_response)
+            self.assertEqual('405 Method Not Allowed', self.got_statuses[-1])
+
 
 class TestStorletMiddlewareObject(_TestStorletMiddleware):
     def setUp(self):
@@ -621,6 +630,17 @@ class TestStorletMiddlewareObject(_TestStorletMiddleware):
         resp = app(req.environ, self.start_response)
         self.assertEqual('200 OK', self.got_statuses[-1])
         self.assertEqual(resp, ['FAKE SEGMENT'])
+
+    def test_storlets_with_invalid_method(self):
+        target = '/sda1/p/AUTH_a/c/o'
+
+        req = Request.blank(
+            target, environ={'REQUEST_METHOD': '_parse_vaco'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        app = self.get_app(self.app, self.conf)
+        app(req.environ, self.start_response)
+        self.assertEqual('405 Method Not Allowed', self.got_statuses[-1])
 
 
 class TestStorletBaseHandler(unittest.TestCase):

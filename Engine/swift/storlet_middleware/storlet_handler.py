@@ -22,7 +22,7 @@ from swift.common.swob import HTTPException, Response, \
     HTTPPreconditionFailed, HTTPRequestedRangeNotSatisfiable, \
     HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, is_success, \
-    register_swift_info
+    register_swift_info, public
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from storlet_gateway.common.exceptions import StorletRuntimeException, \
@@ -361,14 +361,20 @@ class StorletProxyHandler(BaseStorletHandler):
 
     def handle_request(self):
         if hasattr(self, self.request.method):
-            resp = getattr(self, self.request.method)()
-            return resp
+            try:
+                handler = getattr(self, self.request.method)
+                getattr(handler, 'publicly_accessible')
+            except AttributeError:
+                # TODO(kota_): add allowed_method list to Allow header
+                return HTTPMethodNotAllowed(request=self.request)
+            return handler()
         else:
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
         return self.gateway.gatewayProxyGetFlow(self.request, resp)
 
+    @public
     def GET(self):
         """
         GET handler on Proxy
@@ -469,6 +475,7 @@ class StorletProxyHandler(BaseStorletHandler):
                 source_resp.headers['last-modified']
         return resp
 
+    @public
     def PUT(self):
         """
         PUT handler on Proxy
@@ -489,6 +496,7 @@ class StorletProxyHandler(BaseStorletHandler):
             self.gateway.gatewayProxyPutFlow(self.request)
         return self.handle_put_copy_response(out_md, app_iter)
 
+    @public
     def COPY(self):
         """
         COPY handler on Proxy
@@ -541,7 +549,13 @@ class StorletObjectHandler(BaseStorletHandler):
 
     def handle_request(self):
         if hasattr(self, self.request.method):
-            return getattr(self, self.request.method)()
+            try:
+                handler = getattr(self, self.request.method)
+                getattr(handler, 'publicly_accessible')
+            except AttributeError:
+                # TODO(kota_): add allowed_method list to Allow header
+                return HTTPMethodNotAllowed(request=self.request)
+            return handler()
         else:
             # un-defined method should be NOT ALLOWED
             raise HTTPMethodNotAllowed(request=self.request)
@@ -550,6 +564,7 @@ class StorletObjectHandler(BaseStorletHandler):
         return self.gateway.gatewayObjectGetFlow(
             self.request, resp)
 
+    @public
     def GET(self):
         """
         GET handler on object-server
