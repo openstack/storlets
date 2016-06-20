@@ -6,4 +6,17 @@ nosetests --exe $@
 rvalue=$?
 cd -
 
+# dump log into VIRTUAL_ENV_DIR when this func test call via tox
+if [ ! -z "${VIRTUAL_ENV+x}" ]; then
+   log_dir="${VIRTUAL_ENV}/log"
+   mkdir -p ${log_dir}
+   echo "grep syslog from /etc/log/syslog to ${log_file}"
+   for log_name in "account-server" "container-server" "object-server" "proxy-server" "ansible"
+   do
+       log_file="${log_dir}/${log_name}.log"
+       sudo egrep "${log_name}" /var/log/syslog > ${log_file}
+       sudo chown ${USER}.${USER} ${log_file}
+   done
+fi
+
 exit $rvalue
