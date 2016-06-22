@@ -1,0 +1,209 @@
+# Copyright (c) 2010-2016 OpenStack Foundation
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import urllib
+from swift.common.swob import Response
+
+
+class NotStorletRequest(Exception):
+    pass
+
+
+class NotStorletExecution(NotStorletRequest):
+    pass
+
+
+def _request_instance_property():
+    """
+    Set and retrieve the request instance.
+    This works to force to tie the consistency between the request path and
+    self.vars (i.e. api_version, account, container, obj) even if unexpectedly
+    (separately) assigned.
+    """
+    def getter(self):
+        return self._request
+
+    def setter(self, request):
+        self._request = request
+        try:
+            self._extract_vaco()
+        except ValueError:
+            raise NotStorletRequest()
+
+    return property(getter, setter,
+                    doc="Force to tie the request to acc/con/obj vars")
+
+
+class StorletBaseHandler(object):
+    """
+    This is an abstract handler for Proxy/Object Server middleware
+    """
+    request = _request_instance_property()
+
+    def __init__(self, request, conf, app, logger):
+        """
+        :param request: swob.Request instance
+        :param conf: gatway conf dict
+        :param app: wsgi Application
+        :param logger: logger instance
+        """
+        self.request = request
+        self.app = app
+        self.logger = logger
+        self.conf = conf
+        self.gateway_class = self.conf['gateway_module']
+
+    def _setup_gateway(self):
+        """
+        Setup gateway instance
+
+        """
+        self.gateway = self.gateway_class(
+            self.conf, self.logger, self.app, self.account)
+        self._update_storlet_parameters_from_headers()
+
+    def _extract_vaco(self):
+        """
+        Set version, account, container, obj vars from self._parse_vaco result
+
+        :raises ValueError: if self._parse_vaco raises ValueError while
+                            parsing, this method doesn't care and raise it to
+                            upper caller.
+        """
+        self._api_version, self._account, self._container, self._obj = \
+            self._parse_vaco()
+
+    @property
+    def api_version(self):
+        return self._api_version
+
+    @property
+    def account(self):
+        return self._account
+
+    @property
+    def container(self):
+        return self._container
+
+    @property
+    def obj(self):
+        return self._obj
+
+    def _parse_vaco(self):
+        """
+        Parse method of path from self.request which depends on child class
+        (Proxy or Object)
+
+        :return: a string tuple of (version, account, container, object)
+        """
+        raise NotImplementedError()
+
+    def handle_request(self):
+        """
+        Run storlet
+
+        """
+        raise NotImplementedError()
+
+    @property
+    def is_storlet_execution(self):
+        """
+        Check if the request requires storlet execution
+
+        :return: Whether storlet should be executed
+        """
+        return 'X-Run-Storlet' in self.request.headers
+
+    @property
+    def is_range_request(self):
+        """
+        Determines whether the request is a byte-range request
+
+        :return: Whether the request is a byte-range request
+        """
+        return 'Range' in self.request.headers
+
+    @property
+    def is_storlet_range_request(self):
+        return 'X-Storlet-Range' in self.request.headers
+
+    def is_slo_response(self, resp):
+        """
+        Determins whether the response is a slo one
+
+        :param resp: swob.Response instance
+        :return: Whenther the response is a slo one
+        """
+        self.logger.debug(
+            'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
+                self.account, self.container, self.obj))
+        is_slo = 'X-Static-Large-Object' in resp.headers
+        if is_slo:
+            self.logger.debug(
+                '{0}/{1}/{2} is indeed an SLO assembly '
+                'object'.format(self.account, self.container, self.obj))
+        else:
+            self.logger.debug(
+                '{0}/{1}/{2} is NOT an SLO assembly object'.format(
+                    self.account, self.container, self.obj))
+        return is_slo
+
+    def _update_storlet_parameters_from_headers(self):
+        """
+        Extract parameters for header (an alternative to parmeters through
+        the query string)
+
+        """
+        parameters = {}
+        for param in self.request.headers:
+            if param.lower().startswith('x-storlet-parameter'):
+                keyvalue = self.request.headers[param]
+                keyvalue = urllib.unquote(keyvalue)
+                [key, value] = keyvalue.split(':')
+                parameters[key] = value
+        self.request.params.update(parameters)
+
+    def _call_gateway(self, resp):
+        """
+        Call gateway module to get result of storlet execution
+        in GET flow
+
+        :param resp: swob.Response instance
+        """
+        raise NotImplementedError()
+
+    def apply_storlet(self, resp):
+        """
+        Apply storlet on response
+
+        :param resp: swob.Response instance
+        :return: processed reponse
+        """
+        outmd, app_iter = self._call_gateway(resp)
+
+        new_headers = resp.headers.copy()
+
+        if 'Content-Length' in new_headers:
+            new_headers.pop('Content-Length')
+        if 'Transfer-Encoding' in new_headers:
+            new_headers.pop('Transfer-Encoding')
+
+        # Range response(206) should be replaced by 200
+        if 'Content-Range' in resp.headers:
+            new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
+            new_headers.pop('Content-Range')
+
+        return Response(headers=new_headers, app_iter=app_iter,
+                        reuqest=self.request)
