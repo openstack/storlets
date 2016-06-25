@@ -27,10 +27,12 @@ class TestExecDepStorlet(StorletFunctionalTest):
         self.storlet_file = 'junk.txt'
         self.container = 'myobjects'
         self.dep_names = ['get42']
+        self.additional_headers = {}
         super(TestExecDepStorlet, self).setUp()
 
     def test_execdep(self):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         resp = dict()
         resp_headers, gf = c.get_object(self.url, self.token,
                                         'myobjects',
@@ -41,3 +43,9 @@ class TestExecDepStorlet(StorletFunctionalTest):
         self.assertTrue('x-object-meta-depend-ret-code' in resp_headers)
         self.assertTrue(resp_headers['x-object-meta-depend-ret-code'] == '42')
         self.assertEqual(resp['status'], 200)
+
+
+class TestExecDepStorletOnProxy(TestExecDepStorlet):
+    def setUp(self):
+        super(TestExecDepStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

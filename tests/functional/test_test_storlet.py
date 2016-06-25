@@ -39,6 +39,7 @@ class TestTestStorlet(StorletFunctionalTest):
         self.storlet_file = ''
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestTestStorlet, self).setUp()
 
         c.put_object(self.url,
@@ -49,6 +50,7 @@ class TestTestStorlet(StorletFunctionalTest):
 
     def invokeTestStorlet(self, op, withlog=False):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         if withlog is True:
             headers['X-Storlet-Generate-Log'] = 'True'
 
@@ -107,3 +109,9 @@ class TestTestStorlet(StorletFunctionalTest):
 
     def test_parallel_print(self):
         self.invokeTestStorletinParallel()
+
+
+class TestTestStorletOnProxy(TestTestStorlet):
+    def setUp(self):
+        super(TestTestStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

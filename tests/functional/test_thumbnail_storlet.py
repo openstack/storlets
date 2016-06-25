@@ -30,10 +30,12 @@ class TestThumbnailStorlet(StorletFunctionalTest):
         self.storlet_file = 'sample.jpg'
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestThumbnailStorlet, self).setUp()
 
     def invoke_storlet_on_get(self):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         resp = dict()
         resp_headers, gf = c.get_object(self.url, self.token,
                                         'myobjects',
@@ -47,6 +49,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
 
     def invoke_storlet_on_put(self):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         resp = dict()
         source_file = '%s/%s' % (self.path_to_bundle, self.storlet_file)
         with open(source_file, 'r') as f:
@@ -65,6 +68,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
     def invoke_storlet_on_copy_from(self):
         headers = {'X-Run-Storlet': self.storlet_name,
                    'X-Copy-From': 'myobjects/%s' % self.storlet_file}
+        headers.update(self.additional_headers)
         resp = dict()
         c.put_object(self.url, self.token,
                      'myobjects', 'gen_thumb_on_copy.jpg', '',
@@ -90,6 +94,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
         headers = {'X-Auth-Token': self.token,
                    'X-Run-Storlet': self.storlet_name,
                    'Destination': 'myobjects/gen_thumb_on_copy_.jpg'}
+        headers.update(self.additional_headers)
         req = urllib2.Request(url, headers=headers)
         req.get_method = lambda: 'COPY'
         conn = urllib2.urlopen(req, timeout=10)
@@ -111,3 +116,9 @@ class TestThumbnailStorlet(StorletFunctionalTest):
 
     def test_copy(self):
         self.invoke_storlet_on_copy_dest()
+
+
+class TestThumbnailStorletOnProxy(TestThumbnailStorlet):
+    def setUp(self):
+        super(TestThumbnailStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

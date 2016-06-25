@@ -29,6 +29,7 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
         self.storlet_file = 'source.txt'
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestHalfIdentityStorlet, self).setUp()
 
     def invoke_storlet(self, op, params=None, global_params=None,
@@ -42,6 +43,7 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
             querystring = None
 
         req_headers = {'X-Run-Storlet': self.storlet_name}
+        req_headers.update(self.additional_headers)
         if headers:
             req_headers.update(headers)
 
@@ -78,6 +80,7 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
             content_length = None
             headers = {'X-Run-Storlet': self.storlet_name,
                        'X-Object-Meta-Testkey': random_md}
+            headers.update(self.additional_headers)
             c.put_object(self.url, self.token, self.container,
                          'half_random_source',
                          uploaded_content, content_length, None, None,
@@ -111,3 +114,9 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
             'GET',
             headers={'X-Storlet-Range': 'bytes=5-10'})
         self.assertEqual(res, 'fhj')
+
+
+class TestHalfIdentityStorletOnProxy(TestHalfIdentityStorlet):
+    def setUp(self):
+        super(TestHalfIdentityStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

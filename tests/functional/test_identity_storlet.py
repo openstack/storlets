@@ -30,11 +30,13 @@ class TestIdentityStorlet(StorletFunctionalTest):
         self.storlet_file = 'source.txt'
         self.container = 'myobjects'
         self.dep_names = ['get42']
+        self.additional_headers = {}
         super(TestIdentityStorlet, self).setUp()
 
     def invoke_storlet(self, op, params=None, global_params=None,
                        header_parameters=False):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         if params is not None:
             if header_parameters:
                 querystring = None
@@ -120,6 +122,7 @@ class TestIdentityStorlet(StorletFunctionalTest):
         GBFile.close()
 
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         GBFile = open('/tmp/1GB_file', 'r')
         response = dict()
         c.put_object(self.url, self.token,
@@ -156,3 +159,9 @@ class TestIdentityStorlet(StorletFunctionalTest):
         self.invoke_storlet('GET', {'execute': 'true'})
         self.invoke_storlet('GET', {'execute': 'true'},
                             header_parameters=True)
+
+
+class TestIdentityStorletOnProxy(TestIdentityStorlet):
+    def setUp(self):
+        super(TestIdentityStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

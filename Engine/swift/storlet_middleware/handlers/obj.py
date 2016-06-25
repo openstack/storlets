@@ -82,7 +82,8 @@ class StorletObjectHandler(StorletBaseHandler):
         not_runnable = any(
             [self.is_storlet_range_request, self.is_slo_get_request,
              self.conf['storlet_execute_on_proxy_only'],
-             self.is_slo_response(orig_resp)])
+             self.is_slo_response(orig_resp),
+             self.has_run_on_proxy_header])
 
         if not_runnable:
             # Storlet must be invoked on proxy as it is:

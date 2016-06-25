@@ -37,6 +37,7 @@ class TestMetadataStorlet(StorletFunctionalTest):
         self.storlet_file = 'source.txt'
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestMetadataStorlet, self).setUp()
 
     def test_metadata_get(self, params=None, global_params=None):
@@ -49,6 +50,7 @@ class TestMetadataStorlet(StorletFunctionalTest):
             querystring = None
 
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         original_headers, original_content = \
             c.get_object(self.url, self.token,
                          'myobjects', self.storlet_file,
@@ -65,3 +67,9 @@ class TestMetadataStorlet(StorletFunctionalTest):
         self.assertEqual(original_headers['X-Object-Meta-key10'.lower()], '10')
         omv = original_headers['X-Object-Meta-override_key'.lower()]
         self.assertEqual(omv, 'new_value')
+
+
+class TestMetadataStorletOnProxy(TestMetadataStorlet):
+    def setUp(self):
+        super(TestMetadataStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

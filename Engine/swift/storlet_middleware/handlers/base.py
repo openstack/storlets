@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import urllib
-from swift.common.swob import Response
+from swift.common.swob import HTTPBadRequest, Response
 
 
 class NotStorletRequest(Exception):
@@ -134,6 +134,20 @@ class StorletBaseHandler(object):
         :return: Whether the request is a byte-range request
         """
         return 'Range' in self.request.headers
+
+    @property
+    def has_run_on_proxy_header(self):
+        """
+        Check whether there is a header mandating storlet execution on proxy
+
+        :return: Whether a header exists mandating storlet execution on proxy
+        """
+        if 'X-Storlet-Run-On-Proxy' in self.request.headers:
+            if self.request.headers['X-Storlet-Run-On-Proxy'].strip():
+                raise HTTPBadRequest('X-Storlet-Run-On-Proxy header should '
+                                     'be empty', request=self.request)
+            return True
+        return False
 
     @property
     def is_storlet_range_request(self):

@@ -53,6 +53,7 @@ class TestSLO(StorletFunctionalTest):
         self.storlet_file = ''
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestSLO, self).setUp()
 
         create_container(self.url, self.token, 'myobjects')
@@ -144,6 +145,7 @@ class TestSLO(StorletFunctionalTest):
 
     def test_get_SLO(self):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         response = dict()
         headers, body = c.get_object(self.url, self.token,
                                      'myobjects', 'assembly',
@@ -152,3 +154,9 @@ class TestSLO(StorletFunctionalTest):
                                      resp_chunk_size=1048576,
                                      headers=headers)
         self.compare_slo_to_chunks(body)
+
+
+class TestSloOnProxy(TestSLO):
+    def setUp(self):
+        super(TestSloOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}

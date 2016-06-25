@@ -75,7 +75,8 @@ class StorletProxyHandler(StorletBaseHandler):
         # storlet to be invoked now at proxy side:
         runnable = any(
             [self.is_storlet_range_request, self.is_slo_response(resp),
-             self.conf['storlet_execute_on_proxy_only']])
+             self.conf['storlet_execute_on_proxy_only'],
+             self.has_run_on_proxy_header])
         return runnable
 
     @property
