@@ -45,6 +45,7 @@ class TestExecDepStorlet(StorletBaseFunctionalTest):
             child.sendline('com.ibm.storlet.execdep.ExecDepStorlet')
             child.expect('Please enter dependency.*', timeout=2)
             child.sendline(self.execdep_storlet_dep_file)
-            child.expect('\n')
+            child.sendline('\n')
+            child.expect('Storlet deployment complete.*', timeout=self.timeout)
         except Exception as err:
             self.fail('Unexpected exception %s' % err)

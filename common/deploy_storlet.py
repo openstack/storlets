@@ -13,7 +13,6 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
 
-import os
 import sys
 import zipfile
 from cluster_config_parser import ClusterConfig
@@ -49,15 +48,14 @@ def main():
     print("Please enter dependency jars (leave a blank line when you are "
           "done):")
     dependency_jars = []
-    dependencies = []
     dependency_jar = sys.stdin.readline().rstrip()
     while dependency_jar:
         dependency_jars.append(dependency_jar)
-        dependencies.append(os.path.basename(dependency_jar))
         dependency_jar = sys.stdin.readline().rstrip()
 
     deploy_storlet(url, token, storlet_jar, storlet_main_class,
-                   dependency_jars, dependencies)
+                   dependency_jars)
+    print("Storlet deployment complete")
 
 if __name__ == "__main__":
     main()
