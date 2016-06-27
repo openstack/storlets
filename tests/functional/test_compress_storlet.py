@@ -27,10 +27,12 @@ class TestCompressStorlet(StorletFunctionalTest):
         self.storlet_file = 'input.txt'
         self.container = 'myobjects'
         self.dep_names = []
+        self.additional_headers = {}
         super(TestCompressStorlet, self).setUp()
 
     def test_put(self):
         headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
         querystring = "action=compress"
 
         with open('../../StorletSamples/CompressStorlet/bin/input.txt',
@@ -65,3 +67,9 @@ class TestCompressStorlet(StorletFunctionalTest):
                 processed_content += chunk
 
         self.assertEqual(data, processed_content)
+
+
+class TestCompressStorletOnProxy(TestCompressStorlet):
+    def setUp(self):
+        super(TestCompressStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
