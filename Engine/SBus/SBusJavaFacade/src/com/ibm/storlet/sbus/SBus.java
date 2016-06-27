@@ -63,16 +63,16 @@ public class SBus {
 	/*------------------------------------------------------------------------
 	 * receive
 	 * */
-	public SBusDatagram receive() throws IOException {
+	public ServerSBusInDatagram receive() throws Exception {
 		SBusRawMessage Msg = SBusBack_.receiveRawMessage(hServerSideSBus_);
-		SBusDatagram Dtg = new SBusDatagram(Msg);
+		ServerSBusInDatagram Dtg = new ServerSBusInDatagram(Msg);
 		return Dtg;
 	}
 
 	/*------------------------------------------------------------------------
 	 * send
 	 * */
-	public void send(final String strSBusPath, final SBusDatagram Dtg)
+	public void send(final String strSBusPath, final ServerSBusOutDatagram Dtg)
 			throws IOException {
 
 		SBusRawMessage Msg = Dtg.toRawMessage();

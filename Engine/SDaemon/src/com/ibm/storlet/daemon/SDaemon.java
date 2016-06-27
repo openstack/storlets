@@ -1,23 +1,19 @@
-/*----------------------------------------------------------------------------
- * Copyright IBM Corp. 2015, 2015 All Rights Reserved
+/*
+ * Copyright (c) 2015, 2016 OpenStack Foundation.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the License for the specific language governing permissions and
- * Limitations under the License.
- * ---------------------------------------------------------------------------
+ * limitations under the License.
  */
-
-/*============================================================================
- DD-MMM-YYYY    eranr       Initial implementation.
- 10-Jul-2014    evgenyl     Refactoring. Switching to SBus.
- ===========================================================================*/
 
 package com.ibm.storlet.daemon;
 
@@ -27,7 +23,7 @@ import java.io.IOException;
 import java.util.HashMap;
 
 import org.slf4j.LoggerFactory;
-
+import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.Level;
 
 import com.ibm.storlet.common.*;
@@ -44,7 +40,7 @@ import java.util.concurrent.*;
  * */
 public class SDaemon {
 
-	private static ch.qos.logback.classic.Logger logger_;
+	private static Logger logger_;
 	private static SBus sbus_;
 	private static STaskFactory storletTaskFactory_;
 	private static ExecutorService threadPool_;
@@ -52,9 +48,6 @@ public class SDaemon {
 	private static HashMap<String, Future> taskIdToTask_;
 	private static int nDefaultTimeoutToWaitBeforeShutdown_ = 3;
 
-	/*------------------------------------------------------------------------
-	 * initLog
-	 * */
 	private static boolean initLog(final String strClassName,
 			final String strLogLevel) {
 		Level newLevel = Level.toLevel(strLogLevel);
@@ -71,9 +64,6 @@ public class SDaemon {
 		return bStatus;
 	}
 
-	/*------------------------------------------------------------------------
-	 * loadStorlet
-	 * */
 	private static IStorlet loadStorlet(final String strStorletClassName) {
 		IStorlet storlet = null;
 		try {
@@ -170,13 +160,13 @@ public class SDaemon {
 			}
 
 			logger_.trace(strStorletName_ + ": Calling receive");
-			SBusDatagram dtg = null;
+			ServerSBusInDatagram dtg = null;
 			try {
 				dtg = sbus_.receive();
 				logger_.trace(strStorletName_ + ": Receive returned");
-			} catch (IOException e) {
+			} catch (Exception e) {
 				logger_.error(strStorletName_
-						+ ": Failed to receive data on SBus");
+						+ ": Failed to receive data on SBus", e);
 				doContinue = false;
 				break;
 
@@ -194,7 +184,7 @@ public class SDaemon {
 	 * or do some other job ( halt, description, or maybe something 
 	 * else in the future ).
 	 * */
-	private static boolean processDatagram(SBusDatagram dtg) {
+	private static boolean processDatagram(ServerSBusInDatagram dtg) {
 		boolean bStatus = true;
 		SAbstractTask sTask = null;
 		try {
@@ -288,4 +278,3 @@ public class SDaemon {
 		logger_.info(strStorletName_ + ": threadpool down");
 	}
 }
-/* ============================== END OF FILE =============================== */

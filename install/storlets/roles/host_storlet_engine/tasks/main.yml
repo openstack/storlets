@@ -13,20 +13,34 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- name: install python facade on host
+- name: copy python facade tar locally
   copy: src={{ SBusPythonFacade_dir }}/dist/{{ SBusPythonFacade_egg_dist }} dest=/tmp
 
-- unarchive: owner=root group=root mode=755 dest=/ src=/tmp/{{ SBusPythonFacade_egg_dist }}
-- file: path=/tmp/{{ SBusPythonFacade_egg_dist }} state=absent
+- name: unarchive python facade
+  unarchive: owner=root
+             group=root
+             mode=0755
+             dest=/
+             src=/tmp/{{ SBusPythonFacade_egg_dist }}
+
+- name: delete python facade tar local copy
+  file: path=/tmp/{{ SBusPythonFacade_egg_dist }} state=absent
 
 - name: install sbus transport layer on host
   copy: src={{ SBusTransportLayer_dir }}/{{ sbus_so }} dest=/{{python_dist_packages_dir}} owner=root group=root mode=0755
 
-- name: install swift middleware on host
+- name: copy swift middleware tar locally
   copy: src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }} dest=/tmp
 
-- unarchive: owner=root group=root mode=0755 dest=/ src=/tmp/{{ swift_middleware_egg_dist }}
-- file: path=/tmp/{{ swift_middleware_egg_dist }} state=absent
+- name: unarchive swift middleware
+  unarchive: owner=root
+             group=root
+             mode=0755
+             dest=/
+             src=/tmp/{{ swift_middleware_egg_dist }}
+
+- name: delete swift middleware tar local copy
+  file: path=/tmp/{{ swift_middleware_egg_dist }} state=absent
 
 - stat: path={{ lxc_device }}/scripts
   register: st
@@ -64,11 +78,11 @@
 
 - name: Copy gateway conf template
   template:
-  src: ../../common_templates/storlet-docker-gateway.conf-sample
-  dest: "{{ storlet_gateway_conf_file }}"
-  owner: "{{ swift_run_time_user }}"
-  group: "{{ swift_run_time_group }}"
-  mode: "0644"
+    src: ../../common_templates/storlet-docker-gateway.conf-sample
+    dest: "{{ storlet_gateway_conf_file }}"
+    owner: "{{ swift_run_time_user }}"
+    group: "{{ swift_run_time_group }}"
+    mode: 0644
 
 - name: configure swift
   shell: chdir={{ engine_install_dir  }}

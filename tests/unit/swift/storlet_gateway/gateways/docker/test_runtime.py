@@ -30,7 +30,7 @@ from tests.unit.swift import FakeLogger
 @contextmanager
 def _mock_sbus(send_status=0):
     with mock.patch('storlet_gateway.gateways.docker.runtime.'
-                    'SBusDatagram.create_service_datagram'), \
+                    'ClientSBusOutDatagram.create_service_datagram'), \
         mock.patch('storlet_gateway.gateways.docker.runtime.'
                    'SBus.send') as fake_send:
         fake_send.return_value = send_status

@@ -57,11 +57,4 @@
     - "mv logback-1.1.2/logback-classic-1.1.2.jar ."
     - "rm -fr logback-1.1.2/ logback-1.1.2.tar.gz"
 
-- name: Copy additional resources
-  copy:
-    src: "{{ item }}"
-    dest: /data/registry/repositories/ubuntu_14.04_jre8
-  with_items:
-    - logback.xml
-
 - include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8

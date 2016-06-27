@@ -1,23 +1,20 @@
-/*----------------------------------------------------------------------------
- * Copyright IBM Corp. 2015, 2015 All Rights Reserved
+/*
+ * Copyright (c) 2015, 2016 OpenStack Foundation.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the License for the specific language governing permissions and
- * Limitations under the License.
- * ---------------------------------------------------------------------------
+ * limitations under the License.
  */
 
-/*============================================================================
- DD-MMM-YYYY    eranr       Initial implementation.
- 10-Jul-2014    evgenyl     Refactoring.
- ===========================================================================*/
 package com.ibm.storlet.daemon;
 
 import org.slf4j.Logger;
@@ -47,9 +44,6 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 	private String taskId_ = null;
 	private HashMap<String, Future> taskIdToTask_ = null;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
 	public SExecutionTask(IStorlet storlet,
 			ArrayList<StorletInputStream> instreams,
 			ArrayList<StorletOutputStream> outstreams, OutputStream taskIdOut,
@@ -65,9 +59,6 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 
 	}
 
-	/*------------------------------------------------------------------------
-	 * getters
-	 * */
 	public ArrayList<StorletInputStream> getInStreams() {
 		return inStreams_;
 	}
@@ -84,9 +75,6 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 		return taskIdOut_;
 	}
 
-	/*------------------------------------------------------------------------
-	 * setters
-	 * */
 	public void setTaskId(String taskId) {
 		taskId_ = taskId;
 	}
@@ -95,9 +83,6 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 		taskIdToTask_ = taskIdToTask;
 	}
 
-	/*------------------------------------------------------------------------
-	 * close streams
-	 * */
 	private void closeStorletInputStreams(){
 		for(StorletInputStream stream : inStreams_){
 			stream.close();
@@ -115,11 +100,6 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 		closeStorletOutputStreams();
 	}
 
-	/*------------------------------------------------------------------------
-	 * run
-	 * 
-	 * Actual storlet invocation
-	 * */
 	@Override
 	public void run() {
 		try {
@@ -140,4 +120,3 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
 		}
 	}
 }
-/* ============================== END OF FILE =============================== */

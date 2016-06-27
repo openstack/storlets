@@ -38,6 +38,9 @@ RUN ["chmod", "0744", "/opt/storlets/SDaemon.jar"]
 COPY SCommon.jar                                        /opt/storlets/
 RUN ["chmod", "0744", "/opt/storlets/SCommon.jar"]
 
+COPY logback.xml                                        /opt/storlets/
+RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
+
 ADD storlet_daemon_factory-1.0.linux-x86_64.tar.gz      /
 RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/storlet_daemon_factory*
 

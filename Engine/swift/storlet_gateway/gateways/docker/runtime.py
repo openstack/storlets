@@ -1,17 +1,17 @@
-"""-------------------------------------------------------------------------
-Copyright IBM Corp. 2015, 2015 All Rights Reserved
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-Limitations under the License.
--------------------------------------------------------------------------"""
+# Copyright (c) 2015, 2016 OpenStack Foundation.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+# implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
 import os
 import select
@@ -27,7 +27,7 @@ from contextlib import contextmanager
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
 from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import SBusDatagram
+from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
 from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
     SBUS_FD_LOGGER, SBUS_FD_OUTPUT_OBJECT, SBUS_FD_OUTPUT_OBJECT_METADATA, \
     SBUS_FD_OUTPUT_TASK_ID
@@ -252,7 +252,9 @@ class RunTimeSandbox(object):
         pipe_path = self.paths.host_factory_pipe()
 
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_PING, write_fd)
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_PING,
+                write_fd)
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
                 return -1
@@ -354,9 +356,10 @@ class RunTimeSandbox(object):
         prms['pool_size'] = self.storlet_daemon_thread_pool_size
 
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_START_DAEMON,
-                                                       write_fd)
-            dtg.set_exec_params(prms)
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_START_DAEMON,
+                write_fd,
+                prms)
 
             pipe_path = self.paths.host_factory_pipe()
             rc = SBus.send(pipe_path, dtg)
@@ -375,9 +378,10 @@ class RunTimeSandbox(object):
         Stop SDaemon process in the account's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_STOP_DAEMON,
-                                                       write_fd)
-            dtg.add_exec_param('storlet_name', storlet_id)
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_STOP_DAEMON,
+                write_fd,
+                {'storlet_name': storlet_id})
             pipe_path = self.paths.host_factory_pipe()
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
@@ -397,9 +401,10 @@ class RunTimeSandbox(object):
         Get the status of SDaemon process in the account's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_DAEMON_STATUS,
-                                                       write_fd)
-            dtg.add_exec_param('storlet_name', storlet_id)
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_DAEMON_STATUS,
+                write_fd,
+                {'storlet_name': storlet_id})
             pipe_path = self.paths.host_factory_pipe()
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
@@ -552,9 +557,11 @@ class StorletInvocationProtocol(object):
 
     def _cancel(self):
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(SBUS_CMD_CANCEL,
-                                                       write_fd)
-            dtg.set_task_id(self.task_id)
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_CANCEL,
+                write_fd,
+                None,
+                self.task_id)
             rc = SBus.send(self.storlet_pipe_path, dtg)
             if (rc < 0):
                 raise StorletRuntimeException('Failed to cancel task')
@@ -562,11 +569,11 @@ class StorletInvocationProtocol(object):
             os.read(read_fd, 10)
 
     def _invoke(self):
-        dtg = SBusDatagram()
-        dtg.set_files(self.remote_fds)
-        dtg.set_metadata(self.remote_fds_metadata)
-        dtg.set_exec_params(self.srequest.params)
-        dtg.set_command(SBUS_CMD_EXECUTE)
+        dtg = ClientSBusOutDatagram(
+            SBUS_CMD_EXECUTE,
+            self.remote_fds,
+            self.remote_fds_metadata,
+            self.srequest.params)
         rc = SBus.send(self.storlet_pipe_path, dtg)
 
         if (rc < 0):
@@ -657,7 +664,7 @@ class StorletInvocationProtocol(object):
 
     def communicate(self):
         try:
-            with self.storlet_logger.activate(), \
+            with self.storlet_logger.activate(),\
                 self._activate_invocation_descriptors():
                 self._invoke()
 

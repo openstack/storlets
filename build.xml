@@ -33,7 +33,7 @@
 	    	dest="Engine/dependencies/slf4j-api-1.7.7.jar"
 	    	verbose="true"
 	    	usetimestamp="true"/>
-                <copy file="install/storlets/roles/docker_base_jre_image/files/logback.xml" 
+                <copy file="install/storlets/roles/docker_storlet_engine_image/files/logback.xml"
 		tofile="Engine/dependencies/logback.xml"/>
 	</target>
 

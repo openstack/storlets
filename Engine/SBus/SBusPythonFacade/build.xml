@@ -23,8 +23,8 @@
 	
 	<target name="build">
 		<exec executable="python" dir="." failonerror="true">
-							<arg value="setup.py"/>
-					        <arg value="bdist"/>
+			<arg value="setup.py"/>
+		        <arg value="bdist"/>
 		</exec>
 	</target>
 

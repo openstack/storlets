@@ -25,8 +25,7 @@ import sys
 import time
 
 from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import SBusDatagram
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_OUTPUT_OBJECT
+from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_DAEMON_STATUS
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_HALT
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_PING
@@ -89,7 +88,8 @@ class daemon_factory(object):
                     'json_simple-1.1.jar',
                     'SBusJavaFacade.jar',
                     'SCommon.jar',
-                    'SDaemon.jar']
+                    'SDaemon.jar',
+                    '']
         jar_deps = ['%s%s:' % (str_prfx, x) for x in jar_deps]
         str_dmn_clspth = ''.join(jar_deps)
         str_dmn_clspth = str_dmn_clspth + storlet_path
@@ -211,7 +211,9 @@ class daemon_factory(object):
                           format(storlet_name, storlet_pipe_name))
         # TODO(takashi): We had better use contextmanager
         read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_PING, write_fd)
+        dtg = ClientSBusOutDatagram.create_service_datagram(
+            SBUS_CMD_PING,
+            write_fd)
         b_status = False
         error_text = "Daemon isn't responding"
         for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
@@ -407,7 +409,9 @@ class daemon_factory(object):
                           format(storlet_name, storlet_pipe_name))
         # TODO(takashi): We had better use contextmanager
         read_fd, write_fd = os.pipe()
-        dtg = SBusDatagram.create_service_datagram(SBUS_CMD_HALT, write_fd)
+        dtg = ClientSBusOutDatagram.create_service_datagram(
+            SBUS_CMD_HALT,
+            write_fd)
         SBus.send(storlet_pipe_name, dtg)
         os.close(read_fd)
         os.close(write_fd)
@@ -433,18 +437,10 @@ class daemon_factory(object):
         b_status = False
         error_text = ''
         b_iterate = True
-        command = -1
-        try:
-            command = dtg.get_command()
-        except Exception:
-            error_text = "Received message does not have command" \
-                         " identifier. continuing."
-            b_status = False
-            self.logger.error(error_text)
-        else:
-            self.logger.debug("Received command {0}".format(command))
+        command = dtg.command
+        prms = dtg.params
+        self.logger.debug("Received command {0}".format(command))
 
-        prms = dtg.get_exec_params()
         # TODO(takashi): refactor this
         if command == SBUS_CMD_START_DAEMON:
             self.logger.debug('Do SBUS_CMD_START_DAEMON')
@@ -510,34 +506,34 @@ class daemon_factory(object):
             self.logger.debug("Wait returned")
 
             dtg = sbus.receive(fd)
-            if not dtg:
-                self.logger.error("Failed to receive message. exiting.")
+            # TODO(eranr):
+            # Should we really be exitting here.
+            # If so should we exit the container altogether, so
+            # that it gets restarted?
+            if dtg is None:
+                self.logger.error("Failed to receive message. Exitting.")
                 return
 
-            try:
-                # TODO(takashi): We had better use contextmanager
-                outfd = dtg.get_first_file_of_type(SBUS_FD_OUTPUT_OBJECT)
-            except Exception:
+            outfd = dtg.get_service_out_fd()
+            if outfd is None:
                 self.logger.error("Received message does not have outfd."
                                   " continuing.")
                 continue
-            else:
-                self.logger.debug("Received outfd %d" % outfd.fileno())
 
-            b_status, error_text, b_iterate = \
-                self.dispatch_command(dtg, container_id)
-
-            self.log_and_report(outfd, b_status, error_text)
-            outfd.close()
+            self.logger.debug("Received outfd %d" % outfd)
+            with os.fdopen(outfd, 'w') as outfile:
+                b_status, error_text, b_iterate = \
+                    self.dispatch_command(dtg, container_id)
+                self.log_and_report(outfile, b_status, error_text)
 
         # We left the main loop for some reason. Terminating.
         self.logger.debug('Leaving main loop')
 
-    def log_and_report(self, outfd, b_status, error_text):
+    def log_and_report(self, outfile, b_status, error_text):
         """
         Send result result description message back to swift middleware
 
-        :param outfd : Output channel to send the message to
+        :param outfile : Output channel to send the message to
         :param b_status : Flag, whether the operation was successful
         :param error_text: The result description
         """
@@ -545,7 +541,7 @@ class daemon_factory(object):
         self.logger.debug(' Just processed command')
         self.logger.debug(' Going to answer: %s' % answer)
         try:
-            outfd.write(answer)
+            outfile.write(answer)
             self.logger.debug(" ... and still alive")
         except Exception:
             self.logger.debug('Problem while writing response %s' % answer)

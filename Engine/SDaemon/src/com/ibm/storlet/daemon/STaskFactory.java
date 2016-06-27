@@ -1,24 +1,20 @@
-/*----------------------------------------------------------------------------
- * Copyright IBM Corp. 2015, 2015 All Rights Reserved
+/*
+ * Copyright (c) 2015, 2016 OpenStack Foundation.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+ * implied.
  * See the License for the specific language governing permissions and
- * Limitations under the License.
- * ---------------------------------------------------------------------------
+ * limitations under the License.
  */
 
-/*============================================================================
- DD-MMM-YYYY    eranr       Initial implementation.
- 10-Jul-2014    evgenyl     Refactoring. Switching to SBusDatagram.
- 01-Oct-2014    evgenyl     Drop "type" from INPUT_STREAM metadata
- ===========================================================================*/
 package com.ibm.storlet.daemon;
 
 import java.io.FileOutputStream;
@@ -30,8 +26,7 @@ import org.slf4j.Logger;
 
 import com.ibm.storlet.common.*;
 import com.ibm.storlet.daemon.SExecutionTask;
-import com.ibm.storlet.sbus.SBusDatagram;
-import com.ibm.storlet.sbus.SBusDatagram.eStorletCommand;
+import com.ibm.storlet.sbus.ServerSBusInDatagram;
 
 /*----------------------------------------------------------------------------
  * StorletTaskFactory
@@ -44,40 +39,32 @@ public class STaskFactory {
 	private Logger logger_;
 	private ObjectRequestsTable requestsTable_;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
 	public STaskFactory(IStorlet storlet, Logger logger) {
 		this.storlet_ = storlet;
 		this.logger_ = logger;
 		this.requestsTable_ = new ObjectRequestsTable();
 	}
 
-	/*------------------------------------------------------------------------
-	 * createStorletTask
-	 * 
-	 * Factory entry point
-	 * */
-	public SAbstractTask createStorletTask(SBusDatagram dtg)
+	public SAbstractTask createStorletTask(ServerSBusInDatagram dtg)
 			throws StorletException {
 		SAbstractTask ResObj = null;
-		eStorletCommand command = dtg.getCommand();
+		String command = dtg.getCommand();
 
-		if (eStorletCommand.SBUS_CMD_HALT == command) {
+		if (command.equals("SBUS_CMD_HALT")) {
 			this.logger_.trace("createStorletTask: " + "received HALT command");
 			ResObj = new SHaltTask(logger_);
-		} else if (eStorletCommand.SBUS_CMD_EXECUTE == command) {
+		} else if (command.equals("SBUS_CMD_EXECUTE")) {
 			this.logger_.trace("createStorletTask: "
 					+ "received EXECUTE command");
 			ResObj = createExecutionTask(dtg);
-		} else if (eStorletCommand.SBUS_CMD_DESCRIPTOR == command) {
+		} else if (command.equals("SBUS_CMD_DESCRIPTOR")) {
 			this.logger_.trace("createStorletTask: "
 					+ "received Descriptor command");
 			ResObj = createDescriptorTask(dtg);
-		} else if (eStorletCommand.SBUS_CMD_PING == command) {
+		} else if (command.equals("SBUS_CMD_PING")) {
 			this.logger_.trace("createStorletTask: " + "received Ping command");
 			ResObj = createPingTask(dtg);
-		} else if (eStorletCommand.SBUS_CMD_CANCEL == command) {
+		} else if (command.equals("SBUS_CMD_CANCEL")) {
 			this.logger_.trace("createStorletTask: "
 					+ "received Cancel command");
 			ResObj = createCancelTask(dtg);
@@ -88,10 +75,7 @@ public class STaskFactory {
 		return ResObj;
 	}
 
-	/*------------------------------------------------------------------------
-	 * createExecutionTask
-	 * */
-	private SExecutionTask createExecutionTask(SBusDatagram dtg)
+	private SExecutionTask createExecutionTask(ServerSBusInDatagram dtg)
 			throws StorletException {
 		ArrayList<StorletInputStream> inStreams = new ArrayList<StorletInputStream>();
 		ArrayList<StorletOutputStream> outStreams = new ArrayList<StorletOutputStream>();
@@ -148,10 +132,7 @@ public class STaskFactory {
 				dtg.getExecParams(), storletLogger, logger_);
 	}
 
-	/*------------------------------------------------------------------------
-	 * createDescriptorTask
-	 * */
-	private SDescriptorTask createDescriptorTask(SBusDatagram dtg) {
+	private SDescriptorTask createDescriptorTask(ServerSBusInDatagram dtg) {
 		SDescriptorTask ResObj = null;
 		String strKey = "";
 		boolean bStatus = true;
@@ -203,10 +184,7 @@ public class STaskFactory {
 		return ResObj;
 	}
 
-	/*------------------------------------------------------------------------
-	 * createCancelTask
-	 * */
-	private SCancelTask createCancelTask(SBusDatagram dtg) {
+	private SCancelTask createCancelTask(ServerSBusInDatagram dtg) {
 		SCancelTask ResObj = null;
 		String taskId = dtg.getTaskId();
 		boolean bStatus = true;
@@ -221,10 +199,10 @@ public class STaskFactory {
 
 		if (bStatus) {
 			String strFDType = dtg.getFilesMetadata()[0].get("type");
-			if (!strFDType.equals("SBUS_FD_OUTPUT_OBJECT")) {
+			if (!strFDType.equals("SBUS_FD_SERVICE_OUT")) {
 				this.logger_.error("createCancelTask: "
 						+ "Wrong fd type for Cancel command. "
-						+ "Expected SBUS_FD_OUTPUT_OBJECT " + " got "
+						+ "Expected SBUS_FD_SERVICE_OUT " + " got "
 						+ strFDType);
 				bStatus = false;
 			}
@@ -242,10 +220,7 @@ public class STaskFactory {
 		return ResObj;
 	}
 
-	/*------------------------------------------------------------------------
-	 * createPingTask
-	 * */
-	private SPingTask createPingTask(SBusDatagram dtg) {
+	private SPingTask createPingTask(ServerSBusInDatagram dtg) {
 		SPingTask ResObj = null;
 		boolean bStatus = true;
 
@@ -259,10 +234,10 @@ public class STaskFactory {
 
 		if (bStatus) {
 			String strFDType = dtg.getFilesMetadata()[0].get("type");
-			if (!strFDType.equals("SBUS_FD_OUTPUT_OBJECT")) {
+			if (!strFDType.equals("SBUS_FD_SERVICE_OUT")) {
 				this.logger_.error("createPingTask: "
 						+ "Wrong fd type for Ping command. "
-						+ "Expected SBUS_FD_OUTPUT_OBJECT " + " got "
+						+ "Expected SBUS_FD_SERVICE_OUT " + " got "
 						+ strFDType);
 				bStatus = false;
 			}
@@ -280,4 +255,3 @@ public class STaskFactory {
 		return ResObj;
 	}
 }
-/* ============================== END OF FILE =============================== */

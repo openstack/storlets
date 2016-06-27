@@ -53,7 +53,10 @@
 
 - name: Copy Init Container Script
   copy:
-    src: init_container.sh
+    src: "{{item}}"
     dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
+  with_items:
+    - init_container.sh
+    - logback.xml
 
 - include: create_layer.yml dockerfile_prefix={{ base_os_image }}_jre8_storlets layer_suffix=jre8_storlets
