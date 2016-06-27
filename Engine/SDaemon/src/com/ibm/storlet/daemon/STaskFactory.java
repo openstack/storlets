@@ -18,6 +18,7 @@
 package com.ibm.storlet.daemon;
 
 import java.io.FileOutputStream;
+import java.io.FileDescriptor;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -81,27 +82,25 @@ public class STaskFactory {
 		ArrayList<StorletOutputStream> outStreams = new ArrayList<StorletOutputStream>();
 		StorletLogger storletLogger = null;
 		int nFiles = dtg.getNFiles();
-		HashMap<String, String>[] FilesMD = dtg.getFilesMetadata();
+		HashMap<String, HashMap<String, String>>[] FilesMD = dtg.getFilesMetadata();
 		this.logger_.trace("StorletTask: Got " + nFiles + " fds");
 		OutputStream taskIdOut = null;
 		for (int i = 0; i < nFiles; ++i) {
-			String strFDtype = FilesMD[i].get("type");
-			// type is a metadata field used internally, and it should not
-			// make it further to the Storlet invocation
-
-			FilesMD[i].remove("type");
+			HashMap<String, String> storletsMetadata = FilesMD[i].get("storlets");
+			HashMap<String, String> storageMetadata = FilesMD[i].get("storage");
+			FileDescriptor fd = dtg.getFiles()[i];
+			String strFDtype = storletsMetadata.get("type");
 			if (strFDtype.equals("SBUS_FD_OUTPUT_TASK_ID")) {
-				taskIdOut = new FileOutputStream(dtg.getFiles()[i]);
+				taskIdOut = new FileOutputStream(fd);
 			} else if (strFDtype.equals("SBUS_FD_INPUT_OBJECT")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_INPUT_OBJECT");
-				inStreams.add(new StorletInputStream(dtg.getFiles()[i], dtg
-						.getFilesMetadata()[i]));
+				inStreams.add(new StorletInputStream(fd, storageMetadata));
 			} else if (strFDtype.equals("SBUS_FD_OUTPUT_OBJECT")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_OUTPUT_OBJECT");
 				String strNextFDtype = dtg.getFilesMetadata()[i + 1]
-						.get("type");
+						.get("storlets").get("type");
 				if (!strNextFDtype.equals("SBUS_FD_OUTPUT_OBJECT_METADATA")) {
 					this.logger_.error("StorletTask: fd " + (i + 1)
 							+ " is not SBUS_FD_OUTPUT_OBJECT_METADATA "
@@ -110,20 +109,20 @@ public class STaskFactory {
 					this.logger_.trace("createStorletTask: fd " + (i + 1)
 							+ " is of type SBUS_FD_OUTPUT_OBJECT_METADATA");
 				}
-				outStreams.add(new StorletObjectOutputStream(dtg.getFiles()[i],
-						dtg.getFilesMetadata()[i], dtg.getFiles()[i + 1]));
+				outStreams.add(new StorletObjectOutputStream(fd, storageMetadata,
+					       dtg.getFiles()[i + 1]));
 				++i;
 			} else if (strFDtype.equals("SBUS_FD_LOGGER")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_LOGGER");
-				storletLogger = new StorletLogger(dtg.getFiles()[i]);
+				storletLogger = new StorletLogger(fd);
 			} else if (strFDtype.equals("SBUS_FD_OUTPUT_CONTAINER")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_OUTPUT_CONTAINER");
 				this.logger_.trace("createStorletTask: md is"
-						+ dtg.getFilesMetadata()[i].toString());
-				outStreams.add(new StorletContainerHandle(dtg.getFiles()[i],
-						dtg.getFilesMetadata()[i], requestsTable_));
+						+ storageMetadata.toString());
+				outStreams.add(new StorletContainerHandle(fd,
+					       storageMetadata, requestsTable_));
 			} else
 				this.logger_.error("createStorletTask: fd " + i
 						+ " is of unknown type " + strFDtype);
@@ -158,8 +157,7 @@ public class STaskFactory {
 		if (bStatus) {
 			// type is a metadata field used internally, and it should not
 			// make it further to the Storlet invocation
-			String strFDType = dtg.getFilesMetadata()[0].get("type");
-			dtg.getFilesMetadata()[0].remove("type");
+			String strFDType = dtg.getFilesMetadata()[0].get("storlets").get("type");
 			if (!strFDType.equals("SBUS_FD_OUTPUT_OBJECT")) {
 				this.logger_.error("createDescriptorTask: "
 						+ "Wrong fd type for descriptor command. "
@@ -173,7 +171,7 @@ public class STaskFactory {
 
 		if (bStatus) {
 			StorletObjectOutputStream objStream = new StorletObjectOutputStream(
-					dtg.getFiles()[0], dtg.getFilesMetadata()[0],
+					dtg.getFiles()[0], dtg.getFilesMetadata()[0].get("storage"),
 					dtg.getFiles()[1]);
 			// parse descriptor stuff
 			this.logger_.trace("createStorletTask: "
@@ -198,7 +196,7 @@ public class STaskFactory {
 		this.logger_.trace("createCancelTask: #FDs is good");
 
 		if (bStatus) {
-			String strFDType = dtg.getFilesMetadata()[0].get("type");
+			String strFDType = dtg.getFilesMetadata()[0].get("storlets").get("type");
 			if (!strFDType.equals("SBUS_FD_SERVICE_OUT")) {
 				this.logger_.error("createCancelTask: "
 						+ "Wrong fd type for Cancel command. "
@@ -233,7 +231,7 @@ public class STaskFactory {
 		this.logger_.trace("createPingTask: #FDs is good");
 
 		if (bStatus) {
-			String strFDType = dtg.getFilesMetadata()[0].get("type");
+			String strFDType = dtg.getFilesMetadata()[0].get("storlets").get("type");
 			if (!strFDType.equals("SBUS_FD_SERVICE_OUT")) {
 				this.logger_.error("createPingTask: "
 						+ "Wrong fd type for Ping command. "

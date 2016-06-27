@@ -16,12 +16,24 @@
 - name: copy python facade tar locally
   copy: src={{ SBusPythonFacade_dir }}/dist/{{ SBusPythonFacade_egg_dist }} dest=/tmp
 
+- name: test SBusPythonFacade state
+  stat: path="/{{python_dist_packages_dir}}/SBusPythonFacade"
+  register: st
+
+- name: remove python facade if exists
+  file: path="/{{python_dist_packages_dir}}/SBusPythonFacade" state=absent
+  when: st.stat.exists
+
+- name: test SBusPythonFacade egg state
+  stat: path="/{{python_dist_packages_dir}}/SBusPythonFacade-1.0-py2.7.egg-info"
+  register: st
+
+- name: remove python facade if exists
+  file: path="/{{python_dist_packages_dir}}/SBusPythonFacade-1.0-py2.7.egg-info" state=absent
+  when: st.stat.exists
+
 - name: unarchive python facade
-  unarchive: owner=root
-             group=root
-             mode=0755
-             dest=/
-             src=/tmp/{{ SBusPythonFacade_egg_dist }}
+  unarchive: owner=root group=root mode=0755 dest=/ src=/tmp/{{ SBusPythonFacade_egg_dist }}
 
 - name: delete python facade tar local copy
   file: path=/tmp/{{ SBusPythonFacade_egg_dist }} state=absent
@@ -32,12 +44,32 @@
 - name: copy swift middleware tar locally
   copy: src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }} dest=/tmp
 
+- name: test swift_middleware state
+  stat: path="/{{python_dist_packages_dir}}/swift_middleware"
+  register: st
+
+- name: remove python facade if exists
+  file: path="/{{python_dist_packages_dir}}/swift_middleware" state=absent
+  when: st.stat.exists
+
+- name: test swift_gateway state
+  stat: path="/{{python_dist_packages_dir}}/swift_gateway"
+  register: st
+
+- name: remove python facade if exists
+  file: path="/{{python_dist_packages_dir}}/swift_gateway" state=absent
+  when: st.stat.exists
+
+- name: test swift egg state
+  stat: path="/{{python_dist_packages_dir}}/storlets-1.0-py2.7.egg-info"
+  register: st
+
+- name: remove python facade if exists
+  file: path="/{{python_dist_packages_dir}}/storlets-1.0-py2.7.egg-info" state=absent
+  when: st.stat.exists
+
 - name: unarchive swift middleware
-  unarchive: owner=root
-             group=root
-             mode=0755
-             dest=/
-             src=/tmp/{{ swift_middleware_egg_dist }}
+  unarchive: owner=root group=root mode=0755 dest=/ src=/tmp/{{ swift_middleware_egg_dist }}
 
 - name: delete swift middleware tar local copy
   file: path=/tmp/{{ swift_middleware_egg_dist }} state=absent

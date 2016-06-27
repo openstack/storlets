@@ -17,6 +17,7 @@ import os
 import random
 import string
 from swiftclient import client as c
+from nose.plugins.attrib import attr
 from __init__ import StorletFunctionalTest
 
 
@@ -114,6 +115,7 @@ class TestIdentityStorlet(StorletFunctionalTest):
             self.assertEqual(resp_headers['X-Object-Meta-Testkey'.lower()],
                              random_md)
 
+    @attr('slow')
     def test_put_1GB_file(self):
         GBFile = open('/tmp/1GB_file', 'w')
         for _ in range(128):

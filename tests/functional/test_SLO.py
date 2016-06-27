@@ -18,6 +18,7 @@ import os
 import random
 import string
 from swiftclient import client as c
+from nose.plugins.attrib import attr
 from __init__ import StorletFunctionalTest
 
 
@@ -56,7 +57,6 @@ class TestSLO(StorletFunctionalTest):
         self.additional_headers = {}
         super(TestSLO, self).setUp()
 
-        create_container(self.url, self.token, 'myobjects')
         create_container(self.url, self.token, 'container1')
         create_container(self.url, self.token, 'container2')
         create_container(self.url, self.token, 'container3')
@@ -143,6 +143,7 @@ class TestSLO(StorletFunctionalTest):
                         f.close()
                     self.ssertEqual(chunk, aux_content)
 
+    @attr('slow')
     def test_get_SLO(self):
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)

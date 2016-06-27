@@ -1,11 +1,29 @@
 #!/bin/bash
 
+if [ "$#" -ne 1 ]; then
+    echo "Usage: .functests <flavour>"
+    echo "flavour = jenkins | dev"
+    exit 1
+fi
+
+FLAVOR="$1"
+if [ "$FLAVOR" != "jenkins" ] && [ "$FLAVOR" != "dev" ]; then
+    echo "flavour must be either \"jenkins\" or \"dev\""
+    echo "dev flavor skips long running tests"
+    exit 1
+fi
+shift
+
 SRC_DIR=$(python -c "import os; print os.path.dirname(os.path.realpath('$0'))")
 cd ${SRC_DIR}/tests/functional
-nosetests --exe -v $@
+nosetests --exe -v -a '!slow' $@
 rvalue=$?
-cd -
+if [ "$FLAVOR" == "jenkins" ]; then
+    nosetests --exe -v -a 'slow' $@
+    let rvalue="$rvalue+$?"
+fi
 
+cd -
 # dump log into VIRTUAL_ENV_DIR when this func test call via tox
 if [ ! -z "${VIRTUAL_ENV+x}" ]; then
    log_dir="${VIRTUAL_ENV}/log"

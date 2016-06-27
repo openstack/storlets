@@ -68,7 +68,12 @@ The functional tests can be invoked using:
 
 ::
 
-    ./.functests
+    ./.functests dev
+
+.. note::
+
+  To run the entire set of functional tests, which takes longer run:
+  ./.functests jenkins
 
 from the repo root.
 

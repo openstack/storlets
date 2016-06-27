@@ -60,7 +60,8 @@ class ClientSBusOutDatagram(object):
 
     @staticmethod
     def create_service_datagram(command, outfd, params=None, task_id=None):
-        md = [{'type': SBUS_FD_SERVICE_OUT}]
+        md = [{'storlets': {'type': SBUS_FD_SERVICE_OUT},
+              'storage': {}}]
         fds = [outfd]
         return ClientSBusOutDatagram(command, fds, md, params, task_id)
 
@@ -131,7 +132,7 @@ class ServerSBusInDatagram(object):
 
     def get_service_out_fd(self):
         for i in xrange(len(self._md)):
-            if self._md[i]['type'] == SBUS_FD_SERVICE_OUT:
+            if self._md[i]['storlets']['type'] == SBUS_FD_SERVICE_OUT:
                 return self._fds[i]
         return None
 

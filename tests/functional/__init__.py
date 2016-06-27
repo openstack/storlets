@@ -17,6 +17,7 @@ import unittest
 from common.cluster_config_parser import ClusterConfig
 from common.utils import storlet_get_auth, deploy_storlet,\
     put_local_file
+from swiftclient import client as swiftclient
 
 CONFIG_FILE = '../../cluster_config.json'
 PATH_TO_STORLETS = '../../StorletSamples'
@@ -33,6 +34,15 @@ class StorletBaseFunctionalTest(unittest.TestCase):
 
 
 class StorletFunctionalTest(StorletBaseFunctionalTest):
+
+    def create_container(self):
+        response = dict()
+        swiftclient.put_container(self.url, self.token,
+                                  self.container, headers=None,
+                                  response_dict=response)
+        status = response.get('status')
+        assert (status >= 200 or status < 300)
+
     def setUp(self):
         super(StorletFunctionalTest, self).setUp()
         self.url, self.token = storlet_get_auth(self.conf)
@@ -47,6 +57,7 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
         deploy_storlet(self.url, self.token,
                        storlet, self.storlet_main,
                        self.deps)
+        self.create_container()
         if self.storlet_file:
             put_local_file(self.url, self.token,
                            self.container,

@@ -561,4 +561,4 @@ Step 2: Run the functional tests
 ::
 
     cd $HOME/storlets
-    ./.functests
+    ./.functests dev

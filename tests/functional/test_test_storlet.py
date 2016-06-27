@@ -15,6 +15,7 @@ Limitations under the License.
 
 import threading
 from swiftclient import client as c
+from nose.plugins.attrib import attr
 from __init__ import StorletFunctionalTest
 
 
@@ -91,6 +92,7 @@ class TestTestStorlet(StorletFunctionalTest):
     def test_crash(self):
         self.invokeTestStorlet("crash")
 
+    @attr('slow')
     def test_hold(self):
         self.invokeTestStorlet("hold")
 

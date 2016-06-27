@@ -47,8 +47,16 @@ public class ServerSBusInDatagram {
 	private FileDescriptor[] fds;
 	private String command;
 	private HashMap<String, String> params;
-	private HashMap<String, String>[] metadata;
+	private HashMap<String, HashMap<String, String>>[] metadata;
 	private String taskID;
+
+	private void populateMetadata(HashMap<String, String> dest, JSONObject source) throws ParseException {
+		for (Object key : source.keySet()) {
+			String strKey = (String)key;
+			String strVal = (String)source.get(key);
+			dest.put(strKey, strVal);
+		}
+	}
 
 	/**
 	 * Parses a raw message coming from the wire.
@@ -70,9 +78,14 @@ public class ServerSBusInDatagram {
 	 * descriptors array:
 	 * [
 	 *     {
-	 *         "type": "the fd type encoded as string",  // Mandatory
-	 *         "metadata key1": "metadata value 1",
-	 *         ...
+	 *         "storlets": {
+	 *             "type": "the fd type encoded as string",  // Mandatory
+	 *             ... // Additional optional storlets metadata
+	 *         },
+	 *         "storage": {
+	 *             "metadata key1": "metadata value 1",
+	 *             ...
+	 *        }
 	 *     },
 	 *     ...
 	 * ]
@@ -101,18 +114,24 @@ public class ServerSBusInDatagram {
 		}
 
 		String strMD = msg.getMetadata();
-                this.metadata = (HashMap<String, String>[]) new HashMap[getNFiles()];
+                this.metadata = (HashMap<String, HashMap<String, String>>[])new HashMap[getNFiles()];
 		JSONArray jsonarray = (JSONArray)(new JSONParser().parse(strMD));
 		Iterator it = jsonarray.iterator();
 		int i=0;
 		while (it.hasNext()) {
+			this.metadata[i] = new HashMap<String, HashMap<String, String>>();
+			HashMap<String, String> storletsMetadata = new HashMap<String, String>();
+			HashMap<String, String> storageMetadata = new HashMap<String, String>();
 			JSONObject jsonobject = (JSONObject)it.next();
-			this.metadata[i] = new HashMap<String, String>();
-			for (Object key : jsonobject.keySet()) {
-				String strKey = (String)key;
-				String strVal = (String)jsonobject.get(key);
-				this.metadata[i].put(strKey, strVal);
+			if (jsonobject.containsKey("storage")) {
+				populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
 			}
+			if (!jsonobject.containsKey("storlets")) {
+			} else {
+				populateMetadata(storletsMetadata, (JSONObject)jsonobject.get("storlets"));
+			}
+			this.metadata[i].put("storage", storageMetadata);
+			this.metadata[i].put("storlets", storletsMetadata);
 			i++;
 		}
 	}
@@ -137,7 +156,7 @@ public class ServerSBusInDatagram {
 		return taskID;
 	}
 
-	public HashMap<String, String>[] getFilesMetadata() {
+	public HashMap<String, HashMap<String, String>>[] getFilesMetadata() {
 		return metadata;
 	}
 }
