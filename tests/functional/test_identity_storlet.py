@@ -18,6 +18,7 @@ import random
 import string
 from swiftclient import client as c
 from nose.plugins.attrib import attr
+from contextlib import contextmanager
 from __init__ import StorletFunctionalTest
 
 
@@ -115,26 +116,35 @@ class TestIdentityStorlet(StorletFunctionalTest):
             self.assertEqual(resp_headers['X-Object-Meta-Testkey'.lower()],
                              random_md)
 
+    @contextmanager
+    def _filecontext(self, path):
+        yield
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+
     @attr('slow')
     def test_put_1GB_file(self):
-        GBFile = open('/tmp/1GB_file', 'w')
-        for _ in range(128):
-            uploaded_content = ''.join('1' for _ in range(8 * 1024 * 1024))
-            GBFile.write(uploaded_content)
-        GBFile.close()
+        gf_file_path = '/tmp/1GB_file'
+        with self._filecontext(gf_file_path):
+            GBFile = open('/tmp/1GB_file', 'w')
+            for _ in range(128):
+                uploaded_content = ''.join('1' for _ in range(8 * 1024 * 1024))
+                GBFile.write(uploaded_content)
+            GBFile.close()
 
-        headers = {'X-Run-Storlet': self.storlet_name}
-        headers.update(self.additional_headers)
-        GBFile = open('/tmp/1GB_file', 'r')
-        response = dict()
-        c.put_object(self.url, self.token,
-                     self.container, '1GBFile', GBFile,
-                     1024 * 1024 * 1024, None, None,
-                     "application/octet-stream",
-                     headers, None, None, None, response)
-        status = response.get('status')
-        self.assertTrue(status in [200, 201])
-        os.remove('/tmp/1GB_file')
+            headers = {'X-Run-Storlet': self.storlet_name}
+            headers.update(self.additional_headers)
+            GBFile = open('/tmp/1GB_file', 'r')
+            response = dict()
+            c.put_object(self.url, self.token,
+                         self.container, '1GBFile', GBFile,
+                         1024 * 1024 * 1024, None, None,
+                         "application/octet-stream",
+                         headers, None, None, None, response)
+            status = response.get('status')
+            self.assertTrue(status in [200, 201])
 
     def test_put(self):
         self.invoke_storlet('PUT')
@@ -161,6 +171,31 @@ class TestIdentityStorlet(StorletFunctionalTest):
         self.invoke_storlet('GET', {'execute': 'true'})
         self.invoke_storlet('GET', {'execute': 'true'},
                             header_parameters=True)
+
+    def _test_get_range(self, start, end, expected):
+        srange = 'bytes=%d-%d' % (start, end)
+        headers = {'X-Run-Storlet': self.storlet_name,
+                   'X-Storlet-Range': srange}
+        junk, content = c.get_object(self.url, self.token,
+                                     'myobjects',
+                                     'small',
+                                     headers=headers,
+                                     response_dict=dict())
+        self.assertEqual(content, expected)
+
+    def test_get_ranges(self):
+        response = dict()
+        c.put_object(self.url, self.token,
+                     self.container, 'small',
+                     '0123456789abcd',
+                     response_dict=response)
+
+        self._test_get_range(0, 0, '0')
+        self._test_get_range(0, 10, '0123456789a')
+        self._test_get_range(2, 10, '23456789a')
+        self._test_get_range(10, 13, 'abcd')
+        self._test_get_range(10, 14, 'abcd')
+        self._test_get_range(10, 15, 'abcd')
 
 
 class TestIdentityStorletOnProxy(TestIdentityStorlet):

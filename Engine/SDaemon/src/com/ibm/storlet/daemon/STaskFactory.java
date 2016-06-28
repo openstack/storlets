@@ -20,6 +20,7 @@ package com.ibm.storlet.daemon;
 import java.io.FileOutputStream;
 import java.io.FileDescriptor;
 import java.io.OutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,7 +32,7 @@ import com.ibm.storlet.sbus.ServerSBusInDatagram;
 
 /*----------------------------------------------------------------------------
  * StorletTaskFactory
- * 
+ *
  * Analyze the request datagram. Setup the obtained file descriptors.
  * Prepare the storlet execution environment
  * */
@@ -95,7 +96,25 @@ public class STaskFactory {
 			} else if (strFDtype.equals("SBUS_FD_INPUT_OBJECT")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_INPUT_OBJECT");
-				inStreams.add(new StorletInputStream(fd, storageMetadata));
+				String start = storletsMetadata.get("start");
+				String end = storletsMetadata.get("end");
+				if (start != null && end != null) {
+					RangeStorletInputStream rangeStream;
+					try {
+						rangeStream = new RangeStorletInputStream(
+						fd,
+						storageMetadata,
+						Long.parseLong(start),
+						Long.parseLong(end));
+					} catch (IOException e) {
+						this.logger_.error("Got start="+start+" end="+end);
+						this.logger_.error(e.toString(), e);
+						throw new StorletException(e.toString());
+					}
+					inStreams.add((StorletInputStream)rangeStream);
+				} else {
+					inStreams.add(new StorletInputStream(fd, storageMetadata));
+				}
 			} else if (strFDtype.equals("SBUS_FD_OUTPUT_OBJECT")) {
 				this.logger_.trace("createStorletTask: fd " + i
 						+ " is of type SBUS_FD_OUTPUT_OBJECT");

@@ -87,6 +87,12 @@ class ClientSBusOutDatagram(object):
     def serialized_md(self):
         return json.dumps(self._md)
 
+    def __str__(self):
+        return 'num_fds=%s, md=%s, cmd_params=%s' % (
+            self.num_fds,
+            str(self.serialized_md),
+            str(self.serialized_cmd_params))
+
 
 class ServerSBusInDatagram(object):
     """De-Serializes a command coming form the wire.

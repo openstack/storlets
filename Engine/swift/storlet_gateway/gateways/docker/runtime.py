@@ -531,6 +531,11 @@ class StorletInvocationProtocol(object):
         if self.srequest.user_metadata:
             for key, val in self.srequest.user_metadata.iteritems():
                 input_fd_metadata.set_storage_metadata_item(key, val)
+        if self.srequest.start and self.srequest.end:
+            input_fd_metadata.set_storlets_metadata_item('start',
+                                                         self.srequest.start)
+            input_fd_metadata.set_storlets_metadata_item('end',
+                                                         self.srequest.end)
         return [input_fd_metadata.md,
                 RemoteFDMetadata({'type': SBUS_FD_OUTPUT_TASK_ID}).md,
                 RemoteFDMetadata({'type': SBUS_FD_OUTPUT_OBJECT}).md,

@@ -67,6 +67,13 @@ class StorletObjectHandler(StorletBaseHandler):
         """
         self.logger.debug('GET. Run storlet')
 
+        # The proxy may add a Range header in the case
+        # where the execution is to be done on proxy only
+        # (and X-Storlet-Range header exists)
+        # Hence we allow having a Range header ONLY
+        # if there is also X-Storlet-Range
+        # Otherwise, running a Storlet together with
+        # The HTTP Range header is not allowed
         if self.is_range_request and not self.is_storlet_range_request:
             raise HTTPRequestedRangeNotSatisfiable(
                 'Storlet execution with range header is not supported',
@@ -79,10 +86,10 @@ class StorletObjectHandler(StorletBaseHandler):
 
         # TODO(takashi): not sure manifest file should not be run with storlet
         not_runnable = any(
-            [self.is_storlet_range_request, self.is_slo_get_request,
-             self.conf['storlet_execute_on_proxy_only'],
-             self.is_slo_response(orig_resp),
-             self.has_run_on_proxy_header])
+            [self.execute_on_proxy,
+             self.execute_range_on_proxy,
+             self.is_slo_get_request,
+             self.is_slo_response(orig_resp)])
 
         if not_runnable:
             # Storlet must be invoked on proxy as it is:

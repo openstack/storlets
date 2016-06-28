@@ -40,6 +40,34 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
 
+    def test_init_with_range(self):
+        storlet_id = 'Storlet-1.0.jar'
+        params = {}
+        metadata = {}
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_range': 'bytes=1-6'}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     iter(StringIO()), options=options)
+
+        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
+        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual(None, dsreq.start)
+        self.assertEqual(None, dsreq.end)
+
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_range': 'bytes=1-6'}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     None, 0, options=options)
+
+        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
+        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual('1', dsreq.start)
+        self.assertEqual('6', dsreq.end)
+
 
 class TestStorletGatewayDocker(unittest.TestCase):
 

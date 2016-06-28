@@ -74,9 +74,9 @@ class StorletProxyHandler(StorletBaseHandler):
         # SLO / proxy only case:
         # storlet to be invoked now at proxy side:
         runnable = any(
-            [self.is_storlet_range_request, self.is_slo_response(resp),
-             self.conf['storlet_execute_on_proxy_only'],
-             self.has_run_on_proxy_header])
+            [self.execute_on_proxy,
+             self.execute_range_on_proxy,
+             self.is_slo_response(resp)])
         return runnable
 
     @property
@@ -201,7 +201,16 @@ class StorletProxyHandler(StorletBaseHandler):
         params = self.verify_access_to_storlet()
         self.augment_storlet_request(params)
 
-        if self.is_storlet_range_request:
+        # Range requests:
+        # Range requests are not allowed with storlet invocation.
+        # To run a storlet on a selected input range use the X-Storlet-Range
+        # header.
+        # If the range request is to be executed on the proxy we
+        # create an HTTP Range request based on X-Storlet-Range
+        # and let the request continue so that we get the required
+        # range as input to the storlet that would get executed on
+        # the proxy.
+        if self.execute_range_on_proxy:
             self.request.headers['Range'] = \
                 self.request.headers['X-Storlet-Range']
 

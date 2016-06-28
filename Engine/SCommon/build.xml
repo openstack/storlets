@@ -21,36 +21,36 @@
 
 	<target name="java">
 		<mkdir dir="bin" />
-		<javac srcdir="src"	destdir="bin" includeantruntime="false">
-		    <classpath>
-			    <pathelement 
-			    	path="../SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"/>
-		    	<pathelement 
-		    	    path="../dependencies/json_simple-1.1.jar"/>
-		    	<pathelement 
-		    	    path="../dependencies/slf4j-api-1.7.7.jar"/>
-		    	<pathelement 
-		    	    path="../dependencies/logback-classic-1.1.2.jar"/>
-		    	<pathelement 
-		    	    path="../dependencies/logback-core-1.1.2.jar"/>
-		    	<pathelement path="."/>
+		<javac srcdir="src" destdir="bin" includeantruntime="false">
+			<classpath>
+				<pathelement path="../SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"/>
+				<pathelement path="../dependencies/json_simple-1.1.jar"/>
+				<pathelement path="../dependencies/slf4j-api-1.7.7.jar"/>
+				<pathelement path="../dependencies/logback-classic-1.1.2.jar"/>
+				<pathelement path="../dependencies/logback-core-1.1.2.jar"/>
+				<pathelement path="."/>
 			</classpath>
 		</javac>
 	</target>
 
 	<target name="jar" depends="java">
-        <jar destfile="SCommon.jar" 
-             basedir="bin">
-            <manifest>
-                <attribute 
-                    name="Main-Class" 
-                    value="com.ibm.storlet.daemon.IStorlet" />
-            </manifest>
-        </jar>
-        <move file="SCommon.jar" todir="bin/" />
-    </target>
+		<jar destfile="SCommon.jar" basedir="bin">
+			<manifest>
+				<attribute name="Main-Class" value="com.ibm.storlet.daemon.IStorlet" />
+			</manifest>
+		</jar>
+		<move file="SCommon.jar" todir="bin/" />
+	</target>
 
-	<target name="build" depends="clean, jar">
+	<target name="test">
+		<javac srcdir="test" destdir="bin" includeantruntime="false">
+			<classpath>
+				<pathelement path="."/>
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="build" depends="clean, jar, test">
 	</target>
 
 </project>

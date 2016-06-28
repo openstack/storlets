@@ -146,6 +146,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             req = Request.blank(
                 target, environ={'REQUEST_METHOD': 'GET'},
                 headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                         'X-Storlet-Run-On-Proxy': '',
                          'X-Storlet-Range': req_range})
             app = self.get_app(self.app, self.conf)
             resp = app(req.environ, self.start_response)
@@ -160,6 +161,27 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             raw_req = self.app.get_calls('GET', target)[0]
             for key in ['Range', 'X-Storlet-Range']:
                 self.assertEqual(raw_req[2][key], req_range)
+
+    def test_GET_with_storlets_and_object_storlet_range(self):
+        # Create a single range request that needs to be
+        # processed by the object handler
+        target = '/v1/AUTH_a/c/o'
+        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.app.register('GET', storlet, HTTPOk, body='jar binary')
+
+        with storlet_enabled():
+            req_range = 'bytes=1-6'
+            req = Request.blank(
+                target, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                         'X-Storlet-Range': req_range})
+            app = self.get_app(self.app, self.conf)
+            resp = app(req.environ, self.start_response)
+            # We assert that nothing actually happens
+            # by the proxy handler
+            self.assertEqual('200 OK', self.got_statuses[-1])
+            self.assertEqual(resp, ['FAKE APP'])
 
     def test_GET_slo_without_storlets(self):
         target = '/v1/AUTH_a/c/slo_manifest'

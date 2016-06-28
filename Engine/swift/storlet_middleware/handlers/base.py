@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import urllib
-from swift.common.swob import HTTPBadRequest, Response
+from swift.common.swob import HTTPBadRequest, Response, Range
 
 
 class NotStorletRequest(Exception):
@@ -136,7 +136,18 @@ class StorletBaseHandler(object):
         return 'Range' in self.request.headers
 
     @property
-    def has_run_on_proxy_header(self):
+    def is_storlet_range_request(self):
+        return 'X-Storlet-Range' in self.request.headers
+
+    @property
+    def is_storlet_multiple_range_request(self):
+        if not self.is_storlet_range_request:
+            return False
+
+        r = self.request.headers['X-Storlet-Range']
+        return len(Range(r).ranges) > 1
+
+    def _has_run_on_proxy_header(self):
         """
         Check whether there is a header mandating storlet execution on proxy
 
@@ -150,8 +161,14 @@ class StorletBaseHandler(object):
         return False
 
     @property
-    def is_storlet_range_request(self):
-        return 'X-Storlet-Range' in self.request.headers
+    def execute_on_proxy(self):
+        return (self._has_run_on_proxy_header() or
+                self.conf['storlet_execute_on_proxy_only'])
+
+    @property
+    def execute_range_on_proxy(self):
+        return (self.is_storlet_multiple_range_request or
+                (self.is_storlet_range_request and self.execute_on_proxy))
 
     def is_slo_response(self, resp):
         """
@@ -220,6 +237,9 @@ class StorletBaseHandler(object):
             new_headers.pop('Transfer-Encoding')
 
         # Range response(206) should be replaced by 200
+        # If the range is being processed on the object node
+        # then we will get 200 as the response will not have a
+        # range iter.
         if 'Content-Range' in resp.headers:
             new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
             new_headers.pop('Content-Range')

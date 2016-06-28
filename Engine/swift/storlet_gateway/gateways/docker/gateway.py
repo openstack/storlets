@@ -18,6 +18,7 @@ import shutil
 
 from swift.common.internal_client import InternalClient as ic
 from swift.common.utils import config_true_value
+from swift.common.swob import Range
 from storlet_gateway.common.exceptions import StorletConfigError
 from storlet_gateway.common.stob import StorletRequest
 from storlet_gateway.gateways.base import StorletGatewayBase
@@ -70,6 +71,26 @@ class DockerStorletRequest(StorletRequest):
         self.dependencies = [x.strip() for x
                              in self.options['storlet_dependency'].split(',')
                              if x.strip()]
+
+        self.start = self.end = None
+        srange = self.options.get('storlet_range')
+        # TODO(eranr): The below is a hack to make sure we
+        # do not add the range to the request in case we run
+        # on the proxy. If the range exists it will make its
+        # way to the storlet side and there will be an attempt
+        # to seek on it. A way to know that we are on the object
+        # server is that we have a fd. We need to either have
+        # a derived request class for object or have some
+        # other field telling us whether to use the range or not.
+        if srange and data_fd is not None:
+            r = Range(srange)
+            # We are interested in extracting only a single range
+            # if there is more then one range the code path
+            # that deals with it is outside of the storlet code
+            # e.g. not the case where we execute locally on the
+            # object node and need to filter the range ourselves.
+            self.start = str(r.ranges[0][0])
+            self.end = str(r.ranges[0][1])
 
     @property
     def generate_log(self):
@@ -127,6 +148,23 @@ class StorletGatewayDocker(StorletGatewayBase):
                 short_key = key[len('X-Object-Meta-'):]
                 metadata[short_key] = headers[key]
         return metadata
+
+    def _get_storlet_invocation_data(self, req):
+        # TODO(takashi): merge the following idata into StorletRequest
+        data = dict()
+
+        for key in req.headers:
+            prefix = 'X-Storlet-'
+            if key.startswith(prefix):
+                new_key = 'storlet_' + \
+                    key[len(prefix):].lower().replace('-', '_')
+                data[new_key] = req.headers.get(key)
+
+        data['scope'] = self.account
+        if data['scope'].rfind(':') > 0:
+            data['scope'] = data['scope'][:data['scope'].rfind(':')]
+
+        return data
 
     def _build_storlet_request(self, req, sheaders, sbody_iter=None, sfd=None):
         storlet_id = req.headers.get('X-Run-Storlet')
@@ -236,23 +274,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                     key.startswith('X-Object-Meta-Storlet')):
                 del headers[key]
         return headers
-
-    def _get_storlet_invocation_data(self, req):
-        # TODO(takashi): merge the following idata into StorletRequest
-        data = dict()
-
-        for key in req.headers:
-            prefix = 'X-Storlet-'
-            if key.startswith(prefix):
-                new_key = 'storlet_' + \
-                    key[len(prefix):].lower().replace('-', '_')
-                data[new_key] = req.headers.get(key)
-
-        data['scope'] = self.account
-        if data['scope'].rfind(':') > 0:
-            data['scope'] = data['scope'][:data['scope'].rfind(':')]
-
-        return data
 
     def _upload_storlet_logs(self, slog_path, sreq):
         if sreq.generate_log:
