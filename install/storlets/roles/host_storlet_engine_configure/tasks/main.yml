@@ -14,7 +14,7 @@
 # limitations under the License.
 
 - name: create installation directory
-  shell: mkdir -p {{ engine_install_dir }} creates={{ engine_install_dir }}
+  file: path={{ engine_install_dir }} state=directory recurse=yes
 
 - name: Copy Swift middleware conf template
   template:

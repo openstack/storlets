@@ -13,9 +13,9 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- stat: path="{{ swift_install_reop_dir }}"
+- stat: path={{ swift_install_reop_dir }}
   register: inst_dir
-- command: mkdir -p {{ swift_install_reop_dir }}
+- file: path={{ swift_install_reop_dir }} state=directory recurse=yes
   when: not inst_dir.stat.exists
 
 - name: clone swift_install repo
@@ -30,8 +30,9 @@
 - name: clone openstack ansible libraries (for keystone configuration)
   git: repo=https://github.com/openstack-ansible/openstack-ansible-modules.git
        dest={{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/openstack-ansible-modules
+       version="HEAD"
 
 - name: Copy cluster_config.json to the swift install location
   copy: src="{{ playbook_dir }}/cluster_config.json" dest="{{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/cluster_config.json"
 
-- command: chmod 1777 "{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
+- file: mode=1777 path="{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"

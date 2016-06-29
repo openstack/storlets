@@ -16,8 +16,8 @@
 - name: install python facade on host
   copy: src={{ SBusPythonFacade_dir }}/dist/{{ SBusPythonFacade_egg_dist }} dest=/tmp
 
-- command: "tar -x --no-overwrite-dir --owner=root --group=root --mode=0755 --directory=/ --file=/tmp/{{ SBusPythonFacade_egg_dist }}"
-- shell: rm /tmp/{{ SBusPythonFacade_egg_dist }}
+- unarchive: owner=root group=root mode=755 dest=/ src=/tmp/{{ SBusPythonFacade_egg_dist }}
+- file: path=/tmp/{{ SBusPythonFacade_egg_dist }} state=absent
 
 - name: install sbus transport layer on host
   copy: src={{ SBusTransportLayer_dir }}/{{ sbus_so }} dest=/{{python_dist_packages_dir}} owner=root group=root mode=0755
@@ -26,8 +26,8 @@
 - name: install swift middleware on host
   copy: src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }} dest=/tmp
 
-- command: "tar -x --no-overwrite-dir --owner=root --group=root --mode=0755 --directory=/ --file=/tmp/{{ swift_middleware_egg_dist }}"
-- shell: rm /tmp/{{ swift_middleware_egg_dist }}
+- unarchive: owner=root group=root mode=755 dest=/ src=/tmp/{{ swift_middleware_egg_dist }}
+- file: path=/tmp/{{ swift_middleware_egg_dist }} state=absent
 
 - stat: path={{ lxc_device }}/scripts
   register: st

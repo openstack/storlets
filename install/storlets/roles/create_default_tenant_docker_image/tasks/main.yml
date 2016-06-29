@@ -18,8 +18,8 @@
   register: tenant_id
 
 - name: create the tenant specific docker image step 1 - create repo dir
-  file: 
-    state: directory 
+  file:
+    state: directory
     dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
     owner: root
     mode: 0755
@@ -30,7 +30,7 @@
     dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}/Dockerfile"
     owner: root
     mode: 0755
-    
+
 - name: "Build the image {{ tenant_id.stdout_lines[0] }}"
   command: "docker build -q -t {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
   args:

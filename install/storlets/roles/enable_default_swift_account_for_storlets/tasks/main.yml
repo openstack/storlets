@@ -15,8 +15,8 @@
 
 # TODO(eran): Get the enabled flag name from config file
 - name: Set account metadata in swift -- enable storlets
-  command: swift post 
-           --os-auth-url="{{ keystone_public_url }}" 
+  command: swift post
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ user_name }}"
            --os-password="{{ user_password }}"
            --os-tenant-name="{{ tenant_name }}"
@@ -25,7 +25,7 @@
 # TODO(eran): Get the log container name from config file
 - name: create the Swift log container
   command: swift post
-           --os-auth-url="{{ keystone_public_url }}" 
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ user_name }}"
            --os-password="{{ user_password }}"
            --os-tenant-name="{{ tenant_name }}"
@@ -34,7 +34,7 @@
 # TODO(eran): Get the storlet container name from config file
 - name: create the Swift storlet container
   command: swift post
-           --os-auth-url="{{ keystone_public_url }}" 
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ user_name }}"
            --os-password="{{ user_password }}"
            --os-tenant-name="{{ tenant_name }}"
@@ -43,7 +43,7 @@
 # TODO(eran): Get the dependency container name from config file
 - name: create the Swift dependency container
   command: swift post
-           --os-auth-url="{{ keystone_public_url }}" 
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ user_name }}"
            --os-password="{{ user_password }}"
            --os-tenant-name="{{ tenant_name }}"
@@ -54,7 +54,7 @@
 # Specifically note the acls given to the storlet manager
 - name: create the Swift docker_images container
   command: swift post
-           --os-auth-url="{{ keystone_public_url }}" 
+           --os-auth-url="{{ keystone_public_url }}"
            --os-username="{{ user_name }}"
            --os-password="{{ user_password }}"
            --os-tenant-name="{{ tenant_name }}"

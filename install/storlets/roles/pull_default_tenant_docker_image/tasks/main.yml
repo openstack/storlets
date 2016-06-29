@@ -16,10 +16,9 @@
 - name: Get the tenant id from Keystone
   shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ tenant_name }} | awk '{print $2}'
   register: tenant_id
-  
+
 - name: docker pull
   command: docker pull {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}
 
 - name: shutdown_container
-  shell: "/usr/bin/python {{ lxc_device }}/scripts/send_halt_cmd_to_daemon_factory.py 
-         {{ lxc_device }}/pipes/scopes/AUTH_{{ tenant_id.stdout_lines[0] }}/factory_pipe"
+  shell: "/usr/bin/python {{ lxc_device }}/scripts/send_halt_cmd_to_daemon_factory.py {{ lxc_device }}/pipes/scopes/AUTH_{{ tenant_id.stdout_lines[0] }}/factory_pipe"

@@ -16,7 +16,7 @@
 - name: mkdir srv directory
   become: yes
   become_user: root
-  command: mkdir /srv
+  file: path=/srv state=directory
   ignore_errors: yes
 
 - name: create disk file
