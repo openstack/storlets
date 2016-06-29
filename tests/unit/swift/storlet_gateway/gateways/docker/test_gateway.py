@@ -26,23 +26,12 @@ from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
 class TestDockerStorletRequest(unittest.TestCase):
 
     def test_init(self):
-        headers = {'X-Object-Meta-Storlet-Main': 'main',
-                   'X-Storlet-Key0': 'Value0',
-                   'x-storlet-key1': 'Value1',
-                   'X-Object-Meta-Storlet-Key2': 'Value2',
-                   'x-object-meta-storlet-key3': 'Value3',
-                   'X-Object-Meta-Key4': 'Value4',
-                   'x-object-meta-key5': 'Value5'}
-        params = {'Param6': 'Value6',
-                  'Param7': 'Value7'}
-        req = Request.blank('', headers=headers)
-        dsreq = DockerStorletRequest(req, params, iter(StringIO()))
+        metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+        params = {'Param1': 'Value1', 'Param2': 'Value2'}
+        dsreq = DockerStorletRequest(params, metadata, iter(StringIO()))
 
-        self.assertEqual(dsreq.generate_log, False)
-        self.assertEqual(dsreq.storlet_id, 'main')
-        self.assertEqual(dsreq.user_metadata,
-                         {'Key4': 'Value4',
-                          'Key5': 'Value5'})
+        self.assertEqual(dsreq.user_metadata, metadata)
+        self.assertEqual(dsreq.params, params)
 
 
 class TestStorletGatewayDocker(unittest.TestCase):

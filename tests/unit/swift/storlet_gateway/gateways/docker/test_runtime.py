@@ -20,7 +20,6 @@ import tempfile
 from contextlib import contextmanager
 from six import StringIO
 
-from swift.common.swob import Request
 from storlet_gateway.common.exceptions import StorletRuntimeException
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
 from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
@@ -293,8 +292,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         self.pipe_path = tempfile.mktemp()
         self.log_file = tempfile.mktemp()
 
-        storlet_request = DockerStorletRequest(
-            Request.blank('/'), {}, iter(StringIO()))
+        storlet_request = DockerStorletRequest({}, {}, iter(StringIO()))
         self.protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1)
 

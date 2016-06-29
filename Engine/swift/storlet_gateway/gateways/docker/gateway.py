@@ -31,9 +31,8 @@ CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
 """---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
-(1) The classes DockerStorletRequest. This encapsulates what goes in and comes
+(1) The class DockerStorletRequest. This encapsulates what goes in and comes
     out of the gateway
-
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
     validate_storlet_registration
     validate_dependency_registration
@@ -56,25 +55,11 @@ class DockerStorletRequest(StorletRequest):
     2. Metadata identifying the stream
     """
 
-    def _get_user_metadata(self, headers):
-        metadata = {}
-        for key in headers:
-            if key.startswith('X-Object-Meta-Storlet'):
-                pass
-            elif key.startswith('X-Object-Meta-'):
-                short_key = key[len('X-Object-Meta-'):]
-                metadata[short_key] = headers[key]
-        return metadata
-
-    def __init__(self, request, params, data_iter=None, data_fd=None):
-        # TODO(takashi): These parameters should be parsed outside gateway,
-        #                because this parsing is specific to swift
-        self.generate_log = request.headers.get('X-Storlet-Generate-Log',
-                                                False)
-        storlet_id = request.headers.get('X-Object-Meta-Storlet-Main')
-        user_metadata = self._get_user_metadata(request.headers)
+    def __init__(self, params, user_metadata, data_iter=None, data_fd=None):
+        # TODO(takashi): storlet_id is now set as None, but should be set
+        # properly after merging idata into StorletRequest
         super(DockerStorletRequest, self).__init__(
-            storlet_id, params, user_metadata, data_iter, data_fd)
+            None, params, user_metadata, data_iter, data_fd)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -119,13 +104,23 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
+    def _get_user_metadata(self, headers):
+        metadata = {}
+        for key in headers:
+            if key.startswith('X-Object-Meta-Storlet'):
+                pass
+            elif key.startswith('X-Object-Meta-'):
+                short_key = key[len('X-Object-Meta-'):]
+                metadata[short_key] = headers[key]
+        return metadata
+
     def gateway_proxy_put_copy_flow(self, sreq, req):
         self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache()
         run_time_sbox.activate_storlet_daemon(self.idata,
                                               docker_updated)
-        self._add_system_params(req.params)
+        self._add_system_params(sreq.params)
         # Clean all Storlet stuff from the request headers
         # we do not need them anymore, and they
         # may interfere with the rest of the execution.
@@ -152,18 +147,20 @@ class StorletGatewayDocker(StorletGatewayBase):
         # TODO(takashi): chunk size should be configurable
         reader = orig_req.environ['wsgi.input'].read
         body_iter = iter(lambda: reader(65536), '')
-        sreq = DockerStorletRequest(orig_req, orig_req.params,
-                                    body_iter)
+        user_metadata = self._get_user_metadata(orig_req.headers)
+        sreq = DockerStorletRequest(orig_req.params, user_metadata, body_iter)
         return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyCopyFlow(self, orig_req, src_resp):
-        sreq = DockerStorletRequest(orig_req, orig_req.params,
+        user_metadata = self._get_user_metadata(src_resp.headers)
+        sreq = DockerStorletRequest(orig_req.params, user_metadata,
                                     src_resp.app_iter)
         return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyGetFlow(self, req, orig_resp):
         # Flow for running the GET computation on the proxy
-        sreq = DockerStorletRequest(orig_resp, req.params,
+        user_metadata = self._get_user_metadata(orig_resp.headers)
+        sreq = DockerStorletRequest(req.params, user_metadata,
                                     orig_resp.app_iter)
 
         self.idata = self._get_storlet_invocation_data(req)
@@ -171,7 +168,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         docker_updated = self.update_docker_container_from_cache()
         run_time_sbox.activate_storlet_daemon(self.idata,
                                               docker_updated)
-        self._add_system_params(req.params)
+        self._add_system_params(sreq.params)
 
         slog_path = self. \
             paths.slog_path(self.idata['storlet_main_class'])
@@ -190,7 +187,8 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     def gatewayObjectGetFlow(self, req, orig_resp):
         # TODO(takashi): should check if _fp is available
-        sreq = DockerStorletRequest(orig_resp, req.params,
+        user_metadata = self._get_user_metadata(orig_resp.headers)
+        sreq = DockerStorletRequest(req.params, user_metadata,
                                     data_fd=orig_resp.app_iter._fp.fileno())
 
         self.idata = self._get_storlet_invocation_data(req)
@@ -198,7 +196,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         docker_updated = self.update_docker_container_from_cache()
         run_time_sbox.activate_storlet_daemon(self.idata,
                                               docker_updated)
-        self._add_system_params(req.params)
+        self._add_system_params(sreq.params)
 
         slog_path = self. \
             paths.slog_path(self.idata['storlet_main_class'])
@@ -234,6 +232,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         return headers
 
     def _get_storlet_invocation_data(self, req):
+        # TODO(takashi): merge the following idata into StorletRequest
         data = dict()
         data['storlet_name'] = req.headers.get('X-Run-Storlet')
         data['generate_log'] = req.headers.get('X-Storlet-Generate-Log', False)
