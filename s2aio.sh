@@ -25,8 +25,7 @@ install/install_ansible.sh
 # While at it, take care of host key verification.
 # This involves:
 # 1. Generate an rsa key for the current user if necessary
-if [ ! -f ~/.ssh/id_rsa.pub ];
-then
+if [ ! -f ~/.ssh/id_rsa.pub ]; then
     ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
 fi
 # 2. Add the key to the user's authorized keys

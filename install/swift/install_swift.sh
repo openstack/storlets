@@ -13,10 +13,6 @@
 # that can be formatted and mounted as a Swift device.
 # The script assume it 'can sudo'
 
-function usage() {
-    echo "Usage: $0 [device-name]";
-}
-
 if [ "$#" -eq 0 ]; then
     DEVICE='loop0'
 elif [ "$#" -eq 1 ]; then
@@ -26,7 +22,7 @@ elif [ "$#" -eq 1 ]; then
         exit
     fi
 else
-    usage
+    echo "Usage: $0 [device-name]";
     exit
 fi
 
