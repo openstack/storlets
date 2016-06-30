@@ -64,5 +64,7 @@ int main(int argc, char **argv) {
 			mount_dir2,
 			container_image);
 	ret = system(command);
-	return ret;
+	if (ret)
+	    return(EXIT_FAILURE);
+	return(EXIT_SUCCESS);
 }

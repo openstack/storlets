@@ -315,6 +315,29 @@ class RunTimeSandbox(object):
                docker_container_name, docker_image_name, pipe_mount,
                storlet_mount]
 
+        ret = subprocess.call(cmd)
+        if ret == 0:
+            self.wait()
+            return
+
+        # We were unable to start docker container from the tenant image.
+        # Let us try to start docker container from default image.
+        self.logger.info("Failed to start docker container from tenant image "
+                         "%s" % docker_image_name)
+        self.logger.info("Trying to start docker container from default image")
+
+        # TODO(eranr): move the default tenant image name to a config var
+        if self.docker_repo:
+            docker_image_name = '%s/%s' % (self.docker_repo,
+                                           'ubuntu_14.04_jre8_storlets')
+        else:
+            docker_image_name = 'ubuntu_14.04_jre8_storlets'
+
+        cmd = [self.paths.host_restart_script_dir +
+               '/restart_docker_container',
+               docker_container_name, docker_image_name, pipe_mount,
+               storlet_mount]
+
         subprocess.call(cmd)
         self.wait()
 
