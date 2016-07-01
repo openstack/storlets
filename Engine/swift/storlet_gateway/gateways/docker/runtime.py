@@ -415,8 +415,7 @@ class RunTimeSandbox(object):
 
     def activate_storlet_daemon(self, invocation_data, cache_updated=True):
         storlet_daemon_status = \
-            self.get_storlet_daemon_status(invocation_data[
-                'storlet_main_class'])
+            self.get_storlet_daemon_status(invocation_data['storlet_main'])
         if (storlet_daemon_status == -1):
             # We failed to send a command to the factory.
             # Best we can do is execute the container.
@@ -435,7 +434,7 @@ class RunTimeSandbox(object):
             self.logger.debug('The cache was updated, and the storlet daemon '
                               'is running. Stopping daemon')
             res = \
-                self.stop_storlet_daemon(invocation_data['storlet_main_class'])
+                self.stop_storlet_daemon(invocation_data['storlet_main'])
             if res != 1:
                 try:
                     self.restart()
@@ -449,18 +448,17 @@ class RunTimeSandbox(object):
         if (storlet_daemon_status == 0):
             self.logger.debug('Going to start storlet daemon!')
             class_path = \
-                '/home/swift/%s/%s' % (invocation_data['storlet_main_class'],
+                '/home/swift/%s/%s' % (invocation_data['storlet_main'],
                                        invocation_data['storlet_name'])
             for dep in invocation_data['storlet_dependency'].split(','):
                 class_path = '%s:/home/swift/%s/%s' % \
                              (class_path,
-                              invocation_data['storlet_main_class'],
+                              invocation_data['storlet_main'],
                               dep)
 
             daemon_status = \
                 self.start_storlet_daemon(class_path,
-                                          invocation_data[
-                                              'storlet_main_class'])
+                                          invocation_data['storlet_main'])
 
             if daemon_status != 1:
                 self.logger.error('Daemon start Failed, returned code is %d' %

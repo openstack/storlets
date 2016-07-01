@@ -189,6 +189,18 @@ class TestStorletGatewayDocker(unittest.TestCase):
         self.assertFalse('X-Object-Meta-Storlet-Key3' in req.headers)
         self.assertEqual(req.headers['X-Object-Meta-Key4'], 'Value4')
 
+    def test_get_storlet_invocation_data(self):
+        headers = {'X-Run-Storlet': 'TestStorlet',
+                   'X-Storlet-Test-Key1': 'Value1',
+                   'X-Storlet-Test-Key2': 'Value2'}
+        req = self._create_req('GET', headers=headers)
+        gw = self._create_gateway()
+        idata = gw._get_storlet_invocation_data(req)
+        self.assertEqual({'scope': self.account,
+                          'storlet_name': 'TestStorlet',
+                          'storlet_test_key1': 'Value1',
+                          'storlet_test_key2': 'Value2'},
+                         idata)
 
 if __name__ == '__main__':
     unittest.main()
