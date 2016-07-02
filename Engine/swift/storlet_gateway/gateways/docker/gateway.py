@@ -55,11 +55,25 @@ class DockerStorletRequest(StorletRequest):
     2. Metadata identifying the stream
     """
 
-    def __init__(self, params, user_metadata, data_iter=None, data_fd=None):
+    def __init__(self, storlet_id, params, user_metadata, data_iter=None,
+                 data_fd=None, options=None):
         # TODO(takashi): storlet_id is now set as None, but should be set
         # properly after merging idata into StorletRequest
         super(DockerStorletRequest, self).__init__(
-            None, params, user_metadata, data_iter, data_fd)
+            storlet_id, params, user_metadata, data_iter, data_fd,
+            options=options)
+        self._generate_log = self.options.get('generate_log')
+
+        # TODO(takashi): Some of following parameters should be defined common
+        #                parameters for StorletRequest
+        self.storlet_main = self.options['storlet_main']
+        self.dependencies = [x.strip() for x
+                             in self.options['storlet_dependency'].split(',')
+                             if x.strip()]
+
+    @property
+    def generate_log(self):
+        return config_true_value(self._generate_log)
 
 
 class StorletGatewayDocker(StorletGatewayBase):
@@ -114,23 +128,27 @@ class StorletGatewayDocker(StorletGatewayBase):
                 metadata[short_key] = headers[key]
         return metadata
 
+    def _build_storlet_request(self, req, sheaders, sbody_iter=None, sfd=None):
+        storlet_id = req.headers.get('X-Run-Storlet')
+        user_metadata = self._get_user_metadata(sheaders)
+        idata = self._get_storlet_invocation_data(req)
+        sreq = DockerStorletRequest(storlet_id, req.params, user_metadata,
+                                    sbody_iter, sfd, options=idata)
+        return sreq
+
     def gateway_proxy_put_copy_flow(self, sreq, req):
-        self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
-        docker_updated = self.update_docker_container_from_cache()
-        run_time_sbox.activate_storlet_daemon(self.idata,
-                                              docker_updated)
-        self._add_system_params(sreq.params)
+        docker_updated = self.update_docker_container_from_cache(sreq)
+        run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
+        self._add_system_params(sreq)
         # Clean all Storlet stuff from the request headers
         # we do not need them anymore, and they
         # may interfere with the rest of the execution.
         self._clean_storlet_stuff_from_request(req.headers)
         req.headers.pop('X-Run-Storlet')
 
-        slog_path = self. \
-            paths.slog_path(self.idata['storlet_main'])
-        storlet_pipe_path = self. \
-            paths.host_storlet_pipe(self.idata['storlet_main'])
+        slog_path = self.paths.slog_path(sreq.storlet_main)
+        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
 
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
@@ -139,7 +157,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         sresp = sprotocol.communicate()
 
-        self._upload_storlet_logs(slog_path)
+        self._upload_storlet_logs(slog_path, sreq)
 
         return sresp
 
@@ -147,33 +165,26 @@ class StorletGatewayDocker(StorletGatewayBase):
         # TODO(takashi): chunk size should be configurable
         reader = orig_req.environ['wsgi.input'].read
         body_iter = iter(lambda: reader(65536), '')
-        user_metadata = self._get_user_metadata(orig_req.headers)
-        sreq = DockerStorletRequest(orig_req.params, user_metadata, body_iter)
+        sreq = self._build_storlet_request(
+            orig_req, orig_req.headers, body_iter)
         return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyCopyFlow(self, orig_req, src_resp):
-        user_metadata = self._get_user_metadata(src_resp.headers)
-        sreq = DockerStorletRequest(orig_req.params, user_metadata,
-                                    src_resp.app_iter)
+        sreq = self._build_storlet_request(orig_req, src_resp.headers,
+                                           src_resp.app_iter)
         return self.gateway_proxy_put_copy_flow(sreq, orig_req)
 
     def gatewayProxyGetFlow(self, req, orig_resp):
-        # Flow for running the GET computation on the proxy
-        user_metadata = self._get_user_metadata(orig_resp.headers)
-        sreq = DockerStorletRequest(req.params, user_metadata,
-                                    orig_resp.app_iter)
+        sreq = self._build_storlet_request(
+            req, orig_resp.headers, orig_resp.app_iter)
 
-        self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
-        docker_updated = self.update_docker_container_from_cache()
-        run_time_sbox.activate_storlet_daemon(self.idata,
-                                              docker_updated)
-        self._add_system_params(sreq.params)
+        docker_updated = self.update_docker_container_from_cache(sreq)
+        run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
+        self._add_system_params(sreq)
 
-        slog_path = self. \
-            paths.slog_path(self.idata['storlet_main'])
-        storlet_pipe_path = self. \
-            paths.host_storlet_pipe(self.idata['storlet_main'])
+        slog_path = self.paths.slog_path(sreq.storlet_main)
+        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
 
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
@@ -181,38 +192,33 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               self.storlet_timeout)
         sresp = sprotocol.communicate()
 
-        self._upload_storlet_logs(slog_path)
+        self._upload_storlet_logs(slog_path, sreq)
 
         return sresp
 
     def gatewayObjectGetFlow(self, req, orig_resp):
         # TODO(takashi): should check if _fp is available
-        user_metadata = self._get_user_metadata(orig_resp.headers)
-        sreq = DockerStorletRequest(req.params, user_metadata,
-                                    data_fd=orig_resp.app_iter._fp.fileno())
+        sreq = self._build_storlet_request(
+            req, orig_resp.headers, sfd=orig_resp.app_iter._fp.fileno())
 
-        self.idata = self._get_storlet_invocation_data(req)
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
-        docker_updated = self.update_docker_container_from_cache()
-        run_time_sbox.activate_storlet_daemon(self.idata,
-                                              docker_updated)
-        self._add_system_params(sreq.params)
+        docker_updated = self.update_docker_container_from_cache(sreq)
+        run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
+        self._add_system_params(sreq)
 
-        slog_path = self. \
-            paths.slog_path(self.idata['storlet_main'])
-        storlet_pipe_path = self.paths. \
-            host_storlet_pipe(self.idata['storlet_main'])
+        slog_path = self.paths.slog_path(sreq.storlet_main)
+        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
 
         sprotocol = StorletInvocationProtocol(sreq, storlet_pipe_path,
                                               slog_path,
                                               self.storlet_timeout)
         sresp = sprotocol.communicate()
 
-        self._upload_storlet_logs(slog_path)
+        self._upload_storlet_logs(slog_path, sreq)
 
         return sresp
 
-    def _add_system_params(self, params):
+    def _add_system_params(self, sreq):
         """
         Adds Storlet engine specific parameters to the invocation
 
@@ -221,8 +227,8 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         :params params: Request parameters
         """
-        params['storlet_execution_path'] = self. \
-            paths.sbox_storlet_exec(self.idata['storlet_main'])
+        sreq.params['storlet_execution_path'] = self. \
+            paths.sbox_storlet_exec(sreq.options['storlet_main'])
 
     def _clean_storlet_stuff_from_request(self, headers):
         for key in headers:
@@ -234,7 +240,6 @@ class StorletGatewayDocker(StorletGatewayBase):
     def _get_storlet_invocation_data(self, req):
         # TODO(takashi): merge the following idata into StorletRequest
         data = dict()
-        data['storlet_name'] = req.headers.get('X-Run-Storlet')
 
         for key in req.headers:
             prefix = 'X-Storlet-'
@@ -249,14 +254,14 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         return data
 
-    def _upload_storlet_logs(self, slog_path):
-        if (config_true_value(self.idata.get('storlet_generate_log'))):
+    def _upload_storlet_logs(self, slog_path, sreq):
+        if sreq.generate_log:
             with open(slog_path, 'r') as logfile:
                 client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
                 # TODO(takashi): Is it really html?
                 #                (I suppose it should be text/plain)
                 headers = {'CONTENT_TYPE': 'text/html'}
-                storlet_name = self.idata['storlet_name'].split('-')[0]
+                storlet_name = sreq.storlet_id.split('-')[0]
                 log_obj_name = '%s.log' % storlet_name
                 # TODO(takashi): we had better retrieve required values from
                 #                sconf in __init__
@@ -264,7 +269,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                      self.sconf['storlet_logcontainer'],
                                      log_obj_name, headers)
 
-    def bring_from_cache(self, obj_name, is_storlet):
+    def bring_from_cache(self, obj_name, sreq, is_storlet):
         """
         Auxiliary function that:
 
@@ -310,8 +315,8 @@ class StorletGatewayDocker(StorletGatewayBase):
             # only, and not for dependencies.
             # This will change when we will head dependencies as well
             fstat = os.stat(cache_target_path)
-            storlet_or_size = long(self.idata['storlet_content_length'])
-            storlet_or_time = float(self.idata['storlet_x_timestamp'])
+            storlet_or_size = long(sreq.options['storlet_content_length'])
+            storlet_or_time = float(sreq.options['storlet_x_timestamp'])
             b_storlet_size_changed = fstat.st_size != storlet_or_size
             b_storlet_file_updated = float(fstat.st_mtime) < storlet_or_time
             if b_storlet_size_changed or b_storlet_file_updated:
@@ -345,8 +350,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         # 1. The Docker container does not hold a copy of the object
         # 2. The Docker container holds an older version of the object
         update_docker = False
-        docker_storlet_path = self.paths. \
-            host_storlet(self.idata['storlet_main'])
+        docker_storlet_path = self.paths.host_storlet(sreq.storlet_main)
         docker_target_path = os.path.join(docker_storlet_path, obj_name)
 
         if not os.path.exists(docker_storlet_path):
@@ -371,7 +375,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         return update_docker
 
-    def update_docker_container_from_cache(self):
+    def update_docker_container_from_cache(self, sreq):
         """
         Iterates over the storlet name and its dependencies appearing
 
@@ -392,14 +396,12 @@ class StorletGatewayDocker(StorletGatewayBase):
         # updated within the Docker container
         docker_updated = False
 
-        updated = self.bring_from_cache(self.idata['storlet_name'],
-                                        True)
+        updated = self.bring_from_cache(sreq.storlet_id, sreq, True)
         docker_updated = docker_updated or updated
 
-        if self.idata['storlet_dependency']:
-            for dep in self.idata['storlet_dependency'].split(','):
-                updated = self.bring_from_cache(dep, False)
-                docker_updated = docker_updated or updated
+        for dep in sreq.dependencies:
+            updated = self.bring_from_cache(dep, sreq, False)
+            docker_updated = docker_updated or updated
 
         return docker_updated
 

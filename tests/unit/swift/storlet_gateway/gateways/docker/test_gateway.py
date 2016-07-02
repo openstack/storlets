@@ -26,12 +26,19 @@ from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
 class TestDockerStorletRequest(unittest.TestCase):
 
     def test_init(self):
-        metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+        storlet_id = 'Storlet-1.0.jar'
         params = {'Param1': 'Value1', 'Param2': 'Value2'}
-        dsreq = DockerStorletRequest(params, metadata, iter(StringIO()))
+        metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2'}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     iter(StringIO()), options=options)
 
-        self.assertEqual(dsreq.user_metadata, metadata)
-        self.assertEqual(dsreq.params, params)
+        self.assertEqual(metadata, dsreq.user_metadata)
+        self.assertEqual(params, dsreq.params)
+        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
+        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
 
 
 class TestStorletGatewayDocker(unittest.TestCase):
@@ -197,7 +204,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
         gw = self._create_gateway()
         idata = gw._get_storlet_invocation_data(req)
         self.assertEqual({'scope': self.account,
-                          'storlet_name': 'TestStorlet',
                           'storlet_test_key1': 'Value1',
                           'storlet_test_key2': 'Value2'},
                          idata)

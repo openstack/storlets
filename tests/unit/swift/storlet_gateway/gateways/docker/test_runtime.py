@@ -291,8 +291,11 @@ class TestStorletInvocationProtocol(unittest.TestCase):
     def setUp(self):
         self.pipe_path = tempfile.mktemp()
         self.log_file = tempfile.mktemp()
-
-        storlet_request = DockerStorletRequest({}, {}, iter(StringIO()))
+        storlet_id = 'Storlet-1.0.jar'
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2'}
+        storlet_request = DockerStorletRequest(
+            storlet_id, {}, {}, iter(StringIO()), options=options)
         self.protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1)
 

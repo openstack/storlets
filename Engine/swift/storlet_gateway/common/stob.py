@@ -151,11 +151,16 @@ class StorletData(object):
 
 class StorletRequest(StorletData):
     def __init__(self, storlet_id, params, user_metadata,
-                 data_iter=None, data_fd=None, timeout=10, cancel=None):
+                 data_iter=None, data_fd=None, options=None,
+                 timeout=10, cancel=None):
         super(StorletRequest, self).__init__(
             user_metadata, data_iter, data_fd, timeout, cancel)
         self.storlet_id = storlet_id
         self.params = params
+        if options is None:
+            self.options = {}
+        else:
+            self.options = options
 
 
 class StorletResponse(StorletData):
