@@ -128,9 +128,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         req.headers.pop('X-Run-Storlet')
 
         slog_path = self. \
-            paths.slog_path(self.idata['storlet_main_class'])
+            paths.slog_path(self.idata['storlet_main'])
         storlet_pipe_path = self. \
-            paths.host_storlet_pipe(self.idata['storlet_main_class'])
+            paths.host_storlet_pipe(self.idata['storlet_main'])
 
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
@@ -171,9 +171,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._add_system_params(sreq.params)
 
         slog_path = self. \
-            paths.slog_path(self.idata['storlet_main_class'])
+            paths.slog_path(self.idata['storlet_main'])
         storlet_pipe_path = self. \
-            paths.host_storlet_pipe(self.idata['storlet_main_class'])
+            paths.host_storlet_pipe(self.idata['storlet_main'])
 
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
@@ -199,9 +199,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         self._add_system_params(sreq.params)
 
         slog_path = self. \
-            paths.slog_path(self.idata['storlet_main_class'])
+            paths.slog_path(self.idata['storlet_main'])
         storlet_pipe_path = self.paths. \
-            host_storlet_pipe(self.idata['storlet_main_class'])
+            host_storlet_pipe(self.idata['storlet_main'])
 
         sprotocol = StorletInvocationProtocol(sreq, storlet_pipe_path,
                                               slog_path,
@@ -222,7 +222,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :params params: Request parameters
         """
         params['storlet_execution_path'] = self. \
-            paths.sbox_storlet_exec(self.idata['storlet_main_class'])
+            paths.sbox_storlet_exec(self.idata['storlet_main'])
 
     def _clean_storlet_stuff_from_request(self, headers):
         for key in headers:
@@ -235,30 +235,22 @@ class StorletGatewayDocker(StorletGatewayBase):
         # TODO(takashi): merge the following idata into StorletRequest
         data = dict()
         data['storlet_name'] = req.headers.get('X-Run-Storlet')
-        data['generate_log'] = req.headers.get('X-Storlet-Generate-Log', False)
-        data['storlet_original_timestamp'] = req.headers. \
-            get('X-Storlet-X-Timestamp')
-        data['storlet_original_size'] = req.headers. \
-            get('X-Storlet-Content-Length')
-        data['storlet_md'] = {'storlet_original_timestamp':
-                              data['storlet_original_timestamp'],
-                              'storlet_original_size':
-                              data['storlet_original_size']}
-        data['storlet_main_class'] = req.headers. \
-            get('X-Storlet-Main')
 
-        scope = self.account
-        data['scope'] = scope
+        for key in req.headers:
+            prefix = 'X-Storlet-'
+            if key.startswith(prefix):
+                new_key = 'storlet_' + \
+                    key[len(prefix):].lower().replace('-', '_')
+                data[new_key] = req.headers.get(key)
+
+        data['scope'] = self.account
         if data['scope'].rfind(':') > 0:
             data['scope'] = data['scope'][:data['scope'].rfind(':')]
 
-        data['storlet_dependency'] = req.headers. \
-            get('X-Storlet-Dependency')
-        data['request_params'] = req.params
         return data
 
     def _upload_storlet_logs(self, slog_path):
-        if (config_true_value(self.idata['generate_log'])):
+        if (config_true_value(self.idata.get('storlet_generate_log'))):
             with open(slog_path, 'r') as logfile:
                 client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
                 # TODO(takashi): Is it really html?
@@ -317,10 +309,9 @@ class StorletGatewayDocker(StorletGatewayBase):
             # We mention that this is currenlty applicable for storlets
             # only, and not for dependencies.
             # This will change when we will head dependencies as well
-            storlet_md = self.idata['storlet_md']
             fstat = os.stat(cache_target_path)
-            storlet_or_size = long(storlet_md['storlet_original_size'])
-            storlet_or_time = float(storlet_md['storlet_original_timestamp'])
+            storlet_or_size = long(self.idata['storlet_content_length'])
+            storlet_or_time = float(self.idata['storlet_x_timestamp'])
             b_storlet_size_changed = fstat.st_size != storlet_or_size
             b_storlet_file_updated = float(fstat.st_mtime) < storlet_or_time
             if b_storlet_size_changed or b_storlet_file_updated:
@@ -355,7 +346,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         # 2. The Docker container holds an older version of the object
         update_docker = False
         docker_storlet_path = self.paths. \
-            host_storlet(self.idata['storlet_main_class'])
+            host_storlet(self.idata['storlet_main'])
         docker_target_path = os.path.join(docker_storlet_path, obj_name)
 
         if not os.path.exists(docker_storlet_path):
