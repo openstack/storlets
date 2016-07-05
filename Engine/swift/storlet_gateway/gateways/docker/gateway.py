@@ -174,16 +174,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                                     sbody_iter, sfd, options=idata)
         return sreq
 
-    def gateway_proxy_put_copy_flow(self, sreq, req):
+    def gateway_proxy_put_copy_flow(self, sreq):
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
         self._add_system_params(sreq)
-        # Clean all Storlet stuff from the request headers
-        # we do not need them anymore, and they
-        # may interfere with the rest of the execution.
-        self._clean_storlet_stuff_from_request(req.headers)
-        req.headers.pop('X-Run-Storlet')
 
         slog_path = self.paths.slog_path(sreq.storlet_main)
         storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
@@ -205,12 +200,12 @@ class StorletGatewayDocker(StorletGatewayBase):
         body_iter = iter(lambda: reader(65536), '')
         sreq = self._build_storlet_request(
             orig_req, orig_req.headers, body_iter)
-        return self.gateway_proxy_put_copy_flow(sreq, orig_req)
+        return self.gateway_proxy_put_copy_flow(sreq)
 
     def gatewayProxyCopyFlow(self, orig_req, src_resp):
         sreq = self._build_storlet_request(orig_req, src_resp.headers,
                                            src_resp.app_iter)
-        return self.gateway_proxy_put_copy_flow(sreq, orig_req)
+        return self.gateway_proxy_put_copy_flow(sreq)
 
     def gatewayProxyGetFlow(self, req, orig_resp):
         sreq = self._build_storlet_request(
@@ -267,13 +262,6 @@ class StorletGatewayDocker(StorletGatewayBase):
         """
         sreq.params['storlet_execution_path'] = self. \
             paths.sbox_storlet_exec(sreq.options['storlet_main'])
-
-    def _clean_storlet_stuff_from_request(self, headers):
-        for key in headers:
-            if (key.startswith('X-Storlet') or
-                    key.startswith('X-Object-Meta-Storlet')):
-                del headers[key]
-        return headers
 
     def _upload_storlet_logs(self, slog_path, sreq):
         if sreq.generate_log:

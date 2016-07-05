@@ -533,6 +533,26 @@ class TestStorletProxyHandler(unittest.TestCase):
         with self.assertRaises(AttributeError):
             handler.obj = 'obj'
 
+    def test_remove_storlet_headers(self):
+        req = Request.blank(
+            '/v1/acc/cont/obj', environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storlet-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar'})
+        with storlet_enabled():
+            handler = self.handler_class(
+                req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+
+        headers = {'X-Storlet-Key1': 'Value1',
+                   'X-Key2': 'Value2',
+                   'X-Object-Meta-Storlet-Key3': 'Value3',
+                   'X-Object-Meta-Key4': 'Value4'}
+        handler._remove_storlet_headers(headers)
+
+        self.assertFalse('X-Storlet-Key1' in headers)
+        self.assertEqual(headers['X-Key2'], 'Value2')
+        self.assertFalse('X-Object-Meta-Storlet-Key3' in headers)
+        self.assertEqual(headers['X-Object-Meta-Key4'], 'Value4')
+
 
 if __name__ == '__main__':
     unittest.main()
