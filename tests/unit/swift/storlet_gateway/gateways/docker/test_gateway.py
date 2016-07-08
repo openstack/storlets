@@ -210,20 +210,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_dependency_registration(params, obj)
 
-    def test_clean_storlet_stuff_from_request(self):
-        headers = {'X-Storlet-Key1': 'Value1',
-                   'X-Key2': 'Value2',
-                   'X-Object-Meta-Storlet-Key3': 'Value3',
-                   'X-Object-Meta-Key4': 'Value4'}
-        req = self._create_req('GET', headers=headers)
-        gw = self._create_gateway()
-        gw._clean_storlet_stuff_from_request(req.headers)
-
-        self.assertFalse('X-Storlet-Key1' in req.headers)
-        self.assertEqual(req.headers['X-Key2'], 'Value2')
-        self.assertFalse('X-Object-Meta-Storlet-Key3' in req.headers)
-        self.assertEqual(req.headers['X-Object-Meta-Key4'], 'Value4')
-
     def test_get_storlet_invocation_data(self):
         headers = {'X-Run-Storlet': 'TestStorlet',
                    'X-Storlet-Test-Key1': 'Value1',

@@ -261,11 +261,22 @@ class StorletProxyHandler(StorletBaseHandler):
                     header)
 
     def handle_put_copy_response(self, out_md, app_iter):
-        self.request.environ['wsgi.input'] = app_iter
+        self._remove_storlet_headers(self.request.headers)
         if 'CONTENT_LENGTH' in self.request.environ:
             self.request.environ.pop('CONTENT_LENGTH')
         self.request.headers['Transfer-Encoding'] = 'chunked'
+        self._set_metadata_in_headers(self.request.headers, out_md)
+
+        self.request.environ['wsgi.input'] = app_iter
+
         return self.request.get_response(self.app)
+
+    def _remove_storlet_headers(self, headers):
+        for key in headers.keys():
+            if (key.startswith('X-Storlet-') or
+                    key.startswith('X-Object-Meta-Storlet') or
+                    key == 'X-Run-Storlet'):
+                headers.pop(key)
 
     def base_handle_copy_request(self, src_container, src_obj,
                                  dest_container, dest_object):
@@ -287,8 +298,6 @@ class StorletProxyHandler(StorletBaseHandler):
 
         # Do proxy copy flow
         sresp = self.gateway.gatewayProxyCopyFlow(self.request, source_resp)
-        self._set_metadata_in_headers(self.request.headers,
-                                      sresp.user_metadata)
 
         resp = self.handle_put_copy_response(sresp.user_metadata,
                                              sresp.data_iter)
