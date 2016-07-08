@@ -12,12 +12,13 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
-from six import BytesIO
-from storlet_gateway.common.stob import StorletResponse
+from storlet_gateway.common.stob import StorletRequest, StorletResponse
 from storlet_gateway.gateways.base import StorletGatewayBase
 
 
 class StorletGatewayStub(StorletGatewayBase):
+
+    request_class = StorletRequest
 
     def __init__(self, sconf, logger, app, account):
         self.logger = logger
@@ -33,22 +34,10 @@ class StorletGatewayStub(StorletGatewayBase):
     def validate_dependency_registration(cls, params, obj):
         pass
 
-    def indentity_invocation(self, user_metadata, body):
+    def indentity_invocation(self, user_metadata, data_iter):
         self.logger.debug("Identity invocation is called")
-        return StorletResponse(user_metadata, data_iter=BytesIO(body))
+        return StorletResponse(user_metadata, data_iter)
 
-    def gatewayProxyPutFlow(self, orig_request):
-        return self.indentity_invocation(orig_request.headers,
-                                         orig_request.body)
-
-    def gatewayProxyCopyFlow(self, orig_request, source_resp):
-        return self.indentity_invocation(source_resp.headers,
-                                         source_resp.body)
-
-    def gatewayProxyGetFlow(self, request, original_response):
-        return self.indentity_invocation(original_response.headers,
-                                         original_response.body)
-
-    def gatewayObjectGetFlow(self, request, original_response):
-        return self.indentity_invocation(original_response.headers,
-                                         original_response.body)
+    def invocation_flow(self, sreq):
+        return self.indentity_invocation(sreq.user_metadata,
+                                         sreq.data_iter)

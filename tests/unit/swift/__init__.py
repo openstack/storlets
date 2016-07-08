@@ -12,23 +12,32 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
+import traceback
 
 
 class FakeLogger(object):
     def __init__(self, *args, **kwargs):
         pass
 
+    def _print_log(self, level, msg):
+        print('%s: %s' % (level, msg))
+
     def debug(self, msg):
-        pass
+        self._print_log('DEBUG', msg)
 
     def info(self, msg):
-        pass
+        self._print_log('INFO', msg)
 
     def warn(self, msg):
-        pass
+        self._print_log('WARN', msg)
 
     def error(self, msg):
-        pass
+        self._print_log('ERROR', msg)
 
     def exception(self, msg):
-        pass
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_msg = traceback.format_exception(exc_type, exc_value,
+                                             exc_traceback)
+        new_msg = '%s: %s' % (msg, exc_msg)
+        self._print_log('EXCEPTION', new_msg)

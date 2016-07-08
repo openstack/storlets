@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from swift.common.swob import HTTPMethodNotAllowed, \
-    HTTPRequestedRangeNotSatisfiable
+    HTTPRequestedRangeNotSatisfiable, Range
 from swift.common.utils import public
 from storlet_middleware.handlers.base import StorletBaseHandler, \
     NotStorletRequest
@@ -44,6 +44,21 @@ class StorletObjectHandler(StorletBaseHandler):
         """
         return self.request.params.get('multipart-manifest') == 'get'
 
+    def _get_storlet_invocation_options(self, req):
+        options = super(StorletObjectHandler, self).\
+            _get_storlet_invocation_options(req)
+
+        # If the request is a storlet request with an simgle input range, we
+        # pass range parameters to storlet gateway, to realize range handling
+        # with keepling zero copy
+        if self.is_storlet_range_request and \
+                not self.is_storlet_multiple_range_request:
+            srange = Range(req.headers['X-Storlet-Range'])
+            options['range_start'] = srange.ranges[0][0]
+            options['range_end'] = srange.ranges[0][1]
+
+        return options
+
     def handle_request(self):
         if hasattr(self, self.request.method):
             try:
@@ -58,7 +73,9 @@ class StorletObjectHandler(StorletBaseHandler):
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
-        return self.gateway.gatewayObjectGetFlow(self.request, resp)
+        sreq = self._build_storlet_request(
+            self.request, resp.headers, resp.app_iter)
+        return self.gateway.invocation_flow(sreq)
 
     @public
     def GET(self):

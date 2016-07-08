@@ -18,7 +18,7 @@ from swift.common.constraints import check_copy_from_header, \
     check_destination_header
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized, \
     HTTPMethodNotAllowed, HTTPPreconditionFailed
-from swift.common.utils import config_true_value, public
+from swift.common.utils import config_true_value, public, FileLikeIter
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from storlet_middleware.handlers.base import StorletBaseHandler, \
@@ -177,7 +177,9 @@ class StorletProxyHandler(StorletBaseHandler):
             raise HTTPMethodNotAllowed(request=self.request)
 
     def _call_gateway(self, resp):
-        return self.gateway.gatewayProxyGetFlow(self.request, resp)
+        sreq = self._build_storlet_request(self.request, resp.headers,
+                                           resp.app_iter)
+        return self.gateway.invocation_flow(sreq)
 
     def augment_storlet_request(self, params):
         """
@@ -255,7 +257,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                'X-Fresh-Metadata']
 
         for header in unsupported_headers:
-            if self.request.headers.get(header):
+            if header in self.request.headers:
                 raise HTTPBadRequest(
                     'Storlet on copy with %s is not supported' %
                     header)
@@ -267,8 +269,7 @@ class StorletProxyHandler(StorletBaseHandler):
         self.request.headers['Transfer-Encoding'] = 'chunked'
         self._set_metadata_in_headers(self.request.headers, out_md)
 
-        self.request.environ['wsgi.input'] = app_iter
-
+        self.request.environ['wsgi.input'] = FileLikeIter(app_iter)
         return self.request.get_response(self.app)
 
     def _remove_storlet_headers(self, headers):
@@ -294,19 +295,19 @@ class StorletProxyHandler(StorletBaseHandler):
         source_req.path_info = source_path
         source_req.headers['X-Newest'] = 'true'
 
-        source_resp = source_req.get_response(self.app)
-
-        # Do proxy copy flow
-        sresp = self.gateway.gatewayProxyCopyFlow(self.request, source_resp)
+        src_resp = source_req.get_response(self.app)
+        sreq = self._build_storlet_request(self.request, src_resp.headers,
+                                           src_resp.app_iter)
+        sresp = self.gateway.invocation_flow(sreq)
 
         resp = self.handle_put_copy_response(sresp.user_metadata,
                                              sresp.data_iter)
-        acct, path = source_resp.environ['PATH_INFO'].split('/', 3)[2:4]
+        acct, path = src_resp.environ['PATH_INFO'].split('/', 3)[2:4]
         resp.headers['X-Storlet-Generated-From-Account'] = quote(acct)
         resp.headers['X-Storlet-Generated-From'] = quote(path)
-        if 'last-modified' in source_resp.headers:
+        if 'last-modified' in src_resp.headers:
             resp.headers['X-Storlet-Generated-From-Last-Modified'] = \
-                source_resp.headers['last-modified']
+                src_resp.headers['last-modified']
         return resp
 
     @public
@@ -326,7 +327,13 @@ class StorletProxyHandler(StorletBaseHandler):
             return self.base_handle_copy_request(src_container, src_obj,
                                                  dest_container, dest_object)
 
-        sresp = self.gateway.gatewayProxyPutFlow(self.request)
+        # TODO(takashi): chunk size should be configurable
+        reader = self.request.environ['wsgi.input'].read
+        body_iter = iter(lambda: reader(65536), '')
+        sreq = self._build_storlet_request(
+            self.request, self.request.headers, body_iter)
+
+        sresp = self.gateway.invocation_flow(sreq)
         self._set_metadata_in_headers(self.request.headers,
                                       sresp.user_metadata)
         return self.handle_put_copy_response(sresp.user_metadata,

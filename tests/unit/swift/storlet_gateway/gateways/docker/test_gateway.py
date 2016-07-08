@@ -46,27 +46,55 @@ class TestDockerStorletRequest(unittest.TestCase):
         metadata = {}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
-                   'storlet_range': 'bytes=1-6'}
-        dsreq = DockerStorletRequest(storlet_id, params, metadata,
-                                     iter(StringIO()), options=options)
-
-        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
-        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
-        self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
-        self.assertEqual(None, dsreq.start)
-        self.assertEqual(None, dsreq.end)
-
-        options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2',
-                   'storlet_range': 'bytes=1-6'}
+                   'range_start': 1,
+                   'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      None, 0, options=options)
 
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
-        self.assertEqual('1', dsreq.start)
-        self.assertEqual('6', dsreq.end)
+        self.assertEqual(1, dsreq.start)
+        self.assertEqual(6, dsreq.end)
+
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'range_start': 0,
+                   'range_end': 0}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     None, 0, options=options)
+
+        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
+        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual(0, dsreq.start)
+        self.assertEqual(0, dsreq.end)
+
+    def test_has_range(self):
+        storlet_id = 'Storlet-1.0.jar'
+        params = {}
+        metadata = {}
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2'}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     None, 0, options=options)
+        self.assertFalse(dsreq.has_range)
+
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'range_start': 1,
+                   'range_end': 6}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     None, 0, options=options)
+        self.assertTrue(dsreq.has_range)
+
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'range_start': 0,
+                   'range_end': 6}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     None, 0, options=options)
+        self.assertTrue(dsreq.has_range)
 
 
 class TestStorletGatewayDocker(unittest.TestCase):
@@ -209,18 +237,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
             'Dependency-Version': '1.0'}
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_dependency_registration(params, obj)
-
-    def test_get_storlet_invocation_data(self):
-        headers = {'X-Run-Storlet': 'TestStorlet',
-                   'X-Storlet-Test-Key1': 'Value1',
-                   'X-Storlet-Test-Key2': 'Value2'}
-        req = self._create_req('GET', headers=headers)
-        gw = self._create_gateway()
-        idata = gw._get_storlet_invocation_data(req)
-        self.assertEqual({'scope': self.account,
-                          'storlet_test_key1': 'Value1',
-                          'storlet_test_key2': 'Value2'},
-                         idata)
 
 if __name__ == '__main__':
     unittest.main()

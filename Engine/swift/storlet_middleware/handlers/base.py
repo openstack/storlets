@@ -15,6 +15,7 @@
 
 import urllib
 from swift.common.swob import HTTPBadRequest, Response, Range
+from swift.common.utils import config_true_value
 
 
 class NotStorletRequest(Exception):
@@ -64,6 +65,7 @@ class StorletBaseHandler(object):
         self.logger = logger
         self.conf = conf
         self.gateway_class = self.conf['gateway_module']
+        self.sreq_class = self.gateway_class.request_class
 
     def _setup_gateway(self):
         """
@@ -248,3 +250,49 @@ class StorletBaseHandler(object):
 
         return Response(headers=new_headers, app_iter=sresp.data_iter,
                         reuqest=self.request)
+
+    def _get_user_metadata(self, headers):
+        metadata = {}
+        for key in headers:
+            if key.startswith('X-Object-Meta-Storlet'):
+                pass
+            elif key.startswith('X-Object-Meta-'):
+                short_key = key[len('X-Object-Meta-'):]
+                metadata[short_key] = headers[key]
+        return metadata
+
+    def _get_storlet_invocation_options(self, req):
+        options = dict()
+
+        filtered_key = ['X-Storlet-Range', 'X-Storlet-Generate-Log']
+
+        for key in req.headers:
+            prefix = 'X-Storlet-'
+            if key.startswith(prefix) and key not in filtered_key:
+                new_key = 'storlet_' + \
+                    key[len(prefix):].lower().replace('-', '_')
+                options[new_key] = req.headers.get(key)
+
+        scope = self.account
+        if scope.rfind(':') > 0:
+            scope = scope[:scope.rfind(':')]
+        options['scope'] = scope
+
+        options['generate_log'] = \
+            config_true_value(req.headers.get('X-Storlet-Generate-Log'))
+
+        return options
+
+    def _build_storlet_request(self, req, sheaders, sbody_iter):
+        storlet_id = req.headers.get('X-Run-Storlet')
+        user_metadata = self._get_user_metadata(sheaders)
+        options = self._get_storlet_invocation_options(req)
+
+        if hasattr(sbody_iter, '_fp'):
+            sreq = self.sreq_class(storlet_id, req.params, user_metadata,
+                                   data_fd=sbody_iter._fp.fileno(),
+                                   options=options)
+        else:
+            sreq = self.sreq_class(storlet_id, req.params, user_metadata,
+                                   sbody_iter, options=options)
+        return sreq

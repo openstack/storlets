@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import copy
 import os
 import select
 from storlet_gateway.common.exceptions import StorletTimeout
@@ -131,6 +132,8 @@ class StorletData(object):
         if data_iter is None and data_fd is None:
             raise ValueError('Either of data_iter or data_fd should not be '
                              'None')
+        if cancel is not None and data_iter is not None:
+            raise ValueError('cancel func can only be specified with data_fd')
         self.user_metadata = user_metadata
         self.data_fd = data_fd
         self._data_iter = data_iter
@@ -156,7 +159,7 @@ class StorletRequest(StorletData):
         super(StorletRequest, self).__init__(
             user_metadata, data_iter, data_fd, timeout, cancel)
         self.storlet_id = storlet_id
-        self.params = params
+        self.params = copy.deepcopy(params)
         if options is None:
             self.options = {}
         else:

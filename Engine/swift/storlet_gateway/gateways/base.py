@@ -12,9 +12,12 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
+from storlet_gateway.common.stob import StorletRequest
 
 
 class StorletGatewayBase(object):
+
+    request_class = StorletRequest
 
     @classmethod
     def validate_storlet_registration(cls, params, obj):
@@ -26,14 +29,5 @@ class StorletGatewayBase(object):
         raise NotImplementedError("Not implemented: "
                                   "validate_dependency_registration")
 
-    def gatewayProxyPutFlow(self, orig_request):
-        raise NotImplementedError("Not implemented: gatewayProxyPutFlow")
-
-    def gatewayProxyCopyFlow(self, orig_request, src_response):
-        raise NotImplementedError("Not implemented: gatewayProxyCopyFlow")
-
-    def gatewayProxyGetFlow(self, request, original_response):
-        raise NotImplementedError("Not implemented: gatewayProxySloFlow")
-
-    def gatewayObjectGetFlow(self, request, original_response):
-        raise NotImplementedError("Not implemented: gatewayObjectGetFlow")
+    def invocation_flow(self, sreq):
+        raise NotImplementedError("Not implemented: invocation_flow")

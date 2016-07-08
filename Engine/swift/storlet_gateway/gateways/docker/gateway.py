@@ -17,8 +17,6 @@ import os
 import shutil
 
 from swift.common.internal_client import InternalClient as ic
-from swift.common.utils import config_true_value
-from swift.common.swob import Range
 from storlet_gateway.common.exceptions import StorletConfigError
 from storlet_gateway.common.stob import StorletRequest
 from storlet_gateway.gateways.base import StorletGatewayBase
@@ -37,10 +35,7 @@ The API is made of:
 (2) The StorletGateway is the Docker flavor of the StorletGateway API:
     validate_storlet_registration
     validate_dependency_registration
-    gatewayObjectGetFlow
-    gatewayProxyPutFlow
-    gatewayProxyCopyFlow
-    gatewayProxyGetFlow
+    invocation_flow
 (3) parse_gateway_conf parses the docker gateway specific configuration. While
     it is part of the API, it is implemented as a static method as the parsing
     of the configuration takes place before the StorletGateway is instantiated
@@ -63,7 +58,7 @@ class DockerStorletRequest(StorletRequest):
         super(DockerStorletRequest, self).__init__(
             storlet_id, params, user_metadata, data_iter, data_fd,
             options=options)
-        self._generate_log = self.options.get('generate_log')
+        self.generate_log = self.options.get('generate_log', False)
 
         # TODO(takashi): Some of following parameters should be defined common
         #                parameters for StorletRequest
@@ -72,32 +67,17 @@ class DockerStorletRequest(StorletRequest):
                              in self.options['storlet_dependency'].split(',')
                              if x.strip()]
 
-        self.start = self.end = None
-        srange = self.options.get('storlet_range')
-        # TODO(eranr): The below is a hack to make sure we
-        # do not add the range to the request in case we run
-        # on the proxy. If the range exists it will make its
-        # way to the storlet side and there will be an attempt
-        # to seek on it. A way to know that we are on the object
-        # server is that we have a fd. We need to either have
-        # a derived request class for object or have some
-        # other field telling us whether to use the range or not.
-        if srange and data_fd is not None:
-            r = Range(srange)
-            # We are interested in extracting only a single range
-            # if there is more then one range the code path
-            # that deals with it is outside of the storlet code
-            # e.g. not the case where we execute locally on the
-            # object node and need to filter the range ourselves.
-            self.start = str(r.ranges[0][0])
-            self.end = str(r.ranges[0][1])
+        self.start = self.options.get('range_start')
+        self.end = self.options.get('range_end')
 
     @property
-    def generate_log(self):
-        return config_true_value(self._generate_log)
+    def has_range(self):
+        return self.start is not None and self.end is not None
 
 
 class StorletGatewayDocker(StorletGatewayBase):
+
+    request_class = DockerStorletRequest
 
     def __init__(self, sconf, logger, app, account):
         self.logger = logger
@@ -139,42 +119,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
-    def _get_user_metadata(self, headers):
-        metadata = {}
-        for key in headers:
-            if key.startswith('X-Object-Meta-Storlet'):
-                pass
-            elif key.startswith('X-Object-Meta-'):
-                short_key = key[len('X-Object-Meta-'):]
-                metadata[short_key] = headers[key]
-        return metadata
-
-    def _get_storlet_invocation_data(self, req):
-        # TODO(takashi): merge the following idata into StorletRequest
-        data = dict()
-
-        for key in req.headers:
-            prefix = 'X-Storlet-'
-            if key.startswith(prefix):
-                new_key = 'storlet_' + \
-                    key[len(prefix):].lower().replace('-', '_')
-                data[new_key] = req.headers.get(key)
-
-        data['scope'] = self.account
-        if data['scope'].rfind(':') > 0:
-            data['scope'] = data['scope'][:data['scope'].rfind(':')]
-
-        return data
-
-    def _build_storlet_request(self, req, sheaders, sbody_iter=None, sfd=None):
-        storlet_id = req.headers.get('X-Run-Storlet')
-        user_metadata = self._get_user_metadata(sheaders)
-        idata = self._get_storlet_invocation_data(req)
-        sreq = DockerStorletRequest(storlet_id, req.params, user_metadata,
-                                    sbody_iter, sfd, options=idata)
-        return sreq
-
-    def gateway_proxy_put_copy_flow(self, sreq):
+    def invocation_flow(self, sreq):
         run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
@@ -188,63 +133,6 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               slog_path,
                                               self.storlet_timeout)
 
-        sresp = sprotocol.communicate()
-
-        self._upload_storlet_logs(slog_path, sreq)
-
-        return sresp
-
-    def gatewayProxyPutFlow(self, orig_req):
-        # TODO(takashi): chunk size should be configurable
-        reader = orig_req.environ['wsgi.input'].read
-        body_iter = iter(lambda: reader(65536), '')
-        sreq = self._build_storlet_request(
-            orig_req, orig_req.headers, body_iter)
-        return self.gateway_proxy_put_copy_flow(sreq)
-
-    def gatewayProxyCopyFlow(self, orig_req, src_resp):
-        sreq = self._build_storlet_request(orig_req, src_resp.headers,
-                                           src_resp.app_iter)
-        return self.gateway_proxy_put_copy_flow(sreq)
-
-    def gatewayProxyGetFlow(self, req, orig_resp):
-        sreq = self._build_storlet_request(
-            req, orig_resp.headers, orig_resp.app_iter)
-
-        run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
-        docker_updated = self.update_docker_container_from_cache(sreq)
-        run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
-        self._add_system_params(sreq)
-
-        slog_path = self.paths.slog_path(sreq.storlet_main)
-        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
-
-        sprotocol = StorletInvocationProtocol(sreq,
-                                              storlet_pipe_path,
-                                              slog_path,
-                                              self.storlet_timeout)
-        sresp = sprotocol.communicate()
-
-        self._upload_storlet_logs(slog_path, sreq)
-
-        return sresp
-
-    def gatewayObjectGetFlow(self, req, orig_resp):
-        # TODO(takashi): should check if _fp is available
-        sreq = self._build_storlet_request(
-            req, orig_resp.headers, sfd=orig_resp.app_iter._fp.fileno())
-
-        run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
-        docker_updated = self.update_docker_container_from_cache(sreq)
-        run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
-        self._add_system_params(sreq)
-
-        slog_path = self.paths.slog_path(sreq.storlet_main)
-        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
-
-        sprotocol = StorletInvocationProtocol(sreq, storlet_pipe_path,
-                                              slog_path,
-                                              self.storlet_timeout)
         sresp = sprotocol.communicate()
 
         self._upload_storlet_logs(slog_path, sreq)

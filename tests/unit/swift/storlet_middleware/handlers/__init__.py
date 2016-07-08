@@ -36,8 +36,6 @@ DEFAULT_CONFIG = {
 
 class BaseTestStorletMiddleware(unittest.TestCase):
     def setUp(self):
-        self.got_statuses = []
-        self.got_headers = []
         self.conf = copy.copy(DEFAULT_CONFIG)
         self.app = FakeApp()
 
@@ -49,11 +47,7 @@ class BaseTestStorletMiddleware(unittest.TestCase):
             get_fake_logger:
             get_fake_logger.return_value = FakeLogger()
             factory = storlet_handler.filter_factory(global_conf, **local_conf)
-        return factory(app)
-
-    def start_response(self, status, headers):
-        self.got_statuses.append(status)
-        self.got_headers.append(headers)
+            return factory(app)
 
     def test_load_app(self):
         try:
