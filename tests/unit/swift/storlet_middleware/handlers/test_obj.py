@@ -35,8 +35,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
                        'X-Run-Storlet': 'Storlet-1.0.jar'}
             req = Request.blank(path, environ={'REQUEST_METHOD': method},
                                 headers=headers)
-            app = self.get_app(lambda env, start: None, self.conf)
-            resp = req.get_response(app)
+            resp = self.get_response(req)
             self.assertEqual('405 Method Not Allowed', resp.status)
 
         for method in ('POST', 'PUT', 'DELETE'):
@@ -44,7 +43,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
 
     def test_PUT_objet_into_storlets_container(self):
         target = '/sda1/p/AUTH_a/storlet/storlet-1.0.jar'
-        self.app.register('PUT', target, HTTPCreated)
+        self.base_app.register('PUT', target, HTTPCreated)
 
         sheaders = {'X-Object-Meta-Storlet-Language': 'Java',
                     'X-Object-Meta-Storlet-Interface-Version': '1.0',
@@ -53,8 +52,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
                         'org.openstack.storlet.Storlet'}
         req = Request.blank(target, environ={'REQUEST_METHOD': 'PUT'},
                             headers=sheaders)
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('201 Created', resp.status)
 
     def test_GET_without_storlets(self):
@@ -62,12 +60,11 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
             req = Request.blank(
                 path, environ={'REQUEST_METHOD': 'GET'},
                 headers={'X-Backend-Storlet-Policy-Index': '0'})
-            self.app.register('GET', path, HTTPOk, body='FAKE APP')
-            app = self.get_app(self.app, self.conf)
-            resp = req.get_response(app)
+            self.base_app.register('GET', path, HTTPOk, body='FAKE APP')
+            resp = self.get_response(req)
             self.assertEqual('200 OK', resp.status)
             self.assertEqual('FAKE APP', resp.body)
-            self.app.reset_all()
+            self.base_app.reset_all()
 
         for target in ('/sda1/p/AUTH_a', '/sda1/p/AUTH_a/c',
                        '/sda1/p/AUTH_a/c/o'):
@@ -75,34 +72,32 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
 
     def test_GET_with_storlets(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('200 OK', resp.status)
         self.assertEqual('FAKE APP', resp.body)
 
     def test_GET_with_storlets_and_http_range(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar',
                      'Range': 'bytes=10-20'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('416 Requested Range Not Satisfiable',
                          resp.status)
 
     def test_GET_with_storlets_and_storlet_range(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
@@ -110,8 +105,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
                      'X-Run-Storlet': 'Storlet-1.0.jar',
                      'X-Storlet-Range': 'bytes=1-6',
                      'Range': 'bytes=1-6'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('200 OK', resp.status)
         self.assertEqual('AKE AP', resp.body)
         self.assertEqual('bytes 1-6/8',
@@ -119,7 +113,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
 
     def test_GET_with_storlets_and_storlet_proxy_range(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
@@ -128,8 +122,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
                      'X-Storlet-Range': 'bytes=1-6',
                      'Range': 'bytes=1-6',
                      'X-Storlet-Run-On-Proxy': ''})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('206 Partial Content', resp.status)
         self.assertEqual('AKE AP', resp.body)
         self.assertEqual('bytes 1-6/8',
@@ -137,32 +130,30 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
 
     def test_GET_slo_manifest_with_storlets(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk,
-                          headers={'X-Static-Large-Object': 'True'},
-                          body='FAKE MANIFEST')
+        self.base_app.register('GET', target, HTTPOk,
+                               headers={'X-Static-Large-Object': 'True'},
+                               body='FAKE MANIFEST')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('200 OK', resp.status)
         self.assertEqual('FAKE MANIFEST', resp.body)
 
     def test_GET_slo_segment_with_storlets(self):
         target = '/sda1/p/AUTH_a/c/o'
-        self.app.register('GET', target, HTTPOk,
-                          headers={'X-Static-Large-Object': 'True'},
-                          body='FAKE SEGMENT')
+        self.base_app.register('GET', target, HTTPOk,
+                               headers={'X-Static-Large-Object': 'True'},
+                               body='FAKE SEGMENT')
 
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'},
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'multipart-manifest': 'get',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('200 OK', resp.status)
         self.assertEqual('FAKE SEGMENT', resp.body)
 
@@ -173,8 +164,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
             target, environ={'REQUEST_METHOD': '_parse_vaco'},
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
-        app = self.get_app(self.app, self.conf)
-        resp = req.get_response(app)
+        resp = self.get_response(req)
         self.assertEqual('405 Method Not Allowed', resp.status)
 
 

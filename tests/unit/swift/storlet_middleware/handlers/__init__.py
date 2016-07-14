@@ -37,7 +37,7 @@ DEFAULT_CONFIG = {
 class BaseTestStorletMiddleware(unittest.TestCase):
     def setUp(self):
         self.conf = copy.copy(DEFAULT_CONFIG)
-        self.app = FakeApp()
+        self.base_app = FakeApp()
 
     def tearDown(self):
         pass
@@ -51,6 +51,10 @@ class BaseTestStorletMiddleware(unittest.TestCase):
 
     def test_load_app(self):
         try:
-            self.get_app(self.app, self.conf)
+            self.get_app(self.base_app, self.conf)
         except Exception:
             self.fail('Application loading got an error')
+
+    def get_response(self, req):
+        app = self.get_app(self.base_app, self.conf)
+        return req.get_response(app)
