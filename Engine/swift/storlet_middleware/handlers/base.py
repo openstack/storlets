@@ -284,6 +284,20 @@ class StorletBaseHandler(object):
         return options
 
     def _build_storlet_request(self, req, sheaders, sbody_iter):
+        """
+        Build a storlet_gatway.common.stob.StorletRequest (or its child)
+        instance for storlet invocation
+
+        :param req: an instane of swift.common.swob.Request
+        :param sheaders: swift.common.swob.HeaderKeyDict instance which
+                         includes object metadata information to be passed
+                         to storlet daemon
+        :param sbody_iter: an iterator instance to pass to storlet daemon as
+                           input stream which can have _fp to suggest fd to
+                           read directly.
+        :return: storlet_gatway.common.stob.StorletRequest instance (or its
+                 child instance)
+        """
         storlet_id = req.headers.get('X-Run-Storlet')
         user_metadata = self._get_user_metadata(sheaders)
         options = self._get_storlet_invocation_options(req)
