@@ -491,17 +491,21 @@ class StorletInvocationProtocol(object):
     application
 
     :param srequest: StorletRequest instance
-    :param storlet_pipe_path:
-    :param storlet_logger_path:
-    :param timeout:
+    :param storlet_pipe_path: path string to pipe
+    :param storlet_logger_path: path string to log file
+    :param timeout: integer of timeout for waiting the resp from container
+    :param extra_sources (WIP): a list of StorletRequest instances
+                                which keep data_iter for adding extra source
+                                as data stream
     """
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
+                 timeout, extra_sources=None, logger=None):
         self.srequest = srequest
         self.storlet_pipe_path = storlet_pipe_path
         self.storlet_logger_path = storlet_logger_path
         self.storlet_logger = StorletLogger(self.storlet_logger_path,
                                             'storlet_invoke')
+        self.logger = logger
         self.timeout = timeout
 
         # local side file descriptors
@@ -512,6 +516,19 @@ class StorletInvocationProtocol(object):
         self.execution_str_read_fd = None
         self.execution_str_write_fd = None
         self.task_id = None
+        self._input_data_read_fd = None
+        self._input_data_write_fd = None
+
+        self.extra_data_sources = []
+        extra_sources = extra_sources or []
+        for source in extra_sources:
+            if source.has_fd:
+                # TODO(kota_): it may be data_fd in the future.
+                raise Exception(
+                    'extra_source no requires data_fd just data_iter')
+            self.extra_data_sources.append(
+                {'read_fd': None, 'write_fd': None,
+                 'data_iter': source.data_iter})
 
         if not os.path.exists(storlet_logger_path):
             os.makedirs(storlet_logger_path)
@@ -531,11 +548,15 @@ class StorletInvocationProtocol(object):
         """
         File descriptors to be passed to container side
         """
-        return [self.input_data_read_fd,
-                self.execution_str_write_fd,
-                self.data_write_fd,
-                self.metadata_write_fd,
-                self.storlet_logger.getfd()]
+        remote_fds = [self.input_data_read_fd,
+                      self.execution_str_write_fd,
+                      self.data_write_fd,
+                      self.metadata_write_fd,
+                      self.storlet_logger.getfd()]
+
+        for source in self.extra_data_sources:
+            remote_fds.append(source['read_fd'])
+        return remote_fds
 
     @property
     def remote_fds_metadata(self):
@@ -551,11 +572,15 @@ class StorletInvocationProtocol(object):
                 str(self.srequest.start)
             input_fd_metadata.storlets_metadata['end'] = \
                 str(self.srequest.end)
-        return [input_fd_metadata.to_dict(),
-                FDMetadata(SBUS_FD_OUTPUT_TASK_ID).to_dict(),
-                FDMetadata(SBUS_FD_OUTPUT_OBJECT).to_dict(),
-                FDMetadata(SBUS_FD_OUTPUT_OBJECT_METADATA).to_dict(),
-                FDMetadata(SBUS_FD_LOGGER).to_dict()]
+        fds_metadata = [input_fd_metadata.to_dict(),
+                        FDMetadata(SBUS_FD_OUTPUT_TASK_ID).to_dict(),
+                        FDMetadata(SBUS_FD_OUTPUT_OBJECT).to_dict(),
+                        FDMetadata(SBUS_FD_OUTPUT_OBJECT_METADATA).to_dict(),
+                        FDMetadata(SBUS_FD_LOGGER).to_dict()]
+
+        for fd_metadata in self.extra_data_sources:
+            fds_metadata.append(FDMetadata(SBUS_FD_INPUT_OBJECT).to_dict())
+        return fds_metadata
 
     @contextmanager
     def _activate_invocation_descriptors(self):
@@ -581,6 +606,9 @@ class StorletInvocationProtocol(object):
         self.execution_str_read_fd, self.execution_str_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
 
+        for source in self.extra_data_sources:
+            source['read_fd'], source['write_fd'] = os.pipe()
+
     def _safe_close(self, fds):
         """
         Make sure that all of the file descriptors get closed
@@ -604,6 +632,7 @@ class StorletInvocationProtocol(object):
         """
         fds = [self.data_write_fd, self.metadata_write_fd,
                self.execution_str_write_fd]
+        fds.extend([source['read_fd'] for source in self.extra_data_sources])
         self._safe_close(fds)
 
     def _close_local_side_descriptors(self):
@@ -612,6 +641,7 @@ class StorletInvocationProtocol(object):
         """
         fds = [self.data_read_fd, self.metadata_read_fd,
                self.execution_str_read_fd]
+        fds.extend([source['write_fd'] for source in self.extra_data_sources])
         self._safe_close(fds)
 
     def _cancel(self):
@@ -739,7 +769,18 @@ class StorletInvocationProtocol(object):
                 # 4. Storlet continues writing and gets stuck as middleware
                 #    is busy writing, but still not consuming the reader end
                 #    of the Storlet writer.
-                eventlet.spawn_n(self._write_input_data)
+                eventlet.spawn_n(self._write_input_data,
+                                 self._input_data_write_fd,
+                                 self.srequest.data_iter)
+
+            for source in self.extra_data_sources:
+                # NOTE(kota_): not sure right now if using eventlet.spawn_n is
+                #              right way. GreenPool is better? I don't get
+                #              whole for the dead lock described in above.
+                self._wait_for_write_with_timeout(source['write_fd'])
+                eventlet.spawn_n(self._write_input_data,
+                                 source['write_fd'],
+                                 source['data_iter'])
 
             out_md = self._read_metadata()
             self._wait_for_read_with_timeout(self.data_read_fd)
@@ -753,16 +794,20 @@ class StorletInvocationProtocol(object):
             raise
 
     @contextmanager
-    def _open_writer(self):
-        writer = os.fdopen(self._input_data_write_fd, 'w')
+    def _open_writer(self, fd):
+        writer = os.fdopen(fd, 'w')
         try:
             yield writer
+        except OSError as e:
+            if self.logger:
+                self.logger.exception('opening fd failed: %s', e.message)
+            raise
         finally:
             writer.close()
         # NOTE(takashi): writer.close() also closes fd, so we don't have to
         #                close fd again.
 
-    def _write_input_data(self):
-        with self._open_writer() as writer:
-            for chunk in self.srequest.data_iter:
+    def _write_input_data(self, fd, data_iter):
+        with self._open_writer(fd) as writer:
+            for chunk in data_iter:
                 self._write_with_timeout(writer, chunk)

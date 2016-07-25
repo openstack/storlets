@@ -16,6 +16,8 @@
 import unittest
 import six
 from six import StringIO
+from swift.common.swob import Request, Response
+from swift.common.utils import FileLikeIter
 from tests.unit.swift import FakeLogger
 from tests.unit.swift.storlet_gateway.gateways import FakeFileManager
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
@@ -27,6 +29,7 @@ from tempfile import mkdtemp
 from shutil import rmtree
 import mock
 import json
+import eventlet
 
 
 class MockInternalClient(object):
@@ -379,7 +382,8 @@ use = egg:swift#catch_errors
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_dependency_registration(params, obj)
 
-    def test_docker_gateway_communicate(self):
+    def _test_docker_gateway_communicate(self, extra_sources=None):
+        extra_sources = extra_sources or []
         options = {'generate_log': False,
                    'scope': 'AUTH_account',
                    'storlet_main': 'org.openstack.storlet.Storlet',
@@ -420,6 +424,17 @@ use = egg:swift#catch_errors
         def mock_close(fd):
             pass
 
+        called_fd_and_bodies = []
+        invocation_protocol = \
+            'storlet_gateway.gateways.docker.runtime.' \
+            'StorletInvocationProtocol._write_input_data'
+
+        def mock_writer(self, fd, app_iter):
+            body = ''
+            for chunk in app_iter:
+                body += chunk
+            called_fd_and_bodies.append((fd, body))
+
         # prepare nested mock patch
         # SBus -> mock SBus.send() for container communication
         # os.read -> mock reading the file descriptor from container
@@ -433,12 +448,12 @@ use = egg:swift#catch_errors
                     lambda r, w, x, timeout=None: (r, w, x))
         @mock.patch('storlet_gateway.common.stob.os.read',
                     mock_read)
+        @mock.patch(invocation_protocol, mock_writer)
         def test_invocation_flow():
-            sresp = self.gateway.invocation_flow(st_req)
-            body = ''
-            for data in sresp.data_iter:
-                body = body + data
-            self.assertEqual('something', body)
+            sresp = self.gateway.invocation_flow(st_req, extra_sources)
+            eventlet.sleep(0.1)
+            file_like = FileLikeIter(sresp.data_iter)
+            self.assertEqual('something', file_like.read())
 
         # I hate the decorator to return an instance but to track current
         # implementation, we have to make a mock class for this. Need to fix.
@@ -453,6 +468,56 @@ use = egg:swift#catch_errors
         st_req.file_manager = MockFileManager()
 
         test_invocation_flow()
+
+        # ensure st_req.app_iter is drawn
+        self.assertRaises(StopIteration, next, st_req.data_iter)
+        expected_mock_writer_calls = len(extra_sources) + 1
+        self.assertEqual(expected_mock_writer_calls,
+                         len(called_fd_and_bodies))
+        self.assertEqual(called_fd_and_bodies[0][1], 'body')
+        return called_fd_and_bodies
+
+    def test_docker_gateway_communicate(self):
+        self._test_docker_gateway_communicate()
+
+    def test_docker_gateway_communicate_with_extra_sources(self):
+        options = {'generate_log': False,
+                   'scope': 'AUTH_account',
+                   'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+
+        data_sources = []
+
+        def generate_extra_st_request():
+            # This works similarly with build_storlet_request
+            # TODO(kota_): think of more generarl way w/o
+            # build_storlet_request
+            sw_req = Request.blank(
+                self.req_path, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Run-Storlet': self.sobj})
+
+            sw_resp = Response(
+                app_iter=iter(['This is a response body']), status=200)
+
+            st_req = DockerStorletRequest(
+                storlet_id=sw_req.headers['X-Run-Storlet'],
+                params=sw_req.params,
+                user_metadata={},
+                data_iter=sw_resp.app_iter, options=options)
+            data_sources.append(sw_resp.app_iter)
+            return st_req
+
+        extra_request = generate_extra_st_request()
+        mock_calls = self._test_docker_gateway_communicate(
+            extra_sources=[extra_request])
+        self.assertEqual(mock_calls[1][1], 'This is a response body')
+
+        # run all existing eventlet threads
+        for app_iter in data_sources:
+            # ensure all app_iters are drawn
+            self.assertRaises(StopIteration, next, app_iter)
 
 
 if __name__ == '__main__':

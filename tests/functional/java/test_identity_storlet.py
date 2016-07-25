@@ -20,6 +20,7 @@ from swiftclient import client as c
 from nose.plugins.attrib import attr
 from contextlib import contextmanager
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 
 class TestIdentityStorlet(StorletJavaFunctionalTest):
@@ -203,3 +204,7 @@ class TestIdentityStorletOnProxy(TestIdentityStorlet):
     def setUp(self):
         super(TestIdentityStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

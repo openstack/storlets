@@ -27,7 +27,8 @@ except ImportError:
         check_destination_header
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized, \
     HTTPMethodNotAllowed, HTTPPreconditionFailed
-from swift.common.utils import config_true_value, public, FileLikeIter
+from swift.common.utils import config_true_value, public, FileLikeIter, \
+    list_from_csv, split_path
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from storlet_middleware.handlers.base import StorletBaseHandler, \
@@ -44,6 +45,7 @@ class StorletProxyHandler(StorletBaseHandler):
             request, conf, gateway_conf, app, logger)
         self.storlet_containers = [self.storlet_container,
                                    self.storlet_dependency]
+        self.extra_sources = []
 
         if not self.is_storlet_request:
             # This is not storlet-related request, so pass it
@@ -186,7 +188,7 @@ class StorletProxyHandler(StorletBaseHandler):
     def _call_gateway(self, resp):
         sreq = self._build_storlet_request(self.request, resp.headers,
                                            resp.app_iter)
-        return self.gateway.invocation_flow(sreq)
+        return self.gateway.invocation_flow(sreq, self.extra_sources)
 
     def augment_storlet_request(self, params):
         """
@@ -197,6 +199,37 @@ class StorletProxyHandler(StorletBaseHandler):
         """
         for key, val in params.iteritems():
             self.request.headers['X-Storlet-' + key] = val
+
+    def gather_extra_sources(self):
+        # (kota_): I know this is a crazy hack to set the resp
+        # dinamically so that this is a temprorary way to make sure
+        # the capability, this aboslutely needs cleanup more genelic
+        if 'X-Storlet-Extra-Resources' in self.request.headers:
+            try:
+                resources = list_from_csv(
+                    self.request.headers['X-Storlet-Extra-Resources'])
+                # resourece should be /container/object
+                for resource in resources:
+                    # sanity check, if it's invalid path ValueError
+                    # will be raisen
+                    swift_path = ['', self.api_version, self.account]
+                    swift_path.extend(split_path(resource, 2, 2, True))
+                    sub_req = make_subrequest(
+                        self.request.environ,
+                        'GET', '/'.join(swift_path),
+                        agent='ST')
+                    sub_resp = sub_req.get_response(self.app)
+                    # TODO(kota_): make this in another green thread
+                    # expicially, in parallel with primary GET
+
+                    self.extra_sources.append(
+                        self._build_storlet_request(
+                            self.request, sub_resp.headers,
+                            sub_resp.app_iter))
+            except ValueError:
+                raise HTTPBadRequest(
+                    'X-Storlet-Extra-Resource must be a csv with'
+                    '/container/object format')
 
     @public
     def GET(self):
@@ -240,6 +273,7 @@ class StorletProxyHandler(StorletBaseHandler):
             # full object to detect if we are in SLO case,
             # and invoke Storlet only if in SLO case.
             if self.is_proxy_runnable(original_resp):
+                self.gather_extra_sources()
                 return self.apply_storlet(original_resp)
             else:
                 # Non proxy GET case: Storlet was already invoked at
@@ -305,7 +339,8 @@ class StorletProxyHandler(StorletBaseHandler):
         src_resp = source_req.get_response(self.app)
         sreq = self._build_storlet_request(self.request, src_resp.headers,
                                            src_resp.app_iter)
-        sresp = self.gateway.invocation_flow(sreq)
+        self.gather_extra_sources()
+        sresp = self.gateway.invocation_flow(sreq, self.extra_sources)
 
         resp = self.handle_put_copy_response(sresp.user_metadata,
                                              sresp.data_iter)

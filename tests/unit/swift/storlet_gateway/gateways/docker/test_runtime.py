@@ -395,6 +395,35 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             # sanity
             self.assertRaises(StopIteration, next, pipes)
 
+    def test_invocation_protocol_remote_fds(self):
+        # In default, we have 5 fds in remote_fds
+        storlet_id = 'Storlet-1.0.jar'
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+        storlet_request = DockerStorletRequest(
+            storlet_id, {}, {}, iter(StringIO()), options=options)
+        protocol = StorletInvocationProtocol(
+            storlet_request, self.pipe_path, self.log_file, 1)
+        self.assertEqual(5, len(protocol.remote_fds))
+
+        # extra_resources expands the remote_fds
+        storlet_request = DockerStorletRequest(
+            storlet_id, {}, {}, iter(StringIO()), options=options)
+        protocol = StorletInvocationProtocol(
+            storlet_request, self.pipe_path, self.log_file, 1,
+            extra_sources=[storlet_request])
+        self.assertEqual(6, len(protocol.remote_fds))
+
+        # 2 more extra_resources expands the remote_fds
+        storlet_request = DockerStorletRequest(
+            storlet_id, {}, {}, iter(StringIO()), options=options)
+        protocol = StorletInvocationProtocol(
+            storlet_request, self.pipe_path, self.log_file, 1,
+            extra_sources=[storlet_request] * 3)
+        self.assertEqual(8, len(protocol.remote_fds))
+
 
 if __name__ == '__main__':
     unittest.main()

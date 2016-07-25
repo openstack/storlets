@@ -183,11 +183,15 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
-    def invocation_flow(self, sreq):
+    def invocation_flow(self, sreq, extra_sources=None):
         """
-        Invoke storlet for given StorletRequest
+        Invoke the backend protocl with gateway
 
-        :param sreq: DockerStorletRequest instance
+        :param sreq: StorletRequest instance
+        :param extra_sources (WIP): A list of StorletRequest instance to gather
+                                    as extra resoureces to feed to storlet
+                                    container as data source
+        :return: StorletResponse instance
         """
         run_time_sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
@@ -200,7 +204,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
                                               slog_path,
-                                              self.storlet_timeout)
+                                              self.storlet_timeout,
+                                              extra_sources=extra_sources,
+                                              logger=self.logger)
 
         sresp = sprotocol.communicate()
 

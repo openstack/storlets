@@ -173,12 +173,34 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('200 OK', resp.status)
             self.assertEqual('FAKE APP', resp.body)
 
+    def test_GET_with_storlets_and_extra_resourece(self):
+        target = '/v1/AUTH_a/c/o'
+        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
+        extra_target = '/v1/AUTH_a/c2/o2'
+        self.base_app.register('GET', extra_target, HTTPOk, body='Whooa')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+
+        with storlet_enabled():
+            req = Request.blank(
+                target, environ={'REQUEST_METHOD': 'GET'},
+                headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                         'X-Storlet-Run-On-Proxy': '',
+                         'X-Storlet-Extra-Resources': '/c2/o2'})
+            resp = self.get_response(req)
+            self.assertEqual('200 OK', resp.status)
+            self.assertEqual('FAKE APP', resp.body)
+
+            # GET target called
+            self.assertTrue(any(self.base_app.get_calls('GET', target)))
+            # GET extra target also called
+            self.assertTrue(any(self.base_app.get_calls('GET', extra_target)))
+
     def test_GET_slo_without_storlets(self):
         target = '/v1/AUTH_a/c/slo_manifest'
         self.base_app.register('GET', target, HTTPOk,
                                headers={'x-static-large-object': 'True'},
                                body='FAKE APP')
-
         req = Request.blank(
             target, environ={'REQUEST_METHOD': 'GET'})
         resp = self.get_response(req)

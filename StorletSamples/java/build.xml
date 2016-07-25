@@ -28,6 +28,7 @@
                 <fileset dir="CompressStorlet" includes="build.xml" />
                 <fileset dir="ThumbnailStorlet" includes="build.xml" />
                 <fileset dir="CsvStorlet" includes="build.xml" />
+                <fileset dir="MultiInputStorlet" includes="build.xml" />
             </subant>
         </sequential>
     </macrodef>

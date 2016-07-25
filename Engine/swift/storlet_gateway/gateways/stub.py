@@ -38,6 +38,6 @@ class StorletGatewayStub(StorletGatewayBase):
         self.logger.debug("Identity invocation is called")
         return StorletResponse(user_metadata, data_iter)
 
-    def invocation_flow(self, sreq):
+    def invocation_flow(self, sreq, extra_resources=None):
         return self.indentity_invocation(sreq.user_metadata,
                                          sreq.data_iter)

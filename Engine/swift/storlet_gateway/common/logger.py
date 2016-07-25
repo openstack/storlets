@@ -16,15 +16,30 @@ Limitations under the License.
 import os
 from contextlib import contextmanager
 
+NOTOPEN = 0
+OPEN = 1
+CLOSED = 2
+
 
 class StorletLogger(object):
     def __init__(self, path, name):
         self.full_path = os.path.join(path, '%s.log' % name)
+        self._status = NOTOPEN
 
     def open(self):
-        self._file = open(self.full_path, 'a')
+        if self._status == OPEN:
+            raise Exception('StorletLogger has been open')
+        try:
+            self._file = open(self.full_path, 'a')
+        except Exception:
+            raise
+        else:
+            self._status = OPEN
 
     def getfd(self):
+        if self._status != OPEN:
+            # TODO(kota_): Is it safe to return None?
+            return None
         return self._file.fileno()
 
     def getsize(self):
@@ -32,7 +47,14 @@ class StorletLogger(object):
         return statinfo.st_size
 
     def close(self):
-        self._file.close()
+        if self._status != OPEN:
+            raise Exception('StorletLogger is not open')
+        try:
+            self._file.close()
+        except Exception:
+            raise
+        else:
+            self._status = CLOSED
 
     @contextmanager
     def activate(self):

@@ -470,5 +470,5 @@ class StorletBaseHandler(object):
                                    options=options)
         else:
             sreq = self.sreq_class(storlet_id, req.params, user_metadata,
-                                   sbody_iter, options=options)
+                                   data_iter=sbody_iter, options=options)
         return sreq
