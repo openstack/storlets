@@ -44,6 +44,8 @@ class SwiftFileManager(FileManager):
 
     @property
     def client(self):
+        # TODO(kota_): IMO, we need to make this to self._client environ to
+        #              get rid of redundant instanciation
         return InternalClient(self.conf_file, 'SA', 1)
 
     def _get_object(self, container, obj, headers=None):

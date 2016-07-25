@@ -118,6 +118,7 @@ class RunTimePaths(object):
 
     def __init__(self, scope, conf):
         self.scope = scope
+        self.reseller_prefix = conf.get('reseller_prefix', 'AUTH')
         self.factory_pipe_suffix = 'factory_pipe'
         self.sandbox_pipe_prefix = '/mnt/channels'
         self.storlet_pipe_suffix = '_storlet_pipe'
@@ -214,7 +215,7 @@ class RunTimeSandbox(object):
         self.sandbox_wait_timeout = \
             int(conf.get('restart_linux_container_timeout', 3))
 
-        self.docker_repo = conf['docker_repo']
+        self.docker_repo = conf.get('docker_repo', 'localhost:5001')
         self.docker_image_name_prefix = 'tenant'
 
         # TODO(should come from upper layer Storlet metadata)
@@ -491,6 +492,37 @@ class RemoteFDMetadata(object):
 
 
 class StorletInvocationProtocol(object):
+    """
+    StorletInvocationProtocol class
+
+    This class serves communictaion with a Docker container to run an
+    application
+
+    :param srequest: StorletRequest instance
+    :param storlet_pipe_path:
+    :param storlet_logger_path:
+    :param timeout:
+    """
+    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
+                 timeout):
+        self.srequest = srequest
+        self.storlet_pipe_path = storlet_pipe_path
+        self.storlet_logger_path = storlet_logger_path
+        self.storlet_logger = StorletLogger(self.storlet_logger_path,
+                                            'storlet_invoke')
+        self.timeout = timeout
+
+        # local side file descriptors
+        self.data_read_fd = None
+        self.data_write_fd = None
+        self.metadata_read_fd = None
+        self.metadata_write_fd = None
+        self.execution_str_read_fd = None
+        self.execution_str_write_fd = None
+        self.task_id = None
+
+        if not os.path.exists(storlet_logger_path):
+            os.makedirs(storlet_logger_path)
 
     @property
     def input_data_read_fd(self):
@@ -595,29 +627,9 @@ class StorletInvocationProtocol(object):
             raise StorletRuntimeException("Failed to send execute command")
 
         self._wait_for_read_with_timeout(self.execution_str_read_fd)
+        # TODO(kota_): need an assertion for task_id format
         self.task_id = os.read(self.execution_str_read_fd, 10)
         os.close(self.execution_str_read_fd)
-
-    def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout):
-        self.srequest = srequest
-        self.storlet_pipe_path = storlet_pipe_path
-        self.storlet_logger_path = storlet_logger_path
-        self.storlet_logger = StorletLogger(self.storlet_logger_path,
-                                            'storlet_invoke')
-        self.timeout = timeout
-
-        # local side file descriptors
-        self.data_read_fd = None
-        self.data_write_fd = None
-        self.metadata_read_fd = None
-        self.metadata_write_fd = None
-        self.execution_str_read_fd = None
-        self.execution_str_write_fd = None
-        self.task_id = None
-
-        if not os.path.exists(storlet_logger_path):
-            os.makedirs(storlet_logger_path)
 
     def _wait_for_read_with_timeout(self, fd):
         """
@@ -680,7 +692,7 @@ class StorletInvocationProtocol(object):
     def communicate(self):
         try:
             with self.storlet_logger.activate(),\
-                self._activate_invocation_descriptors():
+                    self._activate_invocation_descriptors():
                 self._invoke()
 
             if not self.srequest.has_fd:

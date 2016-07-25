@@ -19,6 +19,7 @@ import unittest
 import tempfile
 from contextlib import contextmanager
 from six import StringIO
+from stat import ST_MODE
 
 from storlet_gateway.common.exceptions import StorletRuntimeException
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
@@ -26,6 +27,7 @@ from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
 from tests.unit.swift import FakeLogger
 from exceptions import AssertionError
+from tests.unit import with_tempdir
 
 
 @contextmanager
@@ -110,8 +112,8 @@ class TestRuntimePaths(unittest.TestCase):
 
         # When the directory exists
         with mock.patch('os.path.exists', return_value=True), \
-            mock.patch('os.makedirs') as m, \
-            mock.patch('os.chmod') as c:
+                mock.patch('os.makedirs') as m, \
+                mock.patch('os.chmod') as c:
             self.paths.create_host_pipe_prefix()
             self.assertEqual(m.call_count, 0)
             cargs, ckwargs = c.call_args
@@ -120,8 +122,8 @@ class TestRuntimePaths(unittest.TestCase):
 
         # When the directory does not exist
         with mock.patch('os.path.exists', return_value=False), \
-            mock.patch('os.makedirs') as m, \
-            mock.patch('os.chmod') as c:
+                mock.patch('os.makedirs') as m, \
+                mock.patch('os.chmod') as c:
             self.paths.create_host_pipe_prefix(),
             self.assertEqual(m.call_count, 1)
             # Make sure about the target directory
@@ -188,9 +190,72 @@ class TestRuntimePaths(unittest.TestCase):
             self.paths.get_host_dependency_cache_dir(),
             os.path.join(self.cache_dir, self.scope, 'dependency'))
 
+    def test_runtime_paths_default(self):
+        # CHECK: docs  says we need 4 dirs for communicate
+        # ====================================================================
+        # |1| host_factory_pipe_path    | <pipes_dir>/<account>/factory_pipe |
+        # ====================================================================
+        # |2| host_storlet_pipe_path    | <pipes_dir>/<account>/<storlet_id> |
+        # ====================================================================
+        # |3| sandbox_factory_pipe_path | /mnt/channels/factory_pipe         |
+        # ====================================================================
+        # |4| sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>         |
+        # ====================================================================
+        #
+        # With this test,  the account value is "account" (because of w/o
+        # reseller_prefix), and the storlet_id is "Storlet-1.0.jar" (app name?)
+        # ok, let's check for these values
+
+        runtime_paths = RunTimePaths('AUTH_account', {})
+        storlet_id = 'Storlet-1.0.jar'
+
+        # For pipe
+        self.assertEqual('/home/docker_device/pipes/scopes/AUTH_account',
+                         runtime_paths.host_pipe_prefix())
+
+        # 1. host_factory_pipe_path <pipes_dir>/<scope>/factory_pipe
+        self.assertEqual(
+            '/home/docker_device/pipes/scopes/AUTH_account/factory_pipe',
+            runtime_paths.host_factory_pipe())
+        # 2. host_storlet_pipe_path <pipes_dir>/<scope>/<storlet_id>
+        self.assertEqual(
+            '/home/docker_device/pipes/scopes/AUTH_account/Storlet-1.0.jar',
+            runtime_paths.host_storlet_pipe(storlet_id))
+        # 3. Yes, right now, we don't have the path for #3 in Python
+        # 4. sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>
+        self.assertEqual('/mnt/channels/Storlet-1.0.jar',
+                         runtime_paths.sbox_storlet_pipe(storlet_id))
+
+        # This looks like for jar load?
+        self.assertEqual('/home/docker_device/storlets/scopes/AUTH_account',
+                         runtime_paths.host_storlet_prefix())
+        self.assertEqual(
+            '/home/docker_device/storlets/scopes/AUTH_account/Storlet-1.0.jar',
+            runtime_paths.host_storlet(storlet_id))
+        # And this one is a mount poit in sand box?
+        self.assertEqual('/home/swift/Storlet-1.0.jar',
+                         runtime_paths.sbox_storlet_exec(storlet_id))
+
+    @with_tempdir
+    def test_create_host_pipe_prefix_with_real_dir(self, temp_dir):
+        runtime_paths = RunTimePaths('AUTH_account', {'host_root': temp_dir})
+        runtime_paths.create_host_pipe_prefix()
+        path = runtime_paths.host_pipe_prefix()
+        self.assertTrue(os.path.exists(path))
+        self.assertTrue(os.path.isdir(path))
+        permission = oct(os.stat(path)[ST_MODE])[-3:]
+        # TODO(kota_): make sure if this is really acceptable
+        self.assertEqual('777', permission)
+
+
+class TestRuntimePathsTempauth(TestRuntimePaths):
+    def setUp(self):
+        self.account = 'AUTH_test'
+        self.scope = 'test'
+        self._initialize()
+
 
 class TestRunTimeSandbox(unittest.TestCase):
-
     def setUp(self):
         self.logger = FakeLogger()
         # TODO(takashi): take these values from config file

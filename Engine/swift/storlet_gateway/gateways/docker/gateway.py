@@ -88,6 +88,13 @@ class StorletGatewayDocker(StorletGatewayBase):
     request_class = DockerStorletRequest
 
     def __init__(self, sconf, logger, scope):
+        """
+        :param sconf: a dict for storlets conf
+        :param logger: a logger instance
+        :param scope: a string for sandbox path basically consists of
+                      PREFIX_projectid comming from swift request path
+                      (e.g. AUTH_<project id>)
+        """
         super(StorletGatewayDocker, self).__init__(sconf, logger, scope)
         # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
@@ -169,7 +176,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         """
         Auxiliary function that:
 
-        (1) Brings from Swift obj_name, whether this is a
+        (1) Brings from Swift obj_name, either this is in a
             storlet or a storlet dependency.
         (2) Copies from local cache into the Docker conrainer
         If this is a Storlet then also validates that the cache is updated

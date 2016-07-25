@@ -20,9 +20,9 @@ from storlet_gateway.common.exceptions import StorletTimeout
 
 
 class FileDescriptorIterator(object):
-    def __init__(self, obj_data, timeout, cancel_func):
+    def __init__(self, fd, timeout, cancel_func):
         self.closed = False
-        self.obj_data = obj_data
+        self.fd = fd
         self.timeout = timeout
         self.cancel_func = cancel_func
         self.buf = b''
@@ -33,7 +33,7 @@ class FileDescriptorIterator(object):
     def read_with_timeout(self, size):
         try:
             with StorletTimeout(self.timeout):
-                chunk = os.read(self.obj_data, size)
+                chunk = os.read(self.fd, size)
         except StorletTimeout:
             if self.cancel_func:
                 self.cancel_func()
@@ -46,11 +46,11 @@ class FileDescriptorIterator(object):
 
     def next(self, size=64 * 1024):
         if len(self.buf) < size:
-            r, w, e = select.select([self.obj_data], [], [], self.timeout)
+            r, w, e = select.select([self.fd], [], [], self.timeout)
             if len(r) == 0:
                 self.close()
 
-            if self.obj_data in r:
+            if self.fd in r:
                 self.buf += self.read_with_timeout(size - len(self.buf))
                 if self.buf == b'':
                     raise StopIteration('Stopped iterator ex')
@@ -119,7 +119,7 @@ class FileDescriptorIterator(object):
     def close(self):
         if self.closed:
             return
-        os.close(self.obj_data)
+        os.close(self.fd)
         self.closed = True
 
     def __del__(self):
