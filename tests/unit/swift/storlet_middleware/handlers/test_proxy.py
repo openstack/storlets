@@ -22,7 +22,7 @@ from swift.common.swob import Request, HTTPOk, HTTPCreated, HTTPAccepted, \
 from storlet_middleware.handlers import StorletProxyHandler
 
 from tests.unit.swift.storlet_middleware.handlers import \
-    BaseTestStorletMiddleware
+    BaseTestStorletMiddleware, create_handler_config
 
 
 @contextmanager
@@ -465,6 +465,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
 class TestStorletProxyHandler(unittest.TestCase):
     def setUp(self):
         self.handler_class = StorletProxyHandler
+        self.conf = create_handler_config('proxy')
 
     def test_init_handler(self):
         req = Request.blank(
@@ -473,7 +474,7 @@ class TestStorletProxyHandler(unittest.TestCase):
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         with storlet_enabled():
             handler = self.handler_class(
-                req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+                req, self.conf, mock.MagicMock(), mock.MagicMock())
 
         self.assertEqual('/v1/acc/cont/obj', handler.request.path)
         self.assertEqual('v1', handler.api_version)
@@ -515,7 +516,7 @@ class TestStorletProxyHandler(unittest.TestCase):
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         with storlet_enabled():
             handler = self.handler_class(
-                req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+                req, self.conf, mock.MagicMock(), mock.MagicMock())
 
         headers = {'X-Storlet-Key1': 'Value1',
                    'X-Key2': 'Value2',

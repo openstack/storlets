@@ -20,7 +20,7 @@ from swift.common.swob import Request, HTTPOk, HTTPCreated
 from storlet_middleware.handlers import StorletObjectHandler
 
 from tests.unit.swift.storlet_middleware.handlers import \
-    BaseTestStorletMiddleware
+    BaseTestStorletMiddleware, create_handler_config
 
 
 class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
@@ -171,6 +171,7 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
 class TestStorletObjectHandler(unittest.TestCase):
     def setUp(self):
         self.handler_class = StorletObjectHandler
+        self.conf = create_handler_config('object')
 
     def test_init_handler(self):
         req = Request.blank(
@@ -178,7 +179,7 @@ class TestStorletObjectHandler(unittest.TestCase):
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         handler = self.handler_class(
-            req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
+            req, self.conf, mock.MagicMock(), mock.MagicMock())
         # FIXME: stil hold api version 0 at ObjectHandler but will be
         #        deprecated if it's never used.
         self.assertEqual('0', handler.api_version)

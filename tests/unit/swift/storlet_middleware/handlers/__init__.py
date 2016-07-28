@@ -17,6 +17,7 @@ import copy
 import mock
 import unittest
 
+from storlet_gateway.gateways.stub import StorletGatewayStub
 from storlet_middleware import storlet_handler
 
 from tests.unit.swift import FakeLogger
@@ -32,6 +33,11 @@ DEFAULT_CONFIG = {
         'storlet_gateway.gateways.stub:StorletGatewayStub',
     'storlet_gateway_conf': '/etc/swift/storlet_stub_gateway.conf',
     'execution_server': 'proxy'}
+
+
+def create_handler_config(exec_server):
+    return {'execution_server': exec_server,
+            'gateway_module': StorletGatewayStub}
 
 
 class BaseTestStorletMiddleware(unittest.TestCase):

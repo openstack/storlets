@@ -147,6 +147,7 @@ class StorletBaseHandler(object):
         :param app: wsgi Application
         :param logger: logger instance
         """
+        self.reseller_prefix = conf.get('reseller_prefix', 'AUTH')
         self.request = request
         self.app = app
         self.logger = logger
@@ -164,7 +165,7 @@ class StorletBaseHandler(object):
 
         """
         self.gateway = self.gateway_class(
-            self.conf, self.logger, self.app, self.account)
+            self.conf, self.logger, self.scope)
         self._update_storlet_parameters_from_headers()
 
     def _extract_vaco(self):
@@ -177,6 +178,15 @@ class StorletBaseHandler(object):
         """
         self._api_version, self._account, self._container, self._obj = \
             self._parse_vaco()
+
+    @property
+    def scope(self):
+        if self._account.startswith(self.reseller_prefix + '_'):
+            start = len(self.reseller_prefix) + 1
+        else:
+            start = 0
+        end = min(start + 13, len(self.account))
+        return self._account[start:end]
 
     @property
     def api_version(self):

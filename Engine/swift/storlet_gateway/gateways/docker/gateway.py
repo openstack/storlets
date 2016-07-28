@@ -82,15 +82,11 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     request_class = DockerStorletRequest
 
-    def __init__(self, sconf, logger, app, account):
-        self.logger = logger
+    def __init__(self, sconf, logger, scope):
+        super(StorletGatewayDocker, self).__init__(sconf, logger, scope)
         # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
-        self.app = app
-        # TODO(takashi): We should use scope instead of account in gateway
-        self.account = account
-        self.sconf = sconf
         self.storlet_timeout = int(self.sconf['storlet_timeout'])
-        self.paths = RunTimePaths(account, sconf)
+        self.paths = RunTimePaths(scope, sconf)
 
     @classmethod
     def validate_storlet_registration(cls, params, name):
@@ -123,7 +119,7 @@ class StorletGatewayDocker(StorletGatewayBase):
                                  ': {0}'.format(md))
 
     def invocation_flow(self, sreq):
-        run_time_sbox = RunTimeSandbox(self.account, self.sconf, self.logger)
+        run_time_sbox = RunTimeSandbox(self.scope, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
         self._add_system_params(sreq)

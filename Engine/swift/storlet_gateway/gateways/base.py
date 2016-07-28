@@ -19,6 +19,11 @@ class StorletGatewayBase(object):
 
     request_class = StorletRequest
 
+    def __init__(self, sconf, logger, scope):
+        self.logger = logger
+        self.sconf = sconf
+        self.scope = scope
+
     @classmethod
     def validate_storlet_registration(cls, params, obj):
         raise NotImplementedError("Not implemented: "
