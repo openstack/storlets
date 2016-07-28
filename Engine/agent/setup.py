@@ -13,10 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
+from setuptools import setup, find_packages
 
-from setuptools import setup
-
-setup(name='storlet_daemon_factory',
+setup(name='storlets_agent',
       version='1.0',
-      package_dir={'storlet_daemon_factory': ''},
-      packages=['storlet_daemon_factory'])
+      packages=find_packages(),
+      scripts=['bin/storlets-daemon-factory']
+      )

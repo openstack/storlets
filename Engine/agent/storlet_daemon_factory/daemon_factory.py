@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # Copyright (c) 2015-2016 OpenStack Foundation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -21,7 +20,6 @@ import os
 import pwd
 import signal
 import subprocess
-import sys
 import time
 
 from SBusPythonFacade.SBus import SBus
@@ -613,6 +611,3 @@ def main(argv):
 
     # Start the main loop
     return factory.main_loop(container_id)
-
-if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
