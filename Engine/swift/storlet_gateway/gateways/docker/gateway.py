@@ -16,7 +16,6 @@ Limitations under the License.
 import os
 import shutil
 
-from swift.common.internal_client import InternalClient as ic
 from storlet_gateway.common.exceptions import StorletConfigError
 from storlet_gateway.common.stob import StorletRequest
 from storlet_gateway.gateways.base import StorletGatewayBase
@@ -66,6 +65,10 @@ class DockerStorletRequest(StorletRequest):
         self.dependencies = [x.strip() for x
                              in self.options['storlet_dependency'].split(',')
                              if x.strip()]
+
+        # TODO(takashi): file manager should not be an optional parameter,
+        #                but a required parameter
+        self.file_manager = self.options.get('file_manager')
 
         self.start = self.options.get('range_start')
         self.end = self.options.get('range_end')
@@ -154,17 +157,9 @@ class StorletGatewayDocker(StorletGatewayBase):
     def _upload_storlet_logs(self, slog_path, sreq):
         if sreq.generate_log:
             with open(slog_path, 'r') as logfile:
-                client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
-                # TODO(takashi): Is it really html?
-                #                (I suppose it should be text/plain)
-                headers = {'CONTENT_TYPE': 'text/html'}
                 storlet_name = sreq.storlet_id.split('-')[0]
                 log_obj_name = '%s.log' % storlet_name
-                # TODO(takashi): we had better retrieve required values from
-                #                sconf in __init__
-                client.upload_object(logfile, self.account,
-                                     self.sconf['storlet_logcontainer'],
-                                     log_obj_name, headers)
+                sreq.file_manager.put_log(log_obj_name, logfile)
 
     def bring_from_cache(self, obj_name, sreq, is_storlet):
         """
@@ -184,12 +179,12 @@ class StorletGatewayDocker(StorletGatewayBase):
         """
         # Determine the cache we are to work with
         # e.g. dependency or storlet
-        if not is_storlet:
-            cache_dir = self.paths.get_host_dependency_cache_dir()
-            swift_source_container = self.paths.storlet_dependency
-        else:
+        if is_storlet:
             cache_dir = self.paths.get_host_storlet_cache_dir()
-            swift_source_container = self.paths.storlet_container
+            get_func = sreq.file_manager.get_storlet
+        else:
+            cache_dir = self.paths.get_host_dependency_cache_dir()
+            get_func = sreq.file_manager.get_dependency
 
         if not os.path.exists(cache_dir):
             os.makedirs(cache_dir, 0o755)
@@ -219,26 +214,20 @@ class StorletGatewayDocker(StorletGatewayBase):
             if b_storlet_size_changed or b_storlet_file_updated:
                 update_cache = True
 
-        expected_perm = ''
         if update_cache:
             # If the cache needs to be updated, then get on with it
-            # bring the object from Swift using ic
-            client = ic('/etc/swift/storlet-proxy-server.conf', 'SA', 1)
-            path = client.make_path(self.account, swift_source_container,
-                                    obj_name)
-            self.logger.debug('Invoking ic on path %s' % path)
-            resp = client.make_request('GET', path, {'PATH_INFO': path}, [200])
+            # bring the object from storge
+            data_iter, perm = get_func(obj_name)
 
+            # TODO(takashi): Do not directly write to target path
             with open(cache_target_path, 'w') as fn:
-                fn.write(resp.body)
+                for data in data_iter:
+                    fn.write(data)
 
             if not is_storlet:
-                expected_perm = resp.headers. \
-                    get('X-Object-Meta-Storlet-Dependency-Permissions', '')
-                if expected_perm != '':
-                    os.chmod(cache_target_path, int(expected_perm, 8))
-                else:
-                    os.chmod(cache_target_path, int('0600', 8))
+                if not perm:
+                    perm = '0600'
+                os.chmod(cache_target_path, int(perm, 8))
 
         # The node's local cache is now updated.
         # We now verify if we need to update the

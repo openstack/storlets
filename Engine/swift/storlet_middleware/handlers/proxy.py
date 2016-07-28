@@ -33,8 +33,6 @@ class StorletProxyHandler(StorletBaseHandler):
     def __init__(self, request, conf, app, logger):
         super(StorletProxyHandler, self).__init__(
             request, conf, app, logger)
-        self.storlet_container = conf.get('storlet_container')
-        self.storlet_dependency = conf.get('storlet_dependency')
         self.storlet_containers = [self.storlet_container,
                                    self.storlet_dependency]
 
