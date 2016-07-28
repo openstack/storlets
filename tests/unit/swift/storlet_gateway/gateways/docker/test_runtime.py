@@ -25,6 +25,7 @@ from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
 from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
 from tests.unit.swift import FakeLogger
+from exceptions import AssertionError
 
 
 @contextmanager
@@ -59,18 +60,21 @@ def _mock_os_pipe(bufs):
     def fake_os_close(fd):
         fd.close()
 
-    pipes = []
-    for buf in bufs:
-        pipe = (FakeFd(buf), FakeFd())
-        pipes.append(pipe)
+    pipes = [(FakeFd(buf), FakeFd()) for buf in bufs]
+    pipe_generator = iter(pipes)
 
-    with mock.patch('storlet_gateway.gateways.docker.runtime.os.pipe') as \
-        fake_os_pipe, \
+    def mock_os_pipe():
+        try:
+            return next(pipe_generator)
+        except StopIteration:
+            raise AssertionError('pipe called more than expected')
+
+    with mock.patch('storlet_gateway.gateways.docker.runtime.os.pipe',
+                    mock_os_pipe), \
         mock.patch('storlet_gateway.gateways.docker.runtime.os.read',
                    fake_os_read) as fake_os_read,\
         mock.patch('storlet_gateway.gateways.docker.runtime.os.close',
                    fake_os_close) as fake_os_close:
-        fake_os_pipe.side_effect = pipes
         yield pipes
 
 
