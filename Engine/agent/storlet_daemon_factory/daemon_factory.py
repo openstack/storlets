@@ -553,17 +553,7 @@ def start_logger(logger_name, log_level, container_id):
     else:
         logger.setLevel(level)
 
-    # TODO(takashi): Why do we need this?
-    for i in range(0, 4):
-        try:
-            log_handler = SysLogHandler('/dev/log')
-            break
-        except Exception:
-            if i < 3:
-                time.sleep(1)
-            else:
-                raise
-
+    log_handler = SysLogHandler('/dev/log')
     str_format = '%(name)-12s: %(levelname)-8s %(funcName)s' + \
                  ' %(lineno)s [%(process)d, %(threadName)s]' + \
                  ' %(message)s'
