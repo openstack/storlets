@@ -115,7 +115,7 @@ class DaemonFactory(object):
         :param log_level: Logger verbosity level
         :param container_id: container id
 
-        :returns: A list of the JVM arguments
+        :returns: (A list of the JVM arguments, A list of environ parameters)
         """
 
         str_prfx = "/opt/storlets/"
@@ -128,9 +128,8 @@ class DaemonFactory(object):
                     'SCommon.jar',
                     'SDaemon.jar',
                     '']
-        jar_deps = ['%s%s:' % (str_prfx, x) for x in jar_deps]
-        str_dmn_clspth = ''.join(jar_deps)
-        str_dmn_clspth = str_dmn_clspth + storlet_path
+        jar_deps = [os.path.join(str_prfx, x) for x in jar_deps]
+        str_dmn_clspth = ':'.join(jar_deps) + ':' + storlet_path
 
         self.logger.debug('START_DAEMON: daemon lang = %s' % daemon_language)
         self.logger.debug('START_DAEMON: str_dmn_clspth = %s' % str_dmn_clspth)
@@ -139,12 +138,9 @@ class DaemonFactory(object):
         self.logger.debug('START_DAEMON: uds_path = %s' % uds_path)
         self.logger.debug('START_DAEMON: log_level = %s' % log_level)
 
-        # We know the Daemon class and its dependencies
         str_daemon_main_class = "com.ibm.storlet.daemon.SDaemon"
 
         self.logger.debug('START_DAEMON:preparing arguments')
-        # Setting two environmental variables
-        # The path strings are corrupted if passed is pargs list below
         if os.environ.get('CLASSPATH'):
             str_dmn_clspth = os.environ['CLASSPATH'] + ':' + str_dmn_clspth
         if os.environ.get('LD_LIBRARY_PATH'):
@@ -152,27 +148,23 @@ class DaemonFactory(object):
         else:
             str_library_path = str_prfx
 
-        # TODO(takashi): We should not set environ value here, because this
-        #                affects the base process
-        os.environ['CLASSPATH'] = str_dmn_clspth
-        os.environ['LD_LIBRARY_PATH'] = str_library_path
-        pargs = [str('/usr/bin/java'),
-                 str(str_daemon_main_class),
-                 str(storlet_name),
-                 str(uds_path),
-                 str(log_level),
-                 str('%d' % pool_size),
-                 str(container_id)]
-        str_pargs = ' '.join(map(str, pargs))
+        env = dict()
+        env['CLASSPATH'] = str_dmn_clspth
+        env['LD_LIBRARY_PATH'] = str_library_path
+
+        pargs = ['/usr/bin/java', str_daemon_main_class, storlet_name,
+                 uds_path, log_level, str(pool_size), container_id]
+        str_pargs = ' '.join(pargs)
         self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
 
-        return pargs
+        return pargs, env
 
-    def spawn_subprocess(self, pargs):
+    def spawn_subprocess(self, pargs, env):
         """
         Launch a JVM process for some storlet daemon
 
         :param pargs: Arguments for the JVM
+        :param env: Environment value
         :returns: (Status, Description text of possible error)
         """
         b_status = True
@@ -187,7 +179,8 @@ class DaemonFactory(object):
             daemon_p = subprocess.Popen(pargs,
                                         stdout=dn,
                                         stderr=subprocess.PIPE,
-                                        shell=False)
+                                        shell=False,
+                                        env=env)
 
             logger_p = subprocess.Popen('logger',
                                         stdin=daemon_p.stderr,
@@ -270,7 +263,7 @@ class DaemonFactory(object):
         :returns: (Status, Description text of possible error)
         """
         if daemon_language.lower() in ['java']:
-            pargs = self.get_jvm_args(
+            pargs, env = self.get_jvm_args(
                 daemon_language, storlet_path, storlet_name,
                 pool_size, uds_path, log_level, container_id)
         else:
@@ -291,7 +284,7 @@ class DaemonFactory(object):
         else:
             self.logger.debug('{0} is not running. About to spawn process'.
                               format(storlet_name))
-            b_status, error_text = self.spawn_subprocess(pargs)
+            b_status, error_text = self.spawn_subprocess(pargs, env)
 
         return b_status, error_text
 

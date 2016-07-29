@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import logging
+import mock
 import unittest
 from six import StringIO
 
@@ -102,6 +103,32 @@ class TestDaemonFactory(unittest.TestCase):
         self.logger = FakeLogger()
         self.pipe_path = 'path/to/pipe'
         self.dfactory = DaemonFactory(self.pipe_path, self.logger)
+
+    def test_get_jvm_args(self):
+        dummy_env = {'CLASSPATH': '/default/classpath',
+                     'LD_LIBRARY_PATH': '/default/ld/library/path'}
+        with mock.patch('storlet_daemon_factory.daemon_factory.os.environ',
+                        dummy_env):
+            pargs, env = self.dfactory.get_jvm_args(
+                'java', 'path/to/storlet', 'Storlet-1.0.jar',
+                1, 'path/to/uds', 'DEBUG', 'contid')
+            self.assertEqual(
+                ['/usr/bin/java', 'com.ibm.storlet.daemon.SDaemon',
+                 'Storlet-1.0.jar', 'path/to/uds', 'DEBUG', '1', 'contid'],
+                pargs)
+            self.assertEqual(
+                {'CLASSPATH': '/default/classpath:'
+                              '/opt/storlets/logback-classic-1.1.2.jar:'
+                              '/opt/storlets/logback-core-1.1.2.jar:'
+                              '/opt/storlets/slf4j-api-1.7.7.jar:'
+                              '/opt/storlets/json_simple-1.1.jar:'
+                              '/opt/storlets/SBusJavaFacade.jar:'
+                              '/opt/storlets/SCommon.jar:'
+                              '/opt/storlets/SDaemon.jar:'
+                              '/opt/storlets/:path/to/storlet',
+                 'LD_LIBRARY_PATH': '/default/ld/library/path:'
+                                    '/opt/storlets/'},
+                env)
 
     def test_get_handler(self):
         # start daemon
