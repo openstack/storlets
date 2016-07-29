@@ -117,8 +117,13 @@ class RunTimePaths(object):
     """
 
     def __init__(self, scope, conf):
+        """
+        Constract RunTimePaths instance
+
+        :param scope: scope name to be used as container name
+        :param conf: gateway conf
+        """
         self.scope = scope
-        self.reseller_prefix = conf.get('reseller_prefix', 'AUTH')
         self.factory_pipe_suffix = 'factory_pipe'
         self.sandbox_pipe_prefix = '/mnt/channels'
         self.storlet_pipe_suffix = '_storlet_pipe'
@@ -208,6 +213,11 @@ class RunTimeSandbox(object):
     """
 
     def __init__(self, scope, conf, logger):
+        """
+        :param scope: scope name to be used as container name
+        :param conf: gateway conf
+        :param logger: logger instance
+        """
         self.paths = RunTimePaths(scope, conf)
         self.scope = scope
 
@@ -231,6 +241,12 @@ class RunTimeSandbox(object):
         self.logger = logger
 
     def _parse_sandbox_factory_answer(self, str_answer):
+        """
+        Parse answer string recieved from container side
+
+        :param str_answer: answer string
+        :returns: (status, message)
+        """
         two_tokens = str_answer.split(':', 1)
         b_success = False
         if two_tokens[0] == 'True':
@@ -238,6 +254,13 @@ class RunTimeSandbox(object):
         return b_success, two_tokens[1]
 
     def ping(self):
+        """
+        Ping to daemon factory process inside container
+
+        :returns:  1 when the daemon factory is responsive
+                   0 when the daemon factory is not responsive
+                  -1 when it fails to send command to the process
+        """
         pipe_path = self.paths.host_factory_pipe()
 
         with _open_pipe() as (read_fd, write_fd):
@@ -329,6 +352,7 @@ class RunTimeSandbox(object):
     def start_storlet_daemon(self, spath, storlet_id):
         """
         Start SDaemon process in the scope's sandbox
+
         """
         prms = {}
         prms['daemon_language'] = 'java'
@@ -526,6 +550,9 @@ class StorletInvocationProtocol(object):
 
     @property
     def input_data_read_fd(self):
+        """
+        File descriptor to read the input body content
+        """
         if self.srequest.has_fd:
             return self.srequest.data_fd
         else:
@@ -533,6 +560,9 @@ class StorletInvocationProtocol(object):
 
     @property
     def remote_fds(self):
+        """
+        File descriptors to be passed to container side
+        """
         return [self.input_data_read_fd,
                 self.execution_str_write_fd,
                 self.data_write_fd,
@@ -541,6 +571,9 @@ class StorletInvocationProtocol(object):
 
     @property
     def remote_fds_metadata(self):
+        """
+        Metadata about file descriptors to be passed to container side
+        """
         input_fd_metadata = RemoteFDMetadata({'type': SBUS_FD_INPUT_OBJECT})
         if self.srequest.user_metadata:
             for key, val in self.srequest.user_metadata.iteritems():
@@ -593,16 +626,25 @@ class StorletInvocationProtocol(object):
                     pass
 
     def _close_remote_side_descriptors(self):
+        """
+        Close all of the container side descriptors
+        """
         fds = [self.data_write_fd, self.metadata_write_fd,
                self.execution_str_write_fd]
         self._safe_close(fds)
 
     def _close_local_side_descriptors(self):
+        """
+        Close all of the host side descriptors
+        """
         fds = [self.data_read_fd, self.metadata_read_fd,
                self.execution_str_read_fd]
         self._safe_close(fds)
 
     def _cancel(self):
+        """
+        Cancel on-going storlet execution
+        """
         with _open_pipe() as (read_fd, write_fd):
             dtg = ClientSBusOutDatagram.create_service_datagram(
                 SBUS_CMD_CANCEL,
@@ -612,10 +654,13 @@ class StorletInvocationProtocol(object):
             rc = SBus.send(self.storlet_pipe_path, dtg)
             if (rc < 0):
                 raise StorletRuntimeException('Failed to cancel task')
-
+            # TODO(takashi): Check the reponse here
             os.read(read_fd, 10)
 
     def _invoke(self):
+        """
+        Send an execution command to the remote daemon factory
+        """
         dtg = ClientSBusOutDatagram(
             SBUS_CMD_EXECUTE,
             self.remote_fds,
@@ -635,10 +680,10 @@ class StorletInvocationProtocol(object):
         """
         Wait while the read file descriptor gets ready
 
-        :param fd: File descriptor
-        :raises StorletTimeout: Exception raised when it time out to cancel the
-                                existing task
-        :raises StorletRuntimeException: Exception raised when it fail to
+        :param fd: File descriptor to read
+        :raises StorletTimeout: Exception raised when it times out to cancel
+                                the existing task
+        :raises StorletRuntimeException: Exception raised when it fails to
                                          cancel the existing task
         """
         try:
@@ -664,6 +709,11 @@ class StorletInvocationProtocol(object):
             raise StorletRuntimeException('Read fd is not ready')
 
     def _read_metadata(self):
+        """
+        Read metadata in the storlet execution result from fd
+
+        :returns: a dict of metadata
+        """
         self._wait_for_read_with_timeout(self.metadata_read_fd)
         flat_json = os.read(self.metadata_read_fd, MAX_META_OVERALL_SIZE)
         if flat_json is None:
@@ -672,6 +722,15 @@ class StorletInvocationProtocol(object):
         return json.loads(flat_json)
 
     def _wait_for_write_with_timeout(self, fd):
+        """
+        Wait while the write file descriptor gets ready
+
+        :param fd: File descriptor to write
+        :raises StorletTimeout: Exception raised when it times out to cancel
+                                the existing task
+        :raises StorletRuntimeException: Exception raised when it fails to
+                                         cancel the existing task
+        """
         with StorletTimeout(self.timeout):
             r, w, e = select.select([], [fd], [])
         if fd not in w:

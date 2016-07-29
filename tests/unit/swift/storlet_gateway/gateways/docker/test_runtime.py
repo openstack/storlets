@@ -193,33 +193,33 @@ class TestRuntimePaths(unittest.TestCase):
     def test_runtime_paths_default(self):
         # CHECK: docs  says we need 4 dirs for communicate
         # ====================================================================
-        # |1| host_factory_pipe_path    | <pipes_dir>/<account>/factory_pipe |
+        # |1| host_factory_pipe_path    | <pipes_dir>/<scope>/factory_pipe   |
         # ====================================================================
-        # |2| host_storlet_pipe_path    | <pipes_dir>/<account>/<storlet_id> |
+        # |2| host_storlet_pipe_path    | <pipes_dir>/<scope>/<storlet_id>   |
         # ====================================================================
         # |3| sandbox_factory_pipe_path | /mnt/channels/factory_pipe         |
         # ====================================================================
         # |4| sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>         |
         # ====================================================================
         #
-        # With this test,  the account value is "account" (because of w/o
-        # reseller_prefix), and the storlet_id is "Storlet-1.0.jar" (app name?)
+        # With this test,  the scope value is "account" and the storlet_id is
+        # "Storlet-1.0.jar" (app name?)
         # ok, let's check for these values
 
-        runtime_paths = RunTimePaths('AUTH_account', {})
+        runtime_paths = RunTimePaths('account', {})
         storlet_id = 'Storlet-1.0.jar'
 
         # For pipe
-        self.assertEqual('/home/docker_device/pipes/scopes/AUTH_account',
+        self.assertEqual('/home/docker_device/pipes/scopes/account',
                          runtime_paths.host_pipe_prefix())
 
         # 1. host_factory_pipe_path <pipes_dir>/<scope>/factory_pipe
         self.assertEqual(
-            '/home/docker_device/pipes/scopes/AUTH_account/factory_pipe',
+            '/home/docker_device/pipes/scopes/account/factory_pipe',
             runtime_paths.host_factory_pipe())
         # 2. host_storlet_pipe_path <pipes_dir>/<scope>/<storlet_id>
         self.assertEqual(
-            '/home/docker_device/pipes/scopes/AUTH_account/Storlet-1.0.jar',
+            '/home/docker_device/pipes/scopes/account/Storlet-1.0.jar',
             runtime_paths.host_storlet_pipe(storlet_id))
         # 3. Yes, right now, we don't have the path for #3 in Python
         # 4. sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>
@@ -227,10 +227,10 @@ class TestRuntimePaths(unittest.TestCase):
                          runtime_paths.sbox_storlet_pipe(storlet_id))
 
         # This looks like for jar load?
-        self.assertEqual('/home/docker_device/storlets/scopes/AUTH_account',
+        self.assertEqual('/home/docker_device/storlets/scopes/account',
                          runtime_paths.host_storlet_prefix())
         self.assertEqual(
-            '/home/docker_device/storlets/scopes/AUTH_account/Storlet-1.0.jar',
+            '/home/docker_device/storlets/scopes/account/Storlet-1.0.jar',
             runtime_paths.host_storlet(storlet_id))
         # And this one is a mount poit in sand box?
         self.assertEqual('/home/swift/Storlet-1.0.jar',
@@ -238,7 +238,7 @@ class TestRuntimePaths(unittest.TestCase):
 
     @with_tempdir
     def test_create_host_pipe_prefix_with_real_dir(self, temp_dir):
-        runtime_paths = RunTimePaths('AUTH_account', {'host_root': temp_dir})
+        runtime_paths = RunTimePaths('account', {'host_root': temp_dir})
         runtime_paths.create_host_pipe_prefix()
         path = runtime_paths.host_pipe_prefix()
         self.assertTrue(os.path.exists(path))
@@ -250,7 +250,6 @@ class TestRuntimePaths(unittest.TestCase):
 
 class TestRuntimePathsTempauth(TestRuntimePaths):
     def setUp(self):
-        self.account = 'AUTH_test'
         self.scope = 'test'
         self._initialize()
 
