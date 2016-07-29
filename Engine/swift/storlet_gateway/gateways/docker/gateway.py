@@ -93,15 +93,18 @@ class StorletGatewayDocker(StorletGatewayBase):
     def validate_storlet_registration(cls, params, name):
         mandatory = ['Language', 'Interface-Version', 'Dependency',
                      'Object-Metadata', 'Main']
-        StorletGatewayDocker._check_mandatory_params(params, mandatory)
+        cls._check_mandatory_params(params, mandatory)
 
-        if '-' not in name or '.' not in name:
-            raise ValueError('Storlet name is incorrect')
+        if params['Language'].lower() == 'java':
+            if '-' not in name or '.' not in name:
+                raise ValueError('Storlet name is incorrect')
+        else:
+            raise ValueError('Unsupported Language')
 
     @classmethod
     def validate_dependency_registration(cls, params, name):
         mandatory = ['Dependency-Version']
-        StorletGatewayDocker._check_mandatory_params(params, mandatory)
+        cls._check_mandatory_params(params, mandatory)
 
         perm = params.get('Dependency-Permissions')
         if perm is not None:
@@ -110,7 +113,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             except ValueError:
                 raise ValueError('Dependency permission is incorrect')
             if (perm_int & int('600', 8)) != int('600', 8):
-                raise ValueError('The owner hould have rw permission')
+                raise ValueError('The owner should have rw permission')
 
     @classmethod
     def _check_mandatory_params(cls, params, mandatory):
