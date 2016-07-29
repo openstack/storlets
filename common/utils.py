@@ -34,9 +34,10 @@ def put_storlet_object(url, token, storlet_name, storlet_path,
                        dependency, main_class):
     headers = {'X-Object-Meta-Storlet-Language': 'Java',
                'X-Object-Meta-Storlet-Interface-Version': '1.0',
-               'X-Object-Meta-Storlet-Dependency': dependency,
                'X-Object-Meta-Storlet-Object-Metadata': 'no',
                'X-Object-Meta-Storlet-Main': main_class}
+    if dependency:
+        headers['X-Object-Meta-Storlet-Dependency'] = dependency
     put_local_file(url, token, 'storlet', storlet_path, storlet_name, headers)
 
 

@@ -40,6 +40,16 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
 
+        options = {'storlet_main': 'org.openstack.storlet.Storlet'}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     iter(StringIO()), options=options)
+
+        self.assertEqual(metadata, dsreq.user_metadata)
+        self.assertEqual(params, dsreq.params)
+        self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
+        self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual([], dsreq.dependencies)
+
     def test_init_with_range(self):
         storlet_id = 'Storlet-1.0.jar'
         params = {}
@@ -179,11 +189,19 @@ class TestStorletGatewayDocker(unittest.TestCase):
                 params, ['keyA', 'KeyD'])
 
     def test_validate_storlet_registration(self):
-        # correct name and headers
+        # correct name and headers w/ dependency
         obj = 'storlet-1.0.jar'
         params = {'Language': 'java',
                   'Interface-Version': '1.0',
                   'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # correct name and headers w/o dependency
+        obj = 'storlet-1.0.jar'
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
                   'Object-Metadata': 'no',
                   'Main': 'path.to.storlet.class'}
         StorletGatewayDocker.validate_storlet_registration(params, obj)
