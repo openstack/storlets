@@ -50,17 +50,28 @@ class DockerStorletRequest(StorletRequest):
     2. Metadata identifying the stream
     """
 
+    # TODO(takashi): Some of following parameters should be defined common
+    #                parameters for StorletRequest
+    required_options = ['storlet_main', 'storlet_language', 'file_manager']
+
     def __init__(self, storlet_id, params, user_metadata, data_iter=None,
                  data_fd=None, options=None):
-        # TODO(takashi): storlet_id is now set as None, but should be set
-        # properly after merging idata into StorletRequest
+        """
+        :param storlet_id: storlet id
+        :param params: execution parameters
+        :param user_metadata: user metadata
+        :param data_iter: an iterator to read data
+        :param data_fd: a file descriptor to read data
+        :param options: a dictionaly which stores gateway specific options.
+        :raises ValueError: when some of the required options (storlet_main
+                            and file_manager) are missing
+        """
         super(DockerStorletRequest, self).__init__(
             storlet_id, params, user_metadata, data_iter, data_fd,
             options=options)
+
         self.generate_log = self.options.get('generate_log', False)
 
-        # TODO(takashi): Some of following parameters should be defined common
-        #                parameters for StorletRequest
         self.storlet_main = self.options['storlet_main']
         self.storlet_language = self.options['storlet_language']
 
@@ -72,9 +83,7 @@ class DockerStorletRequest(StorletRequest):
         else:
             self.dependencies = []
 
-        # TODO(takashi): file manager should not be an optional parameter,
-        #                but a required parameter
-        self.file_manager = self.options.get('file_manager')
+        self.file_manager = self.options['file_manager']
 
         self.start = self.options.get('range_start')
         self.end = self.options.get('range_end')

@@ -153,9 +153,23 @@ class StorletData(object):
 
 
 class StorletRequest(StorletData):
+
+    required_options = []
+
     def __init__(self, storlet_id, params, user_metadata,
                  data_iter=None, data_fd=None, options=None,
                  timeout=10, cancel=None):
+        """
+        :param storlet_id: storlet id
+        :param params: parameters for storlet execution
+        :param user_metadata: user metadata related to the data to be processed
+        :param data_iter: iterator to read data to be processed
+        :param data_fd: File descriptor to read data to be processed
+        :param options: options specific to StorletRequest types
+        :param timeout: Timeout to be set for data reading
+        :param cancel: cancel operation to be executed when timeout happens
+        :raises ValueError: when some of the required options are missing
+        """
         super(StorletRequest, self).__init__(
             user_metadata, data_iter, data_fd, timeout, cancel)
         self.storlet_id = storlet_id
@@ -164,6 +178,10 @@ class StorletRequest(StorletData):
             self.options = {}
         else:
             self.options = options
+
+        for opt in self.required_options:
+            if options.get(opt) is None:
+                raise ValueError('Required option %s is missing' % opt)
 
 
 class StorletResponse(StorletData):
