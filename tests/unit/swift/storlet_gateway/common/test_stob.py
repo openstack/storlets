@@ -113,3 +113,7 @@ class TestFileDescriptorIterator(unittest.TestCase):
             self.assertEqual(
                 self.iter_like.readlines(7),
                 [b'aaaa\n', b'bb'])
+
+
+if __name__ == '__main__':
+    unittest.main()
