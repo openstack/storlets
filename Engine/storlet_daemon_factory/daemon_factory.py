@@ -554,19 +554,16 @@ def start_logger(logger_name, log_level, container_id):
 
     :param logger_name: The name to report with
     :param log_level: The verbosity level. This should be selected
+    :param container_id: container id
     """
     logging.raiseExceptions = False
     log_level = log_level.upper()
 
-    if (log_level == 'DEBUG'):
-        level = logging.DEBUG
-    elif (log_level == 'INFO'):
-        level = logging.INFO
-    elif (log_level == 'WARNING'):
-        level = logging.WARN
-    elif (log_level == 'CRITICAL'):
-        level = logging.CRITICAL
-    else:
+    # NOTE(takashi): currently logging.WARNING is defined as the same value
+    #                as logging.WARN, so we can properly handle WARNING here
+    try:
+        level = getattr(logging, log_level)
+    except AttributeError:
         level = logging.ERROR
 
     logger = logging.getLogger("CONT #" + container_id + ": " + logger_name)
@@ -576,23 +573,24 @@ def start_logger(logger_name, log_level, container_id):
     else:
         logger.setLevel(level)
 
+    # TODO(takashi): Why do we need this?
     for i in range(0, 4):
         try:
-            sysLogh = SysLogHandler('/dev/log')
+            log_handler = SysLogHandler('/dev/log')
             break
-        except Exception as e:
+        except Exception:
             if i < 3:
                 time.sleep(1)
             else:
-                raise e
+                raise
 
     str_format = '%(name)-12s: %(levelname)-8s %(funcName)s' + \
                  ' %(lineno)s [%(process)d, %(threadName)s]' + \
                  ' %(message)s'
     formatter = logging.Formatter(str_format)
-    sysLogh.setFormatter(formatter)
-    sysLogh.setLevel(level)
-    logger.addHandler(sysLogh)
+    log_handler.setFormatter(formatter)
+    log_handler.setLevel(level)
+    logger.addHandler(log_handler)
     return logger
 
 
