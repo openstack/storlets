@@ -48,7 +48,7 @@
 				<fileset dir="Engine/SCommon" includes="build.xml" />
 				<fileset dir="Engine/SDaemon" includes="build.xml" />
 				<fileset dir="Engine/SMScripts" includes="build.xml" />
-				<fileset dir="Engine/storlet_daemon_factory" includes="build.xml" />
+				<fileset dir="Engine/agent" includes="build.xml" />
 				<fileset dir="Engine/swift" includes="build.xml" />
 			</subant>
 		</sequential>

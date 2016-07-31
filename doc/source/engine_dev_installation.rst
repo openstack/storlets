@@ -253,7 +253,7 @@ Step 3: Augment the above created image with the storlets stuff
     cp $HOME/storlets/Engine/SBus/SBusTransportLayer/bin/sbus.so .
     cp $HOME/storlets/Engine/SDaemon/bin/SDaemon.jar .
     cp $HOME/storlets/Engine/SCommon/bin/SCommon.jar .
-    cp $HOME/storlets/Engine/storlet_daemon_factory/dist/storlet_daemon_factory-1.0.linux-x86_64.tar.gz .
+    cp $HOME/storlets/Engine/agent/dist/storlets_agent-1.0.linux-x86_64.tar.gz .
     cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/init_container.sh .
     cd -
 
@@ -287,8 +287,8 @@ with the following content:
     COPY SCommon.jar                                        /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/SCommon.jar"]
 
-    ADD storlet_daemon_factory-1.0.linux-x86_64.tar.gz      /
-    RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/storlet_daemon_factory*
+    ADD storlets_agent-1.0.linux-x86_64.tar.gz      /
+    RUN ["chmod", "0755", "/usr/local/bin/storlets-daemon-factory"]
 
     COPY init_container.sh                                  /opt/storlets/
     RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]

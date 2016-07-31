@@ -27,5 +27,5 @@ if [ $1 = "debug" ]; then
     $2
 else
     #service rsyslog start
-    python /usr/local/lib/python2.7/dist-packages/storlet_daemon_factory/daemon_factory.py $2 $3 $HOSTNAME
+    /usr/local/bin/storlets-daemon-factory $2 $3 $HOSTNAME
 fi
