@@ -78,10 +78,7 @@ class DaemonFactory(object):
         :param log_level: Logger verbosity level
         :param container_id: container id
 
-        :returns: A tuple including the following three elements
-                  - Error code, 0 if successful
-                  - Error description
-                  - A list of the JVM arguments
+        :returns: A list of the JVM arguments
         """
 
         str_prfx = "/opt/storlets/"
@@ -108,38 +105,31 @@ class DaemonFactory(object):
         # We know the Daemon class and its dependencies
         str_daemon_main_class = "com.ibm.storlet.daemon.SDaemon"
 
-        n_error_id = 0
-        error_text = ''
-        pargs = []
-        if daemon_language == "java":
-            self.logger.debug('START_DAEMON:preparing arguments')
-            # Setting two environmental variables
-            # The path strings are corrupted if passed is pargs list below
-            if os.environ.get('CLASSPATH'):
-                str_dmn_clspth = os.environ['CLASSPATH'] + ':' \
-                    + str_dmn_clspth
-            if os.environ.get('LD_LIBRARY_PATH'):
-                str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' \
-                    + str_prfx
-            else:
-                str_library_path = str_prfx
-            os.environ['CLASSPATH'] = str_dmn_clspth
-            os.environ['LD_LIBRARY_PATH'] = str_library_path
-            pargs = [str('/usr/bin/java'),
-                     str(str_daemon_main_class),
-                     str(storlet_name),
-                     str(uds_path),
-                     str(log_level),
-                     str('%d' % pool_size),
-                     str(container_id)]
-            str_pargs = ' '.join(map(str, pargs))
-            self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
+        self.logger.debug('START_DAEMON:preparing arguments')
+        # Setting two environmental variables
+        # The path strings are corrupted if passed is pargs list below
+        if os.environ.get('CLASSPATH'):
+            str_dmn_clspth = os.environ['CLASSPATH'] + ':' + str_dmn_clspth
+        if os.environ.get('LD_LIBRARY_PATH'):
+            str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' + str_prfx
         else:
-            n_error_id = -1
-            error_text = "Got unsupported daemon language %s" % pargs
-            self.logger.error(error_text)
+            str_library_path = str_prfx
 
-        return n_error_id, error_text, pargs
+        # TODO(takashi): We should not set environ value here, because this
+        #                affects the base process
+        os.environ['CLASSPATH'] = str_dmn_clspth
+        os.environ['LD_LIBRARY_PATH'] = str_library_path
+        pargs = [str('/usr/bin/java'),
+                 str(str_daemon_main_class),
+                 str(storlet_name),
+                 str(uds_path),
+                 str(log_level),
+                 str('%d' % pool_size),
+                 str(container_id)]
+        str_pargs = ' '.join(map(str, pargs))
+        self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
+
+        return pargs
 
     def spawn_subprocess(self, pargs):
         """
@@ -183,19 +173,15 @@ class DaemonFactory(object):
                                   format(storlet_name, jvm_pid))
                 # Keep JVM PID
                 self.storlet_name_to_pid[storlet_name] = jvm_pid
-                b_status, error_text = \
-                    self.wait_for_daemon_to_initialize(storlet_name)
-                if not b_status:
-                    # TODO(takashi): We shoudn't use String as Exception
-                    #                (This usage is deprecated)
-                    raise 'No response from Daemon'
+                if not self.wait_for_daemon_to_initialize(storlet_name):
+                    # TODO(takashi): We shoud use more specific exception
+                    raise Exception('No response from Daemon')
             self.logger.debug('START_DAEMON: just occurred')
             error_text = 'OK'
-        except Exception as e:
+        except Exception:
             b_status = False
             error_text = 'Failed to start subprocess %s' % str(pargs)
-            self.logger.error(error_text)
-            self.logger.error('Exception is %s' % str(e))
+            self.logger.exception(error_text)
 
         # TODO(takashi): Now we return error text in tuple, but I think we had
         #                better make this raise Exception including message
@@ -208,30 +194,26 @@ class DaemonFactory(object):
         predefined number of attempts (5)
 
         :param storlet_name: Storlet name we are checking the daemon for
-        :returns: (Status, Description text of possible error)
+        :returns: daemon status (True, False)
         """
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send PING command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
-        # TODO(takashi): We had better use contextmanager
         read_fd, write_fd = os.pipe()
-        dtg = ClientSBusOutDatagram.create_service_datagram(
-            SBUS_CMD_PING,
-            write_fd)
-        b_status = False
-        error_text = "Daemon isn't responding"
-        for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
-            ret = SBus.send(storlet_pipe_name, dtg)
-            if (ret >= 0):
-                resp = os.read(read_fd, 128)
-                if 'OK' == resp:
-                    b_status = True
-                    error_text = 'OK'
-                    break
-            time.sleep(1)
-        os.close(read_fd)
-        os.close(write_fd)
-        return b_status, error_text
+        try:
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_PING, write_fd)
+            for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
+                ret = SBus.send(storlet_pipe_name, dtg)
+                if ret >= 0:
+                    if os.read(read_fd, 128) == 'OK':
+                        return True
+                    time.sleep(1)
+            else:
+                return False
+        finally:
+            os.close(read_fd)
+            os.close(write_fd)
 
     def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
                              pool_size, uds_path, log_level, container_id):
@@ -250,36 +232,28 @@ class DaemonFactory(object):
 
         :returns: (Status, Description text of possible error)
         """
-        b_status = True
-        error_text = ''
-        pargs = []
-        n_error_id, error_text, pargs = self.get_jvm_args(daemon_language,
-                                                          storlet_path,
-                                                          storlet_name,
-                                                          pool_size,
-                                                          uds_path,
-                                                          log_level,
-                                                          container_id)
-        if 0 != n_error_id:
-            self.logger.debug('Problems with arguments for {0}'.
-                              format(storlet_name))
-            b_status = False
+        if daemon_language.lower() in ['java']:
+            pargs = self.get_jvm_args(
+                daemon_language, storlet_path, storlet_name,
+                pool_size, uds_path, log_level, container_id)
+        else:
+            error_txt = 'Got unsupported daemon language: %s' % daemon_language
+            self.logger.error(error_txt)
+            return False, error_txt
 
-        if b_status:
-            self.logger.debug('Assigning storlet_name_to_pipe_name[{0}]={1}'.
-                              format(storlet_name, uds_path))
-            self.storlet_name_to_pipe_name[storlet_name] = uds_path
+        self.logger.debug('Assigning storlet_name_to_pipe_name[{0}]={1}'.
+                          format(storlet_name, uds_path))
+        self.storlet_name_to_pipe_name[storlet_name] = uds_path
 
         self.logger.debug('Validating that {0} is not already running'.
                           format(storlet_name))
-        b_status, eror_text = self.get_process_status_by_name(storlet_name)
+        b_status, _ = self.get_process_status_by_name(storlet_name)
         if b_status:
             error_text = '{0} is already running'.format(storlet_name)
             self.logger.debug(error_text)
         else:
-            error_text = '{0} is not running. About to spawn process'. \
-                         format(storlet_name)
-            self.logger.debug(error_text)
+            self.logger.debug('{0} is not running. About to spawn process'.
+                              format(storlet_name))
             b_status, error_text = self.spawn_subprocess(pargs)
 
         return b_status, error_text
