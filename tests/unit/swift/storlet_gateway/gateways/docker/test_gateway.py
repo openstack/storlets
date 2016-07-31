@@ -206,6 +206,16 @@ class TestStorletGatewayDocker(unittest.TestCase):
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_storlet_registration(params, obj)
 
+        # unsupported language
+        obj = 'storlet.foo'
+        params = {'Language': 'bar',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
     def test_validate_dependency_registration(self):
         # w/o dependency parameter
         obj = 'dep_file'
