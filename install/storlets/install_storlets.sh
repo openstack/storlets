@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -eu
 # The storlets installation has 3 flavors:
 # 1. Jenkins job installation, for running the funciotal tests.
 # 2. Developer instalation.
@@ -29,3 +30,4 @@ echo "Running the enable_storlets_for_default_tenant playbook"
 ansible-playbook -s -i storlets_dynamic_inventory.py enable_storlets_for_default_tenant.yml
 
 # TODO(eranr): Get back to the ant dev playbooks!!!
+set +eu

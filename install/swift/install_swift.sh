@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -eu
 # Invokes the Swift install process that is based on
 # https://github.com/Open-I-Beam/swift-install
 # with appropriate pre install preparations
@@ -38,5 +39,10 @@ fi
 
 ansible-playbook -i hosts prepare_swift_install.yml
 
+set +eu
+# NOTE: Right now, swift-install/provisioning has some tasks to kill no
+# running processes (e.g. swift-init proxy stop for clean environment) and
+# it will make a non zero exit code causes gate failure so remove set -eu
+# trusting those script. (Hopefully, it could be solved in the script)
 cd $REPODIR/swift-install/provisioning
 ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml
