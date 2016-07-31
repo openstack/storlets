@@ -28,14 +28,8 @@ class StorletHandlerMiddleware(object):
     def __init__(self, app, conf, storlet_conf):
         self.app = app
         self.logger = get_logger(conf, log_route='storlet_handler')
-        self.stimeout = int(storlet_conf.get('storlet_timeout'))
-        self.storlet_containers = [storlet_conf.get('storlet_container'),
-                                   storlet_conf.get('storlet_dependency')]
         self.exec_server = storlet_conf.get('execution_server')
         self.handler_class = self._get_handler(self.exec_server)
-        self.gateway_module = storlet_conf['gateway_module']
-        self.proxy_only_storlet_execution = \
-            storlet_conf['storlet_execute_on_proxy_only']
         self.gateway_conf = storlet_conf
 
     def _get_handler(self, exec_server):
@@ -92,7 +86,8 @@ class StorletHandlerMiddleware(object):
 
 
 def filter_factory(global_conf, **local_conf):
-
+    # TODO(takashi): The following gateway config generation should be
+    #                performed using class method of gateway class
     conf = global_conf.copy()
     conf.update(local_conf)
     storlet_conf = dict()
@@ -104,7 +99,6 @@ def filter_factory(global_conf, **local_conf):
     storlet_conf['execution_server'] = conf.get('execution_server', '')
     storlet_conf['storlet_execute_on_proxy_only'] = \
         config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
-    storlet_conf['gateway_conf'] = {}
     storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
 
     module_name = conf.get('storlet_gateway_module', '')
