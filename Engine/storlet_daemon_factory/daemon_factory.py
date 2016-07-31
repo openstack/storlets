@@ -34,7 +34,11 @@ from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMON
 from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMONS
 
 
-class daemon_factory(object):
+EXIT_SUCCESS = 0
+EXIT_FAILURE = 1
+
+
+class DaemonFactory(object):
     """
     This class acts as the manager for storlet daemons.
 
@@ -485,6 +489,9 @@ class daemon_factory(object):
         """
         The 'internal' loop. Listen to SBus, receive datagram,
         dispatch command, report back.
+
+        :param container_id: container id
+        :returns: exit status (SUCCESS/FAILURE)
         """
 
         # Create SBus. Listen and process requests
@@ -492,7 +499,7 @@ class daemon_factory(object):
         fd = sbus.create(self.pipe_path)
         if fd < 0:
             self.logger.error("Failed to create SBus. exiting.")
-            return
+            return EXIT_FAILURE
 
         b_iterate = True
         b_status = True
@@ -502,7 +509,7 @@ class daemon_factory(object):
             rc = sbus.listen(fd)
             if rc < 0:
                 self.logger.error("Failed to wait on SBus. exiting.")
-                return
+                return EXIT_FAILURE
             self.logger.debug("Wait returned")
 
             dtg = sbus.receive(fd)
@@ -512,7 +519,7 @@ class daemon_factory(object):
             # that it gets restarted?
             if dtg is None:
                 self.logger.error("Failed to receive message. Exitting.")
-                return
+                return EXIT_FAILURE
 
             outfd = dtg.get_service_out_fd()
             if outfd is None:
@@ -528,6 +535,7 @@ class daemon_factory(object):
 
         # We left the main loop for some reason. Terminating.
         self.logger.debug('Leaving main loop')
+        return EXIT_SUCCESS
 
     def log_and_report(self, outfile, b_status, error_text):
         """
@@ -610,7 +618,7 @@ def main(argv):
     if (len(argv) != 3):
         usage()
         # TODO(takashi): returning non-zero value is better?
-        return
+        return EXIT_FAILURE
 
     pipe_path = argv[0]
     log_level = argv[1]
@@ -627,11 +635,10 @@ def main(argv):
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
     # create an instance of daemon_factory
-    factory = daemon_factory(pipe_path, logger)
+    factory = DaemonFactory(pipe_path, logger)
 
     # Start the main loop
-    factory.main_loop(container_id)
-
+    return factory.main_loop(container_id)
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    sys.exit(main(sys.argv[1:]))
