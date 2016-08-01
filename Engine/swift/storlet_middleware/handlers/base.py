@@ -14,8 +14,12 @@
 # limitations under the License.
 
 import urllib
+from swift.common.internal_client import InternalClient
 from swift.common.swob import HTTPBadRequest, Response, Range
 from swift.common.utils import config_true_value
+
+from storlet_gateway.common.exceptions import FileManagementError
+from storlet_gateway.common.file_manager import FileManager
 
 
 class NotStorletRequest(Exception):
@@ -24,6 +28,89 @@ class NotStorletRequest(Exception):
 
 class NotStorletExecution(NotStorletRequest):
     pass
+
+
+class SwiftFileManager(FileManager):
+
+    def __init__(self, account, storlet_container, dependency_container,
+                 log_container, conf_file, logger):
+        super(SwiftFileManager, self).__init__()
+        self.account = account
+        self.storlet_container = storlet_container
+        self.dependency_container = dependency_container
+        self.log_container = log_container
+        self.conf_file = conf_file
+        self.logger = logger
+
+    @property
+    def client(self):
+        return InternalClient(self.conf_file, 'SA', 1)
+
+    def _get_object(self, container, obj, headers=None):
+        """
+        Utility function to be used to get object from swift
+
+        :param container: container name
+        :param obj: object name
+        :param headers: request headers
+        """
+        self.logger.debug('GET object %s/%s/%s from swift' %
+                          (self.account, container, obj))
+        _, headers, data_iter = \
+            self.client.get_object(self.account, container, obj, headers)
+        return headers, data_iter
+
+    def _put_object(self, container, obj, headers, fobj):
+        """
+        Utility function to be used to put object into swift
+
+        :param container: container name
+        :param obj: object name
+        :param headers: request headers
+        :param fobj: file object
+        """
+        self.logger.debug('PUT object %s/%s/%s to swift' %
+                          (self.account, container, obj))
+        self.client.upload_object(fobj, self.account, container, headers)
+
+    def get_storlet(self, name):
+        self.logger.debug('get storlet file %s from swift' % name)
+        try:
+            headers, data_iter = \
+                self._get_object(self.storlet_container, name)
+            return data_iter, None
+        except Exception:
+            self.logger.exception('Failed to get storlet file '
+                                  '%s/%s/%s from swift' %
+                                  (self.account, self.storlet_container,
+                                   name))
+            raise FileManagementError('Failed to get storlet file: %s' % name)
+
+    def get_dependency(self, name):
+        self.logger.debug('get dependency file %s from swift' % name)
+        try:
+            headers, data_iter = \
+                self._get_object(self.dependency_container, name)
+            perm = headers.get(
+                'X-Object-Meta-Storlet-Dependency-Permissions')
+            return data_iter, perm
+        except Exception:
+            self.logger.exception('Failed to get dependency file '
+                                  '%s/%s/%s from swift' %
+                                  (self.account, self.dependency_container,
+                                   name))
+            raise FileManagementError('Failed to get dependency file: %s' %
+                                      name)
+
+    def put_log(self, name, fobj):
+        self.logger.debug('save log file %s into swift' % name)
+        try:
+            headers = {'CONTENTTYPE': 'text/plain'}
+            self._put_object(self.log_container, name, headers, fobj)
+        except Exception:
+            self.logger.exception('Failed to put log file %s/%s/%s to swift' %
+                                  (self.account, self.log_container, name))
+            raise FileManagementError('Failed to put log file: %s' % name)
 
 
 def _request_instance_property():
@@ -66,6 +153,10 @@ class StorletBaseHandler(object):
         self.conf = conf
         self.gateway_class = self.conf['gateway_module']
         self.sreq_class = self.gateway_class.request_class
+        self.storlet_container = conf.get('storlet_container', 'storlet')
+        self.storlet_dependency = conf.get('storlet_dependency', 'dependency')
+        self.log_container = conf.get('storlet_logcontainer', 'storletlog')
+        self.client_conf_file = '/etc/swift/storlet-proxy-server.conf'
 
     def _setup_gateway(self):
         """
@@ -280,6 +371,11 @@ class StorletBaseHandler(object):
 
         options['generate_log'] = \
             config_true_value(req.headers.get('X-Storlet-Generate-Log'))
+
+        options['file_manager'] = \
+            SwiftFileManager(self.account, self.storlet_container,
+                             self.storlet_dependency, self.log_container,
+                             self.client_conf_file, self.logger)
 
         return options
 

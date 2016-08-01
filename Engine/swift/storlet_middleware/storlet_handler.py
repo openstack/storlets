@@ -92,11 +92,11 @@ def filter_factory(global_conf, **local_conf):
     conf.update(local_conf)
     storlet_conf = dict()
     storlet_conf['storlet_timeout'] = conf.get('storlet_timeout', 40)
+    storlet_conf['execution_server'] = conf.get('execution_server', '')
     storlet_conf['storlet_container'] = \
         conf.get('storlet_container', 'storlet')
     storlet_conf['storlet_dependency'] = conf.get('storlet_dependency',
                                                   'dependency')
-    storlet_conf['execution_server'] = conf.get('execution_server', '')
     storlet_conf['storlet_execute_on_proxy_only'] = \
         config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
     storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
