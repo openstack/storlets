@@ -75,10 +75,10 @@ class TestTestStorlet(StorletFunctionalTest):
 
             if op == 'print':
                 self.assertEqual(get_response_status, 200)
-                self.assertTrue('op' in get_text)
-                self.assertTrue('print' in get_text)
-                self.assertTrue('param2' in get_text)
-                self.assertTrue('val2' in get_text)
+                self.assertIn('op', get_text)
+                self.assertIn('print', get_text)
+                self.assertIn('param2', get_text)
+                self.assertIn('val2', get_text)
 
         except Exception:
             get_response_status = resp_dict.get('status')

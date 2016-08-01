@@ -40,8 +40,8 @@ class TestExecDepStorlet(StorletFunctionalTest):
                                         response_dict=resp,
                                         headers=headers)
 
-        self.assertTrue('x-object-meta-depend-ret-code' in resp_headers)
-        self.assertTrue(resp_headers['x-object-meta-depend-ret-code'] == '42')
+        self.assertIn('x-object-meta-depend-ret-code', resp_headers)
+        self.assertEqual('42', resp_headers['x-object-meta-depend-ret-code'])
         self.assertEqual(resp['status'], 200)
 
 

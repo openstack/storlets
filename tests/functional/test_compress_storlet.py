@@ -54,7 +54,7 @@ class TestCompressStorlet(StorletFunctionalTest):
 
         object_length = int(original_headers['content-length'])
 
-        self.assertTrue(object_length < len(data))
+        self.assertLess(object_length, len(data))
 
         processed_headers, returned_content = \
             c.get_object(self.url, self.token, self.container,
