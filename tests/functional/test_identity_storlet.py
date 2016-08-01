@@ -144,7 +144,7 @@ class TestIdentityStorlet(StorletFunctionalTest):
                          "application/octet-stream",
                          headers, None, None, None, response)
             status = response.get('status')
-            self.assertTrue(status in [200, 201])
+            self.assertIn(status, [200, 201])
 
     def test_put(self):
         self.invoke_storlet('PUT')

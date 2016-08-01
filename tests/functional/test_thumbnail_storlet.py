@@ -45,7 +45,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
         with open('/tmp/sample.jpg', 'w') as f:
             f.write(gf)
 
-        self.assertTrue(resp['status'] in [200, 202])
+        self.assertIn(resp['status'], [200, 202])
 
     def invoke_storlet_on_put(self):
         headers = {'X-Run-Storlet': self.storlet_name}
@@ -59,7 +59,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
                          response_dict=resp)
 
         status = resp.get('status')
-        self.assertTrue(status in [201, 202])
+        self.assertIn(status, [201, 202])
 
         headers = c.head_object(self.url, self.token,
                                 'myobjects', 'gen_thumb_on_put.jpg')
@@ -76,13 +76,13 @@ class TestThumbnailStorlet(StorletFunctionalTest):
                      response_dict=resp)
 
         status = resp.get('status')
-        self.assertTrue(status in [201, 202])
+        self.assertIn(status, [201, 202])
         rh = resp['headers']
         self.assertEqual(rh['x-storlet-generated-from'],
                          'myobjects/%s' % self.storlet_file)
         self.assertEqual(rh['x-storlet-generated-from-account'],
                          self.acct)
-        self.assertTrue('x-storlet-generated-from-last-modified' in rh)
+        self.assertIn('x-storlet-generated-from-last-modified', rh)
 
         headers = c.head_object(self.url, self.token,
                                 'myobjects', 'gen_thumb_on_copy.jpg')
@@ -99,7 +99,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
         req.get_method = lambda: 'COPY'
         conn = urllib2.urlopen(req, timeout=10)
         status = conn.getcode()
-        self.assertTrue(status in [201, 202])
+        self.assertIn(status, [201, 202])
 
         headers = c.head_object(self.url, self.token,
                                 'myobjects', 'gen_thumb_on_copy_.jpg')

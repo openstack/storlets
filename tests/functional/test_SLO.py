@@ -101,7 +101,8 @@ class TestSLO(StorletFunctionalTest):
                          None, None, None, None, response)
             f.close()
             status = response.get('status')
-            self.assertTrue(status >= 200 and status < 300)
+            self.assertGreaterEqual(status, 200)
+            self.assertLess(status, 300)
 
             headers = response.get('headers')
             segment = dict()
@@ -119,7 +120,8 @@ class TestSLO(StorletFunctionalTest):
                      headers=headers, query_string='multipart-manifest=put',
                      response_dict=response)
         status = response.get('status')
-        self.assertTrue(status >= 200 and status < 300)
+        self.assertGreaterEqual(status, 200)
+        self.assertLess(status, 300)
 
     def compare_slo_to_chunks(self, body):
         i = 1

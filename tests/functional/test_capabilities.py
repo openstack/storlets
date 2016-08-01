@@ -30,7 +30,7 @@ class TestCapabilities(StorletBaseFunctionalTest):
                                        tenant_name=self.conf.tenant_name,
                                        auth_version=self.conf.auth_version)
         info = conn.get_capabilities()
-        self.assertTrue('storlet_handler' in info)
+        self.assertIn('storlet_handler', info)
         options = info['storlet_handler']
         # TODO(eranr): take values from conf
         self.assertEqual(options['storlet_dependency'], 'dependency')

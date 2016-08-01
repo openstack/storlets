@@ -146,7 +146,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('200 OK', resp.status)
             self.assertEqual('AKE AP', resp.body)
 
-            self.assertFalse('Content-Range' in resp.headers)
+            self.assertNotIn('Content-Range', resp.headers)
             self.assertEqual(resp.headers['Storlet-Input-Range'],
                              'bytes 1-6/8')
 
@@ -523,9 +523,9 @@ class TestStorletProxyHandler(unittest.TestCase):
                    'X-Object-Meta-Key4': 'Value4'}
         handler._remove_storlet_headers(headers)
 
-        self.assertFalse('X-Storlet-Key1' in headers)
+        self.assertNotIn('X-Storlet-Key1', headers)
         self.assertEqual(headers['X-Key2'], 'Value2')
-        self.assertFalse('X-Object-Meta-Storlet-Key3' in headers)
+        self.assertNotIn('X-Object-Meta-Storlet-Key3', headers)
         self.assertEqual(headers['X-Object-Meta-Key4'], 'Value4')
 
 
