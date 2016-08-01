@@ -62,9 +62,14 @@ class DockerStorletRequest(StorletRequest):
         # TODO(takashi): Some of following parameters should be defined common
         #                parameters for StorletRequest
         self.storlet_main = self.options['storlet_main']
-        self.dependencies = [x.strip() for x
-                             in self.options['storlet_dependency'].split(',')
-                             if x.strip()]
+
+        if self.options.get('storlet_dependency'):
+            self.dependencies = [
+                x.strip() for x
+                in self.options['storlet_dependency'].split(',')
+                if x.strip()]
+        else:
+            self.dependencies = []
 
         # TODO(takashi): file manager should not be an optional parameter,
         #                but a required parameter
@@ -90,8 +95,8 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     @classmethod
     def validate_storlet_registration(cls, params, name):
-        mandatory = ['Language', 'Interface-Version', 'Dependency',
-                     'Object-Metadata', 'Main']
+        mandatory = ['Language', 'Interface-Version', 'Object-Metadata',
+                     'Main']
         cls._check_mandatory_params(params, mandatory)
 
         if params['Language'].lower() == 'java':
