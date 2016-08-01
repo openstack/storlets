@@ -13,8 +13,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import logging
 import unittest
+from six import StringIO
+
+from storlet_daemon_factory.daemon_factory import start_logger
+
+
+class TestLogger(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_start_logger(self):
+        sio = StringIO()
+        logger = logging.getLogger('CONT #abcdef: test')
+        logger.addHandler(logging.StreamHandler(sio))
+
+        # set log level as INFO
+        logger = start_logger('test', 'INFO', 'abcdef')
+        self.assertEqual(logging.INFO, logger.level)
+        # INFO message is recorded with INFO leg level
+        logger.info('test1')
+        self.assertEqual(sio.getvalue(), 'test1\n')
+        # DEBUG message is not recorded with INFO leg level
+        logger.debug('test2')
+        self.assertEqual(sio.getvalue(), 'test1\n')
+
+        # set log level as DEBUG
+        logger = start_logger('test', 'DEBUG', 'abcdef')
+        self.assertEqual(logging.DEBUG, logger.level)
+        # DEBUG message is recorded with DEBUG leg level
+        logger.debug('test3')
+        self.assertEqual(sio.getvalue(), 'test1\ntest3\n')
+
+        # If the level parameter is unkown, use ERROR as log level
+        logger = start_logger('test', 'foo', 'abcdef')
+        self.assertEqual(logging.ERROR, logger.level)
 
 
 class TestDaemonFactory(unittest.TestCase):
-    pass
+    def setUp(self):
+        pass
