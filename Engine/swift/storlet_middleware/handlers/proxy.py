@@ -14,8 +14,17 @@
 # limitations under the License.
 
 from six.moves.urllib.parse import quote
-from swift.common.constraints import check_copy_from_header, \
-    check_destination_header
+try:
+    # We need to import copy helper functions from copy middleware
+    # since it is introduced to swift.
+    from swift.common.middleware.copy import \
+        _check_copy_from_header as check_copy_from_header, \
+        _check_destination_header as check_destination_header
+except ImportError:
+    # This is required to keep compatibility with
+    # swift < 2.8.0 which does not have COPY middleware.
+    from swift.common.constraints import check_copy_from_header, \
+        check_destination_header
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized, \
     HTTPMethodNotAllowed, HTTPPreconditionFailed
 from swift.common.utils import config_true_value, public, FileLikeIter

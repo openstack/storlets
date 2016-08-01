@@ -56,16 +56,29 @@ def _patch_proxy_pipeline_line(orig_line, storlet_middleware):
     if storlet_middleware in mds:
         return orig_line
 
+    # If there is 'copy' middleware, storlet_hander is placed
+    # in the left of 'copy' middleware.
     try:
-        slo_index = mds.index('slo')
+        copy_index = mds.index('copy')
     except Exception:
-        slo_index = -1
+        copy_index = -1
 
-    if slo_index != -1:
-        mds.insert(slo_index, storlet_middleware)
+    if copy_index != -1:
+        mds.insert(copy_index, storlet_middleware)
     else:
-        proxy_index = mds.index('proxy-server')
-        mds.insert(proxy_index, storlet_middleware)
+        # If there is slo middleware, storlet_hander is placed
+        # in the left of slo middleware.
+        try:
+            slo_index = mds.index('slo')
+        except Exception:
+            slo_index = -1
+
+        if slo_index != -1:
+            mds.insert(slo_index, storlet_middleware)
+        else:
+            # Otherwise, storlet_hander is placed in the left of proxy-sever.
+            proxy_index = mds.index('proxy-server')
+            mds.insert(proxy_index, storlet_middleware)
 
     new_line = 'pipeline ='
     for md in mds:
