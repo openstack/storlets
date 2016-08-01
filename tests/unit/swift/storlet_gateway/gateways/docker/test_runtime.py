@@ -81,7 +81,6 @@ def _mock_os_pipe(bufs):
 class TestRuntimePaths(unittest.TestCase):
 
     def setUp(self):
-        self.account = 'AUTH_0123456789abcdefghijklmnopqrstuv'
         self.scope = '0123456789abc'
         self._initialize()
 
@@ -94,13 +93,9 @@ class TestRuntimePaths(unittest.TestCase):
         self.log_dir = os.path.join(base_dir, 'logs', 'scopes')
         self.cache_dir = os.path.join(base_dir, 'cache', 'scopes')
 
-        self.conf = {
-            'reseller_prefix': 'AUTH',
-            'storlet_container': 'storlet',
-            'storlet_dependency': 'dependency'}
-
+        self.conf = {}
         self.storlet_id = 'org.openstack.storlet.mystorlet'
-        self.paths = RunTimePaths(self.account, self.conf)
+        self.paths = RunTimePaths(self.scope, self.conf)
 
     def tearDown(self):
         pass
@@ -186,22 +181,12 @@ class TestRuntimePaths(unittest.TestCase):
     def test_get_host_storlet_cache_dir(self):
         self.assertEqual(
             self.paths.get_host_storlet_cache_dir(),
-            os.path.join(self.cache_dir, self.scope,
-                         self.conf['storlet_container']))
+            os.path.join(self.cache_dir, self.scope, 'storlet'))
 
     def test_get_host_dependency_cache_dir(self):
         self.assertEqual(
             self.paths.get_host_dependency_cache_dir(),
-            os.path.join(self.cache_dir, self.scope,
-                         self.conf['storlet_dependency']))
-
-
-class TestRuntimePathsTempauth(TestRuntimePaths):
-
-    def setUp(self):
-        self.account = 'AUTH_test'
-        self.scope = 'test'
-        self._initialize()
+            os.path.join(self.cache_dir, self.scope, 'dependency'))
 
 
 class TestRunTimeSandbox(unittest.TestCase):
@@ -209,14 +194,9 @@ class TestRunTimeSandbox(unittest.TestCase):
     def setUp(self):
         self.logger = FakeLogger()
         # TODO(takashi): take these values from config file
-        self.conf = {
-            'reseller_prefix': 'AUTH',
-            'storlet_container': 'storlet',
-            'storlet_dependency': 'dependency',
-            'restart_linux_container_timeout': 3,
-            'docker_repo': 'localhost:5001'}
-        self.account = 'AUTH_0123456789abcdefghijklmnopqrstuv'
-        self.sbox = RunTimeSandbox(self.account, self.conf, self.logger)
+        self.conf = {'docker_repo': 'localhost:5001'}
+        self.scope = '0123456789abc'
+        self.sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
 
     def tearDown(self):
         pass

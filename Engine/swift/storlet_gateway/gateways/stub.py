@@ -20,11 +20,11 @@ class StorletGatewayStub(StorletGatewayBase):
 
     request_class = StorletRequest
 
-    def __init__(self, sconf, logger, app, account):
+    def __init__(self, sconf, logger, scope):
+        super(StorletGatewayStub, self).__init__(sconf, logger, scope)
         self.logger = logger
-        self.app = app
-        self.account = account
         self.sconf = sconf
+        self.scope = scope
 
     @classmethod
     def validate_storlet_registration(cls, params, obj):

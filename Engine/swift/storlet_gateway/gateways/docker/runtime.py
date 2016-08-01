@@ -72,10 +72,10 @@ class RunTimePaths(object):
     Communication channels
     ----------------------
     The RunTimeSandbox communicates with the Sandbox via two types of pipes
-    1. factory pipe - defined per account, used for communication with the
+    1. factory pipe - defined per scope, used for communication with the
        sandbox
        for e.g. start/stop a storlet daemon
-    2. Storlet pipe - defined per account and Storlet, used for communication
+    2. Storlet pipe - defined per scope and Storlet, used for communication
        with a storlet daemon, e.g. to call the invoke API
 
     Each pipe type has two paths:
@@ -90,11 +90,11 @@ class RunTimePaths(object):
     4. host_storlet_pipe_path
 
     Our implementation uses the following path structure for the various pipes:
-    In the host, all pipes belonging to a given account are prefixed by
-    <pipes_dir>/<account>, where <pipes_dir> comes from the configuration
+    In the host, all pipes belonging to a given scope are prefixed by
+    <pipes_dir>/<scope>, where <pipes_dir> comes from the configuration
     Thus:
-    host_factory_pipe_path is of the form <pipes_dir>/<account>/factory_pipe
-    host_storlet_pipe_path is of the form <pipes_dir>/<account>/<storlet_id>
+    host_factory_pipe_path is of the form <pipes_dir>/<scope>/factory_pipe
+    host_storlet_pipe_path is of the form <pipes_dir>/<scope>/<storlet_id>
 
     In The sandbox side
     sandbox_factory_pipe_path is of the form /mnt/channels/factory_pipe
@@ -105,7 +105,7 @@ class RunTimePaths(object):
     The Storlet binaries are accessible from the sandbox using a mounted
     directory.
     This directory is called the storlet directories.
-    On the host side it is of the form <storlet_dir>/<account>/<storlet_name>
+    On the host side it is of the form <storlet_dir>/<scope>/<storlet_name>
     On the sandbox side it is of the form /home/swift/<storlet_name>
     <storlet_dir> comes from the configuration
     <storlet_name> is the prefix of the jar.
@@ -113,13 +113,11 @@ class RunTimePaths(object):
     Logs
     ----
     Logs are located in paths of the form:
-    <log_dir>/<account>/<storlet_name>.log
+    <log_dir>/<scope>/<storlet_name>.log
     """
 
-    def __init__(self, account, conf):
-        self.account = account
-        self.reseller_prefix = conf['reseller_prefix']
-        self.scope = self._get_scope(account, self.reseller_prefix)
+    def __init__(self, scope, conf):
+        self.scope = scope
         self.factory_pipe_suffix = 'factory_pipe'
         self.sandbox_pipe_prefix = '/mnt/channels'
         self.storlet_pipe_suffix = '_storlet_pipe'
@@ -141,14 +139,6 @@ class RunTimePaths(object):
         self.host_restart_script_dir = \
             conf.get('script_dir',
                      os.path.join(self.host_root, 'scripts'))
-
-        self.storlet_container = conf['storlet_container']
-        self.storlet_dependency = conf['storlet_dependency']
-
-    def _get_scope(self, account, prefix):
-        start = len(self.reseller_prefix) + 1
-        end = min(start + 13, len(account))
-        return account[start:end]
 
     def host_pipe_prefix(self):
         return os.path.join(self.host_pipe_root, self.scope)
@@ -188,23 +178,21 @@ class RunTimePaths(object):
         return log_dir
 
     def get_host_storlet_cache_dir(self):
-        return os.path.join(self.host_cache_root, self.scope,
-                            self.storlet_container)
+        return os.path.join(self.host_cache_root, self.scope, 'storlet')
 
     def get_host_dependency_cache_dir(self):
-        return os.path.join(self.host_cache_root, self.scope,
-                            self.storlet_dependency)
+        return os.path.join(self.host_cache_root, self.scope, 'dependency')
 
 """---------------------------------------------------------------------------
 Docker Stateful Container API
 The RunTimeSandbox serve as an API between the Docker Gateway and
-a re-usable per account sandbox
+a re-usable per scope sandbox
 ---------------------------------------------------------------------------"""
 
 
 class RunTimeSandbox(object):
     """
-    The RunTimeSandbox represents a re-usable per account sandbox.
+    The RunTimeSandbox represents a re-usable per scope sandbox.
 
     The sandbox is re-usable in the sense that it can run several storlet
     daemons.
@@ -218,13 +206,13 @@ class RunTimeSandbox(object):
     get_storlet_daemon_status - test if a given storlet daemon is running
     """
 
-    def __init__(self, account, conf, logger):
-        self.paths = RunTimePaths(account, conf)
-        self.account = account
+    def __init__(self, scope, conf, logger):
+        self.paths = RunTimePaths(scope, conf)
+        self.scope = scope
 
         self.sandbox_ping_interval = 0.5
         self.sandbox_wait_timeout = \
-            int(conf['restart_linux_container_timeout'])
+            int(conf.get('restart_linux_container_timeout', 3))
 
         self.docker_repo = conf['docker_repo']
         self.docker_image_name_prefix = 'tenant'
@@ -268,7 +256,7 @@ class RunTimeSandbox(object):
 
     def wait(self):
         """
-        Wait while account's sandbox is starting
+        Wait while scope's sandbox is starting
 
         :raises StorletTimeout: the sandbox has not started in
                                 sandbox_wait_timeout
@@ -284,28 +272,22 @@ class RunTimeSandbox(object):
                         return
         except StorletTimeout:
             self.logger.exception("wait for sandbox %s timedout"
-                                  % self.account)
+                                  % self.scope)
             raise
 
     def restart(self):
         """
-        Restarts the account's sandbox
+        Restarts the scope's sandbox
 
         """
-        # Extract the account's ID from the account
-        if self.account.lower().startswith('auth_'):
-            account_id = self.account[len('auth_'):]
-        else:
-            account_id = self.account
-
         self.paths.create_host_pipe_prefix()
 
         docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
-                                           account_id)
+                                           self.scope)
         if self.docker_repo:
-            docker_image_name = '%s/%s' % (self.docker_repo, account_id)
+            docker_image_name = '%s/%s' % (self.docker_repo, self.scope)
         else:
-            docker_image_name = account_id
+            docker_image_name = self.scope
         pipe_mount = '%s:%s' % (self.paths.host_pipe_prefix(),
                                 self.paths.sandbox_pipe_prefix)
 
@@ -345,7 +327,7 @@ class RunTimeSandbox(object):
 
     def start_storlet_daemon(self, spath, storlet_id):
         """
-        Start SDaemon process in the account's sandbox
+        Start SDaemon process in the scope's sandbox
         """
         prms = {}
         prms['daemon_language'] = 'java'
@@ -375,7 +357,7 @@ class RunTimeSandbox(object):
 
     def stop_storlet_daemon(self, storlet_id):
         """
-        Stop SDaemon process in the account's sandbox
+        Stop SDaemon process in the scope's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
             dtg = ClientSBusOutDatagram.create_service_datagram(
@@ -386,7 +368,7 @@ class RunTimeSandbox(object):
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
                 self.logger.info("Failed to send status command to %s %s" %
-                                 (self.account, storlet_id))
+                                 (self.scope, storlet_id))
                 return -1
 
             reply = os.read(read_fd, 10)
@@ -398,7 +380,7 @@ class RunTimeSandbox(object):
 
     def get_storlet_daemon_status(self, storlet_id):
         """
-        Get the status of SDaemon process in the account's sandbox
+        Get the status of SDaemon process in the scope's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
             dtg = ClientSBusOutDatagram.create_service_datagram(
@@ -409,7 +391,7 @@ class RunTimeSandbox(object):
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
                 self.logger.info("Failed to send status command to %s %s" %
-                                 (self.account, storlet_id))
+                                 (self.scope, storlet_id))
                 return -1
             reply = os.read(read_fd, 10)
 
