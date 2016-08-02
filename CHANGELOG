@@ -1,0 +1,23 @@
+storlets (0.1.0, Openstack Mitaka)
+
+  * First storlets release since it was open sourced.
+
+  * Most of the code has been refactored to ease maintainability
+    this includes: breaking the middleware to base, proxy and object handlers
+    restructure the gateway code to allow easier addition of new gateways
+    simplification of the swift-docker communicartion code
+
+  * Unit tests has been added to most of the python code
+
+  * The documentation has been re-written and updated with focus
+    on installation
+
+  * functional tests have been enriched
+
+  * Added the ability to invoke a storlet on copy including support
+    for swift COPY middleware
+
+  * Added the ability to process single range requests on object nodes
+    to allow better performance when working with Spark.
+
+  * This release is tested with Swift 2.7.0, and Openstack Keystone Mitaka
