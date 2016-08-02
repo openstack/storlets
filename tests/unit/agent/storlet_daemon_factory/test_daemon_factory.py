@@ -54,3 +54,7 @@ class TestLogger(unittest.TestCase):
 class TestDaemonFactory(unittest.TestCase):
     def setUp(self):
         pass
+
+
+if __name__ == '__main__':
+    unittest.main()

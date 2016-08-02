@@ -266,5 +266,6 @@ class TestStorletGatewayDocker(unittest.TestCase):
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_dependency_registration(params, obj)
 
+
 if __name__ == '__main__':
     unittest.main()

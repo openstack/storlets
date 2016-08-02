@@ -328,5 +328,6 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             # sanity
             self.assertRaises(StopIteration, next, pipes)
 
+
 if __name__ == '__main__':
     unittest.main()
