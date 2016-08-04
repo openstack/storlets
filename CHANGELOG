@@ -1,4 +1,4 @@
-storlets (0.1.0, Openstack Mitaka)
+storlets (0.2.0, Openstack Mitaka)
 
   * First storlets release since it was open sourced.
 
@@ -21,3 +21,7 @@ storlets (0.1.0, Openstack Mitaka)
     to allow better performance when working with Spark.
 
   * This release is tested with Swift 2.7.0, and Openstack Keystone Mitaka
+
+storlets (0.1.0, Openstack Mitaka)
+
+  * Storlets are in the open within Openstack CI
