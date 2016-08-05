@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+SBUS_CMD_PREFIX = 'SBUS_CMD_'
+
 SBUS_CMD_HALT = 'SBUS_CMD_HALT'
 SBUS_CMD_EXECUTE = 'SBUS_CMD_EXECUTE'
 SBUS_CMD_START_DAEMON = 'SBUS_CMD_START_DAEMON'

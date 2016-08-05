@@ -17,7 +17,53 @@ import logging
 import unittest
 from six import StringIO
 
-from storlet_daemon_factory.daemon_factory import start_logger
+from SBusPythonFacade import SBusStorletCommand
+
+from tests.unit.swift import FakeLogger
+from storlet_daemon_factory.daemon_factory import CommandResponse, \
+    CommandSuccess, CommandFailure, DaemonFactory, start_logger
+
+
+class TestCommandResponse(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_init(self):
+        resp = CommandResponse(True, 'ok')
+        self.assertTrue(resp.status)
+        self.assertEqual('ok', resp.message)
+        self.assertTrue(resp.iterable)
+
+        resp = CommandResponse(False, 'error', False)
+        self.assertFalse(resp.status)
+        self.assertEqual('error', resp.message)
+        self.assertFalse(resp.iterable)
+
+    def test_report_message(self):
+        resp = CommandResponse(True, 'msg', True)
+        self.assertEqual('True: msg', resp.report_message)
+
+
+class TestCommandSuccess(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_init(self):
+        resp = CommandSuccess('ok')
+        self.assertTrue(resp.status)
+        self.assertEqual('ok', resp.message)
+        self.assertTrue(resp.iterable)
+
+
+class TestCommandFailure(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_init(self):
+        resp = CommandFailure('error')
+        self.assertFalse(resp.status)
+        self.assertEqual('error', resp.message)
+        self.assertTrue(resp.iterable)
 
 
 class TestLogger(unittest.TestCase):
@@ -53,7 +99,50 @@ class TestLogger(unittest.TestCase):
 
 class TestDaemonFactory(unittest.TestCase):
     def setUp(self):
-        pass
+        self.logger = FakeLogger()
+        self.pipe_path = 'path/to/pipe'
+        self.dfactory = DaemonFactory(self.pipe_path, self.logger)
+
+    def test_get_handler(self):
+        # start daemon
+        self.assertEqual(
+            self.dfactory.start_daemon,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_START_DAEMON))
+        # stop daemon
+        self.assertEqual(
+            self.dfactory.stop_daemon,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_STOP_DAEMON))
+        # daemon status
+        self.assertEqual(
+            self.dfactory.daemon_status,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_DAEMON_STATUS))
+        # stop daemons
+        self.assertEqual(
+            self.dfactory.stop_daemons,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_STOP_DAEMONS))
+        # halt
+        self.assertEqual(
+            self.dfactory.halt,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_HALT))
+        # ping
+        self.assertEqual(
+            self.dfactory.ping,
+            self.dfactory.get_handler(
+                SBusStorletCommand.SBUS_CMD_PING))
+        # invalid
+        with self.assertRaises(ValueError):
+            self.dfactory.get_handler('FOO')
+        # unkown
+        with self.assertRaises(ValueError):
+            self.dfactory.get_handler('SBUS_CMD_UNKOWN')
+        # not command handler
+        with self.assertRaises(ValueError):
+            self.dfactory.get_handler('SBUS_CMD_GET_JVM_ARGS')
 
 
 if __name__ == '__main__':

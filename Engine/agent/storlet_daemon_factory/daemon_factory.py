@@ -24,16 +24,55 @@ import time
 
 from SBusPythonFacade.SBus import SBus
 from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_DAEMON_STATUS
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_HALT
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_PING
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_START_DAEMON
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMON
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_STOP_DAEMONS
+from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_PREFIX, \
+    SBUS_CMD_HALT, SBUS_CMD_PING
 
 
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
+
+
+class CommandResponse(Exception):
+    """
+    The result of command execution
+    """
+
+    def __init__(self, status, message, iterable=True):
+        """
+        Constract CommandResponse instance
+
+        :param status: task status
+        :param message: message to be returned and logged
+        :param iterable: wheter we can keep SDaemon process running
+        """
+        self.status = status
+        self.message = message
+        self.iterable = iterable
+
+    @property
+    def report_message(self):
+        """
+        Create log message to be returned to gateway
+        """
+        return '%s: %s' % (str(self.status), self.message)
+
+
+class CommandSuccess(CommandResponse):
+    def __init__(self, message, iterable=True):
+        super(CommandSuccess, self).__init__(True, message, iterable)
+
+
+class CommandFailure(CommandResponse):
+    def __init__(self, message, iterable=True):
+        super(CommandFailure, self).__init__(False, message, iterable)
+
+
+def command_handler(func):
+    """
+    Decorator for handler functions for command
+    """
+    func.is_command_handler = True
+    return func
 
 
 class DaemonFactory(object):
@@ -399,6 +438,60 @@ class DaemonFactory(object):
             b_status = True
         return b_status
 
+    @command_handler
+    def start_daemon(self, container_id, prms):
+        b_status, error_text = self.process_start_daemon(
+            prms['daemon_language'],
+            prms['storlet_path'],
+            prms['storlet_name'],
+            prms['pool_size'],
+            prms['uds_path'],
+            prms['log_level'],
+            container_id)
+        return CommandResponse(b_status, error_text, True)
+
+    @command_handler
+    def stop_daemon(self, container_id, prms):
+        b_status, error_text = self.process_kill(prms['storlet_name'])
+        return CommandResponse(b_status, error_text, True)
+
+    @command_handler
+    def daemon_status(self, container_id, prms):
+        b_status, error_text = \
+            self.get_process_status_by_name(prms['storlet_name'])
+        return CommandResponse(b_status, error_text, True)
+
+    @command_handler
+    def stop_daemons(self, container_id, prms):
+        b_status, error_text = self.process_kill_all()
+        return CommandResponse(b_status, error_text, False)
+
+    @command_handler
+    def halt(self, container_id, prms):
+        b_status, error_text = self.shutdown_all_processes()
+        return CommandResponse(b_status, error_text, False)
+
+    @command_handler
+    def ping(self, container_id, prms):
+        return CommandSuccess('OK')
+
+    def get_handler(self, command):
+        """
+        Decide handler function correspoiding to the recieved command
+
+        :param command: command
+        :returns: handler function
+        """
+        if not command.startswith(SBUS_CMD_PREFIX):
+            raise ValueError('got unknown command %s' % command)
+        func_name = command[len(SBUS_CMD_PREFIX):].lower()
+        try:
+            handler = getattr(self, func_name)
+            getattr(handler, 'is_command_handler')
+        except AttributeError:
+            raise ValueError('got unknown command %s' % command)
+        return handler
+
     def dispatch_command(self, dtg, container_id):
         """
         Parse datagram. React on the request.
@@ -406,56 +499,22 @@ class DaemonFactory(object):
         :param dtg: Datagram to process
         :param container_id: container id
 
-        :returns: The following tuple
-                  (Status, Descrion text of possible error,
-                   Whether we need to continue operation)
+        :returns: CommandResponse instance
         """
-        b_status = False
-        error_text = ''
-        b_iterate = True
         command = dtg.command
         prms = dtg.params
         self.logger.debug("Received command {0}".format(command))
 
-        # TODO(takashi): refactor this
-        if command == SBUS_CMD_START_DAEMON:
-            self.logger.debug('Do SBUS_CMD_START_DAEMON')
-            self.logger.debug('prms = %s' % str(prms))
-            b_status, error_text = \
-                self.process_start_daemon(prms['daemon_language'],
-                                          prms['storlet_path'],
-                                          prms['storlet_name'],
-                                          prms['pool_size'],
-                                          prms['uds_path'],
-                                          prms['log_level'],
-                                          container_id)
-        elif command == SBUS_CMD_STOP_DAEMON:
-            self.logger.debug('Do SBUS_CMD_STOP_DAEMON')
-            b_status, error_text = \
-                self.process_kill(prms['storlet_name'])
-        elif command == SBUS_CMD_DAEMON_STATUS:
-            self.logger.debug('Do SBUS_CMD_DAEMON_STATUS')
-            b_status, error_text = \
-                self.get_process_status_by_name(prms['storlet_name'])
-        elif command == SBUS_CMD_STOP_DAEMONS:
-            self.logger.debug('Do SBUS_CMD_STOP_DAEMONS')
-            b_status, error_text = self.process_kill_all()
-            b_iterate = False
-        elif command == SBUS_CMD_HALT:
-            self.logger.debug('Do SBUS_CMD_HALT')
-            b_status, error_text = self.shutdown_all_processes()
-            b_iterate = False
-        elif command == SBUS_CMD_PING:
-            self.logger.debug('Do SBUS_CMD_PING')
-            b_status = True
-            error_text = 'OK'
+        try:
+            handler = self.get_handler(command)
+        except ValueError as e:
+            self.logger.exception('Failed to decide handler')
+            return CommandFailure(str(e))
         else:
-            b_status = False
-            error_text = "got unknown command %d" % command
-            self.logger.error(error_text)
-
-        self.logger.debug('Done')
-        return b_status, error_text, b_iterate
+            self.logger.debug('Do %s' % command)
+            return handler(container_id, prms)
+        finally:
+            self.logger.debug('Done')
 
     def main_loop(self, container_id):
         """
@@ -473,11 +532,7 @@ class DaemonFactory(object):
             self.logger.error("Failed to create SBus. exiting.")
             return EXIT_FAILURE
 
-        b_iterate = True
-        b_status = True
-        error_text = ''
-
-        while b_iterate:
+        while True:
             rc = sbus.listen(fd)
             if rc < 0:
                 self.logger.error("Failed to wait on SBus. exiting.")
@@ -501,23 +556,23 @@ class DaemonFactory(object):
 
             self.logger.debug("Received outfd %d" % outfd)
             with os.fdopen(outfd, 'w') as outfile:
-                b_status, error_text, b_iterate = \
-                    self.dispatch_command(dtg, container_id)
-                self.log_and_report(outfile, b_status, error_text)
+                resp = self.dispatch_command(dtg, container_id)
+                self.log_and_report(outfile, resp)
+                if not resp.iterable:
+                    break
 
         # We left the main loop for some reason. Terminating.
         self.logger.debug('Leaving main loop')
         return EXIT_SUCCESS
 
-    def log_and_report(self, outfile, b_status, error_text):
+    def log_and_report(self, outfile, resp):
         """
         Send result result description message back to swift middleware
 
         :param outfile : Output channel to send the message to
-        :param b_status : Flag, whether the operation was successful
-        :param error_text: The result description
+        :param resp: CommandResponse instance
         """
-        answer = str(b_status) + ': ' + error_text
+        answer = resp.report_message
         self.logger.debug(' Just processed command')
         self.logger.debug(' Going to answer: %s' % answer)
         try:
