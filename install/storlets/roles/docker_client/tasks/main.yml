@@ -20,8 +20,8 @@
 - shell: dpkg --get-selections | grep linux-image-extra | wc -l
   register: linux_image_extra
 
-- shell: dpkg --get-selections | grep lxc-docker | awk {'print $2'} | grep -w install | wc -l
-  register: lxc_docker
+- shell: dpkg --get-selections | grep docker-engine | awk {'print $2'} | grep -w install | wc -l
+  register: docker_engine
 
 - command: uname -r
   register: uname
@@ -32,21 +32,21 @@
   when: "'0' in aufs.stdout_lines[0]"
 
 - name: Set Docker Ubuntu Repo Key
-  apt_key: keyserver=hkp://keyserver.ubuntu.com:80 id=36A1D7869245C8950F966E92D8576A8BA88D21E9 state=present
+  apt_key: keyserver=hkp://p80.pool.sks-keyservers.net:80 id=58118E89F3A912897C070ADBF76221572C52609D state=present
   ignore_errors: True
-  when: "'0' in lxc_docker.stdout_lines[0]"
+  when: "'0' in docker_engine.stdout_lines[0]"
 
 - name: Install Apt Transport HTTPS
   apt: name=apt-transport-https state=present update-cache=yes force=yes
-  when: "'0' in lxc_docker.stdout_lines[0]"
+  when: "'0' in docker_engine.stdout_lines[0]"
 
 - name: Add Docker Apt repository
-  apt_repository: repo='deb http://get.docker.io/ubuntu docker main' state=present
-  when: "'0' in lxc_docker.stdout_lines[0]"
+  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present
+  when: "'0' in docker_engine.stdout_lines[0]"
 
 - name: Install Docker Client
-  apt: name=lxc-docker state=present update-cache=yes force=yes
-  when: "'0' in lxc_docker.stdout_lines[0]"
+  apt: name=docker-engine state=present update-cache=yes force=yes
+  when: "'0' in docker_engine.stdout_lines[0]"
 
 # There seem to be a bug in the installation where config files are not installed.
 # Might be a bug in the un-install where docket thinks it is upgrading.

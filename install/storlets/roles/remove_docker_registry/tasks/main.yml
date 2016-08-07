@@ -13,40 +13,10 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- stat: path=/opt/docker-registry
-  register: st
-
-- name: Stop Docker repository service
-  service: name=docker-registry state=stopped
-  when: st.stat.exists
+- name: Stop Docker repository container
+  shell: docker stop registry
   ignore_errors: yes
 
-- name: Uninstall repo dependencies
-  pip:
-    chdir: /opt/docker-registry
-    requirements: requirements.txt
-    state: absent
-  when: st.stat.exists
-
-- name: Remove log dir
-  stat: path=/var/log/docker-registry
-  register: p
-- shell: rm -fr /var/log/docker-registry
-  when: p.stat.exists
-
-- name: Remove data dir
-  stat: path=/data/registry
-  register: p
-- shell: rm -fr /data/registry
-  when: p.stat.exists
-
-- name: Delete repository code
-  stat: path=/opt/docker-registry
-  register: p
-- shell: rm -fr /opt/docker-registry
-  when: p.stat.exists
-
-- name: Delete Docker repository service upstart job
-  stat: path=/etc/init/docker-registry.conf
-- shell: rm -fr /etc/init/docker-registry.conf
-  when: p.stat.exists
+- name: Remove Docker repository container
+  shell: docker rm registry
+  ignore_errors: yes

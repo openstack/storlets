@@ -56,7 +56,7 @@
   args:
     chdir: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
   register: command_result
-  failed_when: "'Successfully built' not in command_result.stdout"
+  failed_when: "'sha256:' not in command_result.stdout"
 
 - name: Push the image to the global registry
   command: "docker push {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"
