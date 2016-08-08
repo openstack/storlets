@@ -183,10 +183,20 @@ class StorletBaseHandler(object):
 
     @property
     def scope(self):
+        """
+        Scope parameter to be passed to gateway module
+
+        In swift-storlet usecase, we create one scope per one account.
+        NOTE: scope name does not include reseller prefix
+        NOTE: scope name is cut to be no longer than 12 chars
+        """
         if self._account.startswith(self.reseller_prefix + '_'):
+            # If the account starts with reseller prefix, remove that prefix
+            # from scope
             start = len(self.reseller_prefix) + 1
         else:
             start = 0
+        # TODO(takashi): Using shorter name may cause scope conflicts
         end = min(start + 13, len(self.account))
         return self._account[start:end]
 

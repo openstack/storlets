@@ -80,6 +80,9 @@ class DockerStorletRequest(StorletRequest):
 
     @property
     def has_range(self):
+        """
+        Whether the input range is given
+        """
         return self.start is not None and self.end is not None
 
 
@@ -91,9 +94,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         """
         :param sconf: a dict for storlets conf
         :param logger: a logger instance
-        :param scope: a string for sandbox path basically consists of
-                      PREFIX_projectid comming from swift request path
-                      (e.g. AUTH_<project id>)
+        :param scope: scope name to identify the container
         """
         super(StorletGatewayDocker, self).__init__(sconf, logger, scope)
         # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
@@ -102,6 +103,14 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     @classmethod
     def validate_storlet_registration(cls, params, name):
+        """
+        Validate required parameters for storlet file
+
+        :param params: parameters related to the storlet file
+        :param name: name of the storlet file
+        :raises ValueError: if some of the required parameters are missing,
+                            or some of the parameters are invalid
+        """
         mandatory = ['Language', 'Interface-Version', 'Object-Metadata',
                      'Main']
         cls._check_mandatory_params(params, mandatory)
@@ -114,6 +123,14 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     @classmethod
     def validate_dependency_registration(cls, params, name):
+        """
+        Validate required parameters for dependency file
+
+        :param params: parameters related to the dependency file
+        :param name: name of the dependency file
+        :raises ValueError: if some of the required parameters are missing,
+                            or some of the parameters are invalid
+        """
         mandatory = ['Dependency-Version']
         cls._check_mandatory_params(params, mandatory)
 
@@ -128,12 +145,24 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     @classmethod
     def _check_mandatory_params(cls, params, mandatory):
+        """
+        Ensure that we have all mandatory parameters in the given parameters
+
+        :param params: file parameters
+        :param mandatory: required parameters
+        :raises ValueError: if some of the required parameters are missing
+        """
         for md in mandatory:
             if md not in params:
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
     def invocation_flow(self, sreq):
+        """
+        Invoke storlet for given StorletRequest
+
+        :param sreq: DockerStorletRequest instance
+        """
         run_time_sbox = RunTimeSandbox(self.scope, self.sconf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
@@ -166,6 +195,12 @@ class StorletGatewayDocker(StorletGatewayBase):
             paths.sbox_storlet_exec(sreq.options['storlet_main'])
 
     def _upload_storlet_logs(self, slog_path, sreq):
+        """
+        Upload storlet execution log as a swift object
+
+        :param slog_path: target path
+        :params sreq: DockerStorletRequest instance
+        """
         if sreq.generate_log:
             with open(slog_path, 'r') as logfile:
                 storlet_name = sreq.storlet_id.split('-')[0]
@@ -184,6 +219,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         Swift.
 
         :params obj_name: name of the object
+        :params sreq: DockerStorletRequest instance
         :params is_storlet: True if the object is a storlet object
                             False if the object is a dependency object
         :returns: Wheather the Docker container was updated with obj_name
@@ -280,6 +316,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         local cache, and from there to the Docker container.
         Uses the bring_from_cache auxiliary function.
 
+        :params sreq: DockerStorletRequest instance
         :returns: True if the Docker container was updated
         """
         # where at the host side, reside the storlet containers
