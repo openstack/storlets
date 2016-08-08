@@ -541,7 +541,7 @@ class DaemonFactory(object):
                 self.logger.error("Failed to receive message. Exitting.")
                 return EXIT_FAILURE
 
-            outfd = dtg.get_service_out_fd()
+            outfd = dtg.service_out_fd
             if outfd is None:
                 self.logger.error("Received message does not have outfd."
                                   " continuing.")
