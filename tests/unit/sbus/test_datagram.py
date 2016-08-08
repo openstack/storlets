@@ -15,7 +15,7 @@
 
 import json
 import unittest
-from sbus.file_description import SBUS_FD_SERVICE_OUT
+import sbus.file_description as sbus_fd
 from sbus.datagram import FDMetadata, SBusDatagram, \
     ClientSBusOutDatagram, ServerSBusInDatagram
 
@@ -47,10 +47,23 @@ class TestFDMetadata(unittest.TestCase):
 class TestSBusDatagram(unittest.TestCase):
     def setUp(self):
         self.command = 'COMMAND'
-        self.fds = [1]
-        self.metadata = [{'storlets': {'type': SBUS_FD_SERVICE_OUT,
-                                       'key1': 'value1'},
-                          'storage': {'key2': 'value2'}}]
+        self.types = [sbus_fd.SBUS_FD_SERVICE_OUT,
+                      sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                      sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                      sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                      sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                      sbus_fd.SBUS_FD_OUTPUT_TASK_ID,
+                      sbus_fd.SBUS_FD_LOGGER,
+                      sbus_fd.SBUS_FD_INPUT_OBJECT,
+                      sbus_fd.SBUS_FD_INPUT_OBJECT]
+        self.fds = []
+        self.metadata = []
+        for i in xrange(len(self.types)):
+            self.fds.append(i + 1)
+            self.metadata.append(
+                FDMetadata(self.types[i],
+                           {'key%d' % i: 'value%d' % i},
+                           {'skey%d' % i: 'svalue%d' % i}).to_dict())
         self.params = {'param1': 'paramvalue1'}
         self.task_id = 'id'
         self.dtg = self._create_datagram()
@@ -68,7 +81,7 @@ class TestSBusDatagram(unittest.TestCase):
         self.assertEqual(self.task_id, self.dtg.task_id)
 
     def test_num_fds(self):
-        self.assertEqual(1, self.dtg.num_fds)
+        self.assertEqual(len(self.types), self.dtg.num_fds)
 
     def test_cmd_params(self):
         self.assertEqual({'command': self.command,
@@ -104,7 +117,7 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
         self.assertEqual(self.command, dtg.command)
         self.assertEqual(self.task_id, dtg.task_id)
         self.assertEqual([1], dtg.fds)
-        self.assertEqual([{'storlets': {'type': 'SBUS_FD_SERVICE_OUT'},
+        self.assertEqual([{'storlets': {'type': sbus_fd.SBUS_FD_SERVICE_OUT},
                            'storage': {}}], dtg.metadata)
 
         dtg = ClientSBusOutDatagram.create_service_datagram(
@@ -113,7 +126,7 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
         self.assertEqual(self.command, dtg.command)
         self.assertIsNone(dtg.task_id)
         self.assertEqual([1], dtg.fds)
-        self.assertEqual([{'storlets': {'type': 'SBUS_FD_SERVICE_OUT'},
+        self.assertEqual([{'storlets': {'type': sbus_fd.SBUS_FD_SERVICE_OUT},
                            'storage': {}}], dtg.metadata)
 
 
@@ -130,8 +143,39 @@ class TestServerSBusInOutDatagram(TestSBusDatagram):
         return ServerSBusInDatagram(
             self.fds, md_json, cmd_params)
 
+    def test_find_fds(self):
+        self.assertEqual(
+            [1], self.dtg._find_fds(sbus_fd.SBUS_FD_SERVICE_OUT))
+        self.assertEqual(
+            [2, 3], self.dtg._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT))
+        self.assertEqual(
+            [], self.dtg._find_fds('DUMMY_TYPE'))
+
+    def test_find_fd(self):
+        self.assertEqual(
+            1, self.dtg._find_fd(sbus_fd.SBUS_FD_SERVICE_OUT))
+        self.assertEqual(
+            2, self.dtg._find_fd(sbus_fd.SBUS_FD_OUTPUT_OBJECT))
+        self.assertIsNone(
+            self.dtg._find_fd('DUMMY_TYPE'))
+
     def test_service_out_fd(self):
         self.assertEqual(1, self.dtg.service_out_fd)
+
+    def test_object_out_fds(self):
+        self.assertEqual([2, 3], self.dtg.object_out_fds)
+
+    def test_object_metadata_out_fds(self):
+        self.assertEqual([4, 5], self.dtg.object_metadata_out_fds)
+
+    def test_task_id_out_fd(self):
+        self.assertEqual(6, self.dtg.task_id_out_fd)
+
+    def test_logger_out_fd(self):
+        self.assertEqual(7, self.dtg.logger_out_fd)
+
+    def test_object_in_fds(self):
+        self.assertEqual([8, 9], self.dtg.object_in_fds)
 
 
 if __name__ == '__main__':

@@ -27,7 +27,7 @@ import json
 # ServerSBusInDatagram - De-serializing client commands
 # ClientSBusInDatagram - De-srializing server response
 
-from sbus.file_description import SBUS_FD_SERVICE_OUT
+import sbus.file_description as sbus_fd
 
 
 class FDMetadata(object):
@@ -106,7 +106,7 @@ class ClientSBusOutDatagram(SBusDatagram):
 
     @staticmethod
     def create_service_datagram(command, outfd, params=None, task_id=None):
-        md = [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()]
+        md = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
         fds = [outfd]
         return ClientSBusOutDatagram(command, fds, md, params, task_id)
 
@@ -149,12 +149,48 @@ class ServerSBusInDatagram(SBusDatagram):
         super(ServerSBusInDatagram, self).__init__(
             command, fds, md, params, task_id)
 
+    def _find_fds(self, fdtype):
+        ret = []
+        for i in xrange(len(self.metadata)):
+            if self.metadata[i]['storlets']['type'] == fdtype:
+                ret.append(self.fds[i])
+        return ret
+
+    def _find_fd(self, fdtype):
+        ret = self._find_fds(fdtype)
+        if not ret:
+            return None
+        else:
+            return ret[0]
+
     @property
     def service_out_fd(self):
-        for i in xrange(len(self.metadata)):
-            if self.metadata[i]['storlets']['type'] == SBUS_FD_SERVICE_OUT:
-                return self.fds[i]
-        return None
+        return self._find_fd(sbus_fd.SBUS_FD_SERVICE_OUT)
+
+    @property
+    def object_out_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT)
+
+    @property
+    def object_metadata_out_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA)
+
+    @property
+    def task_id_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_OUTPUT_TASK_ID)
+
+    @property
+    def logger_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_LOGGER)
+
+    @property
+    def object_in_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_INPUT_OBJECT)
+
+    @property
+    def object_in_metadata(self):
+        return [md['storage'] for md in self.metadata
+                if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
 
 # Curerrently we have no Server to Client commands
