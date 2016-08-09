@@ -101,6 +101,7 @@ class TestLogger(unittest.TestCase):
 class TestDaemonFactory(unittest.TestCase):
     kill_path = 'storlet_daemon_factory.daemon_factory.os.kill'
     waitpid_path = 'storlet_daemon_factory.daemon_factory.os.waitpid'
+    sbus_path = 'storlet_daemon_factory.daemon_factory.SBus'
 
     def setUp(self):
         self.logger = FakeLogger()
@@ -203,6 +204,66 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual(0, waitpid.call_count)
             self.assertEqual({}, self.dfactory.storlet_name_to_pid)
 
+    def test_shutdown_all_processes(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path):
+            send.return_value = 0
+            terminated = self.dfactory.shutdown_all_processes()
+            self.assertEqual(2, len(terminated))
+            self.assertIn('storleta', terminated)
+            self.assertIn('storletb', terminated)
+            self.assertEqual({},
+                             self.dfactory.storlet_name_to_pid)
+
+    def test_shutdown_process(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path):
+            send.return_value = 0
+            self.dfactory.shutdown_process('storleta')
+            self.assertEqual({'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path) as waitpid:
+            send.return_value = -1
+            with self.assertRaises(SDaemonError):
+                self.dfactory.shutdown_process('storleta')
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path) as waitpid:
+            send.return_value = 0
+            waitpid.side_effect = OSError()
+            with self.assertRaises(SDaemonError):
+                self.dfactory.shutdown_process('storleta')
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with self.assertRaises(SDaemonError):
+            self.dfactory.shutdown_process('storletc')
+
     def test_stop_daemon(self):
         # Success
         self.dfactory.storlet_name_to_pid = \
@@ -229,6 +290,20 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual('Failed to kill the storlet daemon storleta',
                              resp.message)
             self.assertTrue(resp.iterable)
+
+    def test_halt(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path):
+            send.return_value = 0
+            resp = self.dfactory.halt('contid', {})
+            self.assertTrue(resp.status)
+            self.assertIn('storleta: terminated', resp.message)
+            self.assertIn('storletb: terminated', resp.message)
+            self.assertFalse(resp.iterable)
 
     def test_stop_daemons(self):
         # Success

@@ -397,44 +397,59 @@ class DaemonFactory(object):
         """
         send HALT command to every spawned process
 
-        :returns: (Status, Termination message)
+        :returns: a list of the terminated storlet daemons
         """
-        answer = ''
+        terminated = []
         for storlet_name in self.storlet_name_to_pid.keys():
-            self.shutdown_process(storlet_name)
-            answer += storlet_name + ': terminated; '
-        self.logger.info('All the processes terminated')
-        self.logger.info(answer)
-        # TODO(takashi): Can we really always return True?
-        return True, answer
+            try:
+                self.shutdown_process(storlet_name)
+                terminated.append(storlet_name)
+            except SDaemonError:
+                self.logger.exception('Failed to shutdown sdaemon %s' %
+                                      storlet_name)
+                pass
+        self.logger.info('All the storlet daemons are terminated')
+        return terminated
 
     def shutdown_process(self, storlet_name):
         """
         send HALT command to storlet daemon
 
         :param storlet_name: Storlet name we are checking the daemon for
-        :returns: Status
+        :raises SDaemonError: when wailed to shutdown the storlet daemon
         """
-        b_status = False
-        self.logger.debug('Inside shutdown_process {0}'.format(storlet_name))
+        self.logger.debug(
+            'Shutdown the storlet daemon {0}'.format(storlet_name))
+
+        dmn_pid = self.storlet_name_to_pid.get(storlet_name)
+        self.logger.debug('Storlet Daemon PID is {0}'.format(dmn_pid))
+        if dmn_pid is None:
+            raise SDaemonError('{0} is not found'.format(storlet_name))
+
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send HALT command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
-        # TODO(takashi): We had better use contextmanager
+
         read_fd, write_fd = os.pipe()
-        dtg = ClientSBusOutDatagram.create_service_datagram(
-            SBUS_CMD_HALT,
-            write_fd)
-        SBus.send(storlet_pipe_name, dtg)
-        os.close(read_fd)
-        os.close(write_fd)
-        dmn_pid = self.storlet_name_to_pid.get(storlet_name, -1)
-        self.logger.debug('Storlet Daemon PID is {0}'.format(dmn_pid))
-        if -1 != dmn_pid:
+        try:
+            dtg = ClientSBusOutDatagram.create_service_datagram(
+                SBUS_CMD_HALT, write_fd)
+            rc = SBus.send(storlet_pipe_name, dtg)
+            if rc < 0:
+                raise SDaemonError(
+                    'Failed to send halt to {0}'.format(storlet_name))
+        finally:
+            os.close(read_fd)
+            os.close(write_fd)
+
+        try:
             os.waitpid(dmn_pid, 0)
             self.storlet_name_to_pid.pop(storlet_name)
-            b_status = True
-        return b_status
+        except OSError:
+            self.logger.exception(
+                'Error when waiting the storlet daemon {0}'.format(
+                    storlet_name))
+            raise SDaemonError('Failed to wait {0}'.format(storlet_name))
 
     @command_handler
     def start_daemon(self, container_id, prms):
@@ -474,8 +489,9 @@ class DaemonFactory(object):
 
     @command_handler
     def halt(self, container_id, prms):
-        b_status, error_text = self.shutdown_all_processes()
-        return CommandResponse(b_status, error_text, False)
+        terminated = self.shutdown_all_processes()
+        msg = '; '.join(['%s: terminated' % x for x in terminated])
+        return CommandSuccess(msg, False)
 
     @command_handler
     def ping(self, container_id, prms):
