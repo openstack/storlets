@@ -14,13 +14,13 @@ Limitations under the License.
 import ConfigParser
 from eventlet import Timeout
 from swift.common.swob import HTTPException, HTTPInternalServerError, wsgify
-from swift.common.utils import config_true_value, get_logger, \
-    register_swift_info
-from storlet_gateway.common.exceptions import StorletRuntimeException, \
-    StorletTimeout
+from swift.common.utils import (config_true_value, get_logger,
+                                register_swift_info)
+from storlet_gateway.common.exceptions import (StorletRuntimeException,
+                                               StorletTimeout)
 from storlet_middleware.handlers.base import NotStorletRequest
-from storlet_middleware.handlers import StorletProxyHandler, \
-    StorletObjectHandler
+from storlet_middleware.handlers import (StorletProxyHandler,
+                                         StorletObjectHandler)
 
 
 class StorletHandlerMiddleware(object):
@@ -90,20 +90,17 @@ def filter_factory(global_conf, **local_conf):
     #                performed using class method of gateway class
     conf = global_conf.copy()
     conf.update(local_conf)
-    storlet_conf = dict()
-    storlet_conf['storlet_timeout'] = conf.get('storlet_timeout', 40)
-    storlet_conf['execution_server'] = conf.get('execution_server', '')
-    storlet_conf['storlet_container'] = \
-        conf.get('storlet_container', 'storlet')
-    storlet_conf['storlet_dependency'] = conf.get('storlet_dependency',
-                                                  'dependency')
-    storlet_conf['storlet_execute_on_proxy_only'] = \
-        config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
-    storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
+    storlet_conf = {
+        'storlet_timeout': conf.get('storlet_timeout', 40),
+        'execution_server': conf.get('execution_server', ''),
+        'storlet_container': conf.get('storlet_container', 'storlet'),
+        'storlet_dependency': conf.get('storlet_dependency', 'dependency'),
+        'storlet_execute_on_proxy_only': config_true_value(
+            conf.get('storlet_execute_on_proxy_only', 'false')),
+        'reseller_prefix': conf.get('reseller_prefix', 'AUTH')}
 
     module_name = conf.get('storlet_gateway_module', '')
-    mo = module_name[:module_name.rfind(':')]
-    cl = module_name[module_name.rfind(':') + 1:]
+    mo, _, cl = module_name.rpartition(':')
     module = __import__(mo, fromlist=[cl])
     the_class = getattr(module, cl)
 
