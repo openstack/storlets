@@ -26,12 +26,12 @@ from contextlib import contextmanager
 
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
-from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import FDMetadata, ClientSBusOutDatagram
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
+from sbus import SBus
+from sbus.datagram import FDMetadata, ClientSBusOutDatagram
+from sbus.file_description import SBUS_FD_INPUT_OBJECT, \
     SBUS_FD_LOGGER, SBUS_FD_OUTPUT_OBJECT, SBUS_FD_OUTPUT_OBJECT_METADATA, \
     SBUS_FD_OUTPUT_TASK_ID
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_CANCEL, \
+from sbus.command import SBUS_CMD_CANCEL, \
     SBUS_CMD_DAEMON_STATUS, SBUS_CMD_EXECUTE, SBUS_CMD_PING, \
     SBUS_CMD_START_DAEMON, SBUS_CMD_STOP_DAEMON
 from storlet_gateway.common.exceptions import StorletRuntimeException, \

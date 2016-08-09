@@ -27,7 +27,7 @@ import json
 # ServerSBusInDatagram - De-serializing client commands
 # ClientSBusInDatagram - De-srializing server response
 
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_SERVICE_OUT
+from sbus.file_description import SBUS_FD_SERVICE_OUT
 
 
 class FDMetadata(object):

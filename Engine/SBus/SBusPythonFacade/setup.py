@@ -13,9 +13,8 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
+from setuptools import setup, find_packages
 
-from setuptools import setup
-setup(name='SBusPythonFacade',
+setup(name='sbus',
       version='1.0',
-      package_dir={'SBusPythonFacade': ''},
-      packages=['SBusPythonFacade'])
+      packages=find_packages())

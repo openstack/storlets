@@ -15,8 +15,8 @@
 
 import json
 import unittest
-from SBusPythonFacade.SBusFileDescription import SBUS_FD_SERVICE_OUT
-from SBusPythonFacade.SBusDatagram import FDMetadata, SBusDatagram, \
+from sbus.file_description import SBUS_FD_SERVICE_OUT
+from sbus.datagram import FDMetadata, SBusDatagram, \
     ClientSBusOutDatagram, ServerSBusInDatagram
 
 

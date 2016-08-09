@@ -18,7 +18,7 @@ import mock
 import unittest
 from six import StringIO
 
-from SBusPythonFacade import SBusStorletCommand
+import sbus.command
 
 from tests.unit.swift import FakeLogger
 from storlet_daemon_factory.daemon_factory import CommandResponse, \
@@ -135,32 +135,32 @@ class TestDaemonFactory(unittest.TestCase):
         self.assertEqual(
             self.dfactory.start_daemon,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_START_DAEMON))
+                sbus.command.SBUS_CMD_START_DAEMON))
         # stop daemon
         self.assertEqual(
             self.dfactory.stop_daemon,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_STOP_DAEMON))
+                sbus.command.SBUS_CMD_STOP_DAEMON))
         # daemon status
         self.assertEqual(
             self.dfactory.daemon_status,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_DAEMON_STATUS))
+                sbus.command.SBUS_CMD_DAEMON_STATUS))
         # stop daemons
         self.assertEqual(
             self.dfactory.stop_daemons,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_STOP_DAEMONS))
+                sbus.command.SBUS_CMD_STOP_DAEMONS))
         # halt
         self.assertEqual(
             self.dfactory.halt,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_HALT))
+                sbus.command.SBUS_CMD_HALT))
         # ping
         self.assertEqual(
             self.dfactory.ping,
             self.dfactory.get_handler(
-                SBusStorletCommand.SBUS_CMD_PING))
+                sbus.command.SBUS_CMD_PING))
         # invalid
         with self.assertRaises(ValueError):
             self.dfactory.get_handler('FOO')
