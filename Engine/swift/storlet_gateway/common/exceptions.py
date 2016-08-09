@@ -30,3 +30,7 @@ class StorletConfigError(Exception):
 
 class FileManagementError(Exception):
     pass
+
+
+class StorletGatewayLoadError(Exception):
+    pass

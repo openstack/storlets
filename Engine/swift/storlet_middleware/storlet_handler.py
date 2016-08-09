@@ -18,6 +18,7 @@ from swift.common.utils import config_true_value, get_logger, \
     register_swift_info
 from storlet_gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
+from storlet_gateway.loader import load_gateway
 from storlet_middleware.handlers.base import NotStorletRequest
 from storlet_middleware.handlers import StorletProxyHandler, \
     StorletObjectHandler
@@ -101,11 +102,9 @@ def filter_factory(global_conf, **local_conf):
         config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
     storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
 
-    module_name = conf.get('storlet_gateway_module', '')
-    mo = module_name[:module_name.rfind(':')]
-    cl = module_name[module_name.rfind(':') + 1:]
-    module = __import__(mo, fromlist=[cl])
-    the_class = getattr(module, cl)
+    module_name = conf.get('storlet_gateway_module',
+                           'storlet_gateway.gateways.stub:StorletGatewayStub')
+    gateway_class = load_gateway(module_name)
 
     configParser = ConfigParser.RawConfigParser()
     configParser.read(conf.get('storlet_gateway_conf',
@@ -119,9 +118,9 @@ def filter_factory(global_conf, **local_conf):
     #  supported storlet API version
     swift_info = {'storlet_container': storlet_conf['storlet_container'],
                   'storlet_dependency': storlet_conf['storlet_dependency'],
-                  'storlet_gateway_class': cl}
+                  'storlet_gateway_class': gateway_class.__name__}
 
-    storlet_conf["gateway_module"] = the_class
+    storlet_conf["gateway_module"] = gateway_class
     register_swift_info('storlet_handler', False, **swift_info)
 
     def storlet_handler_filter(app):
