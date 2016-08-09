@@ -67,6 +67,10 @@ class CommandFailure(CommandResponse):
         super(CommandFailure, self).__init__(False, message, iterable)
 
 
+class SDaemonError(Exception):
+    pass
+
+
 def command_handler(func):
     """
     Decorator for handler functions for command
@@ -353,40 +357,41 @@ class DaemonFactory(object):
         (kill -9 $DMN_PID)
 
         :param storlet_name: Storlet name we are checking the daemon for
-        :returns: (Status, Description text of possible error)
+        :returns: (pid, return code)
+        :raises SDaemonError: when failed to kill the storlet daemon
         """
-        self.logger.debug('Current storlet name is: {0}'.format(storlet_name))
-        b_success = True
-        error_text = ''
-        dmn_pid = self.storlet_name_to_pid.get(storlet_name, -1)
+        self.logger.debug('kill the storlet daemon {0}'.format(storlet_name))
+        dmn_pid = self.storlet_name_to_pid.get(storlet_name)
         self.logger.debug('Daemon PID is: {0}'.format(dmn_pid))
-        if -1 != dmn_pid:
+        if dmn_pid is not None:
             try:
                 os.kill(dmn_pid, signal.SIGKILL)
                 obtained_pid, obtained_code = os.waitpid(dmn_pid, os.WNOHANG)
-                error_text = 'Storlet {0}, PID = {1}, ErrCode = {2}'. \
-                             format(storlet_name, obtained_pid, obtained_code)
-                self.logger.debug(error_text)
-            except Exception:
-                self.logger.debug('Crash while killing storlet')
-            self.storlet_name_to_pid.pop(storlet_name)
+                self.logger.debug(
+                    'killed the storlet daemon {0}, PID = {1} ErrCode = {2}'.
+                    format(storlet_name, obtained_pid, obtained_code))
+                self.storlet_name_to_pid.pop(storlet_name)
+                return obtained_pid, obtained_code
+            except OSError:
+                self.logger.exception(
+                    'Error when sending kill signal to the storlet daemon %s' %
+                    storlet_name)
+                raise SDaemonError('Failed to send kill signal to {0}')
         else:
-            error_text = '{0} is not found'.format(storlet_name)
-            b_success = False
-
-        return b_success, error_text
+            raise SDaemonError('{0} is not found'.format(storlet_name))
 
     def process_kill_all(self):
         """
         Kill every one.
 
-        :returns: (Status (True),
-                   Description text of possible error ('OK'))
+        :raises SDaemonError: when failed to kill one of the storlet daemons
         """
         for storlet_name in self.storlet_name_to_pid.keys():
-            self.process_kill(storlet_name)
-        # TODO(takashi): Can we really always return True?
-        return True, 'OK'
+            try:
+                self.process_kill(storlet_name)
+            except SDaemonError:
+                # TODO(takashi): Can we really pass here?
+                pass
 
     def shutdown_all_processes(self):
         """
@@ -445,8 +450,16 @@ class DaemonFactory(object):
 
     @command_handler
     def stop_daemon(self, container_id, prms):
-        b_status, error_text = self.process_kill(prms['storlet_name'])
-        return CommandResponse(b_status, error_text, True)
+        storlet_name = prms['storlet_name']
+        try:
+            pid, code = self.process_kill(storlet_name)
+            msg = 'Storlet {0}, PID = {1}, ErrCode = {2}'.format(
+                storlet_name, pid, code)
+            return CommandSuccess(msg, True)
+        except SDaemonError:
+            msg = 'Failed to kill the storlet daemon %s' % storlet_name
+            self.logger.exception(msg)
+            return CommandFailure(msg)
 
     @command_handler
     def daemon_status(self, container_id, prms):
@@ -456,8 +469,8 @@ class DaemonFactory(object):
 
     @command_handler
     def stop_daemons(self, container_id, prms):
-        b_status, error_text = self.process_kill_all()
-        return CommandResponse(b_status, error_text, False)
+        self.process_kill_all()
+        return CommandSuccess('OK', False)
 
     @command_handler
     def halt(self, container_id, prms):
