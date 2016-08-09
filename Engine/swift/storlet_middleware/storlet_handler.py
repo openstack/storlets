@@ -100,7 +100,7 @@ def filter_factory(global_conf, **local_conf):
         'reseller_prefix': conf.get('reseller_prefix', 'AUTH')}
 
     module_name = conf.get('storlet_gateway_module', '')
-    mo, _, cl = module_name.partition(':')
+    mo, _, cl = module_name.rpartition(':')
     module = __import__(mo, fromlist=[cl])
     the_class = getattr(module, cl)
 
