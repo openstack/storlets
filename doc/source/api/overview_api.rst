@@ -114,8 +114,7 @@ Storlets can be invoked in 3 ways:
     In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
     thumbnail extraction from an existing jpg.
 
-Invocation involves adding an extra header ('X-Run-Storlet') to the Swift original PUT/GET/COPY requests.
-Additional details and examples can be found in <https://github.com/openstack/storlets/blob/master/doc/source/invoking_storlets.rst>.
+Below is the API reference of the abovementioned invocations.
 
 Invoke a storlet upon object download
 -------------------------------------

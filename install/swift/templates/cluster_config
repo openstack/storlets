@@ -1,14 +1,14 @@
 {
     "groups" : {
-        "keystone": [ "127.0.0.1" ],
-        "swift-proxy": [ "127.0.0.1" ],
-        "swift-md": [ "127.0.0.1" ],
-        "swift-object": [ "127.0.0.1" ],
-        "swift-ring-builder": [ "127.0.0.1" ]
+        "keystone": [ "{{ swift_ip }}" ],
+        "swift-proxy": [ "{{ swift_ip }}" ],
+        "swift-md": [ "{{ swift_ip }}" ],
+        "swift-object": [ "{{ swift_ip }}" ],
+        "swift-ring-builder": [ "{{ swift_ip }}" ]
     },
-    "127.0.0.1" : {
+    {{ swift_ip | to_json }} : {
         "rings_info": {
-            "ip" : "127.0.0.1",
+            "ip" : "{{ swift_ip }}",
             "zone": "1",
             "region": "1"
         },
@@ -24,16 +24,16 @@
             ]
         },
         "ansible_ssh_user" : "root",
-        "internal_ip" : "127.0.0.1"
+        "internal_ip" : "{{ swift_ip }}"
     },
     "keystone" : {
         "vars": {
-            "keystone_endpoint_host": "127.0.0.1",
+            "keystone_endpoint_host": "{{ swift_ip }}",
             "keystone_endpoint_port": "35357",
             "keystone_auth_protocol": "http",
-            "keystone_internal_url": "http://127.0.0.1:5000/v2.0",
-            "keystone_admin_url": "http://127.0.0.1:35357/v2.0",
-            "keystone_public_url": "http://127.0.0.1:5000/v2.0",
+            "keystone_internal_url": "http://{{ swift_ip }}:5000/v2.0",
+            "keystone_admin_url": "http://{{ swift_ip }}:35357/v2.0",
+            "keystone_public_url": "http://{{ swift_ip }}:5000/v2.0",
             "keystone_admin_project": "service",
             "keystone_admin_token": "ADMIN",
             "keystone_admin_user": "admin",
@@ -43,9 +43,9 @@
             "swift_default_user_name": "tester",
             "swift_default_user_password": "testing",
             "openstack_region" : "1",
-            "swift_public_endpoint": "127.0.0.1",
-            "swift_management_endpoint": "127.0.0.1",
-            "swift_internal_endpoint": "127.0.0.1",
+            "swift_public_endpoint": "{{ swift_ip }}",
+            "swift_management_endpoint": "{{ swift_ip }}",
+            "swift_internal_endpoint": "{{ swift_ip }}",
             "proxy_port": "80"
         }
     },

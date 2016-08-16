@@ -18,16 +18,9 @@ A disposal VM is always a good idea.
 Installation Guide
 -------------------
 
-Make sure to have a user that can sudo without a password.
-With that user just do:
+.. include:: s2aio_dev_host_include.rst
 
-::
-
-    sudo apt-get update
-    sudo apt-get install python-tox python-nose git
-    git clone https://github.com/openstack/storlets.git
-    cd storlets
-    ./s2aio.sh dev
+For more information please refer to `"s2aio" <http://storlets.readthedocs.io/en/latest/s2aio.html>`__.
 
 ---------------------------------------
 Writing Deploying and Running a Storlet

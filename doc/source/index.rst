@@ -33,6 +33,7 @@ TL;DR
     :maxdepth: 1
 
     getting_started
+    s2aio
 
 Storlets Use Cases
 ==================

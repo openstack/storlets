@@ -99,8 +99,9 @@
     insertafter: "^DOCKER_OPTS="
   when: "'2' in opt_lines_count.stdout"
 
+- name: Stop Docker Daemon
+  shell: bash -c "/usr/sbin/service docker stop"
+  ignore_errors: yes
+
 - name: Restart Docker Daemon
-  service:
-    name: docker
-    state: restarted
-    sleep: 1
+  shell: bash -c "/usr/sbin/service docker start"

@@ -19,3 +19,4 @@ swift_install_repo_name: swift-install
 #swift_install_repo_branch: storlet-swift-install
 swift_install_repo_branch: master
 swift_device: <set device!>
+swift_ip: <set ip!>
