@@ -197,7 +197,7 @@ use = egg:swift#catch_errors
             StorletGatewayDocker._check_mandatory_params(
                 params, ['keyA', 'KeyD'])
 
-    def test_validate_storlet_registration(self):
+    def test_validate_storlet_registration_java(self):
         # correct name and headers w/ dependency
         obj = 'storlet-1.0.jar'
         params = {'Language': 'java',
@@ -233,6 +233,55 @@ use = egg:swift#catch_errors
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_storlet_registration(params, obj)
 
+    def test_validate_storlet_registration_python(self):
+        # correct name and headers w/ dependency
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet.Storlet'}
+        StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # wrong name
+        obj = 'storlet.pyfoo'
+        params = {'Language': 'python',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet.Storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # wrong main class
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'another_storlet.Storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet.foo.Storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+    def test_validate_storlet_registration_not_suppoeted(self):
         # unsupported language
         obj = 'storlet.foo'
         params = {'Language': 'bar',

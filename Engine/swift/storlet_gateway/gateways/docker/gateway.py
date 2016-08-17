@@ -118,6 +118,18 @@ class StorletGatewayDocker(StorletGatewayBase):
         if params['Language'].lower() == 'java':
             if '-' not in name or '.' not in name:
                 raise ValueError('Storlet name is incorrect')
+        elif params['Language'].lower() == 'python':
+            if name.endswith('.py'):
+                cls_name = params['Main']
+                if not cls_name.startswith(name[:-3] + '.'):
+                    raise ValueError('Main class should be included in '
+                                     'storlet file')
+
+                if len(cls_name.split('.')) != 2:
+                    raise ValueError('Submodule is currently not supported')
+            # TODO(takashi): Add support for sdist tar.gz
+            else:
+                raise ValueError('Storlet name is incorrect')
         else:
             raise ValueError('Unsupported Language')
 
