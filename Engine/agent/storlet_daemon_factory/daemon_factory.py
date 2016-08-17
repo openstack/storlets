@@ -105,11 +105,9 @@ class DaemonFactory(object):
     def get_jvm_args(self, daemon_language, storlet_path, storlet_name,
                      pool_size, uds_path, log_level, container_id):
         """
-        Check the input parameters, produce the list
-        of arguments for JVM process launch
+        produce the list of arguments for JVM process launch
 
         :param daemon_language: Language the storlet is written on.
-                                Now (01-Dec-2014) only Java is supported.
         :param storlet_path: Path to the folder where storlet JRE file is
         :param storlet_name: Storlet main class name
         :param pool_size: Number of threads that storlet daemon's thread
@@ -133,33 +131,34 @@ class DaemonFactory(object):
                     '']
         jar_deps = [os.path.join(str_prfx, x) for x in jar_deps]
         str_dmn_clspth = ':'.join(jar_deps) + ':' + storlet_path
-
-        self.logger.debug('START_DAEMON: daemon lang = %s' % daemon_language)
-        self.logger.debug('START_DAEMON: str_dmn_clspth = %s' % str_dmn_clspth)
-        self.logger.debug('START_DAEMON: storlet_name = %s' % storlet_name)
-        self.logger.debug('START_DAEMON: pool_size = %d' % pool_size)
-        self.logger.debug('START_DAEMON: uds_path = %s' % uds_path)
-        self.logger.debug('START_DAEMON: log_level = %s' % log_level)
+        str_library_path = str_prfx
 
         str_daemon_main_class = "org.openstack.storlet.daemon.SDaemon"
 
-        self.logger.debug('START_DAEMON:preparing arguments')
         if os.environ.get('CLASSPATH'):
             str_dmn_clspth = os.environ['CLASSPATH'] + ':' + str_dmn_clspth
-        if os.environ.get('LD_LIBRARY_PATH'):
-            str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' + str_prfx
-        else:
-            str_library_path = str_prfx
 
-        env = dict()
-        env['CLASSPATH'] = str_dmn_clspth
-        env['LD_LIBRARY_PATH'] = str_library_path
+        if os.environ.get('LD_LIBRARY_PATH'):
+            str_library_path = os.environ['LD_LIBRARY_PATH'] + ':' + \
+                str_library_path
+
+        env = {'CLASSPATH': str_dmn_clspth,
+               'LD_LIBRARY_PATH': str_library_path}
 
         pargs = ['/usr/bin/java', str_daemon_main_class, storlet_name,
                  uds_path, log_level, str(pool_size), container_id]
-        str_pargs = ' '.join(pargs)
-        self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
+        return pargs, env
 
+    def get_python_args(self, daemon_language, storlet_path, storlet_name,
+                        pool_size, uds_path, log_level, container_id):
+        str_daemon_main_file = '/usr/local/bin/storlets-daemon'
+        pargs = [str_daemon_main_file, storlet_name, uds_path, log_level,
+                 str(pool_size), container_id]
+
+        python_path = os.path.join('/home/swift/', storlet_name)
+        if os.environ.get('PYTHONPATH'):
+            python_path = os.environ['PYTHONPATH'] + ':' + python_path
+        env = {'PYTHONPATH': python_path}
         return pargs, env
 
     def spawn_subprocess(self, pargs, env, storlet_name):
@@ -172,7 +171,11 @@ class DaemonFactory(object):
         """
         try:
             self.logger.debug('START_DAEMON: actual invocation')
-            self.logger.debug('The arguments are: {0}'.format(str(pargs)))
+            self.logger.debug('START_DAEMON: about to start subprocess'
+                              ' for %s' % storlet_name)
+            str_pargs = ' '.join(pargs)
+            self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
+            self.logger.debug('START_DAEMON: env = %s' % env)
             # TODO(takashi): We had better use contextmanager
             # TODO(takashi): Where is this closed?
             # TODO(takashi): Should we really use this?
@@ -251,7 +254,7 @@ class DaemonFactory(object):
         Start storlet daemon process
 
         :param daemon_language: Language the storlet is written on.
-                                Now (01-Dec-2014) only Java is supported.
+                                Now Java and Python are supported.
         :param storlet_path: Path to the folder where storlet JRE file is
         :param storlet_name: Storlet main class name
         :param pool_size: Number of threads that storlet daemon's thread
@@ -265,6 +268,10 @@ class DaemonFactory(object):
         """
         if daemon_language.lower() in ['java']:
             pargs, env = self.get_jvm_args(
+                daemon_language, storlet_path, storlet_name,
+                pool_size, uds_path, log_level, container_id)
+        elif daemon_language.lower() == 'python':
+            pargs, env = self.get_python_args(
                 daemon_language, storlet_path, storlet_name,
                 pool_size, uds_path, log_level, container_id)
         else:

@@ -136,6 +136,22 @@ class TestDaemonFactory(unittest.TestCase):
                                     '/opt/storlets/'},
                 env)
 
+    def test_get_python_args(self):
+        dummy_env = {'PYTHONPATH': '/default/pythonpath'}
+        with mock.patch('storlet_daemon_factory.daemon_factory.os.environ',
+                        dummy_env):
+            pargs, env = self.dfactory.get_python_args(
+                'python', 'path/to/storlet', 'test_storlet.TestStorlet',
+                1, 'path/to/uds', 'DEBUG', 'contid')
+        self.assertEqual(
+            ['/usr/local/bin/storlets-daemon', 'test_storlet.TestStorlet',
+             'path/to/uds', 'DEBUG', '1', 'contid'],
+            pargs)
+        self.assertEqual(
+            {'PYTHONPATH': '/default/pythonpath:'
+                           '/home/swift/test_storlet.TestStorlet'},
+            env)
+
     def test_spawn_subprocess(self):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a'}
