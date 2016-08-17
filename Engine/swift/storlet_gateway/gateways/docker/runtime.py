@@ -27,7 +27,7 @@ from contextlib import contextmanager
 from swift.common.constraints import MAX_META_OVERALL_SIZE
 
 from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
+from SBusPythonFacade.SBusDatagram import FDMetadata, ClientSBusOutDatagram
 from SBusPythonFacade.SBusFileDescription import SBUS_FD_INPUT_OBJECT, \
     SBUS_FD_LOGGER, SBUS_FD_OUTPUT_OBJECT, SBUS_FD_OUTPUT_OBJECT_METADATA, \
     SBUS_FD_OUTPUT_TASK_ID
@@ -483,38 +483,6 @@ protocol
 ---------------------------------------------------------------------------"""
 
 
-class RemoteFDMetadata(object):
-    """Encapsulation of a remote file descriptor metadata
-    a fd descriptor metadata is made of "storlets" and "storage"
-    metadata, where the "storlets" metadata is for internal usage
-    by the engine and must carry the "type" of the fd.
-    The storage metadata is the metadata of the object being passed
-    to the storlet. The class has a constructor two functional
-    setters for setting storage and storlets metadata keys.
-    there is a single getter of the whole metadata structure.
-    """
-    def __init__(self, storlets_metadata=None, storage_metadata=None):
-        if storlets_metadata:
-            self._storlets_metadata = storlets_metadata
-        else:
-            self._storlets_metadata = dict()
-        if storage_metadata:
-            self._storage_metadata = storage_metadata
-        else:
-            self._storage_metadata = dict()
-
-    @property
-    def md(self):
-        return {'storlets': self._storlets_metadata,
-                'storage': self._storage_metadata}
-
-    def set_storage_metadata_item(self, key, value):
-        self._storage_metadata[key] = value
-
-    def set_storlets_metadata_item(self, key, value):
-        self._storlets_metadata[key] = value
-
-
 class StorletInvocationProtocol(object):
     """
     StorletInvocationProtocol class
@@ -574,21 +542,20 @@ class StorletInvocationProtocol(object):
         """
         Metadata about file descriptors to be passed to container side
         """
-        input_fd_metadata = RemoteFDMetadata({'type': SBUS_FD_INPUT_OBJECT})
+        input_fd_metadata = FDMetadata(SBUS_FD_INPUT_OBJECT)
         if self.srequest.user_metadata:
-            for key, val in self.srequest.user_metadata.iteritems():
-                input_fd_metadata.set_storage_metadata_item(key, val)
+            input_fd_metadata.storage_metadata.update(
+                self.srequest.user_metadata)
         if self.srequest.has_range:
-            input_fd_metadata.set_storlets_metadata_item(
-                'start', str(self.srequest.start))
-            input_fd_metadata.set_storlets_metadata_item(
-                'end', str(self.srequest.end))
-        return [input_fd_metadata.md,
-                RemoteFDMetadata({'type': SBUS_FD_OUTPUT_TASK_ID}).md,
-                RemoteFDMetadata({'type': SBUS_FD_OUTPUT_OBJECT}).md,
-                RemoteFDMetadata(
-                    {'type': SBUS_FD_OUTPUT_OBJECT_METADATA}).md,
-                RemoteFDMetadata({'type': SBUS_FD_LOGGER}).md]
+            input_fd_metadata.storlets_metadata['start'] = \
+                str(self.srequest.start)
+            input_fd_metadata.storlets_metadata['end'] = \
+                str(self.srequest.end)
+        return [input_fd_metadata.to_dict(),
+                FDMetadata(SBUS_FD_OUTPUT_TASK_ID).to_dict(),
+                FDMetadata(SBUS_FD_OUTPUT_OBJECT).to_dict(),
+                FDMetadata(SBUS_FD_OUTPUT_OBJECT_METADATA).to_dict(),
+                FDMetadata(SBUS_FD_LOGGER).to_dict()]
 
     @contextmanager
     def _activate_invocation_descriptors(self):

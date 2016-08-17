@@ -135,7 +135,7 @@ class SBus(object):
         p_metadata = None
 
         if datagram.num_fds > 0:
-            str_json_metadata = datagram.serialized_md
+            str_json_metadata = datagram.serialized_metadata
             p_metadata = c_char_p(str_json_metadata)
             n_metadata = c_int(len(str_json_metadata))
 

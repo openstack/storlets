@@ -12,7 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import copy
 import json
 
 # Designating the host side as the client side and the storlet side
@@ -27,10 +27,59 @@ import json
 # ServerSBusInDatagram - De-serializing client commands
 # ClientSBusInDatagram - De-srializing server response
 
-from SBusFileDescription import SBUS_FD_SERVICE_OUT
+from SBusPythonFacade.SBusFileDescription import SBUS_FD_SERVICE_OUT
 
 
-class ClientSBusOutDatagram(object):
+class FDMetadata(object):
+    def __init__(self, fdtype, storlets_metadata=None, storage_metadata=None):
+        self.fdtype = fdtype
+        self.storlets_metadata = storlets_metadata or {}
+        self.storage_metadata = storage_metadata or {}
+
+    def to_dict(self):
+        storlets_metadata = copy.deepcopy(self.storlets_metadata)
+        storlets_metadata['type'] = self.fdtype
+        return {'storlets': storlets_metadata,
+                'storage': self.storage_metadata}
+
+    @classmethod
+    def from_dict(cls, metadict):
+        _metadict = copy.deepcopy(metadict)
+        storlets_metadata = _metadict['storlets']
+        storage_metadata = _metadict['storage']
+        fdtype = storlets_metadata.pop('type')
+        return cls(fdtype, storlets_metadata, storage_metadata)
+
+
+class SBusDatagram(object):
+    """
+    Basic class for all SBus datagrams
+    """
+    def __init__(self, command, fds, metadata, params=None, task_id=None):
+        self.command = command
+        if len(fds) != len(metadata):
+            raise ValueError('Length mismatch fds:%s metadata:%s' %
+                             (len(fds), len(metadata)))
+        self.fds = fds
+        self.metadata = metadata
+        self.params = params
+        self.task_id = task_id
+
+    @property
+    def num_fds(self):
+        return len(self.fds)
+
+    @property
+    def cmd_params(self):
+        cmd_params = {'command': self.command}
+        if self.params:
+            cmd_params['params'] = self.params
+        if self.task_id:
+            cmd_params['task_id'] = self.task_id
+        return cmd_params
+
+
+class ClientSBusOutDatagram(SBusDatagram):
     """Serializes a command to be sent on the wire.
 
     The outgoing message is parsed by the ServerSBusInDatagram.
@@ -47,54 +96,36 @@ class ClientSBusOutDatagram(object):
         :param fds: An array of file descriptors to pass with the command
         :param md: An array of dictionaries, where the i'th dictionary is the
                    metadata of the i'th fd.
-        :params: A optional dictionary with parameters for the command
-                 execution
-        :params: An optional string task id
+        :param params: A optional dictionary with parameters for the command
+                       execution
+        :param task_id: An optional string task id
 
         """
-        self._command = command
-        self._fds = fds
-        self._md = md
-        self._params = params
-        self._task_id = task_id
+        super(ClientSBusOutDatagram, self).__init__(
+            command, fds, md, params, task_id)
 
     @staticmethod
     def create_service_datagram(command, outfd, params=None, task_id=None):
-        md = [{'storlets': {'type': SBUS_FD_SERVICE_OUT},
-              'storage': {}}]
+        md = [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()]
         fds = [outfd]
         return ClientSBusOutDatagram(command, fds, md, params, task_id)
 
-    def _get_num_fds(self):
-        return len(self._fds)
-    num_fds = property(_get_num_fds, None)
-
-    def _get_fds(self):
-        return self._fds
-    fds = property(_get_fds, None)
-
     @property
     def serialized_cmd_params(self):
-        res = {}
-        res['command'] = self._command
-        if self._params:
-            res['params'] = self._params
-        if self._task_id:
-            res['task_id'] = self._task_id
-        return json.dumps(res)
+        return json.dumps(self.cmd_params)
 
     @property
-    def serialized_md(self):
-        return json.dumps(self._md)
+    def serialized_metadata(self):
+        return json.dumps(self.metadata)
 
     def __str__(self):
         return 'num_fds=%s, md=%s, cmd_params=%s' % (
             self.num_fds,
-            str(self.serialized_md),
+            str(self.serialized_metadata),
             str(self.serialized_cmd_params))
 
 
-class ServerSBusInDatagram(object):
+class ServerSBusInDatagram(SBusDatagram):
     """De-Serializes a command coming form the wire.
 
     The incoming message is serilized by the ClinetSBusOutDatagram.
@@ -104,42 +135,25 @@ class ServerSBusInDatagram(object):
     same parameters.
 
     """
-    def __init__(self, fds, str_md, str_params):
-        self._fds = fds
-        self._md = json.loads(str_md)
-        cmd_params = json.loads(str_params)
-        self._command = cmd_params.get('command')
-        self._params = cmd_params.get('params')
-        self._task_id = cmd_params.get('task_id')
+    def __init__(self, fds, str_md, str_cmd_params):
+        """
+        :param fds: An array of file descriptors to pass with the command
+        :param str_md: serialized metadata
+        :param str_cmd_params: serialized command parameters
+        """
+        md = json.loads(str_md)
+        cmd_params = json.loads(str_cmd_params)
+        command = cmd_params.get('command')
+        params = cmd_params.get('params')
+        task_id = cmd_params.get('task_id')
+        super(ServerSBusInDatagram, self).__init__(
+            command, fds, md, params, task_id)
 
-    def _get_fds(self):
-        return self._fds
-    fds = property(_get_fds, None)
-
-    def _get_num_fds(self):
-        return len(self._fds)
-    num_fds = property(_get_num_fds, None)
-
-    def _get_command(self):
-        return self._command
-    command = property(_get_command, None)
-
-    def _get_md(self):
-        return self._md
-    metadata = property(_get_md, None)
-
-    def _get_params(self):
-        return self._params
-    params = property(_get_params, None)
-
-    def _get_task_id(self):
-        return self._task_id
-    task_id = property(_get_task_id, None)
-
-    def get_service_out_fd(self):
-        for i in xrange(len(self._md)):
-            if self._md[i]['storlets']['type'] == SBUS_FD_SERVICE_OUT:
-                return self._fds[i]
+    @property
+    def service_out_fd(self):
+        for i in xrange(len(self.metadata)):
+            if self.metadata[i]['storlets']['type'] == SBUS_FD_SERVICE_OUT:
+                return self.fds[i]
         return None
 
 
