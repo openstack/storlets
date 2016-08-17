@@ -13,7 +13,7 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-- name: Place Ubuntu 14.04 in local repository
+- name: Tag the Ubuntu 14.04 image as "{{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
   shell: docker images | grep "{{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04" | wc -l
   register: ubuntu_image
 
@@ -21,7 +21,6 @@
   with_items:
     - "docker pull ubuntu:14.04"
     - "docker tag ubuntu:14.04 {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
-    - "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04"
   when: "'0' in ubuntu_image.stdout_lines[0]"
 
 - name: Create Repository for building the image
