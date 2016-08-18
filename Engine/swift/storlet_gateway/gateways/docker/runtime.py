@@ -299,22 +299,22 @@ class RunTimeSandbox(object):
                                   % self.scope)
             raise
 
-    def restart(self):
+    def _restart(self, docker_image_name):
         """
-        Restarts the scope's sandbox
+        Restarts the scope's sandbox using the specified docker image
 
+        :param docker_image_name: name of the docker image to start
+        :returns: retruned value of restart_docker_container
         """
-        self.paths.create_host_pipe_prefix()
+        if self.docker_repo:
+            docker_image_name = '%s/%s' % (self.docker_repo,
+                                           docker_image_name)
 
         docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
                                            self.scope)
-        if self.docker_repo:
-            docker_image_name = '%s/%s' % (self.docker_repo, self.scope)
-        else:
-            docker_image_name = self.scope
+
         pipe_mount = '%s:%s' % (self.paths.host_pipe_prefix(),
                                 self.paths.sandbox_pipe_prefix)
-
         storlet_mount = '%s:%s' % (self.paths.host_storlet_prefix(),
                                    self.paths.sandbox_storlet_dir_prefix)
 
@@ -323,8 +323,17 @@ class RunTimeSandbox(object):
                docker_container_name, docker_image_name, pipe_mount,
                storlet_mount]
 
-        ret = subprocess.call(cmd)
-        if ret == 0:
+        return subprocess.call(cmd)
+
+    def restart(self):
+        """
+        Restarts the scope's sandbox
+
+        """
+        self.paths.create_host_pipe_prefix()
+
+        docker_image_name = self.scope
+        if self._restart(docker_image_name) == 0:
             self.wait()
             return
 
@@ -335,18 +344,8 @@ class RunTimeSandbox(object):
         self.logger.info("Trying to start docker container from default image")
 
         # TODO(eranr): move the default tenant image name to a config var
-        if self.docker_repo:
-            docker_image_name = '%s/%s' % (self.docker_repo,
-                                           'ubuntu_14.04_jre8_storlets')
-        else:
-            docker_image_name = 'ubuntu_14.04_jre8_storlets'
-
-        cmd = [self.paths.host_restart_script_dir +
-               '/restart_docker_container',
-               docker_container_name, docker_image_name, pipe_mount,
-               storlet_mount]
-
-        subprocess.call(cmd)
+        docker_image_name = 'ubuntu_14.04_jre8_storlets'
+        self._restart(docker_image_name)
         self.wait()
 
     def start_storlet_daemon(self, spath, storlet_id):
