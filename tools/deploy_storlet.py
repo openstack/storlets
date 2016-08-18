@@ -12,32 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------'''
-
 import sys
 import zipfile
 from cluster_config_parser import ClusterConfig
-from utils import storlet_get_auth, deploy_storlet
+from utils import get_auth, deploy_storlet
+
+CLS_SUFFIX = '.class'
 
 
 def list_classes(storlet_jar):
-    z = zipfile.ZipFile(storlet_jar, 'r')
-    for f in z.infolist():
-        name = f.filename
-        if name.endswith(".class"):
-            print('\t* ' + name[0:len(name) - 6].replace('/', '.'))
-    z.close()
+    with zipfile.ZipFile(storlet_jar, 'r') as zfile:
+        for f in zfile.infolist():
+            name = f.filename
+            if name.endswith(CLS_SUFFIX):
+                print('\t* ' +
+                      name[:-len(CLS_SUFFIX)].replace('/', '.'))
 
 
 def usage():
     print("Useage: deploy_storlet.py <path to conf>")
 
 
-def main():
-    if len(sys.argv) != 2:
+def main(argv):
+    if len(argv) != 1:
         usage()
-        sys.exit(-1)
-    conf = ClusterConfig(sys.argv[1])
-    url, token = storlet_get_auth(conf)
+        return -1
+    conf = ClusterConfig(argv[0])
+    url, token = get_auth(conf)
     sys.stdout.write("Enter absolute path to storlet jar file: ")
     storlet_jar = sys.stdin.readline().rstrip()
     print("Your jar file contains the following classes:")
@@ -56,6 +57,8 @@ def main():
     deploy_storlet(url, token, storlet_jar, storlet_main_class,
                    dependency_jars)
     print("Storlet deployment complete")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main(sys.argv[1:]))

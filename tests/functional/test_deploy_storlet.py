@@ -20,7 +20,7 @@ from __init__ import StorletBaseFunctionalTest
 class TestExecDepStorlet(StorletBaseFunctionalTest):
     def setUp(self):
         super(TestExecDepStorlet, self).setUp()
-        self.deploy_storlet_path = '../../common/deploy_storlet.py'
+        self.deploy_storlet_path = '../../tools/deploy_storlet.py'
         self.execdep_storlet_path = '%s/%s/%s' % (self.path_to_storlets,
                                                   'ExecDepStorlet',
                                                   self.bin_dir)

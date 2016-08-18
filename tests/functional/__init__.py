@@ -14,8 +14,8 @@ Limitations under the License.
 -------------------------------------------------------------------------'''
 
 import unittest
-from common.cluster_config_parser import ClusterConfig
-from common.utils import storlet_get_auth, deploy_storlet,\
+from tools.cluster_config_parser import ClusterConfig
+from tools.utils import get_auth, deploy_storlet,\
     put_local_file
 from swiftclient import client as swiftclient
 
@@ -45,7 +45,7 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
 
     def setUp(self):
         super(StorletFunctionalTest, self).setUp()
-        self.url, self.token = storlet_get_auth(self.conf)
+        self.url, self.token = get_auth(self.conf)
         self.acct = self.url.split('/')[4]
         self.path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS, self.storlet_dir,
                                             BIN_DIR)
