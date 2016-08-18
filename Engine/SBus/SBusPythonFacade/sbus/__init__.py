@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import ctypes
-from SBusDatagram import ServerSBusInDatagram
+from sbus.datagram import ServerSBusInDatagram
 
 from ctypes import c_char_p
 from ctypes import c_int

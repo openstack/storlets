@@ -24,4 +24,4 @@
          SBusTransportLayer_dir: "{{ SBus_dir }}/SBusTransportLayer"
          sbus_so: bin/sbus.so
          SBusPythonFacade_dir: "{{ SBus_dir }}/SBusPythonFacade/"
-         SBusPythonFacade_egg_dist: SBusPythonFacade-1.0.linux-x86_64.tar.gz
+         SBusPythonFacade_egg_dist: sbus-1.0.linux-x86_64.tar.gz

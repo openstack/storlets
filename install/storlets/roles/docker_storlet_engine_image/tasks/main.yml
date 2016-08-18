@@ -27,7 +27,7 @@
   with_items:
     - "Engine/SBus/SBusJavaFacade/bin/libjsbus.so"
     - "Engine/SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"
-    - "Engine/SBus/SBusPythonFacade/dist/SBusPythonFacade-1.0.linux-x86_64.tar.gz"
+    - "Engine/SBus/SBusPythonFacade/dist/sbus-1.0.linux-x86_64.tar.gz"
     - "Engine/SBus/SBusTransportLayer/bin/sbus.so"
 
 - name: Copy SDaemon resources

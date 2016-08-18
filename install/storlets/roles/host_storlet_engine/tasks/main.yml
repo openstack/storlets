@@ -25,11 +25,11 @@
   when: st.stat.exists
 
 - name: test SBusPythonFacade egg state
-  stat: path="/{{python_dist_packages_dir}}/SBusPythonFacade-1.0-py2.7.egg-info"
+  stat: path="/{{python_dist_packages_dir}}/sbus-1.0-py2.7.egg-info"
   register: st
 
 - name: remove python facade egg if exists
-  file: path="/{{python_dist_packages_dir}}/SBusPythonFacade-1.0-py2.7.egg-info" state=absent
+  file: path="/{{python_dist_packages_dir}}/sbus-1.0-py2.7.egg-info" state=absent
   when: st.stat.exists
 
 - name: unarchive python facade

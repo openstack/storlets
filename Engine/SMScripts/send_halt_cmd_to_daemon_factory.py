@@ -16,9 +16,9 @@
 import os
 import sys
 
-from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_HALT
+from sbus import SBus
+from sbus.datagram import ClientSBusOutDatagram
+from sbus.command import SBUS_CMD_HALT
 
 
 def print_usage(argv):
@@ -30,22 +30,25 @@ def print_usage(argv):
 
 
 def main(argv):
-    if 2 > len(argv):
+    if len(argv) < 2:
         print_usage(argv)
         return
 
     daemon_factory_pipe_name = argv[1]
-    fi, fo = os.pipe()
-    halt_dtg = ClientSBusOutDatagram.create_service_datagram(SBUS_CMD_HALT, fo)
-    n_status = SBus.send(daemon_factory_pipe_name, halt_dtg)
-    if 0 > n_status:
-        print('Sending failed')
-    else:
-        print('Sending succeeded')
-        cmd_response = os.read(fi, 256)
-        print(cmd_response)
-    os.close(fi)
-    os.close(fo)
+    try:
+        fi, fo = os.pipe()
+        halt_dtg = ClientSBusOutDatagram.create_service_datagram(
+            SBUS_CMD_HALT, fo)
+        n_status = SBus.send(daemon_factory_pipe_name, halt_dtg)
+        if n_status < 0:
+            print('Sending failed')
+        else:
+            print('Sending succeeded')
+            cmd_response = os.read(fi, 256)
+            print(cmd_response)
+    finally:
+        os.close(fi)
+        os.close(fo)
 
 
 if __name__ == '__main__':

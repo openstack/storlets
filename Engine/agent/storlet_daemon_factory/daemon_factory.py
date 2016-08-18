@@ -22,9 +22,9 @@ import signal
 import subprocess
 import time
 
-from SBusPythonFacade.SBus import SBus
-from SBusPythonFacade.SBusDatagram import ClientSBusOutDatagram
-from SBusPythonFacade.SBusStorletCommand import SBUS_CMD_PREFIX, \
+from sbus import SBus
+from sbus.datagram import ClientSBusOutDatagram
+from sbus.command import SBUS_CMD_PREFIX, \
     SBUS_CMD_HALT, SBUS_CMD_PING
 
 
