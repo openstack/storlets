@@ -592,7 +592,7 @@ class StorletInvocationProtocol(object):
             try:
                 os.close(fd)
             except OSError as err:
-                if err.errno != errno.EBADFD:
+                if err.errno != errno.EBADF:
                     raise
                 # TODO(kota_): fd might be closed already, so if already
                 # closed, OSError will be raised. we need more refactor to
@@ -644,6 +644,8 @@ class StorletInvocationProtocol(object):
 
         if (rc < 0):
             raise StorletRuntimeException("Failed to send execute command")
+
+        self._close_remote_side_descriptors()
 
         self._wait_for_read_with_timeout(self.execution_str_read_fd)
         # TODO(kota_): need an assertion for task_id format

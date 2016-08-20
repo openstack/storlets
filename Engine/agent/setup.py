@@ -18,5 +18,5 @@ from setuptools import setup, find_packages
 setup(name='storlets_agent',
       version='1.0',
       packages=find_packages(),
-      scripts=['bin/storlets-daemon-factory']
+      scripts=['bin/storlets-daemon-factory', 'bin/storlets-daemon']
       )

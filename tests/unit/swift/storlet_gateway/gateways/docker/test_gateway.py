@@ -379,6 +379,9 @@ use = egg:swift#catch_errors
                 raise Exception('called more then expected')
             return value
 
+        def mock_close(fd):
+            pass
+
         # prepare nested mock patch
         # SBus -> mock SBus.send() for container communication
         # os.read -> mock reading the file descriptor from container
@@ -386,6 +389,8 @@ use = egg:swift#catch_errors
         @mock.patch('storlet_gateway.gateways.docker.runtime.SBus', MockSBus)
         @mock.patch('storlet_gateway.gateways.docker.runtime.os.read',
                     mock_read)
+        @mock.patch('storlet_gateway.gateways.docker.runtime.os.close',
+                    mock_close)
         @mock.patch('storlet_gateway.gateways.docker.runtime.select.select',
                     lambda r, w, x, timeout=None: (r, w, x))
         @mock.patch('storlet_gateway.common.stob.os.read',

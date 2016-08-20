@@ -24,8 +24,7 @@ import time
 
 from sbus import SBus
 from sbus.datagram import ClientSBusOutDatagram
-from sbus.command import SBUS_CMD_PREFIX, \
-    SBUS_CMD_HALT, SBUS_CMD_PING
+from sbus.command import SBUS_CMD_PREFIX, SBUS_CMD_HALT, SBUS_CMD_PING
 
 
 EXIT_SUCCESS = 0
@@ -558,22 +557,36 @@ class DaemonFactory(object):
         :param dtg: Datagram to process
         :param container_id: container id
 
-        :returns: CommandResponse instance
+        :returns: True when it can continue main loop
+                  False when it should break main loop
         """
         command = dtg.command
         prms = dtg.params
         self.logger.debug("Received command {0}".format(command))
 
+        outfd = dtg.service_out_fd
+        if outfd is None:
+            self.logger.error("Received message does not have outfd."
+                              " continuing.")
+            return True
+
+        self.logger.debug("Received outfd %d" % outfd)
+
         try:
             handler = self.get_handler(command)
         except ValueError as e:
             self.logger.exception('Failed to decide handler')
-            return CommandFailure(str(e))
+            resp = CommandFailure(str(e))
         else:
             self.logger.debug('Do %s' % command)
-            return handler(container_id, prms)
+            resp = handler(container_id, prms)
         finally:
             self.logger.debug('Done')
+
+        with os.fdopen(outfd, 'w') as outfile:
+            self.log_and_report(outfile, resp)
+
+        return resp.iterable
 
     def main_loop(self, container_id):
         """
@@ -604,21 +617,11 @@ class DaemonFactory(object):
             # If so should we exit the container altogether, so
             # that it gets restarted?
             if dtg is None:
-                self.logger.error("Failed to receive message. Exitting.")
+                self.logger.error("Failed to receive message. exiting.")
                 return EXIT_FAILURE
 
-            outfd = dtg.service_out_fd
-            if outfd is None:
-                self.logger.error("Received message does not have outfd."
-                                  " continuing.")
-                continue
-
-            self.logger.debug("Received outfd %d" % outfd)
-            with os.fdopen(outfd, 'w') as outfile:
-                resp = self.dispatch_command(dtg, container_id)
-                self.log_and_report(outfile, resp)
-                if not resp.iterable:
-                    break
+            if not self.dispatch_command(dtg, container_id):
+                break
 
         # We left the main loop for some reason. Terminating.
         self.logger.debug('Leaving main loop')
@@ -682,7 +685,7 @@ def usage():
     """
     Print the expected command line arguments.
     """
-    print("daemon_factory <path> <log level> <container_id>")
+    print("storlets-daemon-factory <path> <log level> <container_id>")
 
 
 def main(argv):
@@ -693,7 +696,6 @@ def main(argv):
     """
     if (len(argv) != 3):
         usage()
-        # TODO(takashi): returning non-zero value is better?
         return EXIT_FAILURE
 
     pipe_path = argv[0]
@@ -701,7 +703,7 @@ def main(argv):
     container_id = argv[2]
 
     # Initialize logger
-    logger = start_logger("daemon_factory", log_level, container_id)
+    logger = start_logger("daemon-factory", log_level, container_id)
     logger.debug("Daemon factory started")
     SBus.start_logger("DEBUG", container_id=container_id)
 
