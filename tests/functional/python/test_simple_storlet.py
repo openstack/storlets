@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from swiftclient import client
 from tests.functional import StorletFunctionalTest
 
 
@@ -31,10 +32,12 @@ class TestSimpleStorlet(StorletFunctionalTest):
         super(TestSimpleStorlet, self).setUp(self.language)
 
     def test_get(self):
-        # TODO(takashi): Implement tests for storlet execution
-        # NOTE(takashi): Currently we need this function, which just 'pass'
-        #                to execute setUp to test registration
-        pass
+        resp = dict()
+        headers = {'X-Run-Storlet': self.storlet_name}
+        headers, content = client.get_object(
+            self.url, self.token, self.container, self.storlet_file,
+            response_dict=resp, headers=headers)
+        self.assertEqual(200, resp['status'])
 
 
 class TestSimpleStorletOnProxy(TestSimpleStorlet):
