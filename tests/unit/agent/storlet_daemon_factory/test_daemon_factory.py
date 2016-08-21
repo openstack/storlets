@@ -173,19 +173,18 @@ class TestDaemonFactory(unittest.TestCase):
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = OSError(errno.EPERM, '')
-            with self.assertRaises(SDaemonError) as e:
+            exc_pattern = '^No permission to access the storlet daemon' + \
+                          ' for storleta$'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.get_process_status_by_pid(1000, 'storleta')
-                self.assertEqual(
-                    'No permission to access the storlet daemon for storleta',
-                    str(e))
             self.assertEqual(1, waitpid.call_count)
             self.assertEqual((1000, 1), waitpid.call_args[0])
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = OSError()
-            with self.assertRaises(SDaemonError) as e:
+            exc_pattern = '^Unknown error$'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.get_process_status_by_pid(1000, 'storleta')
-                self.assertEqual('Unknown error', str(e))
             self.assertEqual(1, waitpid.call_count)
             self.assertEqual((1000, 1), waitpid.call_args[0])
 
@@ -242,6 +241,7 @@ class TestDaemonFactory(unittest.TestCase):
                              self.dfactory.storlet_name_to_pid)
 
     def test_process_kill_all(self):
+        # Success
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         with mock.patch(self.kill_path) as kill, \
@@ -252,14 +252,47 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual(2, waitpid.call_count)
             self.assertEqual({}, self.dfactory.storlet_name_to_pid)
 
+        # Success (no processes)
         self.dfactory.storlet_name_to_pid = {}
         with mock.patch(self.kill_path) as kill, \
                 mock.patch(self.waitpid_path) as waitpid:
+            self.dfactory.process_kill_all()
             self.assertEqual(0, kill.call_count)
             self.assertEqual(0, waitpid.call_count)
             self.assertEqual({}, self.dfactory.storlet_name_to_pid)
 
+        # Failure (try_all = True)
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            kill.side_effect = OSError()
+            exc_pattern = '^Failed to stop some storlet daemons: .*'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
+                self.dfactory.process_kill_all()
+            self.assertIn('storleta', str(e.exception))
+            self.assertIn('storletb', str(e.exception))
+            self.assertEqual(2, kill.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        # Failure (try_all = False)
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            kill.side_effect = OSError()
+            exc_pattern = '^Failed to send kill signal to storlet[a-b]$'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+                self.dfactory.process_kill_all(False)
+            self.assertEqual(1, kill.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
     def test_shutdown_all_processes(self):
+        # Success
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
@@ -274,7 +307,42 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual({},
                              self.dfactory.storlet_name_to_pid)
 
+        # Failure (try_all = True)
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path) as waitpid:
+            send.return_value = -1
+            exc_pattern = '^Failed to shutdown some storlet daemons: .*'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
+                self.dfactory.shutdown_all_processes()
+            self.assertIn('storleta', str(e.exception))
+            self.assertIn('storletb', str(e.exception))
+            self.assertEqual(2, send.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        # Failure (try_all = False)
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'patha', 'storletb': 'pathb'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.waitpid_path) as waitpid:
+            send.return_value = -1
+            exc_pattern = '^Failed to send halt to storlet[a-b]$'
+            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+                self.dfactory.shutdown_all_processes(False)
+            self.assertEqual(1, send.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
     def test_shutdown_process(self):
+        # Success
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
@@ -286,6 +354,7 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual({'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
 
+        # Failed to send a command to the storlet daemon
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
@@ -299,6 +368,7 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual({'storleta': 1000, 'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
 
+        # Failed to wait
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
@@ -312,6 +382,7 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual({'storleta': 1000, 'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
 
+        # If the storlet is not found in pid mapping
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \

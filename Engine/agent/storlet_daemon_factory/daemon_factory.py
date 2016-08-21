@@ -375,40 +375,65 @@ class DaemonFactory(object):
                 self.logger.exception(
                     'Error when sending kill signal to the storlet daemon %s' %
                     storlet_name)
-                raise SDaemonError('Failed to send kill signal to {0}')
+                raise SDaemonError('Failed to send kill signal to {0}'
+                                   .format(storlet_name))
         else:
             raise SDaemonError('{0} is not found'.format(storlet_name))
 
-    def process_kill_all(self):
+    def process_kill_all(self, try_all=True):
         """
         Kill every one.
 
+        :param try_all: wheather we try to kill all process if we fail to
+                        stop some of the storlet daemons
         :raises SDaemonError: when failed to kill one of the storlet daemons
         """
+        failed = []
         for storlet_name in self.storlet_name_to_pid.keys():
             try:
                 self.process_kill(storlet_name)
             except SDaemonError:
-                # TODO(takashi): Can we really pass here?
-                pass
+                self.logger.exception('Failed to stop one storlet daemon {0}'
+                                      .format(storlet_name))
+                if try_all:
+                    failed.append(storlet_name)
+                else:
+                    raise
+        if failed:
+            names = ', '.join(failed)
+            raise SDaemonError('Failed to stop some storlet daemons: {0}'
+                               .format(names))
 
-    def shutdown_all_processes(self):
+    def shutdown_all_processes(self, try_all=True):
         """
         send HALT command to every spawned process
 
+        :param try_all: wheather we try to kill all process if we fail to
+                        stop some of the storlet daemons
         :returns: a list of the terminated storlet daemons
+        :raises SDaemonError: when failed to kill one of the storlet daemons
         """
         terminated = []
+        failed = []
         for storlet_name in self.storlet_name_to_pid.keys():
             try:
                 self.shutdown_process(storlet_name)
                 terminated.append(storlet_name)
             except SDaemonError:
-                self.logger.exception('Failed to shutdown sdaemon %s' %
+                self.logger.exception('Failed to shutdown storlet daemon %s' %
                                       storlet_name)
-                pass
-        self.logger.info('All the storlet daemons are terminated')
-        return terminated
+                if try_all:
+                    failed.append(storlet_name)
+                else:
+                    raise
+
+        if failed:
+            names = ', '.join(failed)
+            raise SDaemonError('Failed to shutdown some storlet daemons: {0}'
+                               .format(names))
+        else:
+            self.logger.info('All the storlet daemons are terminated')
+            return terminated
 
     def shutdown_process(self, storlet_name):
         """
@@ -491,14 +516,22 @@ class DaemonFactory(object):
 
     @command_handler
     def stop_daemons(self, container_id, prms):
-        self.process_kill_all()
-        return CommandSuccess('OK', False)
+        try:
+            self.process_kill_all()
+            return CommandSuccess('OK', False)
+        except SDaemonError as e:
+            self.logger.exception('Failed to stop some storlet daemons')
+            return CommandFailure(str(e), False)
 
     @command_handler
     def halt(self, container_id, prms):
-        terminated = self.shutdown_all_processes()
-        msg = '; '.join(['%s: terminated' % x for x in terminated])
-        return CommandSuccess(msg, False)
+        try:
+            terminated = self.shutdown_all_processes()
+            msg = '; '.join(['%s: terminated' % x for x in terminated])
+            return CommandSuccess(msg, False)
+        except SDaemonError as e:
+            self.logger.exception('Failed to halt some storlet daemons')
+            return CommandFailure(str(e), False)
 
     @command_handler
     def ping(self, container_id, prms):
