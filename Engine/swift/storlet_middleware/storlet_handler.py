@@ -102,8 +102,7 @@ def filter_factory(global_conf, **local_conf):
         config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
     storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
 
-    module_name = conf.get('storlet_gateway_module',
-                           'storlet_gateway.gateways.stub:StorletGatewayStub')
+    module_name = conf.get('storlet_gateway_module', 'stub')
     gateway_class = load_gateway(module_name)
 
     configParser = ConfigParser.RawConfigParser()

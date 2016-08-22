@@ -192,7 +192,7 @@ that do not appear in the above configurable installation_vars.yml
           "storlet_log": "storletlog",
           "storlet_images": "docker_images",
           "storlet_timeout": "40",
-          "storlet_gateway_module": "storlet_gateway.storlet_docker_gateway:StorletGatewayDocker",
+          "storlet_gateway_module": "docker",
           "storlet_execute_on_proxy_only": "false",
           "restart_linux_container_timeout": "3"
       }
