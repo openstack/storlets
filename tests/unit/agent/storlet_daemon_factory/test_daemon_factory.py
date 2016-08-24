@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import errno
 import logging
 import mock
 import unittest
@@ -93,7 +94,7 @@ class TestLogger(unittest.TestCase):
         logger.debug('test3')
         self.assertEqual(sio.getvalue(), 'test1\ntest3\n')
 
-        # If the level parameter is unkown, use ERROR as log level
+        # If the level parameter is unknown, use ERROR as log level
         logger = start_logger('test', 'foo', 'abcdef')
         self.assertEqual(logging.ERROR, logger.level)
 
@@ -133,6 +134,60 @@ class TestDaemonFactory(unittest.TestCase):
                  'LD_LIBRARY_PATH': '/default/ld/library/path:'
                                     '/opt/storlets/'},
                 env)
+
+    def test_get_process_status_by_name(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 0, 0
+            self.assertTrue(
+                self.dfactory.get_process_status_by_name('storleta'))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        self.assertFalse(
+            self.dfactory.get_process_status_by_name('storletc'))
+
+    def test_get_process_status_by_pid(self):
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 0, 0
+            self.assertTrue(
+                self.dfactory.get_process_status_by_pid(1000, 'storleta'))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 1000, 0
+            self.assertFalse(
+                self.dfactory.get_process_status_by_pid(1000, 'storleta'))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = OSError(errno.ESRCH, '')
+            self.assertFalse(
+                self.dfactory.get_process_status_by_pid(1000, 'storleta'))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = OSError(errno.EPERM, '')
+            with self.assertRaises(SDaemonError) as e:
+                self.dfactory.get_process_status_by_pid(1000, 'storleta')
+                self.assertEqual(
+                    'No permission to access the storlet daemon for storleta',
+                    str(e))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = OSError()
+            with self.assertRaises(SDaemonError) as e:
+                self.dfactory.get_process_status_by_pid(1000, 'storleta')
+                self.assertEqual('Unknown error', str(e))
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual((1000, 1), waitpid.call_args[0])
 
     def test_process_kill(self):
         # Success
@@ -291,6 +346,35 @@ class TestDaemonFactory(unittest.TestCase):
                              resp.message)
             self.assertTrue(resp.iterable)
 
+    def test_daemon_status(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 0, 0
+            resp = self.dfactory.daemon_status(
+                'contid', {'storlet_name': 'storleta'})
+            self.assertTrue(resp.status)
+            self.assertEqual('Storlet storleta seems to be OK', resp.message)
+            self.assertTrue(resp.iterable)
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 1000, 0
+            resp = self.dfactory.daemon_status(
+                'contid', {'storlet_name': 'storleta'})
+            self.assertFalse(resp.status)
+            self.assertEqual('No running storlet daemon for storleta',
+                             resp.message)
+            self.assertTrue(resp.iterable)
+
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = OSError()
+            resp = self.dfactory.daemon_status(
+                'contid', {'storlet_name': 'storleta'})
+            self.assertFalse(resp.status)
+            self.assertEqual('Unknown error', resp.message)
+            self.assertTrue(resp.iterable)
+
     def test_halt(self):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
@@ -352,9 +436,9 @@ class TestDaemonFactory(unittest.TestCase):
         # invalid
         with self.assertRaises(ValueError):
             self.dfactory.get_handler('FOO')
-        # unkown
+        # unknown
         with self.assertRaises(ValueError):
-            self.dfactory.get_handler('SBUS_CMD_UNKOWN')
+            self.dfactory.get_handler('SBUS_CMD_UNKNOWN')
         # not command handler
         with self.assertRaises(ValueError):
             self.dfactory.get_handler('SBUS_CMD_GET_JVM_ARGS')

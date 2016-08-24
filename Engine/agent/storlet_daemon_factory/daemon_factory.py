@@ -199,8 +199,14 @@ class DaemonFactory(object):
             storlet_name = pargs[2]
 
             # Does JVM run?
-            b_status, error_text = self.get_process_status_by_pid(
-                jvm_pid, storlet_name)
+            try:
+                b_status = self.get_process_status_by_pid(
+                    jvm_pid, storlet_name)
+            except SDaemonError:
+                self.logger.exception('Failed to get status for the storlet '
+                                      'daemon {0}'.format(storlet_name))
+                raise
+
             if b_status:
                 self.logger.debug('Keeping JVM PID in' +
                                   'storlet_name_to_pid[{0}] = {1}'.
@@ -208,8 +214,7 @@ class DaemonFactory(object):
                 # Keep JVM PID
                 self.storlet_name_to_pid[storlet_name] = jvm_pid
                 if not self.wait_for_daemon_to_initialize(storlet_name):
-                    # TODO(takashi): We shoud use more specific exception
-                    raise Exception('No response from Daemon')
+                    raise SDaemonError('No response from Daemon')
             self.logger.debug('START_DAEMON: just occurred')
             error_text = 'OK'
         except Exception:
@@ -281,8 +286,7 @@ class DaemonFactory(object):
 
         self.logger.debug('Validating that {0} is not already running'.
                           format(storlet_name))
-        b_status, _ = self.get_process_status_by_name(storlet_name)
-        if b_status:
+        if self.get_process_status_by_name(storlet_name):
             error_text = '{0} is already running'.format(storlet_name)
             self.logger.debug(error_text)
         else:
@@ -297,25 +301,21 @@ class DaemonFactory(object):
         Check if the daemon runs for the specific storlet
 
         :param storlet_name: Storlet name we are checking the daemon for
-        :returns: (Status, Description text of possible error)
+        :returns: process status (True/False)
         """
-        self.logger.debug('Current storlet name is: {0}'.format(storlet_name))
+        self.logger.debug('Get status for storlet {0}'.
+                          format(storlet_name))
         self.logger.debug('storlet_name_to_pid has {0}'.
                           format(str(self.storlet_name_to_pid.keys())))
-        b_status = False
-        error_text = ''
-        self.logger.debug('Checking status for storlet {0}'.
-                          format(storlet_name))
-        daemon_pid = self.storlet_name_to_pid.get(storlet_name, -1)
-        if -1 != daemon_pid:
-            b_status, error_text = self.get_process_status_by_pid(
-                daemon_pid, storlet_name)
+        daemon_pid = self.storlet_name_to_pid.get(storlet_name)
+        self.logger.debug('Pid for storlet {0} is {1}'.
+                          format(storlet_name, str(daemon_pid)))
+        if daemon_pid is not None:
+            return self.get_process_status_by_pid(daemon_pid, storlet_name)
         else:
-            error_text = 'Storlet name {0} not found in map'. \
-                         format(storlet_name)
-            self.logger.debug(error_text)
-
-        return b_status, error_text
+            self.logger.debug('Storlet name {0} not found in map'.
+                              format(storlet_name))
+            return False
 
     def get_process_status_by_pid(self, daemon_pid, storlet_name):
         """
@@ -323,33 +323,32 @@ class DaemonFactory(object):
 
         :param daemon_pid:   Storlet daemon process ID
         :param storlet_name: Storlet name we are checking the daemon for
-        :returns: (Status, Description text of possible error)
+        :returns: process status (True/False)
         """
-        b_status = False
-        error_text = ''
-        obtained_pid = 0
-        obtained_code = 0
+        self.logger.debug('Get status for storlet {0}, pid {1}'.
+                          format(storlet_name, str(daemon_pid)))
         try:
-            obtained_pid, obtained_code = os.waitpid(daemon_pid, os.WNOHANG)
-            error_text = 'Storlet {0}, PID = {1}, ErrCode = {2}'. \
-                         format(storlet_name, obtained_pid, obtained_code)
-            self.logger.debug(error_text)
+            pid, rc = os.waitpid(daemon_pid, os.WNOHANG)
+            self.logger.debug('Storlet {0}, PID = {1}, ErrCode = {2}'.
+                              format(storlet_name, str(pid), str(rc)))
         except OSError as err:
             if err.errno == errno.ESRCH:
-                error_text = 'No running daemon for {0}'.format(storlet_name)
+                return False
             elif err.errno == errno.EPERM:
-                error_text = 'No permission to access daemon for {0}'. \
-                    format(storlet_name)
+                raise SDaemonError(
+                    'No permission to access the storlet daemon for {0}'.
+                    format(storlet_name))
             else:
-                error_text = 'Unknown error'
+                self.logger.exception(
+                    'Failed to access the storlet daemon for {0}'.
+                    format(storlet_name))
+                raise SDaemonError('Unknown error')
+
+        if not pid and not rc:
+            return True
         else:
-            if 0 == obtained_pid and 0 == obtained_code:
-                error_text = 'Storlet {0} seems to be OK'.format(storlet_name)
-                b_status = True
-            else:
-                error_text = 'Storlet {0} is terminated'.format(storlet_name)
-            self.logger.debug(error_text)
-        return b_status, error_text
+            self.logger.debug('The storlet daemon is terminated')
+            return False
 
     def process_kill(self, storlet_name):
         """
@@ -478,9 +477,17 @@ class DaemonFactory(object):
 
     @command_handler
     def daemon_status(self, container_id, prms):
-        b_status, error_text = \
-            self.get_process_status_by_name(prms['storlet_name'])
-        return CommandResponse(b_status, error_text, True)
+        storlet_name = prms['storlet_name']
+        try:
+            if self.get_process_status_by_name(storlet_name):
+                msg = 'Storlet {0} seems to be OK'.format(storlet_name)
+                return CommandSuccess(msg)
+            else:
+                msg = 'No running storlet daemon for {0}'.format(storlet_name)
+                return CommandFailure(msg)
+        except SDaemonError as e:
+            self.logger.exception('Failed to get daemon status')
+            return CommandFailure(str(e))
 
     @command_handler
     def stop_daemons(self, container_id, prms):
