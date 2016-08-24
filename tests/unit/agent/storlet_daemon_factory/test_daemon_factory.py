@@ -22,7 +22,7 @@ import sbus.command
 
 from tests.unit.swift import FakeLogger
 from storlet_daemon_factory.daemon_factory import CommandResponse, \
-    CommandSuccess, CommandFailure, DaemonFactory, start_logger
+    CommandSuccess, CommandFailure, SDaemonError, DaemonFactory, start_logger
 
 
 class TestCommandResponse(unittest.TestCase):
@@ -99,6 +99,9 @@ class TestLogger(unittest.TestCase):
 
 
 class TestDaemonFactory(unittest.TestCase):
+    kill_path = 'storlet_daemon_factory.daemon_factory.os.kill'
+    waitpid_path = 'storlet_daemon_factory.daemon_factory.os.waitpid'
+
     def setUp(self):
         self.logger = FakeLogger()
         self.pipe_path = 'path/to/pipe'
@@ -129,6 +132,116 @@ class TestDaemonFactory(unittest.TestCase):
                  'LD_LIBRARY_PATH': '/default/ld/library/path:'
                                     '/opt/storlets/'},
                 env)
+
+    def test_process_kill(self):
+        # Success
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 1000, 0
+            self.assertEqual((1000, 0),
+                             self.dfactory.process_kill('storleta'))
+            self.assertEqual(1, kill.call_count)
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual({'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        # When failed to send kill to the storlet daemon
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            kill.side_effect = OSError()
+            with self.assertRaises(SDaemonError):
+                self.dfactory.process_kill('storleta')
+            self.assertEqual(1, kill.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        # When failed to wait
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = OSError()
+            with self.assertRaises(SDaemonError):
+                self.dfactory.process_kill('storleta')
+            self.assertEqual(1, kill.call_count)
+            self.assertEqual(1, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+        # if the storlet daemon is not recognised
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            with self.assertRaises(SDaemonError):
+                self.dfactory.process_kill('storletc')
+            self.assertEqual(0, kill.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({'storleta': 1000, 'storletb': 1001},
+                             self.dfactory.storlet_name_to_pid)
+
+    def test_process_kill_all(self):
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = [(1000, 0), (1001, 0)]
+            self.dfactory.process_kill_all()
+            self.assertEqual(2, kill.call_count)
+            self.assertEqual(2, waitpid.call_count)
+            self.assertEqual({}, self.dfactory.storlet_name_to_pid)
+
+        self.dfactory.storlet_name_to_pid = {}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path) as waitpid:
+            self.assertEqual(0, kill.call_count)
+            self.assertEqual(0, waitpid.call_count)
+            self.assertEqual({}, self.dfactory.storlet_name_to_pid)
+
+    def test_stop_daemon(self):
+        # Success
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000}
+        with mock.patch(self.kill_path), \
+                mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 1000, 0
+            resp = self.dfactory.stop_daemon(
+                'contid', {'storlet_name': 'storleta'})
+            self.assertTrue(resp.status)
+            self.assertEqual('Storlet storleta, PID = 1000, ErrCode = 0',
+                             resp.message)
+            self.assertTrue(resp.iterable)
+
+        # Failure
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000}
+        with mock.patch(self.kill_path) as kill, \
+                mock.patch(self.waitpid_path):
+            kill.side_effect = OSError('ERROR')
+            resp = self.dfactory.stop_daemon(
+                'contid', {'storlet_name': 'storleta'})
+            self.assertFalse(resp.status)
+            self.assertEqual('Failed to kill the storlet daemon storleta',
+                             resp.message)
+            self.assertTrue(resp.iterable)
+
+    def test_stop_daemons(self):
+        # Success
+        self.dfactory.storlet_name_to_pid = \
+            {'storleta': 1000, 'storletb': 1001}
+        with mock.patch(self.kill_path), \
+                mock.patch(self.waitpid_path) as waitpid:
+            waitpid.side_effect = [(1000, 0), (1001, 0)]
+            resp = self.dfactory.stop_daemons(
+                'contid', {})
+            self.assertTrue(resp.status)
+            self.assertEqual('OK', resp.message)
+            self.assertFalse(resp.iterable)
 
     def test_get_handler(self):
         # start daemon
