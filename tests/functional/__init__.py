@@ -43,12 +43,17 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
         status = response.get('status')
         assert (status >= 200 or status < 300)
 
-    def setUp(self):
+    def setUp(self, language='Java'):
         super(StorletFunctionalTest, self).setUp()
         self.url, self.token = get_auth(self.conf)
         self.acct = self.url.split('/')[4]
-        self.path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS, self.storlet_dir,
-                                            BIN_DIR)
+        if language == 'Java':
+            self.path_to_bundle = '%s/%s/%s' % (PATH_TO_STORLETS,
+                                                self.storlet_dir,
+                                                BIN_DIR)
+        else:
+            self.path_to_bundle = '%s/%s' % (PATH_TO_STORLETS,
+                                             self.storlet_dir)
         self.deps = []
         for d in self.dep_names:
             self.deps.append('%s/%s' % (self.path_to_bundle, d))
@@ -56,7 +61,8 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
 
         deploy_storlet(self.url, self.token,
                        storlet, self.storlet_main,
-                       self.deps)
+                       self.deps, language)
+
         self.create_container()
         if self.storlet_file:
             put_local_file(self.url, self.token,
