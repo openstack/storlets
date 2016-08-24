@@ -13,7 +13,7 @@ Quick Installation Guide
     sudo apt-get install python-tox python-nose git
     git clone https://github.com/openstack/storlets.git
     cd storlets
-    ./s2aio.sh 1
+    ./s2aio.sh dev
 
 Note the extra parameter being passed to s2aio.sh, it is important!
 
