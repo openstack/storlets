@@ -62,6 +62,7 @@ class DockerStorletRequest(StorletRequest):
         # TODO(takashi): Some of following parameters should be defined common
         #                parameters for StorletRequest
         self.storlet_main = self.options['storlet_main']
+        self.storlet_language = self.options['storlet_language']
 
         if self.options.get('storlet_dependency'):
             self.dependencies = [

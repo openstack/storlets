@@ -230,14 +230,11 @@ class RunTimeSandbox(object):
         self.docker_repo = conf.get('docker_repo', 'localhost:5001')
         self.docker_image_name_prefix = 'tenant'
 
-        # TODO(should come from upper layer Storlet metadata)
-        self.storlet_language = 'java'
-
         # TODO(add line in conf)
         self.storlet_daemon_thread_pool_size = \
             int(conf.get('storlet_daemon_thread_pool_size', 5))
         self.storlet_daemon_debug_level = \
-            conf.get('storlet_daemon_debug_level', 'TRACE')
+            conf.get('storlet_daemon_debug_level', 'DEBUG')
 
         # TODO(change logger's route if possible)
         self.logger = logger
@@ -350,13 +347,13 @@ class RunTimeSandbox(object):
         self._restart(docker_image_name)
         self.wait()
 
-    def start_storlet_daemon(self, spath, storlet_id):
+    def start_storlet_daemon(self, spath, storlet_id, language):
         """
         Start SDaemon process in the scope's sandbox
 
         """
         prms = {}
-        prms['daemon_language'] = 'java'
+        prms['daemon_language'] = language.lower()
         prms['storlet_path'] = spath
         prms['storlet_name'] = storlet_id
         prms['uds_path'] = self.paths.sbox_storlet_pipe(storlet_id)
@@ -466,7 +463,8 @@ class RunTimeSandbox(object):
                              (class_path, sreq.storlet_main, dep)
 
             daemon_status = \
-                self.start_storlet_daemon(class_path, sreq.storlet_main)
+                self.start_storlet_daemon(class_path, sreq.storlet_main,
+                                          sreq.storlet_language)
 
             if daemon_status != 1:
                 self.logger.error('Daemon start Failed, returned code is %d' %

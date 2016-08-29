@@ -39,7 +39,8 @@ class TestDockerStorletRequest(unittest.TestCase):
         params = {'Param1': 'Value1', 'Param2': 'Value2'}
         metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2'}
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java'}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
 
@@ -48,8 +49,10 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual('java', dsreq.storlet_language)
 
-        options = {'storlet_main': 'org.openstack.storlet.Storlet'}
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_language': 'java'}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
 
@@ -58,6 +61,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual([], dsreq.dependencies)
+        self.assertEqual('java', dsreq.storlet_language)
 
     def test_init_with_range(self):
         storlet_id = 'Storlet-1.0.jar'
@@ -65,6 +69,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         metadata = {}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
                    'range_start': 1,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -73,11 +78,13 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual('java', dsreq.storlet_language)
         self.assertEqual(1, dsreq.start)
         self.assertEqual(6, dsreq.end)
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
                    'range_start': 0,
                    'range_end': 0}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -86,6 +93,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
+        self.assertEqual('java', dsreq.storlet_language)
         self.assertEqual(0, dsreq.start)
         self.assertEqual(0, dsreq.end)
 
@@ -94,13 +102,15 @@ class TestDockerStorletRequest(unittest.TestCase):
         params = {}
         metadata = {}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2'}
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java'}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      None, 0, options=options)
         self.assertFalse(dsreq.has_range)
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
                    'range_start': 1,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -109,6 +119,7 @@ class TestDockerStorletRequest(unittest.TestCase):
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java',
                    'range_start': 0,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -347,7 +358,8 @@ use = egg:swift#catch_errors
         options = {'generate_log': False,
                    'scope': 'AUTH_account',
                    'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2'}
+                   'storlet_dependency': 'dep1,dep2',
+                   'storlet_language': 'java'}
 
         st_req = DockerStorletRequest(
             storlet_id=self.sobj,
