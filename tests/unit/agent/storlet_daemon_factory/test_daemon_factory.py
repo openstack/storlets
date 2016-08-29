@@ -100,9 +100,10 @@ class TestLogger(unittest.TestCase):
 
 
 class TestDaemonFactory(unittest.TestCase):
-    kill_path = 'storlet_daemon_factory.daemon_factory.os.kill'
-    waitpid_path = 'storlet_daemon_factory.daemon_factory.os.waitpid'
-    sbus_path = 'storlet_daemon_factory.daemon_factory.SBus'
+    base_path = 'storlet_daemon_factory.daemon_factory'
+    kill_path = base_path + '.os.kill'
+    waitpid_path = base_path + '.os.waitpid'
+    sbus_path = base_path + '.SBus'
 
     def setUp(self):
         self.logger = FakeLogger()
@@ -115,11 +116,11 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch('storlet_daemon_factory.daemon_factory.os.environ',
                         dummy_env):
             pargs, env = self.dfactory.get_jvm_args(
-                'java', 'path/to/storlet', 'Storlet-1.0.jar',
-                1, 'path/to/uds', 'DEBUG', 'contid')
+                'java', 'path/to/storlet/a', 'Storlet-1.0.jar',
+                1, 'path/to/uds/a', 'DEBUG', 'contid')
             self.assertEqual(
                 ['/usr/bin/java', 'com.ibm.storlet.daemon.SDaemon',
-                 'Storlet-1.0.jar', 'path/to/uds', 'DEBUG', '1', 'contid'],
+                 'Storlet-1.0.jar', 'path/to/uds/a', 'DEBUG', '1', 'contid'],
                 pargs)
             self.assertEqual(
                 {'CLASSPATH': '/default/classpath:'
@@ -130,10 +131,153 @@ class TestDaemonFactory(unittest.TestCase):
                               '/opt/storlets/SBusJavaFacade.jar:'
                               '/opt/storlets/SCommon.jar:'
                               '/opt/storlets/SDaemon.jar:'
-                              '/opt/storlets/:path/to/storlet',
+                              '/opt/storlets/:path/to/storlet/a',
                  'LD_LIBRARY_PATH': '/default/ld/library/path:'
                                     '/opt/storlets/'},
                 env)
+
+    def test_spawn_subprocess(self):
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'path/to/uds/a'}
+
+        class FakePopenObject(object):
+            def __init__(self, pid):
+                self.pid = pid
+                self.stderr = mock.MagicMock()
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.waitpid_path) as waitpid, \
+                mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read:
+            popen.side_effect = [FakePopenObject(1000),
+                                 FakePopenObject(1001)]
+            waitpid.return_value = 0, 0
+            send.return_value = 0
+            read.return_value = 'OK'
+            self.dfactory.spawn_subprocess(
+                ['arg0', 'argv1', 'argv2'],
+                {'envk0': 'envv0'}, 'storleta')
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+            self.assertEqual({'storleta': 1000},
+                             self.dfactory.storlet_name_to_pid)
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.waitpid_path) as waitpid, \
+                mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read:
+            popen.side_effect = [FakePopenObject(1000),
+                                 FakePopenObject(1001)]
+            waitpid.return_value = 0, 0
+            send.return_value = 0
+            read.return_value = 'NG'
+            with self.assertRaises(SDaemonError):
+                self.dfactory.spawn_subprocess(
+                    ['arg0', 'argv1', 'argv2'],
+                    {'envk0': 'envv0'}, 'storleta')
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+            self.assertEqual({'storleta': 1000},
+                             self.dfactory.storlet_name_to_pid)
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.waitpid_path) as waitpid:
+            popen.side_effect = [FakePopenObject(1000),
+                                 FakePopenObject(1001)]
+            waitpid.return_value = 1000, -1
+            with self.assertRaises(SDaemonError):
+                self.dfactory.spawn_subprocess(
+                    ['arg0', 'argv1', 'argv2'],
+                    {'envk0': 'envv0'}, 'storleta')
+            self.assertEqual((1000, 1), waitpid.call_args[0])
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen:
+            popen.side_effect = OSError()
+            with self.assertRaises(SDaemonError):
+                self.dfactory.spawn_subprocess(
+                    ['arg0', 'argv1', 'argv2'],
+                    {'envk0': 'envv0'}, 'storleta')
+
+    def test_wait_for_daemon_to_initialize(self):
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'path/to/uds/a'}
+
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.base_path + '.os.read') as read:
+            send.side_effect = [-1, 0]
+            read.return_value = 'OK'
+            self.assertTrue(
+                self.dfactory.wait_for_daemon_to_initialize('storleta'))
+            self.assertEqual(2, send.call_count)
+            self.assertEqual(1, read.call_count)
+
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.base_path + '.os.read') as read:
+            send.return_value = 0
+            read.return_value = 'NG'
+            self.assertFalse(
+                self.dfactory.wait_for_daemon_to_initialize('storleta'))
+            self.assertEqual(
+                self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
+                send.call_count)
+            self.assertEqual(
+                self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
+                read.call_count)
+
+        self.dfactory.storlet_name_to_pipe_name = \
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
+        with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.time.sleep'):
+            send.return_value = -1
+            self.assertFalse(
+                self.dfactory.wait_for_daemon_to_initialize('storleta'))
+            self.assertEqual(
+                self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
+                send.call_count)
+
+    def test_process_start_daemon(self):
+        # Not running
+        self.dfactory.storlet_name_to_pid = {}
+        self.dfactory.storlet_name_to_pipe_name = {}
+
+        class FakePopenObject(object):
+            def __init__(self, pid):
+                self.pid = pid
+                self.stderr = mock.MagicMock()
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.waitpid_path) as waitpid, \
+                mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read:
+            popen.side_effect = [FakePopenObject(1000),
+                                 FakePopenObject(1001)]
+            waitpid.return_value = 0, 0
+            send.return_value = 0
+            read.return_value = 'OK'
+            self.assertTrue(self.dfactory.process_start_daemon(
+                'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
+                'TRACE', 'contid'))
+            self.assertEqual({'storleta': 'path/to/uds/a'},
+                             self.dfactory.storlet_name_to_pipe_name)
+
+        # Already running
+        self.dfactory.storlet_name_to_pid = {'storleta': 1000}
+        self.dfactory.storlet_name_to_pipe_name = {'storleta': 'path/to/uds/a'}
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 0, 0
+            self.assertFalse(self.dfactory.process_start_daemon(
+                'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
+                'TRACE', 'contid'))
+
+        # Unsupported language
+        with self.assertRaises(SDaemonError):
+            self.dfactory.process_start_daemon(
+                'foo', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
+                'TRACE', 'contid')
 
     def test_get_process_status_by_name(self):
         self.dfactory.storlet_name_to_pid = \
@@ -296,7 +440,7 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0
@@ -346,7 +490,7 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0
@@ -358,7 +502,7 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = -1
@@ -372,7 +516,7 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = 0
@@ -386,9 +530,57 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with self.assertRaises(SDaemonError):
             self.dfactory.shutdown_process('storletc')
+
+    def test_start_daemon(self):
+        prms = {'daemon_language': 'java',
+                'storlet_path': 'path/to/storlet/a',
+                'storlet_name': 'storleta',
+                'pool_size': 1,
+                'uds_path': 'path/to/uds/a',
+                'log_level': 'TRACE'}
+        # Not running
+        self.dfactory.storlet_name_to_pid = {}
+        self.dfactory.storlet_name_to_pipe_name = {}
+
+        class FakePopenObject(object):
+            def __init__(self, pid):
+                self.pid = pid
+                self.stderr = mock.MagicMock()
+
+        with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
+                mock.patch(self.base_path + '.time.sleep'), \
+                mock.patch(self.waitpid_path) as waitpid, \
+                mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read:
+            popen.side_effect = [FakePopenObject(1000),
+                                 FakePopenObject(1001)]
+            waitpid.return_value = 0, 0
+            send.return_value = 0
+            read.return_value = 'OK'
+            ret = self.dfactory.start_daemon('contid', prms)
+            self.assertTrue(ret.status)
+            self.assertEqual('OK', ret.message)
+            self.assertTrue(ret.iterable)
+
+        # Already running
+        self.dfactory.storlet_name_to_pid = {'storleta': 1000}
+        self.dfactory.storlet_name_to_pipe_name = {'storleta': 'path/to/uds/a'}
+        with mock.patch(self.waitpid_path) as waitpid:
+            waitpid.return_value = 0, 0
+            ret = self.dfactory.start_daemon('contid', prms)
+            self.assertTrue(ret.status)
+            self.assertEqual('storleta is already running', ret.message)
+            self.assertTrue(ret.iterable)
+
+        # Unsupported language
+        prms['daemon_language'] = 'foo'
+        ret = self.dfactory.start_daemon('contid', prms)
+        self.assertFalse(ret.status)
+        self.assertEqual('Got unsupported daemon language: foo', ret.message)
+        self.assertTrue(ret.iterable)
 
     def test_stop_daemon(self):
         # Success
@@ -450,7 +642,7 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pid = \
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
-            {'storleta': 'patha', 'storletb': 'pathb'}
+            {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0

@@ -163,51 +163,42 @@ class DaemonFactory(object):
 
         return pargs, env
 
-    def spawn_subprocess(self, pargs, env):
+    def spawn_subprocess(self, pargs, env, storlet_name):
         """
         Launch a JVM process for some storlet daemon
 
         :param pargs: Arguments for the JVM
         :param env: Environment value
-        :returns: (Status, Description text of possible error)
+        :param storlet_name: Name of the storlet to be executed
         """
-        b_status = True
-        error_text = ''
         try:
             self.logger.debug('START_DAEMON: actual invocation')
             self.logger.debug('The arguments are: {0}'.format(str(pargs)))
             # TODO(takashi): We had better use contextmanager
             # TODO(takashi): Where is this closed?
             # TODO(takashi): Should we really use this?
-            dn = open('/dev/null', 'w')
-            daemon_p = subprocess.Popen(pargs,
-                                        stdout=dn,
-                                        stderr=subprocess.PIPE,
-                                        shell=False,
-                                        env=env)
-
-            logger_p = subprocess.Popen('logger',
-                                        stdin=daemon_p.stderr,
-                                        stdout=dn,
-                                        stderr=dn,
-                                        shell=False)
+            dn = open(os.devnull, 'w')
+            daemon_p = subprocess.Popen(
+                pargs, stdout=dn, stderr=subprocess.PIPE,
+                close_fds=True, shell=False, env=env)
+            logger_p = subprocess.Popen(
+                'logger', stdin=daemon_p.stderr, stdout=dn, stderr=dn,
+                close_fds=True, shell=False)
             jvm_pid = daemon_p.pid
             # Wait for the JVM initializes itself
             time.sleep(1)
             self.logger.debug('Daemon process ID is: {0}'.format(jvm_pid))
             self.logger.debug('Logger process ID is: {0}'.format(logger_p.pid))
-            storlet_name = pargs[2]
 
             # Does JVM run?
             try:
-                b_status = self.get_process_status_by_pid(
-                    jvm_pid, storlet_name)
+                status = self.get_process_status_by_pid(jvm_pid, storlet_name)
             except SDaemonError:
                 self.logger.exception('Failed to get status for the storlet '
                                       'daemon {0}'.format(storlet_name))
                 raise
 
-            if b_status:
+            if status:
                 self.logger.debug('Keeping JVM PID in' +
                                   'storlet_name_to_pid[{0}] = {1}'.
                                   format(storlet_name, jvm_pid))
@@ -215,16 +206,17 @@ class DaemonFactory(object):
                 self.storlet_name_to_pid[storlet_name] = jvm_pid
                 if not self.wait_for_daemon_to_initialize(storlet_name):
                     raise SDaemonError('No response from Daemon')
-            self.logger.debug('START_DAEMON: just occurred')
-            error_text = 'OK'
+                self.logger.debug('START_DAEMON: just occurred')
+            else:
+                self.logger.error('Started the storlet daemon for {0}, but '
+                                  'can not check its status'.
+                                  format(storlet_name))
+                raise SDaemonError('Failed to start the sdaemon for {0}'.
+                                   format(storlet_name))
         except Exception:
-            b_status = False
-            error_text = 'Failed to start subprocess %s' % str(pargs)
-            self.logger.exception(error_text)
-
-        # TODO(takashi): Now we return error text in tuple, but I think we had
-        #                better make this raise Exception including message
-        return b_status, error_text
+            self.logger.exception('Failed to start subprocess %s' % str(pargs))
+            raise SDaemonError('Failed to start the sdaemon for {0}'
+                               .format(storlet_name))
 
     def wait_for_daemon_to_initialize(self, storlet_name):
         """
@@ -269,16 +261,16 @@ class DaemonFactory(object):
         :param log_level: Logger verbosity level
         :param container_id: container id
 
-        :returns: (Status, Description text of possible error)
+        :returns: True if it starts a new subprocess
+                  False if there already exists a running process
         """
         if daemon_language.lower() in ['java']:
             pargs, env = self.get_jvm_args(
                 daemon_language, storlet_path, storlet_name,
                 pool_size, uds_path, log_level, container_id)
         else:
-            error_txt = 'Got unsupported daemon language: %s' % daemon_language
-            self.logger.error(error_txt)
-            return False, error_txt
+            raise SDaemonError(
+                'Got unsupported daemon language: %s' % daemon_language)
 
         self.logger.debug('Assigning storlet_name_to_pipe_name[{0}]={1}'.
                           format(storlet_name, uds_path))
@@ -287,14 +279,14 @@ class DaemonFactory(object):
         self.logger.debug('Validating that {0} is not already running'.
                           format(storlet_name))
         if self.get_process_status_by_name(storlet_name):
-            error_text = '{0} is already running'.format(storlet_name)
-            self.logger.debug(error_text)
+            self.logger.debug('the storlet daemon for {0} is already running'.
+                              format(storlet_name))
+            return False
         else:
             self.logger.debug('{0} is not running. About to spawn process'.
                               format(storlet_name))
-            b_status, error_text = self.spawn_subprocess(pargs, env)
-
-        return b_status, error_text
+            self.spawn_subprocess(pargs, env, storlet_name)
+            return True
 
     def get_process_status_by_name(self, storlet_name):
         """
@@ -477,15 +469,20 @@ class DaemonFactory(object):
 
     @command_handler
     def start_daemon(self, container_id, prms):
-        b_status, error_text = self.process_start_daemon(
-            prms['daemon_language'],
-            prms['storlet_path'],
-            prms['storlet_name'],
-            prms['pool_size'],
-            prms['uds_path'],
-            prms['log_level'],
-            container_id)
-        return CommandResponse(b_status, error_text, True)
+        storlet_name = prms['storlet_name']
+        try:
+            if self.process_start_daemon(
+                    prms['daemon_language'], prms['storlet_path'],
+                    storlet_name, prms['pool_size'],
+                    prms['uds_path'], prms['log_level'], container_id):
+                msg = 'OK'
+            else:
+                msg = '{0} is already running'.format(storlet_name)
+            return CommandSuccess(msg)
+        except SDaemonError as e:
+            self.logger.exception('Failed to start the sdaemon for {0}'
+                                  .format(storlet_name))
+            return CommandFailure(str(e))
 
     @command_handler
     def stop_daemon(self, container_id, prms):
