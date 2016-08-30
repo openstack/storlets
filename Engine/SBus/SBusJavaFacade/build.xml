@@ -37,8 +37,8 @@
 	<target name="so" depends="h">
 		<exec dir="." executable="gcc">
 			<arg line="-shared -o bin/libjsbus.so -fPIC" />
-			<arg line="-I/usr/lib/jvm/java-8-oracle/include" />
-			<arg line="-I/usr/lib/jvm/java-8-oracle/include/linux/" />
+			<arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/" />
+			<arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/" />
 			<arg line="-I../SBusTransportLayer" />
 			<arg line="SBusJNI.c ../SBusTransportLayer/sbus.c" />
 		</exec>

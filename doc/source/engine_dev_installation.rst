@@ -149,11 +149,9 @@ We need the following for the Java parts
 
 ::
 
-    sudo add-apt-repository -y ppa:webupd8team/java
-    sudo echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
+    sudo add-apt-repository -y ppa:openjdk-r/ppa
     sudo apt-get update
-    sudo apt-get install --force-yes -y oracle-java8-installer
-    sudo apt-get install --force-yes -y oracle-java8-set-default
+    sudo apt-get install -y openjdk-8-jdk
     sudo apt-get install -y ant
 
 We need the following for Docker
@@ -211,10 +209,9 @@ with the following content:
     RUN apt-get update && \
     apt-get install python -y && \
     apt-get install software-properties-common -y && \
-    add-apt-repository ppa:webupd8team/java && \
+    add-apt-repository ppa:openjdk-r/ppa -y && \
     apt-get update && \
-    echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections && \
-    apt-get install oracle-java8-installer -y && \
+    apt-get install openjdk-8-jre -y && \
     apt-get clean
 
     COPY logback-classic-1.1.2.jar	/opt/storlets/

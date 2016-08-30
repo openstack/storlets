@@ -17,12 +17,10 @@ if [ "$FLAVOR" != "jenkins" ] && [ "$FLAVOR" != "dev" ] && [ "$FLAVOR" != "deplo
 fi
 
 # Install Storlets build prerequisite
-sudo apt-get install -y ant
-sudo add-apt-repository -y ppa:webupd8team/java
+sudo add-apt-repository -y ppa:openjdk-r/ppa
 sudo apt-get update
-sudo echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
-sudo apt-get install --force-yes -y oracle-java8-installer
-sudo apt-get install --force-yes -y oracle-java8-set-default
+sudo apt-get install -y openjdk-8-jdk
+sudo apt-get install -y ant
 sudo apt-get install -y python
 sudo apt-get install -y python-setuptools
 
