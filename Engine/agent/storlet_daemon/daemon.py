@@ -12,10 +12,10 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import json
 import logging
 from logging.handlers import SysLogHandler
 import errno
+import json
 import os
 import pwd
 import sys
@@ -36,6 +36,76 @@ def command_handler(func):
     return func
 
 
+class StorletError(Exception):
+    pass
+
+
+class StorletLoggerError(StorletError):
+    pass
+
+
+class StorletLogger(object):
+
+    def __init__(self, storlet_name, fd):
+        self.fd = fd
+        self.storlet_name = storlet_name
+        self.log_file = None
+
+    def open(self):
+        self.log_file = os.fdopen(self.fd, 'w')
+
+    def close(self):
+        if self.log_file is not None:
+            self.log_file.close()
+            self.log_file = None
+
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
+    def _emit_log(self, level, msg):
+        if self.log_file is None:
+            raise StorletLoggerError('The logger file is not opened')
+        msg = '%s %s: %s' % (self.storlet_name, level, msg)
+        self.log_file.write(msg)
+
+    def debug(self, msg):
+        self._emit_log('DEBUG', msg)
+
+    def info(self, msg):
+        self._emit_log('INFO', msg)
+
+    def warn(self, msg):
+        self._emit_log('WARN', msg)
+
+    def error(self, msg):
+        self._emit_log('ERROR', msg)
+
+    def exception(self, msg):
+        raise NotImplementedError()
+
+
+class MetadataFile(object):
+
+    def __init__(self, fd):
+        self.fd = fd
+        self.used = False
+
+    def dump(self, metadata):
+        if self.used:
+            raise StorletError('You can not dump metadata twice')
+
+        with os.fdopen(self.fd, 'w') as f:
+            f.write(json.dumps(metadata))
+        self.used = True
+
+    def close(self):
+        os.close(self.fd)
+
+
 class Daemon(object):
 
     def __init__(self, storlet_name, sbus_path, logger, pool_size):
@@ -45,6 +115,7 @@ class Daemon(object):
         self.pool_size = pool_size
         self.task_id_to_pid = {}
         self.chunk_size = 16
+        self.storlet_cls = None
 
     def _cleanup_pids(self):
         """
@@ -131,6 +202,18 @@ class Daemon(object):
         for fd in fds:
             self._safe_close_fd(fd)
 
+    def _safe_close_file(self, fobj):
+        try:
+            fobj.close()
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                raise
+            pass
+
+    def _safe_close_files(self, files):
+        for fobj in files:
+            self._safe_close_file(fobj)
+
     @command_handler
     def execute(self, dtg):
         task_id_out_fd = dtg.task_id_out_fd
@@ -148,6 +231,7 @@ class Daemon(object):
         in_md = dtg.object_in_metadata
         out_md_fds = dtg.object_metadata_out_fds
         out_fds = dtg.object_out_fds
+        params = dtg.params
         logger_fd = dtg.logger_out_fd
 
         pid = os.fork()
@@ -165,29 +249,25 @@ class Daemon(object):
                 self.logger.debug('Start storlet invocation')
 
                 self.logger.debug('in_fds:%s in_md:%s out_md_fds:%s out_fds:%s'
-                                  % (in_fds, in_md, out_md_fds, out_fds))
-                with os.fdopen(out_md_fds[0], 'w') as out_md_file:
-                    self.logger.debug('Returning metadata')
-                    out_md_file.write(json.dumps(in_md[0]))
+                                  ' logger_fd: %s'
+                                  % (in_fds, in_md, out_md_fds, out_fds,
+                                     logger_fd))
 
-                with os.fdopen(in_fds[0], 'r') as in_file, \
-                        os.fdopen(out_fds[0], 'w') as out_file, \
-                        os.fdopen(logger_fd, 'w') as log_file:
-                    self.logger.debug('Start to return object data')
-                    log_file.write('Executed\n')
-                    while True:
-                        buf = in_file.read(self.chunk_size)
-                        self.logger.debug('Recieved %d bytes' % len(buf))
-                        self.logger.debug('Writing back %d bytes' % len(buf))
-                        out_file.write(buf)
+                in_files = [os.fdopen(fd, 'r') for fd in in_fds]
+                out_md_files = [MetadataFile(fd) for fd in out_md_fds]
+                out_files = [os.fdopen(fd, 'w') for fd in out_fds]
 
-                        if not buf:
-                            break
-
+                self.logger.debug('Start storlet execution')
+                with StorletLogger(self.storlet_name, logger_fd) as logger:
+                    handler = self.storlet_cls(logger)
+                    handler(in_md, in_files, out_md_files, out_files, params)
                 self.logger.debug('Completed')
             except Exception:
                 self.logger.exception('Error in storlet invocation')
             finally:
+                self._safe_close_files(in_files)
+                self._safe_close_files(out_md_files)
+                self._safe_close_files(out_files)
                 sys.exit()
         return True
 
@@ -256,6 +336,24 @@ class Daemon(object):
             return handler(dtg)
 
     def main_loop(self, container_id):
+
+        storlet_name_sp = self.storlet_name.split('.')
+        if len(storlet_name_sp) != 2:
+            self.logger.error("Invalid storlet name %s. exiting" %
+                              self.storlet_name)
+            return EXIT_FAILURE
+
+        module_name = storlet_name_sp[0]
+        cls_name = storlet_name_sp[1]
+
+        try:
+            module = __import__(module_name, fromlist=[cls_name])
+            self.storlet_cls = getattr(module, cls_name)
+        except (ImportError, AttributeError):
+            self.logger.exception("Failed to load storlet %s" %
+                                  self.storlet_name)
+            return EXIT_FAILURE
+
         sbus = SBus()
         fd = sbus.create(self.sbus_path)
         if fd < 0:
