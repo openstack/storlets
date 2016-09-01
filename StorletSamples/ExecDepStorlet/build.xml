@@ -41,7 +41,7 @@
 		<jar destfile="execdepstorlet-1.0.jar" basedir="bin">
 			<manifest>
 				<attribute name="Main-Class" 
-					       value="com.ibm.storlet.ExecDepStorlet" />
+					       value="org.openstack.storlet.ExecDepStorlet" />
 			</manifest>
 		</jar>
 		<move file="execdepstorlet-1.0.jar" todir="bin" />

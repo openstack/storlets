@@ -1,4 +1,4 @@
-import com.ibm.storlet.common.*;
+import org.openstack.storlet.common.*;
 
 import java.io.FileInputStream;
 import java.io.InputStream;

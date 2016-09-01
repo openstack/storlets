@@ -21,7 +21,7 @@ class TestMetadataStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'TestMetadataStorlet'
         self.storlet_name = 'testmetadatastorlet-1.0.jar'
-        self.storlet_main = ('com.ibm.storlet.testmetadatastorlet'
+        self.storlet_main = ('org.openstack.storlet.testmetadatastorlet'
                              '.MetadataStorlet')
         self.storlet_log = 'testmetadatastorlet-1.0.log'
         self.headers = {'X-Object-Meta-key1': '1',

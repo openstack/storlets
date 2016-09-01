@@ -18,7 +18,7 @@ the storlets build process as described in the development and testing guide_
 .. _guide: engine_dev_tests.html
 
 Import the .jar to a Java project in Eclipse and implement the
-com.ibm.storlet.common.IStorlet interface.
+org.openstack.storlet.common.IStorlet interface.
 The interface has a single method that looks like this:
 
 ::
@@ -182,7 +182,7 @@ Following the Identity storlet example, we have 2 objects to upload:
         X-Object-Meta-Storlet-Interface-Version - currenltly we have a single version '1.0'
         X-Object-Meta-Storlet-Dependency - A comma separated list of dependencies. In our case: 'get42'
         X-Object-Meta-Storlet-Object-Metadata - Currently, not in use, but must appear. Use the value 'no'
-        X-Object-Meta-Storlet-Main - The name of the class that implements the IStorlet API. In our case: 'com.ibm.storlet.identity.IdentityStorlet'
+        X-Object-Meta-Storlet-Main - The name of the class that implements the IStorlet API. In our case: 'org.openstack.storlet.identity.IdentityStorlet'
 
 #. The binary file that the storlet code is dependent on. In our case it is a
    binary called get42. The binary should be uploaded to a container named
@@ -240,7 +240,7 @@ Here is the Swift client command for uploading the storlet. some notes:
   -H "X-Object-Meta-Storlet-Language:Java" \
   -H "X-Object-Meta-Storlet-Interface-Version:1.0" \
   -H "X-Object-Meta-Storlet-Object-Metadata:no" \
-  -H "X-Object-Meta-Storlet-Main:com.ibm.storlet.identity.IdentityStorlet" \
+  -H "X-Object-Meta-Storlet-Main:org.openstack.storlet.identity.IdentityStorlet" \
   -H "X-Object-Meta-Storlet-Dependency:get42"
 
 Here is the Swift client command for uploading the get42 dependency. Again,
@@ -322,7 +322,7 @@ The code assumes v2 authentication, and was tested against a Swift cluster with:
                                os_options = os_options,
                                auth_version="2.0")
   put_storlet_object(url, token,'identitystorlet-1.0.jar','/tmp',
-                     'com.ibm.storlet.identity.IdentityStorlet',
+                     'org.openstack.storlet.identity.IdentityStorlet',
                      'get42')
   put_storlet_dependency(url, token,'get42','/tmp')
 

@@ -45,7 +45,7 @@
             <manifest>
                 <attribute 
                  name="Main-Class" 
-                 value="com.ibm.storlet.daemon.SDaemon" />
+                 value="org.openstack.storlet.daemon.SDaemon" />
             </manifest>
         </jar>
         <move file="SDaemon.jar" todir="bin/" />

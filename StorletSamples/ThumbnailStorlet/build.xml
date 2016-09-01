@@ -32,7 +32,7 @@
 		<jar destfile="thumbnail-1.0.jar" basedir="bin">
 			<manifest>
 				<attribute name="Main-Class" 
-					       value="com.ibm.storlet.Thumbnail" />
+					       value="org.openstack.storlet.Thumbnail" />
 			</manifest>
 		</jar>
 		<move file="thumbnail-1.0.jar" todir="bin" />

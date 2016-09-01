@@ -25,7 +25,7 @@
 #include <syslog.h>
 #include <string.h>
 
-#include "com_ibm_storlet_sbus_SBusJNI.h"
+#include "org_openstack_storlet_sbus_SBusJNI.h"
 #include "sbus.h"
 
 
@@ -58,7 +58,7 @@ int init_java_accessors( JNIEnv* env )
      * Reflecting SBusRawMessage
      * */
 	g_ClassRawMessage =
-			(*env)->FindClass( env, "com/ibm/storlet/sbus/SBusRawMessage" );
+			(*env)->FindClass( env, "org/openstack/storlet/sbus/SBusRawMessage" );
     if( NULL == g_ClassRawMessage )
         return -1;
 
@@ -114,10 +114,10 @@ int init_java_accessors( JNIEnv* env )
  *
  * */
 JNIEXPORT void JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_startLogger( 	JNIEnv* env,
-												jobject obj,
-												jstring jLevel,
-												jstring jContId )
+Java_org_openstack_storlet_sbus_SBusJNI_startLogger( 	JNIEnv* env,
+														jobject obj,
+														jstring jLevel,
+														jstring jContId )
 {
 	const char* pLogLevel = (*env)->GetStringUTFChars( env, jLevel, NULL );
 	if( NULL == pLogLevel )
@@ -135,8 +135,8 @@ Java_com_ibm_storlet_sbus_SBusJNI_startLogger( 	JNIEnv* env,
  *
  * */
 JNIEXPORT void JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_stopLogger( 	JNIEnv* env,
-												jobject obj )
+Java_org_openstack_storlet_sbus_SBusJNI_stopLogger( 	JNIEnv* env,
+														jobject obj )
 {
 	sbus_stop_logger();
 }
@@ -145,9 +145,9 @@ Java_com_ibm_storlet_sbus_SBusJNI_stopLogger( 	JNIEnv* env,
  *
  * */
 JNIEXPORT jint JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_createSBus( 	JNIEnv* env,
-												jobject obj,
-												jstring jstrPath )
+Java_org_openstack_storlet_sbus_SBusJNI_createSBus( 	JNIEnv* env,
+														jobject obj,
+														jstring jstrPath )
 {
 	int nBus = -1;
 	const char* pPath = (*env)->GetStringUTFChars( env, jstrPath, NULL );
@@ -164,9 +164,9 @@ Java_com_ibm_storlet_sbus_SBusJNI_createSBus( 	JNIEnv* env,
  *
  * */
 JNIEXPORT jint JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_listenSBus( 	JNIEnv* env,
-												jobject obj,
-												jint    jnBus )
+Java_org_openstack_storlet_sbus_SBusJNI_listenSBus( 	JNIEnv* env,
+														jobject obj,
+														jint    jnBus )
 {
 	return sbus_listen( jnBus );
 }
@@ -175,10 +175,10 @@ Java_com_ibm_storlet_sbus_SBusJNI_listenSBus( 	JNIEnv* env,
  *
  * */
 JNIEXPORT jint JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_sendRawMessage( 	JNIEnv* env,
-													jobject obj,
-													jstring jstrPath,
-													jobject jMsg )
+Java_org_openstack_storlet_sbus_SBusJNI_sendRawMessage( 	JNIEnv* env,
+															jobject obj,
+															jstring jstrPath,
+															jobject jMsg )
 {
 	syslog( LOG_DEBUG, "Inside sendRawMessage" );
 	if( init_java_accessors( env ) )
@@ -248,9 +248,9 @@ Java_com_ibm_storlet_sbus_SBusJNI_sendRawMessage( 	JNIEnv* env,
  *
  * */
 JNIEXPORT jobject JNICALL
-Java_com_ibm_storlet_sbus_SBusJNI_receiveRawMessage( 	JNIEnv* env,
-														jobject obj,
-														jint    jnBus )
+Java_org_openstack_storlet_sbus_SBusJNI_receiveRawMessage( 	JNIEnv* env,
+															jobject obj,
+															jint    jnBus )
 {
 	syslog( LOG_DEBUG, "JNI: Inside receiveRawMessage" );
 	if( init_java_accessors( env ) )

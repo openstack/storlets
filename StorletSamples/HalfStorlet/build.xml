@@ -30,7 +30,7 @@
 		<jar destfile="halfstorlet-1.0.jar" basedir="bin">
 			<manifest>
 				<attribute name="Main-Class" 
-					       value="com.ibm.storlet.HalfStorlet" />
+					       value="org.openstack.storlet.HalfStorlet" />
 			</manifest>
 		</jar>
 		<move file="halfstorlet-1.0.jar" todir="bin" />

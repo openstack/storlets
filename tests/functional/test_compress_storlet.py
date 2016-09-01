@@ -21,7 +21,7 @@ class TestCompressStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'CompressStorlet'
         self.storlet_name = 'compressstorlet-1.0.jar'
-        self.storlet_main = 'com.ibm.storlet.compress.CompressStorlet'
+        self.storlet_main = 'org.openstack.storlet.compress.CompressStorlet'
         self.storlet_log = ''
         self.headers = {}
         self.storlet_file = 'input.txt'

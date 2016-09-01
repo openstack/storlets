@@ -29,14 +29,14 @@ import java.io.InputStreamReader;
 import java.io.BufferedReader;
 import java.io.OutputStream;
 
-import com.ibm.storlet.common.IStorlet;
-import com.ibm.storlet.common.StorletException;
-import com.ibm.storlet.common.StorletInputStream;
-import com.ibm.storlet.common.StorletLogger;
-import com.ibm.storlet.common.StorletObjectOutputStream;
-import com.ibm.storlet.common.StorletContainerHandle;
-import com.ibm.storlet.common.StorletOutputStream;
-import com.ibm.storlet.common.StorletUtils;
+import org.openstack.storlet.common.IStorlet;
+import org.openstack.storlet.common.StorletException;
+import org.openstack.storlet.common.StorletInputStream;
+import org.openstack.storlet.common.StorletLogger;
+import org.openstack.storlet.common.StorletObjectOutputStream;
+import org.openstack.storlet.common.StorletContainerHandle;
+import org.openstack.storlet.common.StorletOutputStream;
+import org.openstack.storlet.common.StorletUtils;
 
 /***
  * An identity storlet for record based text files.

@@ -119,7 +119,7 @@ class TestDaemonFactory(unittest.TestCase):
                 'java', 'path/to/storlet/a', 'Storlet-1.0.jar',
                 1, 'path/to/uds/a', 'DEBUG', 'contid')
             self.assertEqual(
-                ['/usr/bin/java', 'com.ibm.storlet.daemon.SDaemon',
+                ['/usr/bin/java', 'org.openstack.storlet.daemon.SDaemon',
                  'Storlet-1.0.jar', 'path/to/uds/a', 'DEBUG', '1', 'contid'],
                 pargs)
             self.assertEqual(

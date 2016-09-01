@@ -23,7 +23,7 @@ class TestHalfIdentityStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'HalfStorlet'
         self.storlet_name = 'halfstorlet-1.0.jar'
-        self.storlet_main = 'com.ibm.storlet.half.HalfStorlet'
+        self.storlet_main = 'org.openstack.storlet.half.HalfStorlet'
         self.storlet_log = ''
         self.headers = {'X-Object-Meta-Testkey': 'tester'}
         self.storlet_file = 'source.txt'
