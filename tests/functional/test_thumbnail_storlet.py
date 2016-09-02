@@ -24,7 +24,7 @@ class TestThumbnailStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'ThumbnailStorlet'
         self.storlet_name = 'thumbnail-1.0.jar'
-        self.storlet_main = 'com.ibm.storlet.thumbnail.ThumbnailStorlet'
+        self.storlet_main = 'org.openstack.storlet.thumbnail.ThumbnailStorlet'
         self.storlet_log = None
         self.headers = None
         self.storlet_file = 'sample.jpg'

@@ -38,11 +38,11 @@ class TestExecDepStorlet(StorletBaseFunctionalTest):
             child.expect('Enter absolute path to storlet jar file.*:',
                          timeout=self.timeout)
             child.sendline(self.execdep_storlet_jar_file)
-            child.expect('com.ibm.storlet.execdep.ExecDepStorlet',
+            child.expect('org.openstack.storlet.execdep.ExecDepStorlet',
                          timeout=self.timeout)
             child.expect('Please enter fully qualified storlet main class.*',
                          timeout=self.timeout)
-            child.sendline('com.ibm.storlet.execdep.ExecDepStorlet')
+            child.sendline('org.openstack.storlet.execdep.ExecDepStorlet')
             child.expect('Please enter dependency.*', timeout=2)
             child.sendline(self.execdep_storlet_dep_file)
             child.sendline('\n')

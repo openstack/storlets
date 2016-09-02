@@ -20,7 +20,7 @@
 	</target>
 
 	<target name="testmetadatastorlet">
-		<javac srcdir="src/com/ibm/storlet/testmetadatastorlet" destdir="bin" includeantruntime="false">
+		<javac srcdir="src/org/openstack/storlet/testmetadatastorlet" destdir="bin" includeantruntime="false">
 			<classpath>
 		        <pathelement 
 		        	path="../../Engine/SCommon/bin/SCommon.jar"/>
@@ -29,7 +29,7 @@
 
 	     <jar destfile="bin/testmetadatastorlet-1.0.jar" 
 	          basedir="bin"
-	     	  includes="com/ibm/storlet/testmetadatastorlet/*">
+	     	  includes="org/openstack/storlet/testmetadatastorlet/*">
 	     </jar>
 	</target>
 

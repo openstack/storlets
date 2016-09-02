@@ -142,7 +142,7 @@ class DaemonFactory(object):
         self.logger.debug('START_DAEMON: uds_path = %s' % uds_path)
         self.logger.debug('START_DAEMON: log_level = %s' % log_level)
 
-        str_daemon_main_class = "com.ibm.storlet.daemon.SDaemon"
+        str_daemon_main_class = "org.openstack.storlet.daemon.SDaemon"
 
         self.logger.debug('START_DAEMON:preparing arguments')
         if os.environ.get('CLASSPATH'):

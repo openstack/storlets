@@ -34,7 +34,7 @@ class TestTestStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'TestStorlet'
         self.storlet_name = 'test-10.jar'
-        self.storlet_main = 'com.ibm.storlet.test.test1'
+        self.storlet_main = 'org.openstack.storlet.test.test1'
         self.storlet_log = ''
         self.headers = None
         self.storlet_file = ''

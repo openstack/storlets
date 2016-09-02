@@ -16,7 +16,7 @@
 
 	<target name="clean">
 		<delete dir="bin" />
-		<delete file="com_ibm_storlet_sbus_SBusJNI.h"/>
+		<delete file="org_openstack_storlet_sbus_SBusJNI.h"/>
 	</target>
 
 	<target name="java">
@@ -30,7 +30,7 @@
 
 	<target name="h" depends="java">
 		<javah destdir="." force="yes" classpath="bin">
-			<class name="com.ibm.storlet.sbus.SBusJNI" />
+			<class name="org.openstack.storlet.sbus.SBusJNI" />
 		</javah>
 	</target>
 
@@ -48,7 +48,7 @@
 		<jar destfile="SBusJavaFacade.jar" basedir="bin">
 			<manifest>
 				<attribute name="Main-Class" 
-					       value="com.ibm.storlet.sbus.SBus" />
+					       value="org.openstack.storlet.sbus.SBus" />
 			</manifest>
 		</jar>
 		<move file="SBusJavaFacade.jar" todir="bin/"/>

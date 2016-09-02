@@ -21,7 +21,7 @@ class TestExecDepStorlet(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'ExecDepStorlet'
         self.storlet_name = 'execdepstorlet-1.0.jar'
-        self.storlet_main = 'com.ibm.storlet.execdep.ExecDepStorlet'
+        self.storlet_main = 'org.openstack.storlet.execdep.ExecDepStorlet'
         self.storlet_log = 'execdepstorlet-1.0.log'
         self.headers = None
         self.storlet_file = 'junk.txt'

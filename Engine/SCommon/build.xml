@@ -36,7 +36,7 @@
 	<target name="jar" depends="java">
 		<jar destfile="SCommon.jar" basedir="bin">
 			<manifest>
-				<attribute name="Main-Class" value="com.ibm.storlet.daemon.IStorlet" />
+				<attribute name="Main-Class" value="org.openstack.storlet.daemon.IStorlet" />
 			</manifest>
 		</jar>
 		<move file="SCommon.jar" todir="bin/" />

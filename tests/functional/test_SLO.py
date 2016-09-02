@@ -48,7 +48,7 @@ class TestSLO(StorletFunctionalTest):
     def setUp(self):
         self.storlet_dir = 'IdentityStorlet'
         self.storlet_name = 'identitystorlet-1.0.jar'
-        self.storlet_main = 'com.ibm.storlet.identity.IdentityStorlet'
+        self.storlet_main = 'org.openstack.storlet.identity.IdentityStorlet'
         self.storlet_log = 'identitystorlet-1.0.log'
         self.headers = None
         self.storlet_file = ''
