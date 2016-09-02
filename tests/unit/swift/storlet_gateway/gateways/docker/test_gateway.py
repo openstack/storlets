@@ -14,6 +14,7 @@
 # limitations under the License.
 
 import unittest
+import six
 from six import StringIO
 from tests.unit.swift import FakeLogger
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
@@ -130,6 +131,10 @@ class TestDockerStorletRequest(unittest.TestCase):
 class TestStorletDockerGateway(unittest.TestCase):
 
     def setUp(self):
+        if six.PY3:
+            self.skipTest(
+                "swift.common.internal_client.InternalClient for testing"
+                "doesn't suppoert py3 yet")
         # TODO(takashi): take these values from config file
         self.tempdir = mkdtemp()
         self.sconf = {

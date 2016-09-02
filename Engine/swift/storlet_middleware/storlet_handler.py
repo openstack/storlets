@@ -11,7 +11,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 
-import ConfigParser
+from six.moves import configparser as ConfigParser
 from eventlet import Timeout
 from swift.common.swob import HTTPException, HTTPInternalServerError, wsgify
 from swift.common.utils import config_true_value, get_logger, \

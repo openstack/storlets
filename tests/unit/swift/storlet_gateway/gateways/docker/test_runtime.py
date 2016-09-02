@@ -26,7 +26,6 @@ from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
 from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
 from tests.unit.swift import FakeLogger
-from exceptions import AssertionError
 from tests.unit import with_tempdir
 
 

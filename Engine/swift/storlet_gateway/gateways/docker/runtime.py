@@ -20,6 +20,7 @@ import stat
 import subprocess
 import sys
 import time
+import six
 
 import eventlet
 import json
@@ -676,9 +677,7 @@ class StorletInvocationProtocol(object):
                         % self.task_id)
                     pass
 
-            # TODO(takashi): this should be replaced by six.rerase
-            #                when supporting py3
-            raise exc_type, exc_value, exc_traceback
+            six.reraise(exc_type, exc_value, exc_traceback)
         if fd not in r:
             raise StorletRuntimeException('Read fd is not ready')
 
