@@ -684,6 +684,7 @@ class StorletInvocationProtocol(object):
         flat_json = os.read(self.metadata_read_fd, MAX_META_OVERALL_SIZE)
         if flat_json is None:
             return None
+        os.close(self.metadata_read_fd)
         # TODO(takashi): We should validate json format
         return json.loads(flat_json)
 
