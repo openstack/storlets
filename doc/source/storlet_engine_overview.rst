@@ -39,18 +39,18 @@ The Docker image
 As mentioned above there is a Docker image per account that is enabled for storlets.
 At a high level this image containes:
 
-#. A Java run time environment. Currently storlets can be written only in Java, hence the image
-   must have JRE
-#. A Java based daemon. The Java based daemon is a generic daemon that once spawned loads a
+#. A Java run time environment. This is needed when you run storlets written in Java
+#. A daemon factory. A Python process that starts as part of the Docker container bring up.
+   This process spawns the "per storlet daemons" upon a request from the "storlet docker
+   gateway" that runs in the context of the storlet_middleware.
+#. A storlet daemon. The storlet daemon is a generic daemon that once spawned loads a
    certain storlet code and awaits invocations. Different storlets, e.g. a filtering storlet
    and a compression storlet are loaded into different daemons. A daemon is invoked the first
-   time a certain storlet needs to be executed.
-#. A daemon factory. A Python process that starts as part of the Docker container bring up.
-   This process spawns the Java "per storlet daemons" upon a request from the
-   storlet_middleware. More precisely, it is the "storlet docker gateway" that talks to the
-   daemon factory.
-#. The storlet common jar. This is the jar used for developing storlets. Amongst other things
-   it has the definition of the invoke API the storlet must implement. 
+   time a certain storlet needs to be executed. Currently we have two types of daemons, a Java
+   daemon for loading and running Java written storlets, and a Python daemon for loading and
+   runding Python written storlets.
+#. The storlet common jar. This is the jar used for developing storlets in Java. Amongst
+   other things it has the definition of the invoke API the storlet must implement.
 
 The storlet bus
 ---------------

@@ -45,7 +45,7 @@ time. An example might be: ubuntu_14.04_jre8_storlets reflecting the following
 facts:
 
 #. The base OS is Ubuntu 14.04. Currently this is the only base OS we support.
-#. The Storlets run time is jre8. Currently storlets can be written only in Java.
+#. The Storlets run time is jre8 and python2.7.
 #. The storlet engine code is installed.
 
 The image will come in a .tar format.

@@ -35,7 +35,7 @@ The Content-type of the response is (text/plain).
 Upload a New Storlet
 --------------------
 
-You may write a storlet in Java according to the instructions in the storlet developer guide and upload it to the Object Store.
+You may write a storlet in Java or Python according to the instructions in the storlet developer guide and upload it to the Object Store.
 The storlet is uploaded to the container named 'storlet', so '/storlet' appears in the url.
 The storlet may depend on other existing libraries, which must be uploaded to the 'dependency' container.
 
@@ -46,9 +46,11 @@ The storlet may depend on other existing libraries, which must be uploaded to th
 When uploading a storlet,
 the X-Object-Meta-Storlet-Dependency header requires a value that is a comma separated list of dependencies.
 The main_class_name parameter for the X-Object-Meta-Storlet-Main header specifies the class in which the invoke
-method of the storlet is defined.
+method of the storlet is defined. For python written storlets, this parameter should be prefixed with the python
+module name. For example, if the storlet file is named 'mystorlet.py', then the class name must be
+'mystorlet.<class name>'.
 The X-Object-Meta-Storlet-Language header specified the language in which the storlet is run.
-At present, only 'Java' is supported.
+Either "Python" or "Java" is available for the value.
 The X-Object-Meta-Storlet-Interface-Version header should be provided and set to the value '1.0'.
 Although not currently used, the X-Object-Meta-Storlet-Object-Metadata header must be provided and set to 'no'.
 See the Storlets Developer's manual for details of the signature of the invoke method.
@@ -58,6 +60,8 @@ The content-type of the request should be set to 'application/octet-stream'.
 
  [PUT] /v1/{account}/storlet/{storlet_object_name}
 
+For Java written storlets
+
 ::
 
     'X-Object-Meta-Storlet-Language' :   'Java'
@@ -65,6 +69,17 @@ The content-type of the request should be set to 'application/octet-stream'.
     'X-Object-Meta-Storlet-Dependency': dependencies
     'X-Object-Meta-Storlet-Object-Metadata' : 'no'
     'X-Object-Meta-Storlet-Main': {main_class_name}
+    'X-Auth-Token': {authorization_token}
+
+For Python written storlets
+
+::
+
+    'X-Object-Meta-Storlet-Language' :   'Python'
+    'X-Object-Meta-Storlet-Interface-Version' :   '1.0'
+    'X-Object-Meta-Storlet-Dependency': dependencies
+    'X-Object-Meta-Storlet-Object-Metadata' : 'no'
+    'X-Object-Meta-Storlet-Main': {module_name.class_name}
     'X-Auth-Token': {authorization_token}
 
 
@@ -114,7 +129,7 @@ Storlets can be invoked in 3 ways:
 #. Invocation upon object copy.
     In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
     thumbnail extraction from an existing jpg. The location where the storlet is invoked on copy (object node or proxy node)
-    is the same as for the download case. 
+    is the same as for the download case.
 
 Below is the API reference of the abovementioned invocations.
 
