@@ -192,6 +192,11 @@ class ServerSBusInDatagram(SBusDatagram):
         return [md['storage'] for md in self.metadata
                 if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
+    @property
+    def object_in_storlet_metadata(self):
+        return [md['storlets'] for md in self.metadata
+                if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
+
 
 # Curerrently we have no Server to Client commands
 # This serves as a place holder should we want to bring the
