@@ -39,7 +39,7 @@
     url: "{{ item }}"
     dest: /data/registry/repositories/ubuntu_14.04_jre8
   with_items:
-    - https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/json-simple/json_simple-1.1.jar
+    - http://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/json-simple/json_simple-1.1.jar
     - http://www.slf4j.org/dist/slf4j-1.7.7.tar.gz
     - http://logback.qos.ch/dist/logback-1.1.2.tar.gz
 

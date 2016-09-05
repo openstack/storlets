@@ -330,7 +330,12 @@ class DaemonFactory(object):
             self.logger.debug('Storlet {0}, PID = {1}, ErrCode = {2}'.
                               format(storlet_name, str(pid), str(rc)))
         except OSError as err:
-            if err.errno == errno.ESRCH:
+            # If the storlet daemon crashed
+            # we may get here ECHILD for which
+            # we want to return False
+            if err.errno == errno.ECHILD:
+                return False
+            elif err.errno == errno.ESRCH:
                 return False
             elif err.errno == errno.EPERM:
                 raise SDaemonError(

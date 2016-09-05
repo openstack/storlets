@@ -1,0 +1,64 @@
+<!--
+  Copyright IBM Corp. 2015, 2015 All Rights Reserved
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  Limitations under the License.
+-->
+
+<project>
+    <!-- Bring build Dependencies-->
+    <target name="dependencies" >
+        <mkdir dir="dependencies" />
+        <get src="http://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/json-simple/json_simple-1.1.jar"
+            dest="dependencies/json_simple-1.1.jar"
+            verbose="true"
+            usetimestamp="true"/>
+        <get src="http://central.maven.org/maven2/ch/qos/logback/logback-classic/1.1.2/logback-classic-1.1.2.jar"
+            dest="dependencies/logback-classic-1.1.2.jar"
+            verbose="true"
+            usetimestamp="true"/>
+        <get src="http://central.maven.org/maven2/ch/qos/logback/logback-core/1.1.2/logback-core-1.1.2.jar"
+            dest="dependencies/logback-core-1.1.2.jar"
+            verbose="true"
+            usetimestamp="true"/>
+        <get src="http://central.maven.org/maven2/org/slf4j/slf4j-api/1.7.7/slf4j-api-1.7.7.jar"
+            dest="dependencies/slf4j-api-1.7.7.jar"
+            verbose="true"
+            usetimestamp="true"/>
+        <copy file="../install/storlets/roles/docker_storlet_engine_image/files/logback.xml"
+            tofile="dependencies/logback.xml"/>
+    </target>
+    <!-- Storlets Engine build -->
+    <!-- TODO(eranr): Get rid of the build.xml in Engine/agent, Engine/swift -->
+    <!-- TODO(eranr): Push this build.xml to the java subdirs -->
+    <macrodef name="iterate_engine">
+        <attribute name="target" />
+        <sequential>
+            <subant target="@{target}">
+                <fileset dir="SBus/SBusTransportLayer" includes="build.xml" />
+                <fileset dir="SBus/SBusJavaFacade" includes="build.xml" />
+                <fileset dir="SBus/SBusPythonFacade" includes="build.xml" />
+                <fileset dir="SCommon" includes="build.xml" />
+                <fileset dir="SDaemon" includes="build.xml" />
+                <fileset dir="SMScripts" includes="build.xml" />
+                <fileset dir="agent" includes="build.xml" />
+                <fileset dir="swift" includes="build.xml" />
+            </subant>
+        </sequential>
+    </macrodef>
+    <target name="build" depends="dependencies">
+        <iterate_engine target="build" />
+    </target>
+    <target name="clean">
+        <iterate_engine target="clean" />
+                <delete dir="dependencies" />
+    </target>
+</project>

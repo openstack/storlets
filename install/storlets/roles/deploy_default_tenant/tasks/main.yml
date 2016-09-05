@@ -105,7 +105,7 @@
   args:
     chdir: "/data/registry/repositories/default_tenant_image"
   register: command_result
-  failed_when: "'sha256:' not in command_result.stdout"
+  failed_when: "'Successfully built' not in command_result.stdout"
 
 - name: Push the default_tenant_image into the repository
   command: "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"

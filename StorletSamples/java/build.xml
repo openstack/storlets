@@ -1,0 +1,42 @@
+<!-- 
+  Copyright IBM Corp. 2015, 2015 All Rights Reserved
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  Limitations under the License.
+-->
+
+<project>
+    <!-- Storlets Samples build -->
+    <macrodef name="iterate_storlets">
+        <attribute name="target" />
+        <sequential>
+            <subant target="@{target}">
+                <fileset dir="TestStorlet" includes="build.xml" />
+                <fileset dir="ExecDepStorlet" includes="build.xml" />
+                <fileset dir="IdentityStorlet" includes="build.xml" />
+                <fileset dir="PartitionsIdentityStorlet" includes="build.xml" />
+                <fileset dir="TestMetadataStorlet" includes="build.xml" />
+                <fileset dir="HalfStorlet" includes="build.xml" />
+                <fileset dir="CompressStorlet" includes="build.xml" />
+                <fileset dir="ThumbnailStorlet" includes="build.xml" />
+            </subant>
+        </sequential>
+    </macrodef>
+
+    <target name="build">
+        <iterate_storlets target="build" />
+    </target>
+
+    <target name="clean">
+        <iterate_storlets target="clean" />
+    </target>
+
+</project>
