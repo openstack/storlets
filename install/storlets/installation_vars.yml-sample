@@ -20,6 +20,12 @@ proxy_group: [ "127.0.0.1" ]
 storage_group: [ "127.0.0.1" ]
 docker_group: [ "127.0.0.1" ]
 storlets_management_user: <MGMT_USER>
+storlet_management_account: "storlet_management"
+storlet_management_admin_username: "storlet_manager"
+storlet_manager_admin_password: "storlet_manager"
+storlets_default_tenant_name: "test"
+storlets_default_tenant_user_name: "tester"
+storlets_default_tenant_user_password: "testing"
 keystone_endpoint_host: 127.0.0.1
 keystone_admin_token: ADMIN
 keystone_admin_password: passw0rd

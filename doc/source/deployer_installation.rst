@@ -95,6 +95,12 @@ deployment example.
     storage_group: [ "192.168.56.220", "192.168.56.230", "192.168.56.240" ]
     docker_group: [ "192.168.56.200" ]
     storlets_management_user: root
+    storlet_management_account: "storlet_management"
+    storlet_management_admin_username: "storlet_manager"
+    storlet_manager_admin_password: "storlet_manager"
+    storlets_default_tenant_name: "test"
+    storlets_default_tenant_user_name: "tester"
+    storlets_default_tenant_user_password: "testing"
     keystone_endpoint_host: 192.168.56.200 
     keystone_admin_token: ADMIN
     swift_endpoint_host: 192.168.56.210
@@ -161,9 +167,9 @@ that do not appear in the above configurable installation_vars.yml
           "swift_run_time_user" : "{{ swift_run_time_user }}",
           "swift_run_time_group" : "{{ swift_run_time_group }}",
           "storlets_management_user": "{{ storlets_management_user }}",
-          "storlet_management_account": "storlet_management",
-          "storlet_management_admin_username": "storlet_manager",
-          "storlet_manager_admin_password": "storlet_manager",
+          "storlet_management_account": "{{ storlet_management_account }}",
+          "storlet_management_admin_username": "{{ storlet_management_admin_username }}",
+          "storlet_manager_admin_password": "{{ storlet_manager_admin_password }}",
           "storlet_management_swift_topology_container": "swift_cluster",
           "storlet_management_swift_topology_object": "cluster_config.json",
           "storlet_management_ansible_dir": "/opt/ibm/ansible/playbook",
@@ -177,9 +183,9 @@ that do not appear in the above configurable installation_vars.yml
           "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",
           "swift_user_id": "1003",
           "swift_group_id": "1003",
-          "storlets_default_tenant_name": "test",
-          "storlets_default_tenant_user_name": "tester",
-          "storlets_default_tenant_user_password": "testing",
+          "storlets_default_tenant_name": "{{ storlets_default_tenant_name }}",
+          "storlets_default_tenant_user_name": "{{ storlets_default_tenant_user_name }}",
+          "storlets_default_tenant_user_password": "{{ storlets_default_tenant_user_password }}",
           "storlet_middleware": "storlet_handler",
           "storlet_container": "storlet",
           "storlet_dependency": "dependency",
