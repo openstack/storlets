@@ -30,9 +30,9 @@
 - name: clone openstack ansible libraries (for keystone configuration)
   git: repo=https://github.com/openstack-ansible/openstack-ansible-modules.git
        dest={{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/openstack-ansible-modules
-       version="HEAD"
+       version="master"
 
 - name: Copy cluster_config.json to the swift install location
   copy: src="{{ playbook_dir }}/cluster_config.json" dest="{{ swift_install_reop_dir }}/{{ swift_install_repo_name }}/provisioning/cluster_config.json"
 
-- file: mode=1777 path="{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
+- file: mode=01777 path="{{ swift_install_reop_dir }}/{{swift_install_repo_name}}"
