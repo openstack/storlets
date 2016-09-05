@@ -18,25 +18,19 @@ class SimpleStorlet(object):
     def __init__(self, logger):
         self.logger = logger
 
-    def get_metadata(self):
-        # TODO(takashi): This is just for drafting interface
-        raise NotImplementedError()
+    def __call__(self, in_files, out_files, params):
+        """
+        The function called for storlet invocation
 
-    def get_body_iters(self):
-        # TODO(takashi): This is just for drafting interface
-        raise NotImplementedError()
-
-    def __call__(self, in_md, in_files, out_md_files, out_files, params):
+        :param in_files: a list of StorletInputFile
+        :param out_files: a list of StorletOutputFile
+        :param params: a dict of request parameters
+        """
         self.logger.debug('Returning metadata')
-        metadata = in_md[0]
+        metadata = in_files[0].get_metadata()
         metadata['test'] = 'simple'
-        out_md_files[0].dump(metadata)
+        out_files[0].set_metadata(metadata)
 
-        # TODO(takashi): Currently, we handle writing to fd inside storlet
-        #                application, but it should be handled in storlet
-        #                daemon. However, to realize that, we need to think
-        #                how we can return result data (maybe iterator to
-        #                read the processed body), in multi output case.
         self.logger.debug('Start to return object data')
         while True:
             buf = in_files[0].read(16)
