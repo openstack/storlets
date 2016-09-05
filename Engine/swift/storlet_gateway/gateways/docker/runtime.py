@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import errno
 import os
 import select
 import stat
@@ -581,15 +582,21 @@ class StorletInvocationProtocol(object):
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
 
     def _safe_close(self, fds):
+        """
+        Make sure that all of the file descriptors get closed
+
+        :param fds: a list of file descriptors
+        """
         for fd in fds:
-            if fd:
-                try:
-                    os.close(fd)
-                except OSError:
-                    # TODO(kota_): fd might be closed already, so if already
-                    # closed, OSError will be raised. we need more refactor to
-                    # keep clean the file discriptors.
-                    pass
+            try:
+                os.close(fd)
+            except OSError as err:
+                if err.errno != errno.BADFD:
+                    raise
+                # TODO(kota_): fd might be closed already, so if already
+                # closed, OSError will be raised. we need more refactor to
+                # keep clean the file discriptors.
+                pass
 
     def _close_remote_side_descriptors(self):
         """
