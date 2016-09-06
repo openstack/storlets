@@ -121,6 +121,15 @@ class StorletGatewayDocker(StorletGatewayBase):
         else:
             raise ValueError('Unsupported Language')
 
+        dep = params.get('Dependency')
+        if dep:
+            deps = dep.split(',')
+            if name in deps:
+                raise ValueError('Using the same name for storlet and '
+                                 'dependency is not allowed')
+            if len(deps) != len(set(deps)):
+                raise ValueError('Duplicated name in dependencies')
+
     @classmethod
     def validate_dependency_registration(cls, params, name):
         """

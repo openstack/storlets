@@ -243,6 +243,26 @@ use = egg:swift#catch_errors
         with self.assertRaises(ValueError):
             StorletGatewayDocker.validate_storlet_registration(params, obj)
 
+        # same name for storlet and dependency
+        obj = 'storlet-1.0.jar'
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'storlet-1.0.jar',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # duplicated name in dependencies
+        obj = 'storlet-1.0.jar'
+        params = {'Language': 'java',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file,dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'path.to.storlet.class'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
     def test_validate_dependency_registration(self):
         # w/o dependency parameter
         obj = 'dep_file'
