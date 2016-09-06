@@ -14,47 +14,46 @@
 -->
 <project>
 
-	<target name="clean">
-		<delete dir="bin" />
-		<delete file="org_openstack_storlet_sbus_SBusJNI.h"/>
-	</target>
+    <target name="clean">
+        <delete dir="bin" />
+        <delete file="org_openstack_storlet_sbus_SBusJNI.h"/>
+    </target>
 
-	<target name="java">
-		<mkdir dir="bin" />
-		<javac 
-		    srcdir="src" 
-		    destdir="bin"
-		    classpath="../../dependencies/json_simple-1.1.jar"
-			includeantruntime="false"/>
-	</target>
+    <target name="java">
+        <mkdir dir="bin" />
+        <javac
+            srcdir="src"
+            destdir="bin"
+            classpath="../../dependencies/json_simple-1.1.jar"
+            includeantruntime="false"/>
+    </target>
 
-	<target name="h" depends="java">
-		<javah destdir="." force="yes" classpath="bin">
-			<class name="org.openstack.storlet.sbus.SBusJNI" />
-		</javah>
-	</target>
+    <target name="h" depends="java">
+        <javah destdir="." force="yes" classpath="bin">
+            <class name="org.openstack.storlet.sbus.SBusJNI" />
+        </javah>
+    </target>
 
-	<target name="so" depends="h">
-		<exec dir="." executable="gcc">
-			<arg line="-shared -o bin/libjsbus.so -fPIC" />
-			<arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/" />
-			<arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/" />
-			<arg line="-I../SBusTransportLayer" />
-			<arg line="SBusJNI.c ../SBusTransportLayer/sbus.c" />
-		</exec>
-	</target>
+    <target name="so" depends="h">
+        <exec dir="." executable="gcc">
+            <arg line="-shared -o bin/libjsbus.so -fPIC" />
+            <arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/" />
+            <arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/" />
+            <arg line="-I../SBusTransportLayer" />
+            <arg line="SBusJNI.c ../SBusTransportLayer/sbus.c" />
+        </exec>
+    </target>
 
-	<target name="jar" depends="so">
-		<jar destfile="SBusJavaFacade.jar" basedir="bin">
-			<manifest>
-				<attribute name="Main-Class" 
-					       value="org.openstack.storlet.sbus.SBus" />
-			</manifest>
-		</jar>
-		<move file="SBusJavaFacade.jar" todir="bin/"/>
-	</target>
-	
+    <target name="jar" depends="so">
+        <jar destfile="SBusJavaFacade.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class"
+                           value="org.openstack.storlet.sbus.SBus" />
+            </manifest>
+        </jar>
+        <move file="SBusJavaFacade.jar" todir="bin/"/>
+    </target>
+
     <target name="build" depends="clean, jar">
     </target>
-	
 </project>

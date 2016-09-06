@@ -28,34 +28,34 @@ import org.slf4j.Logger;
 /*----------------------------------------------------------------------------
  * SPingTask
  * 
- * Instantiate AbstractTask class. The primary usage intent is to response 
+ * Instantiate AbstractTask class. The primary usage intent is to response
  * that this Storlet Daemon is running
  * */
 public class SPingTask extends SAbstractTask {
-	private OutputStream sOut_ = null;
+    private OutputStream sOut_ = null;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
-	public SPingTask(OutputStream sOut, Logger logger) {
-		super(logger);
-		this.sOut_ = sOut;
-	}
+    /*------------------------------------------------------------------------
+     * CTOR
+     * */
+    public SPingTask(OutputStream sOut, Logger logger) {
+        super(logger);
+        this.sOut_ = sOut;
+    }
 
-	/*------------------------------------------------------------------------
-	 * run
-	 * 
-	 * The actual response on "ping" command.
-	 * */
-	public boolean run() {
-		boolean bStatus = true;
-		try {
-			this.sOut_.write((new String("OK")).getBytes());
-		} catch (IOException e) {
-			e.printStackTrace();
-			bStatus = false;
-		}
-		return bStatus;
-	}
+    /*------------------------------------------------------------------------
+     * run
+     * 
+     * The actual response on "ping" command.
+     * */
+    public boolean run() {
+        boolean bStatus = true;
+        try {
+            this.sOut_.write((new String("OK")).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+            bStatus = false;
+        }
+        return bStatus;
+    }
 }
 /* ============================== END OF FILE =============================== */

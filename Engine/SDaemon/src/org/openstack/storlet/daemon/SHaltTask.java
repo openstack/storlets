@@ -25,15 +25,15 @@ import org.slf4j.Logger;
 /*----------------------------------------------------------------------------
  * SHaltTask
  * 
- * Instantiate AbstractTask class. The primary usage intent is to stop 
- * a relevant working thread. 
+ * Instantiate AbstractTask class. The primary usage intent is to stop
+ * a relevant working thread.
  * */
 public class SHaltTask extends SAbstractTask {
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
-	public SHaltTask(Logger logger) {
-		super(logger);
-	};
+    /*------------------------------------------------------------------------
+     * CTOR
+     * */
+    public SHaltTask(Logger logger) {
+        super(logger);
+    };
 }
 /* ============================== END OF FILE =============================== */

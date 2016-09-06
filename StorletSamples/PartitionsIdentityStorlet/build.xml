@@ -16,31 +16,31 @@
 
 <project>
 
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
 
-	<target name="java">
-		<mkdir dir="bin" />
-		<javac srcdir="src" destdir="bin"
-		       classpath="../../Engine/SCommon/bin/SCommon.jar"
-		       includeantruntime="false" />
-	</target>
+    <target name="java">
+        <mkdir dir="bin" />
+        <javac srcdir="src" destdir="bin"
+               classpath="../../Engine/SCommon/bin/SCommon.jar"
+               includeantruntime="false" />
+    </target>
 
-	<target name="jar" depends="java">
-		<jar destfile="partitionsidentitystorlet-1.0.jar" basedir="bin">
-			<manifest>
-				<attribute name="Main-Class"
-				           value="org.openstack.storlet.PartitionsIdentityStorlet" />
-			</manifest>
-		</jar>
-		<move file="partitionsidentitystorlet-1.0.jar" todir="bin" />
-	</target>
+    <target name="jar" depends="java">
+        <jar destfile="partitionsidentitystorlet-1.0.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class"
+                           value="org.openstack.storlet.PartitionsIdentityStorlet" />
+            </manifest>
+        </jar>
+        <move file="partitionsidentitystorlet-1.0.jar" todir="bin" />
+    </target>
 
-	<target name="text">
-		<copy file="records.txt" toFile="bin/records.txt" />
-	</target>
+    <target name="text">
+        <copy file="records.txt" toFile="bin/records.txt" />
+    </target>
 
-	<target name="build" depends="clean, jar, text">
-	</target>
+    <target name="build" depends="clean, jar, text">
+    </target>
 </project>

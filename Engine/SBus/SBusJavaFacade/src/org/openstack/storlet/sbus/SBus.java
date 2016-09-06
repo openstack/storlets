@@ -29,63 +29,63 @@ import org.openstack.storlet.sbus.SBusBackend.eLogLevel;
  * The front end Java class for SBus functionality.
  * */
 public class SBus {
-	private SBusHandler hServerSideSBus_;
-	private SBusBackend SBusBack_;
+    private SBusHandler hServerSideSBus_;
+    private SBusBackend SBusBack_;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * 
-	 * Instantiate the SBusBackend object. Start logging
-	 * */
-	public SBus(final String contId) throws IOException {
-		SBusBack_ = new SBusBackend();
-		SBusBack_.startLogger(eLogLevel.SBUS_LOG_DEBUG, contId);
-	}
+    /*------------------------------------------------------------------------
+     * CTOR
+     * 
+     * Instantiate the SBusBackend object. Start logging
+     * */
+    public SBus(final String contId) throws IOException {
+        SBusBack_ = new SBusBackend();
+        SBusBack_.startLogger(eLogLevel.SBUS_LOG_DEBUG, contId);
+    }
 
-	/*------------------------------------------------------------------------
-	 * create
-	 * 
-	 * Initialize the server side SBus
-	 * */
-	public void create(final String strPath) throws IOException {
-		hServerSideSBus_ = SBusBack_.createSBus(strPath);
-	}
+    /*------------------------------------------------------------------------
+     * create
+     * 
+     * Initialize the server side SBus
+     * */
+    public void create(final String strPath) throws IOException {
+        hServerSideSBus_ = SBusBack_.createSBus(strPath);
+    }
 
-	/*------------------------------------------------------------------------
-	 * listen
-	 * 
-	 * Listen to the SBus. Suspend the executing thread
-	 * */
-	public void listen() throws IOException {
-		SBusBack_.listenSBus(hServerSideSBus_);
-	}
+    /*------------------------------------------------------------------------
+     * listen
+     * 
+     * Listen to the SBus. Suspend the executing thread
+     * */
+    public void listen() throws IOException {
+        SBusBack_.listenSBus(hServerSideSBus_);
+    }
 
-	/*------------------------------------------------------------------------
-	 * receive
-	 * */
-	public ServerSBusInDatagram receive() throws Exception {
-		SBusRawMessage Msg = SBusBack_.receiveRawMessage(hServerSideSBus_);
-		ServerSBusInDatagram Dtg = new ServerSBusInDatagram(Msg);
-		return Dtg;
-	}
+    /*------------------------------------------------------------------------
+     * receive
+     * */
+    public ServerSBusInDatagram receive() throws Exception {
+        SBusRawMessage Msg = SBusBack_.receiveRawMessage(hServerSideSBus_);
+        ServerSBusInDatagram Dtg = new ServerSBusInDatagram(Msg);
+        return Dtg;
+    }
 
-	/*------------------------------------------------------------------------
-	 * send
-	 * */
-	public void send(final String strSBusPath, final ServerSBusOutDatagram Dtg)
-			throws IOException {
+    /*------------------------------------------------------------------------
+     * send
+     * */
+    public void send(final String strSBusPath, final ServerSBusOutDatagram Dtg)
+            throws IOException {
 
-		SBusRawMessage Msg = Dtg.toRawMessage();
-		SBusBack_.sendRawMessage(strSBusPath, Msg);
-	}
+        SBusRawMessage Msg = Dtg.toRawMessage();
+        SBusBack_.sendRawMessage(strSBusPath, Msg);
+    }
 
-	/*------------------------------------------------------------------------
-	 * DTOR
-	 * 
-	 * Stop logging
-	 * */
-	public void finalize() {
-		SBusBack_.stopLogger();
-	}
+    /*------------------------------------------------------------------------
+     * DTOR
+     * 
+     * Stop logging
+     * */
+    public void finalize() {
+        SBusBack_.stopLogger();
+    }
 }
 /* ============================== END OF FILE =============================== */

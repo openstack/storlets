@@ -14,29 +14,23 @@
 -->
 
 <project>
-
-	<target name="common">
-		<mkdir dir="bin" />
-	</target>
-		
-	<target name="test">
-		<javac srcdir="src/org/openstack/storlet/test" destdir="bin" includeantruntime="false">
-			<classpath>
-		        <pathelement 
-		        	path="../../Engine/SCommon/bin/SCommon.jar"/>
-			</classpath>
-		</javac>
-
-	     <jar destfile="bin/test-10.jar" 
-	          basedir="bin"
-	     	  includes="org/openstack/storlet/test/*">
-	     </jar>
-	</target>
-	
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
-	
-	<target name="build" depends="clean, common, test"/>
-
+    <target name="common">
+        <mkdir dir="bin" />
+    </target>
+    <target name="test">
+        <javac srcdir="src/org/openstack/storlet/test" destdir="bin" includeantruntime="false">
+            <classpath>
+                <pathelement
+                    path="../../Engine/SCommon/bin/SCommon.jar"/>
+            </classpath>
+        </javac>
+        <jar destfile="bin/test-10.jar"
+             basedir="bin"
+             includes="org/openstack/storlet/test/*">
+        </jar>
+    </target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
+    <target name="build" depends="clean, common, test"/>
 </project>

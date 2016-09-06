@@ -123,14 +123,14 @@ int sbus_create( const char* str_sbus_path )
             close(n_sbus_handle);
         }
 
-    	char mode[] = "0777";
+        char mode[] = "0777";
         n_status = chmod( str_sbus_path, strtol(mode, 0, 8) );
         if( 0 != n_status )
         {
-        	syslog( LOG_ERR,
-        			"sbus_create: Failed to set socket permissions. %s",
-        			strerror(errno) );
-        	close(n_sbus_handle);
+            syslog( LOG_ERR,
+                    "sbus_create: Failed to set socket permissions. %s",
+                    strerror(errno) );
+            close(n_sbus_handle);
         }
 
         int nReuse = 1;
@@ -226,12 +226,12 @@ int dump_data_to_bytestream( char** pp_bytestream,
         int n_offset = 0;
         memcpy( *pp_bytestream + n_offset, (void*) &n_files, int_size );
         n_offset += int_size;
-        memcpy( *pp_bytestream + n_offset, (void*) &n_files_metadata_len, 
+        memcpy( *pp_bytestream + n_offset, (void*) &n_files_metadata_len,
                 int_size );
         n_offset += int_size;
         memcpy( *pp_bytestream + n_offset, (void*) &n_msg_len, int_size );
         n_offset += int_size;
-	memcpy( *pp_bytestream + n_offset, (void*) str_files_metadata,
+    memcpy( *pp_bytestream + n_offset, (void*) str_files_metadata,
                 n_files_metadata_len );
         n_offset += n_files_metadata_len;
         memcpy( *pp_bytestream + n_offset, (void*) str_msg_data, n_msg_len );
@@ -327,7 +327,7 @@ int sbus_send_msg( const char* str_sbus_path,
                                   n_files_metadata_len,
                                   str_msg_data,
                                   n_msg_len );
- 
+
     if( 0 > n_status ) {
         close( n_sock );
     } else {
@@ -375,7 +375,7 @@ int sbus_extract_integer( const char* p_str )
  * Caller shall free the allocated chunk.
  */
 static
-char* sbus_copy_substr(	const char* p_src,
+char* sbus_copy_substr( const char* p_src,
                         int n_len )
 {
     char* p_dst = (char*) malloc( n_len + 1 );
@@ -390,7 +390,7 @@ char* sbus_copy_substr(	const char* p_src,
  * Caller shall free the allocated chunk.
  */
 static
-int sbus_extract_files(	struct msghdr* p_msg,
+int sbus_extract_files( struct msghdr* p_msg,
                         int n_files,
                         int** pp_files )
 {
@@ -466,8 +466,8 @@ int sbus_recv_msg( int n_sbus_handler,
     int n_msg_len = recvmsg( n_sbus_handler, &recv_msg, 0 );
     if( n_msg_len < 0 ) {
         syslog(LOG_ERR, "sbus_recv_msg: recvmsg failed. %s", strerror(errno));
-	close(n_sbus_handler);
-	n_status = -1;
+    close(n_sbus_handler);
+    n_status = -1;
     }
 
     if( 0 <= n_status ) {

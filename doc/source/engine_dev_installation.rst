@@ -56,7 +56,7 @@ To configure Keystone you would also need to:
 ::
 
     sudo apt-get install python-openstackclient
- 
+
 
 Initial Keystone Configutation
 ------------------------------
@@ -66,8 +66,8 @@ change the below command accordingly.
 
 ::
 
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ service create identity 
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ endpoint create --publicurl http://127.0.0.1:5000/v2.0 --adminurl http://127.0.0.1:35357/v2.0 identity 
+    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ service create identity
+    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ endpoint create --publicurl http://127.0.0.1:5000/v2.0 --adminurl http://127.0.0.1:35357/v2.0 identity
     openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ service create object-store
     openstack --os-url http://127.0.0.1:35357/v2.0/ --os-token ADMIN endpoint create --publicurl 'http://127.0.0.1:8080/v1/AUTH_$(tenant_id)s' object-store
 
@@ -214,19 +214,19 @@ with the following content:
     apt-get install openjdk-8-jre -y && \
     apt-get clean
 
-    COPY logback-classic-1.1.2.jar	/opt/storlets/
+    COPY logback-classic-1.1.2.jar  /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/logback-classic-1.1.2.jar"]
 
-    COPY logback-core-1.1.2.jar	/opt/storlets/
+    COPY logback-core-1.1.2.jar /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/logback-core-1.1.2.jar"]
 
-    COPY logback.xml	/opt/storlets/
+    COPY logback.xml    /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
 
-    COPY slf4j-api-1.7.7.jar	/opt/storlets/
+    COPY slf4j-api-1.7.7.jar    /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/slf4j-api-1.7.7.jar"]
 
-    COPY json_simple-1.1.jar	/opt/storlets/
+    COPY json_simple-1.1.jar    /opt/storlets/
     RUN ["chmod", "0744", "/opt/storlets/json_simple-1.1.jar"]
 
 Build the image
@@ -417,7 +417,7 @@ In a SAIO environment these would be:
 /etc/swift/object-server/1.conf through /etc/swift/object-server/4.conf
 otherwise the file is typically /etc/swift/object-server.conf
 
- 1. Add the storlet_handler to the object server pipline just before the slo object-server as shown below: 
+ 1. Add the storlet_handler to the object server pipline just before the slo object-server as shown below:
 
  ::
 

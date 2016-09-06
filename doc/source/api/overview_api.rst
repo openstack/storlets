@@ -46,7 +46,7 @@ The storlet may depend on other existing libraries, which must be uploaded to th
 
 When uploading a storlet,
 the X-Object-Meta-Storlet-Dependency header requires a value that is a comma separated list of dependencies.
-The main_class_name parameter for the X-Object-Meta-Storlet-Main header specifies the class in which the invoke 
+The main_class_name parameter for the X-Object-Meta-Storlet-Main header specifies the class in which the invoke
 method of the storlet is defined.
 The X-Object-Meta-Storlet-Language header specified the language in which the storlet is run.
 At present, only 'Java' is supported.
@@ -100,19 +100,19 @@ Once the storlet and its dependencies are deployed the storlet is ready for invo
 Storlets can be invoked in 3 ways:
 
 #. Invocation upon object download.
-        In this case the user gets a transformation of the object residing in the store (as opposed to the actual object).
-	One use case for GET is anonymization, where the user might not have access to certain data unless it is
-	being anonymized by some storlet.
+    In this case the user gets a transformation of the object residing in the store (as opposed to the actual object).
+    One use case for GET is anonymization, where the user might not have access to certain data unless it is
+    being anonymized by some storlet.
 
 #. Invocation upon object upload.
-	In this case the data kept in the object store is a transformation of the object uploaded by the user
-	(as opposed to the original data or metadata).
-	A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data
-	and adds it as Swift metadata.
+    In this case the data kept in the object store is a transformation of the object uploaded by the user
+    (as opposed to the original data or metadata).
+    A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data
+    and adds it as Swift metadata.
 
 #. Invocation upon object copy.
-        In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
-        thumbnail extraction from an existing jpg.
+    In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
+    thumbnail extraction from an existing jpg.
 
 Invocation involves adding an extra header ('X-Run-Storlet') to the Swift original PUT/GET/COPY requests.
 Additional details and examples can be found in <https://github.com/openstack/storlets/blob/master/doc/source/invoking_storlets.rst>.

@@ -32,38 +32,38 @@ import org.slf4j.Logger;
  * a timeout is encountered)
  * */
 public class SCancelTask extends SAbstractTask {
-	private OutputStream sOut_ = null;
-	private String taskId_ = null;
+    private OutputStream sOut_ = null;
+    private String taskId_ = null;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
-	public SCancelTask(OutputStream sOut, Logger logger, String taskId) {
-		super(logger);
-		this.sOut_ = sOut;
-		this.taskId_ = taskId;
-	}
+    /*------------------------------------------------------------------------
+     * CTOR
+     * */
+    public SCancelTask(OutputStream sOut, Logger logger, String taskId) {
+        super(logger);
+        this.sOut_ = sOut;
+        this.taskId_ = taskId;
+    }
 
-	public String getTaskId() {
-		return taskId_;
-	}
+    public String getTaskId() {
+        return taskId_;
+    }
 
-	public OutputStream getSOut() {
-		return sOut_;
-	}
+    public OutputStream getSOut() {
+        return sOut_;
+    }
 
-	/*------------------------------------------------------------------------
-	 * run
-	 * */
-	public boolean run() {
-		boolean bStatus = true;
-		try {
-			this.sOut_.write((new String("OK")).getBytes());
-		} catch (IOException e) {
-			e.printStackTrace();
-			bStatus = false;
-		}
-		return bStatus;
-	}
+    /*------------------------------------------------------------------------
+     * run
+     * */
+    public boolean run() {
+        boolean bStatus = true;
+        try {
+            this.sOut_.write((new String("OK")).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+            bStatus = false;
+        }
+        return bStatus;
+    }
 }
 /* ============================== END OF FILE =============================== */

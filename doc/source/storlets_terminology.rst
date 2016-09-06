@@ -41,7 +41,7 @@ different ways:
    rather then the uploaded data and metadata.
 #. Invoke a storlet on object copy. This is a way to invoke a storlet over an existing
    data object, where the storlet's output is kept in a newly crerated object. In a regular
-   Swift copy the newly created object is a identical to the source object. 
+   Swift copy the newly created object is a identical to the source object.
 
 ------------------
 The Storlet Engine
@@ -51,7 +51,7 @@ and invoke it over Swift data objects in an isolated manner (inside a Docker con
 In a nutshell the engine intercepts invocation requests, route the input data stream into
 the storlet and receives back the storlet output stream. The engine is implemented as a Swift
 middleware.
-  
+
 -----
 Roles
 -----

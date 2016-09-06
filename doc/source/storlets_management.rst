@@ -14,7 +14,7 @@ Creating a Storlet enabled Tenant
 The operation of creating a Storlet enabled tenant is made of the following steps:
 
 #. Create a new tenant in Keystone, together with a tenant admin user.
-#. Enable the corresponding Swift account for storlets, including the creation of the Storlet specific containers 
+#. Enable the corresponding Swift account for storlets, including the creation of the Storlet specific containers
    whose default names are: storlet, dependency, storletlog and  docker_images
 #. Upload the default Storlets image to the account's docker_images container.
 
@@ -33,7 +33,7 @@ were provided to the initial installation script as described in <https://github
 
 Below is a sample invocation:
 
-:: 
+::
 
   root@lnx-ccs8:/opt/ibm# ./add_new_tenant.py
   ./add_new_tenant.py <tenant_name> <user_name> <user_password>
@@ -94,12 +94,12 @@ Below is a sample invocation:
 Deploying a Tenant Image
 ========================
 Recall that in the Docker image build (described in <https://github.com/openstack/storlets/blob/master/doc/source/building_and_deploying_docker_images.rst>) the image was given a name
-(specified after -t in the docker build command) and was uploaded as a .tar file to the tenant's docker_images Swift container. 
+(specified after -t in the docker build command) and was uploaded as a .tar file to the tenant's docker_images Swift container.
 When deploying an image, the Storlet's admin needs to provide the tenant name, the .tar object name and the image name.
 
 Running the deployment task
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Following the example from the build image instructions, the image name is called service_tenant_image 
+Following the example from the build image instructions, the image name is called service_tenant_image
 and the object name that was uploaded is service_tenant_image.tar, and so we execute:
 
 ::

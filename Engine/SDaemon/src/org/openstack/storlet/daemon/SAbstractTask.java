@@ -26,10 +26,10 @@ import org.slf4j.Logger;
  * */
 public class SAbstractTask {
 
-	protected Logger logger;
+    protected Logger logger;
 
-	public SAbstractTask(Logger logger) {
-		this.logger = logger;
-	}
+    public SAbstractTask(Logger logger) {
+        this.logger = logger;
+    }
 
 }

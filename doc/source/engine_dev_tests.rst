@@ -24,7 +24,7 @@ The main build task in build.xml is dependent on two other build tasks:
     * storlet_middleware
     * storlet_gateway
 
-  #. The SBus code. This is the communication module between the gateway and the Docker container. It has a transport layer written in "C" with 
+  #. The SBus code. This is the communication module between the gateway and the Docker container. It has a transport layer written in "C" with
      'bindings' to both Java and Python.
   #. The Python written storlet_factory_daemon, which is packaged for installation in a Docker image
   #. The Java SDaemon code, which is the daemon code that loads the storlets in run time. This code is compiled to a .jar that is later installed
@@ -39,10 +39,10 @@ Two additional tasks of interest in our build.xml are the deploy_host_engine and
 These tasks are based on the Ansible installation scripts and do the following:
 
 #. deploy_host_engine would get all the code that is relevant to the host side
-   (python middleware and SBus) and deploy it on the hosts as descrined in the 
+   (python middleware and SBus) and deploy it on the hosts as descrined in the
    cluster_config.json file
 #. deploy_container_engine, would create an updated image of the tenant defined
-   in the cluster_config.json and distribute it to all nodes as defined in 
+   in the cluster_config.json and distribute it to all nodes as defined in
    the configuration.
 
 -----------------

@@ -22,17 +22,17 @@
         <mkdir dir="bin" />
         <javac srcdir="src" destdir="bin" includeantruntime="false">
             <classpath>
-                <pathelement 
+                <pathelement
                     path="../SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"/>
-                <pathelement 
+                <pathelement
                     path="../SCommon/bin/SCommon.jar"/>
-                <pathelement 
+                <pathelement
                     path="../dependencies/json_simple-1.1.jar"/>
-                <pathelement 
+                <pathelement
                     path="../dependencies/slf4j-api-1.7.7.jar"/>
-                <pathelement 
+                <pathelement
                     path="../dependencies/logback-classic-1.1.2.jar"/>
-                <pathelement 
+                <pathelement
                     path="../dependencies/logback-core-1.1.2.jar"/>
                 <pathelement path="."/>
             </classpath>
@@ -40,11 +40,11 @@
     </target>
 
     <target name="jar" depends="java">
-        <jar destfile="SDaemon.jar" 
+        <jar destfile="SDaemon.jar"
              basedir="bin">
             <manifest>
-                <attribute 
-                 name="Main-Class" 
+                <attribute
+                 name="Main-Class"
                  value="org.openstack.storlet.daemon.SDaemon" />
             </manifest>
         </jar>

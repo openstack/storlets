@@ -39,58 +39,58 @@ import org.openstack.storlet.common.StorletOutputStream;
 import org.openstack.storlet.common.StorletUtils;
 
 public class CompressStorlet implements IStorlet {
-	@Override
-	public void invoke(ArrayList<StorletInputStream> inputStreams,
-			ArrayList<StorletOutputStream> outputStreams,
-			Map<String, String> parameters, StorletLogger log)
-			throws StorletException {
-		log.emitLog("CompressStorlet Invoked");
+    @Override
+    public void invoke(ArrayList<StorletInputStream> inputStreams,
+            ArrayList<StorletOutputStream> outputStreams,
+            Map<String, String> parameters, StorletLogger log)
+            throws StorletException {
+        log.emitLog("CompressStorlet Invoked");
 
-		StorletInputStream sis = inputStreams.get(0);
-		InputStream is = sis.getStream();
-		HashMap<String, String> metadata = sis.getMetadata();
+        StorletInputStream sis = inputStreams.get(0);
+        InputStream is = sis.getStream();
+        HashMap<String, String> metadata = sis.getMetadata();
 
-		final int COMPRESS = 0;
-		final int UNCOMPRESS = 1;
+        final int COMPRESS = 0;
+        final int UNCOMPRESS = 1;
 
-		int action = COMPRESS;
-		/*
-		 * Get optional action flag
-		 */
+        int action = COMPRESS;
+        /*
+         * Get optional action flag
+         */
                 String action_str = parameters.get("action");
-		if (action_str != null && action_str.equals("uncompress"))
-		{
-			action = UNCOMPRESS;
-		}
+        if (action_str != null && action_str.equals("uncompress"))
+        {
+            action = UNCOMPRESS;
+        }
 
-		StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream)outputStreams.get(0);
-		storletObjectOutputStream.setMetadata(metadata);
-		OutputStream outputStream = storletObjectOutputStream.getStream();
-		try {
-			byte[] buffer = new byte[65536];
-			int len;
-			if (action == COMPRESS) {
-				GZIPOutputStream gzipOS = new GZIPOutputStream(outputStream);
-				while((len=is.read(buffer)) != -1) {
-					gzipOS.write(buffer, 0, len);
-				}
-				gzipOS.close();
-			} else {
-				GZIPInputStream gzipIS = new GZIPInputStream(is);
-				while((len = gzipIS.read(buffer)) != -1) {
-					outputStream.write(buffer, 0, len);
-				}
-				gzipIS.close();
-			}
-		} catch (IOException e) {
-			log.emitLog("CompressExample - raised IOException: " + e.getMessage());
-		} finally {
-			try {
-				is.close();
-				outputStream.close();
-			} catch (IOException e) {
-			}
-		}
-		log.emitLog("CompressStorlet Invocation done");
+        StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream)outputStreams.get(0);
+        storletObjectOutputStream.setMetadata(metadata);
+        OutputStream outputStream = storletObjectOutputStream.getStream();
+        try {
+            byte[] buffer = new byte[65536];
+            int len;
+            if (action == COMPRESS) {
+                GZIPOutputStream gzipOS = new GZIPOutputStream(outputStream);
+                while((len=is.read(buffer)) != -1) {
+                    gzipOS.write(buffer, 0, len);
+                }
+                gzipOS.close();
+            } else {
+                GZIPInputStream gzipIS = new GZIPInputStream(is);
+                while((len = gzipIS.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, len);
+                }
+                gzipIS.close();
+            }
+        } catch (IOException e) {
+            log.emitLog("CompressExample - raised IOException: " + e.getMessage());
+        } finally {
+            try {
+                is.close();
+                outputStream.close();
+            } catch (IOException e) {
+            }
+        }
+        log.emitLog("CompressStorlet Invocation done");
         }
 }

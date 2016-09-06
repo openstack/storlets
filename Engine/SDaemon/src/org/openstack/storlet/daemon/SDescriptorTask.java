@@ -28,39 +28,39 @@ import org.openstack.storlet.common.*;
  * 
  * */
 public class SDescriptorTask extends SAbstractTask {
-	private ObjectRequestsTable requestsTable_ = null;
-	private StorletObjectOutputStream objStream_ = null;
-	private String strKey_ = null;
+    private ObjectRequestsTable requestsTable_ = null;
+    private StorletObjectOutputStream objStream_ = null;
+    private String strKey_ = null;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * */
-	public SDescriptorTask(StorletObjectOutputStream objStream,
-			final String key, ObjectRequestsTable requestsTable, Logger logger) {
-		super(logger);
-		this.requestsTable_ = requestsTable;
-		this.objStream_ = objStream;
-		this.strKey_ = key;
-	}
+    /*------------------------------------------------------------------------
+     * CTOR
+     * */
+    public SDescriptorTask(StorletObjectOutputStream objStream,
+            final String key, ObjectRequestsTable requestsTable, Logger logger) {
+        super(logger);
+        this.requestsTable_ = requestsTable;
+        this.objStream_ = objStream;
+        this.strKey_ = key;
+    }
 
-	/*------------------------------------------------------------------------
-	 * run
-	 * */
-	public void run() {
-		logger.trace("StorletDescriptorTask: " + "run going to extract key "
-				+ strKey_);
-		ObjectRequestEntry entry = requestsTable_.Get(strKey_);
-		logger.trace("StorletDescriptorTask: " + "run got entry "
-				+ entry.toString());
-		try {
-			logger.trace("StorletDescriptorTask: "
-					+ "run puttting the obj stream in the entry ");
-			entry.put(objStream_);
-			logger.trace("StorletDescriptorTask: "
-					+ "run obj stream is in the table ");
-		} catch (InterruptedException e) {
-			logger.error("InterruptedException while putting obj stream");
-		}
-	}
+    /*------------------------------------------------------------------------
+     * run
+     * */
+    public void run() {
+        logger.trace("StorletDescriptorTask: " + "run going to extract key "
+                + strKey_);
+        ObjectRequestEntry entry = requestsTable_.Get(strKey_);
+        logger.trace("StorletDescriptorTask: " + "run got entry "
+                + entry.toString());
+        try {
+            logger.trace("StorletDescriptorTask: "
+                    + "run puttting the obj stream in the entry ");
+            entry.put(objStream_);
+            logger.trace("StorletDescriptorTask: "
+                    + "run obj stream is in the table ");
+        } catch (InterruptedException e) {
+            logger.error("InterruptedException while putting obj stream");
+        }
+    }
 }
 /* ============================== END OF FILE =============================== */

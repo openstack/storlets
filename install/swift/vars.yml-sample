@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # Limitations under the License.
 #---------------------------------------------------------------------------
-           
 swift_install_reop_dir: <set dir!>
 #swift_install_repo_url: https://github.com/Open-I-Beam/swift-install.git
 swift_install_repo_url: https://github.com/eranr/storlets-swift-install.git

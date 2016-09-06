@@ -7,7 +7,7 @@ set -eu
 # This is a dev oriented Swift installation that
 # uses Keystone and a single device for all rings.
 # TODO: Move swift ansible scripts pull from here
-# to the swift-install module 
+# to the swift-install module
 
 # The script takes a block device name as an optional parameter
 # The device name can be either 'loop0' or any block device under /dev

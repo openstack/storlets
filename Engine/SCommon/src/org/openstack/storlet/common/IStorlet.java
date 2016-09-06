@@ -23,8 +23,8 @@ import java.util.ArrayList;
 import java.util.Map;
 
 public interface IStorlet {
-	public void invoke(ArrayList<StorletInputStream> inStreams,
-			ArrayList<StorletOutputStream> outStreams,
-			Map<String, String> parameters, StorletLogger logger)
-			throws StorletException;
+    public void invoke(ArrayList<StorletInputStream> inStreams,
+            ArrayList<StorletOutputStream> outStreams,
+            Map<String, String> parameters, StorletLogger logger)
+            throws StorletException;
 }

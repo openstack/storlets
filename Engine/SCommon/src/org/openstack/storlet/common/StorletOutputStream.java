@@ -26,22 +26,22 @@ import java.io.OutputStream;
 import java.util.HashMap;
 
 public class StorletOutputStream {
-	private HashMap<String, String> metadata;
-	protected OutputStream stream;
+    private HashMap<String, String> metadata;
+    protected OutputStream stream;
 
-	public StorletOutputStream(FileDescriptor fd, HashMap<String, String> md) {
-		stream = ((OutputStream) (new FileOutputStream(fd)));
-		metadata = md;
-	}
+    public StorletOutputStream(FileDescriptor fd, HashMap<String, String> md) {
+        stream = ((OutputStream) (new FileOutputStream(fd)));
+        metadata = md;
+    }
 
-	public HashMap<String, String> getMetadata() {
-		return metadata;
-	}
+    public HashMap<String, String> getMetadata() {
+        return metadata;
+    }
 
-	public void close(){
-		try{
-			stream.close();
-		} catch (IOException e) {
-		}
-	}
+    public void close(){
+        try{
+            stream.close();
+        } catch (IOException e) {
+        }
+    }
 }

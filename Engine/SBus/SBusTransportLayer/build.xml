@@ -14,17 +14,17 @@
 -->
 
 <project>
-	<target name="so">
+    <target name="so">
         <mkdir dir="bin" />
-		<exec dir="." executable="gcc">
-			<arg line="-shared -o bin/sbus.so sbus.c -O2 -fPIC" />
-		</exec>
-	</target>
+        <exec dir="." executable="gcc">
+            <arg line="-shared -o bin/sbus.so sbus.c -O2 -fPIC" />
+        </exec>
+    </target>
 
-	<target name="clean">
+    <target name="clean">
         <delete dir="bin" />
-	</target>
+    </target>
 
-	<target name="build" depends="so">
-	</target>
+    <target name="build" depends="so">
+    </target>
 </project>

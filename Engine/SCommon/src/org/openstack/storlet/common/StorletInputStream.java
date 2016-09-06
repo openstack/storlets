@@ -24,30 +24,30 @@ import java.io.IOException;
 import java.util.HashMap;
 
 public class StorletInputStream {
-	private HashMap<String, String> metadata;
-	protected InputStream stream;
+    private HashMap<String, String> metadata;
+    protected InputStream stream;
 
-	public StorletInputStream(FileDescriptor fd, HashMap<String, String> md) {
-		stream = ((InputStream) (new FileInputStream(fd)));
-		metadata = md;
-	}
+    public StorletInputStream(FileDescriptor fd, HashMap<String, String> md) {
+        stream = ((InputStream) (new FileInputStream(fd)));
+        metadata = md;
+    }
 
-	protected StorletInputStream(HashMap<String, String> md) {
-		metadata = md;
-	}
+    protected StorletInputStream(HashMap<String, String> md) {
+        metadata = md;
+    }
 
-	public HashMap<String, String> getMetadata() {
-		return metadata;
-	}
+    public HashMap<String, String> getMetadata() {
+        return metadata;
+    }
 
-	public InputStream getStream() {
-		return stream;
-	}
+    public InputStream getStream() {
+        return stream;
+    }
 
-	public void close() {
-		try {
-			stream.close();
-		} catch (IOException e) {
-		}
-	}
+    public void close() {
+        try {
+            stream.close();
+        } catch (IOException e) {
+        }
+    }
 }

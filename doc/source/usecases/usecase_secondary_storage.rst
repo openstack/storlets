@@ -5,7 +5,7 @@ It is said that the primary use case for object stores is to serve as secondary
 storage. With the increasing amount of data being gathered and analysed
 (have someone said IoT?) much of this data will make it to seconadry storage.
 
-Being kept on secondary storage does not mean that the data does not 
+Being kept on secondary storage does not mean that the data does not
 need to be queriable anymore: A recent identified trend may be searched
 for in older data that was moved to secondary storage. Storlets allow an
 efficient and simple querying of data that resides in Swift.
