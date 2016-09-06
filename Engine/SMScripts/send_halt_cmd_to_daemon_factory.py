@@ -25,7 +25,7 @@ def print_usage(argv):
     print(argv[0] + ' /path/to/daemon/factory_pipe')
     print('Example:')
     sys.stdout.write(argv[0] + ' ')
-    print('/home/lxc_device/pipes/scopes/'
+    print('/home/docker_device/pipes/scopes/'
           'AUTH_fb8b63c579054c48816ca8acd090b3d9/factory_pipe')
 
 

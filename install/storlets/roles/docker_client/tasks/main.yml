@@ -55,13 +55,13 @@
 # Otherwise, install the conf files from templates.
 - stat: path=/etc/default/docker
   register: st1
-- shell: grep {{ lxc_device }} /etc/default/docker | wc -l
+- shell: grep {{ docker_device }} /etc/default/docker | wc -l
   register: edited
 - name: Configure the Docker client to use the LXC block device.
   lineinfile:
     dest: /etc/default/docker
     regexp: "^DOCKER_OPTS.*"
-    line: DOCKER_OPTS="-g {{ lxc_device }}/docker --insecure-registry {{ groups['docker'][0]}}:{{ docker_registry_port }}"
+    line: DOCKER_OPTS="-g {{ docker_device }}/docker --insecure-registry {{ groups['docker'][0]}}:{{ docker_registry_port }}"
     backup: yes
     state: present
   when: st1.stat.exists and '0' in edited.stdout

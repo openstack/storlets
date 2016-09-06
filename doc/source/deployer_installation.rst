@@ -107,7 +107,7 @@ deployment example.
     swift_endpoint_port: 80
     swift_run_time_user: swift
     swift_run_time_group: swift
-    lxc_device: /srv/node/sdb
+    docker_device: /srv/node/sdb
 
 This file is used for creating the cluster_config.json which is
 used by the Ansible installation. We give a full description of
@@ -153,7 +153,7 @@ that do not appear in the above configurable installation_vars.yml
           "docker": [ "192.168.56.200" ]
       },
       "all" : {
-          "lxc_device": "{{ lxc_device }}",
+          "docker_device": "{{ docker_device }}",
           "storlet_source_dir": "~/storlets",
           "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
           "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",

@@ -20,7 +20,7 @@
   shell: rm -fr /usr/local/lib/python2.7/dist-packages/sbus.so
 
 - name: remove run time
-  shell: rm -fr {{ lxc_device }}/{{ item }}
+  shell: rm -fr {{ docker_device }}/{{ item }}
   with_items:
   - cache
   - storlets

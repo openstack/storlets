@@ -32,4 +32,4 @@ swift_endpoint_host: 127.0.0.1
 swift_endpoint_port: 80
 swift_run_time_user: <SWIFT_RUNTIME_USER>
 swift_run_time_group: <SWIFT_RUNTIME_GROUP>
-lxc_device: /home/docker_device
+docker_device: /home/docker_device

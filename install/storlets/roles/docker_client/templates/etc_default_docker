@@ -4,7 +4,7 @@
 #DOCKER="/usr/local/bin/docker"
 
 # Use DOCKER_OPTS to modify the daemon startup options.
-DOCKER_OPTS="-g {{ lxc_device }}/docker --insecure-registry {{groups['docker'][0] }}:{{ docker_registry_port }}"
+DOCKER_OPTS="-g {{ docker_device }}/docker --insecure-registry {{groups['docker'][0] }}:{{ docker_registry_port }}"
 
 # If you need Docker to use an HTTP proxy, it can also be specified here.
 #export http_proxy="http://127.0.0.1:3128/"

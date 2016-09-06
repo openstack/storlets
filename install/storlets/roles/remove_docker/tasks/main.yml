@@ -41,9 +41,9 @@
   when: st.stat.exists
 
 - name: cleanup docker runtime
-  stat: path="{{ lxc_device }}/docker"
+  stat: path="{{ docker_device }}/docker"
   register: p
-- shell: rm -fr "{{ lxc_device }}"/docker
+- shell: rm -fr "{{ docker_device }}"/docker
   when: p.stat.exists
   ignore_errors: yes
 - stat: path=/var/lib/docker

@@ -7,7 +7,7 @@
     },
     "all" : {
         "ansible_ssh_user" : "{{ ansible_ssh_user }}",
-        "lxc_device": "{{ lxc_device }}",
+        "docker_device": "{{ docker_device }}",
         "storlet_source_dir": "{{ repo_root }}",
         "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
         "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
