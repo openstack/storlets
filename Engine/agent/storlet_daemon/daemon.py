@@ -74,8 +74,10 @@ class StorletLogger(object):
     def info(self, msg):
         self._emit_log('INFO', msg)
 
-    def warn(self, msg):
+    def warning(self, msg):
         self._emit_log('WARN', msg)
+
+    warn = warning
 
     def error(self, msg):
         self._emit_log('ERROR', msg)

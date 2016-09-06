@@ -29,8 +29,10 @@ class FakeLogger(object):
     def info(self, msg):
         self._print_log('INFO', msg)
 
-    def warn(self, msg):
+    def warning(self, msg):
         self._print_log('WARN', msg)
+
+    warn = warning
 
     def error(self, msg):
         self._print_log('ERROR', msg)
