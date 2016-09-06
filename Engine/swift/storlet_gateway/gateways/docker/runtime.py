@@ -592,7 +592,7 @@ class StorletInvocationProtocol(object):
             try:
                 os.close(fd)
             except OSError as err:
-                if err.errno != errno.BADFD:
+                if err.errno != errno.EBADFD:
                     raise
                 # TODO(kota_): fd might be closed already, so if already
                 # closed, OSError will be raised. we need more refactor to
