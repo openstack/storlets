@@ -239,7 +239,8 @@ class DaemonFactory(object):
             for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
                 ret = SBus.send(storlet_pipe_name, dtg)
                 if ret >= 0:
-                    if os.read(read_fd, 128) == 'OK':
+                    resp = os.read(read_fd, 128)
+                    if resp.startswith('True'):
                         return True
                     time.sleep(1)
             else:
@@ -457,12 +458,16 @@ class DaemonFactory(object):
             dtg = ClientSBusOutDatagram.create_service_datagram(
                 SBUS_CMD_HALT, write_fd)
             rc = SBus.send(storlet_pipe_name, dtg)
+            os.close(write_fd)
             if rc < 0:
+                raise SDaemonError(
+                    'Failed to send halt to {0}'.format(storlet_name))
+            resp = os.read(read_fd, 128)
+            if not resp.startswith('True'):
                 raise SDaemonError(
                     'Failed to send halt to {0}'.format(storlet_name))
         finally:
             os.close(read_fd)
-            os.close(write_fd)
 
         try:
             os.waitpid(dmn_pid, 0)

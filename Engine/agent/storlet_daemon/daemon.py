@@ -289,7 +289,10 @@ class Daemon(object):
 
     @command_handler
     def halt(self, dtg):
-        return False
+        out_fd = dtg.service_out_fd
+        with os.fdopen(out_fd, 'w') as outfile:
+            outfile.write('True: OK')
+        return True
 
     def _safe_close_fd(self, fd):
         try:
@@ -389,13 +392,16 @@ class Daemon(object):
         #                implement this maybe when we implement multi output
         #                support
         self.logger.error('Descriptor operation is not implemented')
-        raise NotImplementedError()
+        out_fd = dtg.service_out_fd
+        with os.fdopen(out_fd, 'w') as outfile:
+            outfile.write('False: Descriptor operation is not implemented')
+        return True
 
     @command_handler
     def ping(self, dtg):
         out_fd = dtg.service_out_fd
         with os.fdopen(out_fd, 'w') as outfile:
-            outfile.write('OK')
+            outfile.write('True: OK')
         return True
 
     @command_handler
@@ -405,16 +411,16 @@ class Daemon(object):
         pid = self.task_id_to_pid.get(task_id)
         with os.fdopen(out_fd, 'w') as outfile:
             if not pid:
-                outfile.write('BAD')
+                outfile.write('False: BAD')
             else:
                 try:
                     os.kill(pid)
                     self._remove_pid(pid)
-                    outfile.write('OK')
+                    outfile.write('True: OK')
                 except OSError:
                     self.logger.exception('Failed to kill subprocess: %d' %
                                           pid)
-                    outfile.write('ERROR')
+                    outfile.write('False: ERROR')
         return False
 
     def get_handler(self, command):

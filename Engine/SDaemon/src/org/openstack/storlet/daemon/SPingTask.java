@@ -50,7 +50,7 @@ public class SPingTask extends SAbstractTask {
     public boolean run() {
         boolean bStatus = true;
         try {
-            this.sOut_.write((new String("OK")).getBytes());
+            this.sOut_.write((new String("True: OK")).getBytes());
         } catch (IOException e) {
             e.printStackTrace();
             bStatus = false;

@@ -170,7 +170,7 @@ class TestDaemonFactory(unittest.TestCase):
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
             send.return_value = 0
-            read.return_value = 'OK'
+            read.return_value = 'True: OK'
             self.dfactory.spawn_subprocess(
                 ['arg0', 'argv1', 'argv2'],
                 {'envk0': 'envv0'}, 'storleta')
@@ -187,7 +187,7 @@ class TestDaemonFactory(unittest.TestCase):
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
             send.return_value = 0
-            read.return_value = 'NG'
+            read.return_value = 'False: NG'
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
@@ -223,7 +223,7 @@ class TestDaemonFactory(unittest.TestCase):
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.base_path + '.os.read') as read:
             send.side_effect = [-1, 0]
-            read.return_value = 'OK'
+            read.return_value = 'True: OK'
             self.assertTrue(
                 self.dfactory.wait_for_daemon_to_initialize('storleta'))
             self.assertEqual(2, send.call_count)
@@ -233,7 +233,7 @@ class TestDaemonFactory(unittest.TestCase):
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.base_path + '.os.read') as read:
             send.return_value = 0
-            read.return_value = 'NG'
+            read.return_value = 'False: NG'
             self.assertFalse(
                 self.dfactory.wait_for_daemon_to_initialize('storleta'))
             self.assertEqual(
@@ -273,7 +273,7 @@ class TestDaemonFactory(unittest.TestCase):
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
             send.return_value = 0
-            read.return_value = 'OK'
+            read.return_value = 'True: OK'
             self.assertTrue(self.dfactory.process_start_daemon(
                 'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
                 'TRACE', 'contid'))
@@ -458,8 +458,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0
+            read.return_value = 'True: OK'
             terminated = self.dfactory.shutdown_all_processes()
             self.assertEqual(2, len(terminated))
             self.assertIn('storleta', terminated)
@@ -473,8 +475,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'patha', 'storletb': 'pathb'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = -1
+            read.return_value = 'True: OK'
             exc_pattern = '^Failed to shutdown some storlet daemons: .*'
             with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
                 self.dfactory.shutdown_all_processes()
@@ -491,8 +495,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'patha', 'storletb': 'pathb'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = -1
+            read.return_value = 'True: OK'
             exc_pattern = '^Failed to send halt to storlet[a-b]$'
             with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.shutdown_all_processes(False)
@@ -508,8 +514,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0
+            read.return_value = 'True: OK'
             self.dfactory.shutdown_process('storleta')
             self.assertEqual({'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
@@ -520,8 +528,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = -1
+            read.return_value = 'True: OK'
             with self.assertRaises(SDaemonError):
                 self.dfactory.shutdown_process('storleta')
             self.assertEqual(0, waitpid.call_count)
@@ -534,8 +544,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = 0
+            read.return_value = 'True: OK'
             waitpid.side_effect = OSError()
             with self.assertRaises(SDaemonError):
                 self.dfactory.shutdown_process('storleta')
@@ -575,7 +587,7 @@ class TestDaemonFactory(unittest.TestCase):
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
             send.return_value = 0
-            read.return_value = 'OK'
+            read.return_value = 'True: OK'
             ret = self.dfactory.start_daemon('contid', prms)
             self.assertTrue(ret.status)
             self.assertEqual('OK', ret.message)
@@ -660,8 +672,10 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
         with mock.patch(self.sbus_path + '.send') as send, \
+                mock.patch(self.base_path + '.os.read') as read, \
                 mock.patch(self.waitpid_path):
             send.return_value = 0
+            read.return_value = 'True: OK'
             resp = self.dfactory.halt('contid', {})
             self.assertTrue(resp.status)
             self.assertIn('storleta: terminated', resp.message)

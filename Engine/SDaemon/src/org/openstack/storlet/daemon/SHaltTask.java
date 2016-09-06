@@ -20,6 +20,9 @@
  ===========================================================================*/
 package org.openstack.storlet.daemon;
 
+import java.io.IOException;
+import java.io.OutputStream;
+
 import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
@@ -29,11 +32,30 @@ import org.slf4j.Logger;
  * a relevant working thread.
  * */
 public class SHaltTask extends SAbstractTask {
+    private OutputStream sOut_ = null;
+
     /*------------------------------------------------------------------------
      * CTOR
      * */
-    public SHaltTask(Logger logger) {
+    public SHaltTask(OutputStream sOut, Logger logger) {
         super(logger);
-    };
+        this.sOut_ = sOut;
+    }
+
+    /*------------------------------------------------------------------------
+     * run
+     *
+     * The actual response on "ping" command.
+     * */
+    public boolean run() {
+        boolean bStatus = true;
+        try {
+            this.sOut_.write((new String("True: OK")).getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+            bStatus = false;
+        }
+        return bStatus;
+    }
 }
 /* ============================== END OF FILE =============================== */
