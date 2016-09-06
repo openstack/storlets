@@ -25,8 +25,6 @@ import eventlet
 import json
 from contextlib import contextmanager
 
-from swift.common.constraints import MAX_META_OVERALL_SIZE
-
 from sbus import SBus
 from sbus.datagram import FDMetadata, ClientSBusOutDatagram
 from sbus.file_description import SBUS_FD_INPUT_OBJECT, \
@@ -39,6 +37,9 @@ from storlet_gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlet_gateway.common.logger import StorletLogger
 from storlet_gateway.common.stob import StorletResponse
+
+MAX_METADATA_SIZE = 4096
+
 
 eventlet.monkey_patch()
 
@@ -688,7 +689,7 @@ class StorletInvocationProtocol(object):
         :returns: a dict of metadata
         """
         self._wait_for_read_with_timeout(self.metadata_read_fd)
-        flat_json = os.read(self.metadata_read_fd, MAX_META_OVERALL_SIZE)
+        flat_json = os.read(self.metadata_read_fd, MAX_METADATA_SIZE)
         if flat_json is None:
             return None
         os.close(self.metadata_read_fd)

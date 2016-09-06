@@ -13,13 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from contextlib import contextmanager
 import unittest
 from six import StringIO
-from swift.common.swob import HTTPException, Request
-from swift.common.utils import FileLikeIter
 from tests.unit.swift import FakeLogger
-from tests.unit.swift.storlet_middleware import FakeApp
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
     StorletGatewayDocker
 from tests.unit import MockSBus
@@ -134,7 +130,6 @@ class TestStorletDockerGateway(unittest.TestCase):
             'reseller_prefix': 'AUTH'
         }
         self.logger = FakeLogger()
-        self.app = FakeApp()
 
         self.storlet_container = self.sconf['storlet_container']
         self.storlet_dependency = self.sconf['storlet_dependency']
@@ -187,23 +182,6 @@ use = egg:swift#catch_errors
 
     def _create_proxy_path(self, version, account, container, obj):
         return '/'.join(['', version, account, container, obj])
-
-    def _create_req(self, method, headers=None, body=None):
-        return Request.blank(
-            self.req_path, environ={'REQUEST_METHOD': method},
-            headers=headers, body=body)
-
-    def _create_storlet_req(self, method, headers=None, body=None):
-        if headers is None:
-            headers = {}
-        headers['X-Run-Storlet'] = self.sobj
-        return self._create_req(method, headers, body)
-
-    @contextmanager
-    def assertRaisesHttpStatus(self, status):
-        with self.assertRaises(HTTPException) as e:
-            yield
-            self.assertEqual(e.status_int, status)
 
     def test_check_mandatory_params(self):
         params = {'keyA': 'valueA',
@@ -297,22 +275,16 @@ use = egg:swift#catch_errors
             StorletGatewayDocker.validate_dependency_registration(params, obj)
 
     def test_docker_gateway_communicate(self):
-        sw_req = Request.blank(
-            self.req_path, environ={'REQUEST_METHOD': 'PUT'},
-            headers={'X-Run-Storlet': self.sobj}, body='body')
-
-        reader = sw_req.environ['wsgi.input'].read
-        body_iter = iter(lambda: reader(65536), '')
         options = {'generate_log': False,
                    'scope': 'AUTH_account',
                    'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2'}
 
         st_req = DockerStorletRequest(
-            storlet_id=sw_req.headers['X-Run-Storlet'],
-            params=sw_req.params,
+            storlet_id=self.sobj,
+            params={},
             user_metadata={},
-            data_iter=body_iter, options=options)
+            data_iter=iter('body'), options=options)
 
         # TODO(kota_): need more efficient way for emuration of return value
         # from SDaemon
@@ -351,8 +323,10 @@ use = egg:swift#catch_errors
                     mock_read)
         def test_invocation_flow():
             sresp = self.gateway.invocation_flow(st_req)
-            file_like = FileLikeIter(sresp.data_iter)
-            self.assertEqual('something', file_like.read())
+            body = ''
+            for data in sresp.data_iter:
+                body = body + data
+            self.assertEqual('something', body)
 
         # I hate the decorator to return an instance but to track current
         # implementation, we have to make a mock class for this. Need to fix.
