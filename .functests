@@ -16,12 +16,12 @@ shift
 
 SRC_DIR=$(python -c "import os; print os.path.dirname(os.path.realpath('$0'))")
 cd ${SRC_DIR}/tests/functional
-nosetests --exe -v -a '!slow' $@
-rvalue=$?
 if [ "$FLAVOR" == "jenkins" ]; then
-    nosetests --exe -v -a 'slow' $@
-    let rvalue="$rvalue+$?"
+    nosetests --exe -v $@
+else
+    nosetests --exe -v -a '!slow' $@
 fi
+rvalue=$?
 
 cd -
 # dump log into VIRTUAL_ENV_DIR when this func test call via tox
