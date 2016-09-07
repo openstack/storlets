@@ -23,7 +23,7 @@ class TestSimpleStorlet(StorletFunctionalTest):
         self.storlet_name = 'simple.py'
         self.storlet_main = 'simple.SimpleStorlet'
         self.storlet_log = 'simple.log'
-        self.headers = {'X-Object-Meta-Testkey': 'tester'}
+        self.headers = {}
         self.storlet_file = 'source.txt'
         self.container = 'myobjects'
         self.dep_names = []
@@ -38,6 +38,7 @@ class TestSimpleStorlet(StorletFunctionalTest):
             self.url, self.token, self.container, self.storlet_file,
             response_dict=resp, headers=headers)
         self.assertEqual(200, resp['status'])
+        self.assertEqual('simple', headers['x-object-meta-test'])
 
 
 class TestSimpleStorletOnProxy(TestSimpleStorlet):
