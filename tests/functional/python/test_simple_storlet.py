@@ -33,12 +33,35 @@ class TestSimpleStorlet(StorletFunctionalTest):
 
     def test_get(self):
         resp = dict()
-        headers = {'X-Run-Storlet': self.storlet_name}
+        req_headers = {'X-Run-Storlet': self.storlet_name}
         headers, content = client.get_object(
             self.url, self.token, self.container, self.storlet_file,
-            response_dict=resp, headers=headers)
+            response_dict=resp, headers=req_headers)
         self.assertEqual(200, resp['status'])
         self.assertEqual('simple', headers['x-object-meta-test'])
+
+    def test_put(self):
+        objname = self.storlet_file + '-put'
+
+        resp = dict()
+        req_headers = {'X-Run-Storlet': self.storlet_name}
+        client.put_object(
+            self.url, self.token, self.container, objname,
+            'abcdefg', response_dict=resp, headers=req_headers)
+        self.assertEqual(201, resp['status'])
+
+        resp = dict()
+        headers, content = client.get_object(
+            self.url, self.token, self.container, objname,
+            response_dict=resp)
+        self.assertEqual(200, resp['status'])
+        self.assertEqual('simple', headers['x-object-meta-test'])
+
+        resp = dict()
+        client.delete_object(
+            self.url, self.token, self.container, objname,
+            response_dict=resp)
+        self.assertEqual(204, resp['status'])
 
 
 class TestSimpleStorletOnProxy(TestSimpleStorlet):
