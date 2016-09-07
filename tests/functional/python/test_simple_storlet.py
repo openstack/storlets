@@ -25,6 +25,7 @@ class TestSimpleStorlet(StorletFunctionalTest):
         self.storlet_log = 'simple.log'
         self.headers = {}
         self.storlet_file = 'source.txt'
+        self.content = 'abcdefghijklmonp'
         self.container = 'myobjects'
         self.dep_names = []
         self.additional_headers = {}
@@ -39,6 +40,18 @@ class TestSimpleStorlet(StorletFunctionalTest):
             response_dict=resp, headers=req_headers)
         self.assertEqual(200, resp['status'])
         self.assertEqual('simple', headers['x-object-meta-test'])
+        self.assertEqual(self.content, content)
+
+    def test_range_get(self):
+        resp = dict()
+        req_headers = {'X-Run-Storlet': self.storlet_name,
+                       'X-Storlet-Range': 'bytes=1-4'}
+        headers, content = client.get_object(
+            self.url, self.token, self.container, self.storlet_file,
+            response_dict=resp, headers=req_headers)
+        self.assertEqual(200, resp['status'])
+        self.assertEqual('simple', headers['x-object-meta-test'])
+        self.assertEqual(self.content[1:4], content)
 
     def test_put(self):
         objname = self.storlet_file + '-put'
@@ -47,7 +60,7 @@ class TestSimpleStorlet(StorletFunctionalTest):
         req_headers = {'X-Run-Storlet': self.storlet_name}
         client.put_object(
             self.url, self.token, self.container, objname,
-            'abcdefg', response_dict=resp, headers=req_headers)
+            self.content, response_dict=resp, headers=req_headers)
         self.assertEqual(201, resp['status'])
 
         resp = dict()
@@ -56,6 +69,7 @@ class TestSimpleStorlet(StorletFunctionalTest):
             response_dict=resp)
         self.assertEqual(200, resp['status'])
         self.assertEqual('simple', headers['x-object-meta-test'])
+        self.assertEqual(self.content, content)
 
         resp = dict()
         client.delete_object(
