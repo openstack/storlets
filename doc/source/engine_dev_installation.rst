@@ -537,7 +537,7 @@ content.
             "docker": [ "127.0.0.1" ]
         },
         "all" : {
-            "lxc_device": "/home/docker_device",
+            "docker_device": "/home/docker_device",
             "storlet_source_dir": "~/storlets",
             "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
             "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",

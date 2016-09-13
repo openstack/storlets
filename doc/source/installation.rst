@@ -5,7 +5,7 @@ Storlets Installation
 Background
 ==========
 
-Storlets installation (and build) assume an existing Swift cluster that works with Keystone. 
+Storlets installation (and build) assume an existing Swift cluster that works with Keystone.
 The installation consists of the following components:
 
 #. A set of scripts to assist the Storlets admin. This admin represents the provider, and is responsible for the Storlet enabled accounts and their image management.
@@ -76,13 +76,13 @@ storlets with EC and encryption. Valid values are true / false
 ::
 
   # A cross nodes directory for Storlets internal usage. Must exist with the same name in all proxy and storage nodes.
-  lxc_device: /home/lxc_device
+  docker_device: /home/docker_device
 
   # A pointer to this repo
   storlet_source_dir: <need to point to the repo root>
 
   # Swift Access information. The below IP should be an IP of one of the proxies.
-  swift_endpoint_host: 127.0.0.1 
+  swift_endpoint_host: 127.0.0.1
   swift_public_url: http://{{ swift_endpoint_host }}:80/v1
 
   # Keystone access information

@@ -17,5 +17,5 @@
   roles:
   - role: test_os_version
   tasks:
-  - name: create lxc_device directory
-    file: path={{ lxc_device }} state=directory mode=0777 recurse=yes
+  - name: create docker_device directory
+    file: path={{ docker_device }} state=directory mode=0777 recurse=yes

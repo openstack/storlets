@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 mgmt_vars = [
-    'lxc_device',
+    'docker_device',
     'keystone_endpoint_host',
     'keystone_admin_url',
     'keystone_public_url',

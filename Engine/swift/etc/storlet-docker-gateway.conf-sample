@@ -1,10 +1,10 @@
 [DEFAULT]
 storlet_logcontainer = storletlog
-lxc_root = /home/lxc_device/scopes
-cache_dir = /home/lxc_device/cache/scopes
-log_dir = /home/lxc_device/logs/scopes
-script_dir = /home/lxc_device/scripts
-storlets_dir = /home/lxc_device/storlets/scopes
-pipes_dir = /home/lxc_device/pipes/scopes
+lxc_root = /home/docker_device/scopes
+cache_dir = /home/docker_device/cache/scopes
+log_dir = /home/docker_device/logs/scopes
+script_dir = /home/docker_device/scripts
+storlets_dir = /home/docker_device/storlets/scopes
+pipes_dir = /home/docker_device/pipes/scopes
 docker_repo = localhost:5001
 restart_linux_container_timeout = 3

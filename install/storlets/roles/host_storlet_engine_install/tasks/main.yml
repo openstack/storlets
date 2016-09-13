@@ -22,16 +22,16 @@
 - name: install swift middleware on host
   unarchive: owner=root group=root mode=0755 dest=/ src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }}
 
-- stat: path={{ lxc_device }}/scripts
+- stat: path={{ docker_device }}/scripts
   register: st
 - name: Create scripts directory
-  file: path="{{ lxc_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
+  file: path="{{ docker_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
   when: not st.stat.exists
 
 - name: install runtime scripts used by swift middleware
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: "{{ lxc_device }}/scripts/"
+    dest: "{{ docker_device }}/scripts/"
     mode: "04755"
     owner: root
     group: root
