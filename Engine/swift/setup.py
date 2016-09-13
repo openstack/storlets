@@ -13,11 +13,18 @@ See the License for the specific language governing permissions and
 Limitations under the License.
 -------------------------------------------------------------------------"""
 from setuptools import setup, find_packages
+
+
 paste_factory = ['storlet_handler = '
                  'storlet_middleware.storlet_handler:filter_factory']
+gateways = [
+    'stub = storlet_gateway.gateways.stub:StorletGatewayStub',
+    'docker = storlet_gateway.gateways.docker:StorletGatewayDocker']
+
 
 setup(name='storlets',
       version='1.0',
       packages=find_packages(),
-      entry_points={'paste.filter_factory': paste_factory}
+      entry_points={'paste.filter_factory': paste_factory,
+                    'storlets.gateways': gateways}
       )

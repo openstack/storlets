@@ -29,8 +29,7 @@ DEFAULT_CONFIG = {
     'storlet_container': 'storlet',
     'storlet_dependency': 'dependency',
     'storlet_timeout': '40',
-    'storlet_gateway_module':
-        'storlet_gateway.gateways.stub:StorletGatewayStub',
+    'storlet_gateway_module': 'stub',
     'storlet_gateway_conf': '/etc/swift/storlet_stub_gateway.conf',
     'execution_server': 'proxy'}
 

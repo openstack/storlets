@@ -407,7 +407,7 @@ do the following:
     storlet_container = storlet
     storlet_dependency = dependency
     storlet_timeout = 40
-    storlet_gateway_module = storlet_gateway.storlet_docker_gateway:StorletGatewayDocker
+    storlet_gateway_module = docker
     storlet_gateway_conf = /etc/swift/storlet_docker_gateway.conf
     storlet_execute_on_proxy_only = false
     execution_server = proxy
@@ -432,7 +432,7 @@ otherwise the file is typically /etc/swift/object-server.conf
     storlet_container = storlet
     storlet_dependency = dependency
     storlet_timeout = 40
-    storlet_gateway_module = storlet_gateway.storlet_docker_gateway:StorletGatewayDocker
+    storlet_gateway_module = docker
     storlet_gateway_conf = /etc/swift/storlet_docker_gateway.conf
     storlet_execute_on_proxy_only = false
     execution_server = object

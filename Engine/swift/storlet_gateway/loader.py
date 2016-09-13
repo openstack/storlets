@@ -12,19 +12,38 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import sys
+from stevedore import driver
 from storlet_gateway.common.exceptions import StorletGatewayLoadError
 
 
-def load_gateway(module_name):
-    module_name_sp = module_name.split(':')
-    if not len(module_name_sp):
-        raise StorletGatewayLoadError('Invalid module name: %s' %
-                                      module_name)
+def load_gateway(gateway_name):
+    """
+    Load gateway class for the given name
 
+    :param gateway_name: a name of the gateway class to be loaded
+                         you can specify its entry point name or full path
+    :returns: a gateway class loaded
+    :raises StorletGatewayLoadError: when it fails to load the given gateway
+    """
+
+    namespace = 'storlets.gateways'
     try:
-        # TODO(takashi): Can we use stevedore to load module?
-        module = __import__(module_name_sp[0], fromlist=[module_name_sp[1]])
-        return getattr(module, module_name_sp[1])
-    except (ImportError, AttributeError) as e:
-        raise StorletGatewayLoadError('Failed to load gateway class: %s' %
-                                      str(e))
+        # Try to load gateway class using entry point
+        driver_manager = driver.DriverManager(namespace, gateway_name,
+                                              invoke_on_load=False)
+        return driver_manager.driver
+    except RuntimeError:
+        # Currently we can not find the entry point, so try again to load
+        # using full class path
+        mod_str, _sep, class_str = gateway_name.rpartition('.')
+        if not mod_str:
+            raise StorletGatewayLoadError(
+                'Invalid class path is given for gateway class name %s' %
+                gateway_name)
+        try:
+            __import__(mod_str)
+            return getattr(sys.modules[mod_str], class_str)
+        except (ImportError, AttributeError):
+            raise StorletGatewayLoadError('Failed to load gateway %s' %
+                                          gateway_name)

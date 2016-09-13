@@ -45,7 +45,7 @@
         "storlet_log": "storletlog",
         "storlet_images": "docker_images",
         "storlet_timeout": "40",
-        "storlet_gateway_module": "storlet_gateway.gateways.docker:StorletGatewayDocker",
+        "storlet_gateway_module": "docker",
         "storlet_execute_on_proxy_only": "false",
         "restart_linux_container_timeout": "3"
     }
