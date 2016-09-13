@@ -14,7 +14,7 @@
 #---------------------------------------------------------------------------
 
 - name: cluster_config.json from template
-  hosts: s2aio
+  hosts: localhost
   vars_files:
   - [deploy/installation_vars.yml]
   tasks:

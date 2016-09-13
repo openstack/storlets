@@ -17,4 +17,4 @@ FROM {{ inventory_hostname }}:{{ docker_registry_port }}/{{base_os_image}}_jre8_
 
 MAINTAINER root
 
-RUN ["apt-get", "install", "-y", "vim"]
+RUN ["apt-get", "install", "-y", "--force-yes", "vim"]

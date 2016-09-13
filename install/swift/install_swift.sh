@@ -14,16 +14,22 @@ set -eu
 # that can be formatted and mounted as a Swift device.
 # The script assume it 'can sudo'
 
-if [ "$#" -eq 0 ]; then
-    DEVICE='loop0'
-elif [ "$#" -eq 1 ]; then
-    DEVICE=$1
-    if [ $DEVICE != 'loop0' ] &&  [ ! -b "/dev/$DEVICE" ]; then
-        echo "$DEVICE is not a block device"
-        exit
-    fi
-else
-    echo "Usage: $0 [device-name]";
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 [target] [ip] [device-name]"
+    echo "target = host | docker"
+    exit
+fi
+
+TARGET=$1
+if [ "$TARGET" != "host" ] && [ "$TARGET" != "docker" ]; then
+    echo "target must be either \"host\" or \"docker\""
+    exit 1
+fi
+
+SWIFT_IP=$2
+DEVICE=$3
+if [ $DEVICE != 'loop0' ] &&  [ ! -b "/dev/$DEVICE" ]; then
+    echo "$DEVICE is not a block device"
     exit
 fi
 
@@ -35,6 +41,24 @@ if [ ! -e vars.yml ]; then
     cp vars.yml-sample vars.yml
     sudo sed -i 's/<set device!>/'$DEVICE'/g' vars.yml
     sudo sed -i 's/<set dir!>/'$REPODIR_REPLACE'/g' vars.yml
+    sudo sed -i 's/<set ip!>/'$SWIFT_IP'/g' vars.yml
+fi
+
+if [ $TARGET == 'docker' ]; then
+    cat > hosts <<EOF
+[s2aio]
+$SWIFT_IP
+
+[s2aio:vars]
+ansible_ssh_user=root
+EOF
+    ssh root@$SWIFT_IP 'if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""; fi'
+    ssh root@$SWIFT_IP 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
+else
+    cat > hosts <<EOF
+    [s2aio]
+    $SWIFT_IP
+EOF
 fi
 
 ansible-playbook -i hosts prepare_swift_install.yml
@@ -44,5 +68,9 @@ set +eu
 # running processes (e.g. swift-init proxy stop for clean environment) and
 # it will make a non zero exit code causes gate failure so remove set -eu
 # trusting those script. (Hopefully, it could be solved in the script)
-cd $REPODIR/swift-install/provisioning
-ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml
+if [ $TARGET == 'host' ]; then
+    cd $REPODIR/swift-install/provisioning
+    ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml
+else
+    ssh root@$SWIFT_IP "bash -c 'cd /tmp/swift-install/provisioning ; ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml'"
+fi

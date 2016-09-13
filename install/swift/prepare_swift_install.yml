@@ -25,12 +25,12 @@
   vars_files:
   - [vars.yml]
   tasks:
-  - stat: path="{{playbook_dir}}/cluster_config.json"
+  - stat: path="/tmp/cluster_config.json"
     register: st0
 
   - template:
       src: templates/cluster_config
-      dest: "{{ playbook_dir }}/cluster_config.json"
+      dest: "/tmp/cluster_config.json"
     when: not st0.stat.exists
 
 - name: pull Swift installation scripts

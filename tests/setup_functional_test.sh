@@ -1,2 +1,2 @@
 #!/bin/bash
-./s2aio.sh jenkins
+./s2aio.sh jenkins host
