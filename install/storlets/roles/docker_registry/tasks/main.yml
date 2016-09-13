@@ -13,8 +13,19 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
+- name: Create docker-registry service
+  stat: path=/etc/init.d/docker-registry
+  register: st0
+
+- template:
+    src: etc/init.d/docker-registry
+    dest: /etc/init.d/docker-registry
+    owner: root
+    mode: 0755
+  when: not st0.stat.exists
+
 - name: Start Docker repository service
-  shell: docker run -d -p {{ docker_registry_port }}:5000 -v /var/lib/registry:/var/lib/registry --name registry registry:2
+  shell: bash -c "/usr/sbin/service docker-registry start"
 
 - name: Test repository
   shell: docker images | grep my_busybox | wc -l
