@@ -39,11 +39,11 @@ The guide uses the following addresses:
 
 ::
 
-    management / keystone / docker repository:	192.168.56.200
-    proxy					192.168.56.210
-    object1					192.168.56.220
-    object2					192.168.56.230
-    object3					192.168.56.240
+    management / keystone / docker repository:  192.168.56.200
+    proxy                   192.168.56.210
+    object1                 192.168.56.220
+    object2                 192.168.56.230
+    object3                 192.168.56.240
 
 .. note::
   The Ansible installation scripts used throughout the deployment assume that the user root
@@ -101,13 +101,13 @@ deployment example.
     storlets_default_tenant_name: "test"
     storlets_default_tenant_user_name: "tester"
     storlets_default_tenant_user_password: "testing"
-    keystone_endpoint_host: 192.168.56.200 
+    keystone_endpoint_host: 192.168.56.200
     keystone_admin_token: ADMIN
     swift_endpoint_host: 192.168.56.210
     swift_endpoint_port: 80
     swift_run_time_user: swift
     swift_run_time_group: swift
-    lxc_device: /srv/node/sdb 
+    lxc_device: /srv/node/sdb
 
 This file is used for creating the cluster_config.json which is
 used by the Ansible installation. We give a full description of

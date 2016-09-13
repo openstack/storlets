@@ -15,17 +15,17 @@
 
 <project>
 
-	<target name="clean">
-		<delete dir="build" />
-		<delete dir="dist" />
-		<delete dir="storlets.egg-info" />
-	</target>
-	
-	<target name="build">
-		<exec executable="python" dir="." failonerror="true">
-							<arg value="setup.py"/>
-					        <arg value="bdist"/>
-		</exec>
-	</target>
+    <target name="clean">
+        <delete dir="build" />
+        <delete dir="dist" />
+        <delete dir="storlets.egg-info" />
+    </target>
+
+    <target name="build">
+        <exec executable="python" dir="." failonerror="true">
+            <arg value="setup.py" />
+            <arg value="bdist" />
+        </exec>
+    </target>
 
 </project>

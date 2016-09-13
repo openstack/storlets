@@ -38,10 +38,10 @@ package org.openstack.storlet.sbus;
  */
 public class ServerSBusOutDatagram {
 
-	public ServerSBusOutDatagram() {
-	}
+    public ServerSBusOutDatagram() {
+    }
 
-	public SBusRawMessage toRawMessage() {
-		return new SBusRawMessage();
-	}
+    public SBusRawMessage toRawMessage() {
+        return new SBusRawMessage();
+    }
 }

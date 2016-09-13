@@ -27,14 +27,14 @@ RUN apt-get update && \
     apt-get install openjdk-8-jre -y && \
     apt-get clean
 
-COPY logback-classic-1.1.2.jar	/opt/storlets/
+COPY logback-classic-1.1.2.jar /opt/storlets/
 RUN ["chmod", "0744", "/opt/storlets/logback-classic-1.1.2.jar"]
 
-COPY logback-core-1.1.2.jar	/opt/storlets/
+COPY logback-core-1.1.2.jar /opt/storlets/
 RUN ["chmod", "0744", "/opt/storlets/logback-core-1.1.2.jar"]
 
-COPY slf4j-api-1.7.7.jar	/opt/storlets/
+COPY slf4j-api-1.7.7.jar /opt/storlets/
 RUN ["chmod", "0744", "/opt/storlets/slf4j-api-1.7.7.jar"]
 
-COPY json_simple-1.1.jar	/opt/storlets/
+COPY json_simple-1.1.jar /opt/storlets/
 RUN ["chmod", "0744", "/opt/storlets/json_simple-1.1.jar"]

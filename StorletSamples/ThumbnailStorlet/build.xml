@@ -15,33 +15,33 @@
 
 <project>
 
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
 
-	<target name="java">
-		<mkdir dir="bin" />
-		<javac srcdir="src" destdir="bin" includeantruntime="false">
-			<classpath>
-				<pathelement path="../../Engine/SCommon/bin/SCommon.jar"/>
-			</classpath>
-		</javac>
-	</target>
+    <target name="java">
+        <mkdir dir="bin" />
+        <javac srcdir="src" destdir="bin" includeantruntime="false">
+            <classpath>
+                <pathelement path="../../Engine/SCommon/bin/SCommon.jar"/>
+            </classpath>
+        </javac>
+    </target>
 
-	<target name="jar" depends="java">
-		<jar destfile="thumbnail-1.0.jar" basedir="bin">
-			<manifest>
-				<attribute name="Main-Class" 
-					       value="org.openstack.storlet.Thumbnail" />
-			</manifest>
-		</jar>
-		<move file="thumbnail-1.0.jar" todir="bin" />
-	</target>
+    <target name="jar" depends="java">
+        <jar destfile="thumbnail-1.0.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class"
+                           value="org.openstack.storlet.Thumbnail" />
+            </manifest>
+        </jar>
+        <move file="thumbnail-1.0.jar" todir="bin" />
+    </target>
 
-	<target name="jpg">
-		<copy file="sample.jpg" toFile="bin/sample.jpg" />
-	</target>
+    <target name="jpg">
+        <copy file="sample.jpg" toFile="bin/sample.jpg" />
+    </target>
 
-	<target name="build" depends="jar,jpg">
-	</target>
+    <target name="build" depends="jar,jpg">
+    </target>
 </project>

@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # Limitations under the License.
 #---------------------------------------------------------------------------
-           
 ansible_ssh_user: <ANSIBLE_USER>
 repo_root: <STORLETS_REPO_ROOT>
 mgmt_group: [ "127.0.0.1" ]
@@ -33,4 +32,4 @@ swift_endpoint_host: 127.0.0.1
 swift_endpoint_port: 80
 swift_run_time_user: <SWIFT_RUNTIME_USER>
 swift_run_time_group: <SWIFT_RUNTIME_GROUP>
-lxc_device: /home/docker_device 
+lxc_device: /home/docker_device

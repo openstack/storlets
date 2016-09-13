@@ -15,43 +15,43 @@
  */
 
 /*============================================================================
- DD-MMM-2014	eranr     Initial implementation as sChannel.
+ DD-MMM-2014    eranr     Initial implementation as sChannel.
  Introducing wrapping structures.
- 30-Jun-2014	evgenyl   Switching to SBus. Code refactoring.
+ 30-Jun-2014    evgenyl   Switching to SBus. Code refactoring.
  Simplifying API. Extracting business logic.
  ===========================================================================*/
 
 package org.openstack.storlet.sbus;
 
 /*----------------------------------------------------------------------------
- * This class encapsulates OS level file descriptor used 
- * in Transport Layer APIs. 
+ * This class encapsulates OS level file descriptor used
+ * in Transport Layer APIs.
  * */
 
 public class SBusHandler {
-	private int nFD_;
+    private int nFD_;
 
-	/*------------------------------------------------------------------------
-	 * CTOR
-	 * No default value
-	 * */
-	public SBusHandler(int nFD) {
-		nFD_ = nFD;
-	}
+    /*------------------------------------------------------------------------
+     * CTOR
+     * No default value
+     * */
+    public SBusHandler(int nFD) {
+        nFD_ = nFD;
+    }
 
-	/*------------------------------------------------------------------------
-	 * Getter
-	 * */
-	public int getFD() {
-		return nFD_;
-	}
+    /*------------------------------------------------------------------------
+     * Getter
+     * */
+    public int getFD() {
+        return nFD_;
+    }
 
-	/*------------------------------------------------------------------------
-	 * Validity
-	 * */
-	public boolean isValid() {
-		return (0 <= getFD());
-	}
+    /*------------------------------------------------------------------------
+     * Validity
+     * */
+    public boolean isValid() {
+        return (0 <= getFD());
+    }
 
 }
 /* ============================== END OF FILE =============================== */

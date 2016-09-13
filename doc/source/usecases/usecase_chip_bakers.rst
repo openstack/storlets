@@ -15,4 +15,4 @@ heavier in bandwidth.
 This use case was presented in the Paris Openstack summit, and is featured as a super user
 story that can be viewed in [1]_.
 
-.. [1] http://superuser.openstack.org/articles/docker-meets-swift-a-broadcaster-s-experience 
+.. [1] http://superuser.openstack.org/articles/docker-meets-swift-a-broadcaster-s-experience

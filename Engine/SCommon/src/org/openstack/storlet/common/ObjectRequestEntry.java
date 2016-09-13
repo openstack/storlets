@@ -20,19 +20,19 @@
 package org.openstack.storlet.common;
 
 public class ObjectRequestEntry {
-	private StorletObjectOutputStream objectStream = null;
+    private StorletObjectOutputStream objectStream = null;
 
-	public synchronized StorletObjectOutputStream get()
-			throws InterruptedException {
-		if (objectStream == null)
-			wait();
+    public synchronized StorletObjectOutputStream get()
+            throws InterruptedException {
+        if (objectStream == null)
+            wait();
 
-		return objectStream;
-	}
+        return objectStream;
+    }
 
-	public synchronized void put(StorletObjectOutputStream objectStream)
-			throws InterruptedException {
-		this.objectStream = objectStream;
-		notify();
-	}
+    public synchronized void put(StorletObjectOutputStream objectStream)
+            throws InterruptedException {
+        this.objectStream = objectStream;
+        notify();
+    }
 }

@@ -43,100 +43,100 @@ import org.json.simple.JSONArray;
 
 public class ServerSBusInDatagram {
 
-	private int numFDs;
-	private FileDescriptor[] fds;
-	private String command;
-	private HashMap<String, String> params;
-	private HashMap<String, HashMap<String, String>>[] metadata;
-	private String taskID;
+    private int numFDs;
+    private FileDescriptor[] fds;
+    private String command;
+    private HashMap<String, String> params;
+    private HashMap<String, HashMap<String, String>>[] metadata;
+    private String taskID;
 
-	private void populateMetadata(HashMap<String, String> dest, JSONObject source) throws ParseException {
-		for (Object key : source.keySet()) {
-			String strKey = (String)key;
-			String strVal = (String)source.get(key);
-			dest.put(strKey, strVal);
-		}
-	}
+    private void populateMetadata(HashMap<String, String> dest, JSONObject source) throws ParseException {
+        for (Object key : source.keySet()) {
+            String strKey = (String)key;
+            String strVal = (String)source.get(key);
+            dest.put(strKey, strVal);
+        }
+    }
 
-	/**
-	 * Parses a raw message coming from the wire.
-	 * The incoming message is constructed by the ClientSBusOutDatagram.
-	 * The message is structured as follows:
-	 * Array of file descriptors, already parsed in SBusRawMessage
-	 * A command related json string of the following structure:
-	 * {
-	 *     "command": "command encoded as string",
-	 *     "params": {                            // This element is optional
-	 *         "key1": "value1",
-	 *         ...
-	 *     },
-	 *     "task_id": "task id encoded as string" // This element is optional
-	 * }
-	 * File descriptors metadata, encoded as a JSON array with one
-	 * element per file descriptor. The i'th element in the array
-	 * consists of the metadata of the i'th element in the file
-	 * descriptors array:
-	 * [
-	 *     {
-	 *         "storlets": {
-	 *             "type": "the fd type encoded as string",  // Mandatory
-	 *             ... // Additional optional storlets metadata
-	 *         },
-	 *         "storage": {
-	 *             "metadata key1": "metadata value 1",
-	 *             ...
-	 *        }
-	 *     },
-	 *     ...
-	 * ]
-	 * All the values in the above JSON elemens are strings.
-	 * Once constructed the class provides all necessary accessors to the parsed
-	 * fields.
-	 * @param msg	the raw mwssage consisting of the string encoded json formats
-	 * @see SBusPythonFacade.ClientSBusOutDatagram the python code that serilializes the datagram
-	 * @see SBusPythonFacade.ServerSBusInDatagram the equivalent python code
-	 */
-	public ServerSBusInDatagram(final SBusRawMessage msg) throws ParseException {
-		this.fds = msg.getFiles();
+    /**
+     * Parses a raw message coming from the wire.
+     * The incoming message is constructed by the ClientSBusOutDatagram.
+     * The message is structured as follows:
+     * Array of file descriptors, already parsed in SBusRawMessage
+     * A command related json string of the following structure:
+     * {
+     *     "command": "command encoded as string",
+     *     "params": {                            // This element is optional
+     *         "key1": "value1",
+     *         ...
+     *     },
+     *     "task_id": "task id encoded as string" // This element is optional
+     * }
+     * File descriptors metadata, encoded as a JSON array with one
+     * element per file descriptor. The i'th element in the array
+     * consists of the metadata of the i'th element in the file
+     * descriptors array:
+     * [
+     *     {
+     *         "storlets": {
+     *             "type": "the fd type encoded as string",  // Mandatory
+     *             ... // Additional optional storlets metadata
+     *         },
+     *         "storage": {
+     *             "metadata key1": "metadata value 1",
+     *             ...
+     *        }
+     *     },
+     *     ...
+     * ]
+     * All the values in the above JSON elemens are strings.
+     * Once constructed the class provides all necessary accessors to the parsed
+     * fields.
+     * @param msg   the raw mwssage consisting of the string encoded json formats
+     * @see SBusPythonFacade.ClientSBusOutDatagram the python code that serilializes the datagram
+     * @see SBusPythonFacade.ServerSBusInDatagram the equivalent python code
+     */
+    public ServerSBusInDatagram(final SBusRawMessage msg) throws ParseException {
+        this.fds = msg.getFiles();
                 numFDs = this.fds == null ? 0 : this.fds.length;
 
-		JSONObject jsonCmdParams = (JSONObject)(new JSONParser().parse(msg.getParams()));
-		this.command = (String)jsonCmdParams.get("command");
-		this.params = new HashMap<String, String>();
-		if (jsonCmdParams.containsKey("params")) {
-			JSONObject jsonParams = (JSONObject)jsonCmdParams.get("params");
-			for (Object key : jsonParams.keySet()) {
-				this.params.put((String)key, (String)jsonParams.get(key));
-			}
-		}
-		if (jsonCmdParams.containsKey("task_id")) {
-			this.taskID = (String)jsonCmdParams.get("task_id");
-		}
+        JSONObject jsonCmdParams = (JSONObject)(new JSONParser().parse(msg.getParams()));
+        this.command = (String)jsonCmdParams.get("command");
+        this.params = new HashMap<String, String>();
+        if (jsonCmdParams.containsKey("params")) {
+            JSONObject jsonParams = (JSONObject)jsonCmdParams.get("params");
+            for (Object key : jsonParams.keySet()) {
+                this.params.put((String)key, (String)jsonParams.get(key));
+            }
+        }
+        if (jsonCmdParams.containsKey("task_id")) {
+            this.taskID = (String)jsonCmdParams.get("task_id");
+        }
 
-		String strMD = msg.getMetadata();
+        String strMD = msg.getMetadata();
                 this.metadata = (HashMap<String, HashMap<String, String>>[])new HashMap[getNFiles()];
-		JSONArray jsonarray = (JSONArray)(new JSONParser().parse(strMD));
-		Iterator it = jsonarray.iterator();
-		int i=0;
-		while (it.hasNext()) {
-			this.metadata[i] = new HashMap<String, HashMap<String, String>>();
-			HashMap<String, String> storletsMetadata = new HashMap<String, String>();
-			HashMap<String, String> storageMetadata = new HashMap<String, String>();
-			JSONObject jsonobject = (JSONObject)it.next();
-			if (jsonobject.containsKey("storage")) {
-				populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
-			}
-			if (!jsonobject.containsKey("storlets")) {
-			} else {
-				populateMetadata(storletsMetadata, (JSONObject)jsonobject.get("storlets"));
-			}
-			this.metadata[i].put("storage", storageMetadata);
-			this.metadata[i].put("storlets", storletsMetadata);
-			i++;
-		}
-	}
+        JSONArray jsonarray = (JSONArray)(new JSONParser().parse(strMD));
+        Iterator it = jsonarray.iterator();
+        int i=0;
+        while (it.hasNext()) {
+            this.metadata[i] = new HashMap<String, HashMap<String, String>>();
+            HashMap<String, String> storletsMetadata = new HashMap<String, String>();
+            HashMap<String, String> storageMetadata = new HashMap<String, String>();
+            JSONObject jsonobject = (JSONObject)it.next();
+            if (jsonobject.containsKey("storage")) {
+                populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
+            }
+            if (!jsonobject.containsKey("storlets")) {
+            } else {
+                populateMetadata(storletsMetadata, (JSONObject)jsonobject.get("storlets"));
+            }
+            this.metadata[i].put("storage", storageMetadata);
+            this.metadata[i].put("storlets", storletsMetadata);
+            i++;
+        }
+    }
 
-	public FileDescriptor[] getFiles() {
+    public FileDescriptor[] getFiles() {
                 return fds;
         }
 
@@ -152,11 +152,11 @@ public class ServerSBusInDatagram {
                 return params;
         }
 
-	public String getTaskId() {
-		return taskID;
-	}
+    public String getTaskId() {
+        return taskID;
+    }
 
-	public HashMap<String, HashMap<String, String>>[] getFilesMetadata() {
-		return metadata;
-	}
+    public HashMap<String, HashMap<String, String>>[] getFilesMetadata() {
+        return metadata;
+    }
 }

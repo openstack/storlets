@@ -46,91 +46,91 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 
 public class ThumbnailStorlet implements IStorlet {
-	@Override
-	public void invoke(ArrayList<StorletInputStream> inputStreams,
-			ArrayList<StorletOutputStream> outputStreams,
-			Map<String, String> parameters, StorletLogger log)
-			throws StorletException {
-		log.emitLog("ThumbnailStorlet Invoked");
+    @Override
+    public void invoke(ArrayList<StorletInputStream> inputStreams,
+            ArrayList<StorletOutputStream> outputStreams,
+            Map<String, String> parameters, StorletLogger log)
+            throws StorletException {
+        log.emitLog("ThumbnailStorlet Invoked");
 
-		/*
-		 * Get input stuff
-		 */
-		HashMap<String, String> object_md;
-		StorletInputStream storletInputStream = inputStreams.get(0);
+        /*
+         * Get input stuff
+         */
+        HashMap<String, String> object_md;
+        StorletInputStream storletInputStream = inputStreams.get(0);
                 InputStream thumbnailInputStream = storletInputStream.getStream();
-		object_md = storletInputStream.getMetadata();
-		/*
-		 * Get output stuff
-		 */
+        object_md = storletInputStream.getMetadata();
+        /*
+         * Get output stuff
+         */
 
-		StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream)outputStreams.get(0);
+        StorletObjectOutputStream storletObjectOutputStream = (StorletObjectOutputStream)outputStreams.get(0);
                 OutputStream thumbnailOutputStream = storletObjectOutputStream.getStream();
 
-		/*
-		 * Set the output metadata
-		 */
-		log.emitLog("Setting metadata");
-		storletObjectOutputStream.setMetadata(object_md);
+        /*
+         * Set the output metadata
+         */
+        log.emitLog("Setting metadata");
+        storletObjectOutputStream.setMetadata(object_md);
 
-		/*
-		 * Read Input to BufferedImage
-		 */
-		log.emitLog("Reading Input");
-		BufferedImage img = null;
+        /*
+         * Read Input to BufferedImage
+         */
+        log.emitLog("Reading Input");
+        BufferedImage img = null;
                 try {
-	        	img = ImageIO.read(thumbnailInputStream);
-		} catch (Exception e) {
-			log.emitLog("Failed to read input stream to buffered image");
-			throw new StorletException("Failed to read input stream to buffered image " + e.getMessage());
-		} finally {
-			try {
-				thumbnailInputStream.close();
-			} catch (IOException e) { 
-				log.emitLog("Failed to close input stream");
-			}
-		}
-		try {
-			thumbnailInputStream.close();
-		} catch (IOException e) {
-			log.emitLog("Failed to close input stream");
-		}
+                img = ImageIO.read(thumbnailInputStream);
+        } catch (Exception e) {
+            log.emitLog("Failed to read input stream to buffered image");
+            throw new StorletException("Failed to read input stream to buffered image " + e.getMessage());
+        } finally {
+            try {
+                thumbnailInputStream.close();
+            } catch (IOException e) {
+                log.emitLog("Failed to close input stream");
+            }
+        }
+        try {
+            thumbnailInputStream.close();
+        } catch (IOException e) {
+            log.emitLog("Failed to close input stream");
+        }
 
-		/*
-		 * Convert
-		 */
-		log.emitLog("Converting");
-		int newH = img.getHeight()/8;
-		int newW = img.getWidth()/8;
+        /*
+         * Convert
+         */
+        log.emitLog("Converting");
+        int newH = img.getHeight()/8;
+        int newW = img.getWidth()/8;
                 int type = img.getTransparency() == Transparency.OPAQUE ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_ARGB;
-		BufferedImage thumbnailImage = new BufferedImage(newW, newH, type);
+        BufferedImage thumbnailImage = new BufferedImage(newW, newH, type);
                 Graphics2D g = thumbnailImage.createGraphics();
                 g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
                 g.drawImage(img, 0, 0, newW, newH, null);
                 g.dispose();
 
-		/*
-		 * Write
-		 */
-		log.emitLog("Writing Output");
-		try {
-			ImageIO.write(thumbnailImage, "PNG" , thumbnailOutputStream);
-		} catch (Exception e) {
-			log.emitLog("Failed to write image to out stream");
-			throw new StorletException("Failed to write image to out stream " + e.getMessage());
-		} finally {
-			try {
-				thumbnailOutputStream.close();
-			} catch (IOException e) { 
-			}
-		}
+        /*
+         * Write
+         */
+        log.emitLog("Writing Output");
+        try {
+            ImageIO.write(thumbnailImage, "PNG" , thumbnailOutputStream);
+        } catch (Exception e) {
+            log.emitLog("Failed to write image to out stream");
+            throw new StorletException("Failed to write image to out stream " + e.getMessage());
+        } finally {
+            try {
+                thumbnailOutputStream.close();
+            } catch (IOException e) {
+            }
+        }
 
-		try {
-	        	thumbnailOutputStream.close();
-		} catch (IOException e) {
-		}
+        try {
+                thumbnailOutputStream.close();
+        } catch (IOException e) {
+        }
 
-		log.emitLog("Done");
+        log.emitLog("Done");
 
-	}
+    }
 }

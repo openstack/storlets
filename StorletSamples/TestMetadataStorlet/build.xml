@@ -14,33 +14,27 @@
 -->
 
 <project>
-	
-	<target name="common">
-		<mkdir dir="bin" />
-	</target>
+    <target name="common">
+        <mkdir dir="bin" />
+    </target>
+    <target name="testmetadatastorlet">
+        <javac srcdir="src/org/openstack/storlet/testmetadatastorlet" destdir="bin" includeantruntime="false">
+            <classpath>
+                <pathelement
+                    path="../../Engine/SCommon/bin/SCommon.jar"/>
+            </classpath>
+        </javac>
 
-	<target name="testmetadatastorlet">
-		<javac srcdir="src/org/openstack/storlet/testmetadatastorlet" destdir="bin" includeantruntime="false">
-			<classpath>
-		        <pathelement 
-		        	path="../../Engine/SCommon/bin/SCommon.jar"/>
-			</classpath>
-		</javac>
-
-	     <jar destfile="bin/testmetadatastorlet-1.0.jar" 
-	          basedir="bin"
-	     	  includes="org/openstack/storlet/testmetadatastorlet/*">
-	     </jar>
-	</target>
-
-	<target name="text">
-		<echo message="Some content to copy" file="bin/source.txt" />
-	</target>
-	
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
-	
-	<target name="build" depends="clean, common, text, testmetadatastorlet"/>
-
+         <jar destfile="bin/testmetadatastorlet-1.0.jar"
+              basedir="bin"
+              includes="org/openstack/storlet/testmetadatastorlet/*">
+         </jar>
+    </target>
+    <target name="text">
+        <echo message="Some content to copy" file="bin/source.txt" />
+    </target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
+    <target name="build" depends="clean, common, text, testmetadatastorlet"/>
 </project>

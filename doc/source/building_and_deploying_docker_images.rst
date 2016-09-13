@@ -12,7 +12,7 @@ following:
    of the init process. Specifically, do not install daemons that require special
    initializations on 'OS bring up'.
 
-The idea is that a user supplied docker image would contain dependencies 
+The idea is that a user supplied docker image would contain dependencies
 required by storlets in the form of libraries.
 
 ============
@@ -33,11 +33,11 @@ Below are the steps of this flow:
    the installed software stack, and upload it back to the docker_images container.
 #. Once uploaded, the account manager must notify the Swift Storlet engine manager
    of the update. The storlets manager would take care of testing and deploying
-   it to all Swift nodes. Again, <https://github.com/openstack/storlets/blob/master/doc/source/storlets_management.rst> describes the provided tool 
-   the Storlet manager can use for the actual deployment.
+   it to all Swift nodes. Again, <https://github.com/openstack/storlets/blob/master/doc/source/storlets_management.rst>
+   describes the provided tool the Storlet manager can use for the actual deployment.
 
 The sections below describe in detail the steps taken by the account manager.
- 
+
 Downloading the Docker Image
 ============================
 Downloading the Docker image involves a simple retrieval of a Swift object. To
@@ -52,7 +52,7 @@ facts:
 
 The image will come in a .tar format.
 
-Below is an example of downloading the image from the tenant's docker_images 
+Below is an example of downloading the image from the tenant's docker_images
 container using the swift CLI. As with all examples using the Swift CLI, we are
 using environment variables defining the tenant, user credentials and auth URI.
 All these are required for the operation of any Swift CLI. Please change them
@@ -109,18 +109,18 @@ The below steps illustrate the tuning process:
 
     root@lnx-ccs8:/home/eranr# docker load -i ubuntu_14.04_jre8_storlets.tar
     root@lnx-ccs8:/home/eranr# docker images
-    REPOSITORY                                  TAG                 IMAGE ID		CREATED             VIRTUAL SIZE
-    localhost:5001/ubuntu_14.04_jre8_storlets   latest              f6929e6abc60	3 days ago          563.6 MB
+    REPOSITORY                                  TAG                 IMAGE ID        CREATED             VIRTUAL SIZE
+    localhost:5001/ubuntu_14.04_jre8_storlets   latest              f6929e6abc60    3 days ago          563.6 MB
 
 2. Use a Docker file that is based on the loaded image to make the necessary
-   changes to the image. Below is a Dockerfile for installing 'ffmpeg'. Few 
+   changes to the image. Below is a Dockerfile for installing 'ffmpeg'. Few
    notes are in place:
-   
+
    #. The first line "FROM" must carry the image name we have downloaded.
    #. The maintainer needs to be a user that is allowed to do the actual actions
       within the container. Please leave it as is.
    #. The below example shows ffmpeg installation. For more options and
-       information on Dockerfiles, please refer to: 
+       information on Dockerfiles, please refer to:
        http://docs.docker.com/reference/builder/
    #. One MUST refrain from using the Dockerfile ENTRYPOINT and CMD. Using those
       will cause the image from being unusable by the Storlet engine.
@@ -129,7 +129,7 @@ The below steps illustrate the tuning process:
 
     root@lnx-ccs8:/home/eranr/dockerfile_example# cat Dockerfile
     FROM 127.0.0.1:5001/ubuntu_14.04_jre8_storlets
-  
+ 
     MAINTAINER root
 
     RUN ["apt-get", "update"]

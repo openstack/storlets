@@ -66,7 +66,7 @@ Code Organization
 
   - SCommon/: A Java library required for storlets development
   - SDaemon/: A generic Java daemon for loading storlets at runtime
-  - SMSCripts/: Run time scripts for doing Docker management commands 
+  - SMSCripts/: Run time scripts for doing Docker management commands
   - agent/: Python code for Docker side storlets process management
   - swift/: Python swift side code
 
@@ -89,7 +89,7 @@ For Storlets Developers
 -----------------------
 
 Currently, storlets can be developped in Java only.
-To get started, follow: 
+To get started, follow:
 `"S2AIO - Swift Storlets All In One" <http://storlets.readthedocs.io/en/latest/getting_started.html>`__.
 
 The write and deploy a storlet, follow:

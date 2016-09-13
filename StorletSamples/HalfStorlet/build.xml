@@ -15,31 +15,31 @@
 
 <project>
 
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
 
-	<target name="java">
-		<mkdir dir="bin" />
-		<javac srcdir="src" destdir="bin" 
-			   classpath="../../Engine/SCommon/bin/SCommon.jar" 
-			   includeantruntime="false" />
-	</target>
+    <target name="java">
+        <mkdir dir="bin" />
+        <javac srcdir="src" destdir="bin"
+               classpath="../../Engine/SCommon/bin/SCommon.jar"
+               includeantruntime="false" />
+    </target>
 
-	<target name="jar" depends="java">
-		<jar destfile="halfstorlet-1.0.jar" basedir="bin">
-			<manifest>
-				<attribute name="Main-Class" 
-					       value="org.openstack.storlet.HalfStorlet" />
-			</manifest>
-		</jar>
-		<move file="halfstorlet-1.0.jar" todir="bin" />
-	</target>
+    <target name="jar" depends="java">
+        <jar destfile="halfstorlet-1.0.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class"
+                           value="org.openstack.storlet.HalfStorlet" />
+            </manifest>
+        </jar>
+        <move file="halfstorlet-1.0.jar" todir="bin" />
+    </target>
 
         <target name="text" depends="jar">
-		<echo message="abcdefghijklmonp" file="bin/source.txt" />
-	</target>
+        <echo message="abcdefghijklmonp" file="bin/source.txt" />
+    </target>
 
-	<target name="build" depends="jar, text">
-	</target>
+    <target name="build" depends="jar, text">
+    </target>
 </project>

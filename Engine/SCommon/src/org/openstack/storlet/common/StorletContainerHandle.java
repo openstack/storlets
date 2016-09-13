@@ -27,60 +27,60 @@ import java.util.Date;
 import org.json.simple.JSONObject;
 
 public class StorletContainerHandle extends StorletOutputStream {
-	private String containerName;
-	private ObjectRequestsTable requestTable;
+    private String containerName;
+    private ObjectRequestsTable requestTable;
 
-	public StorletContainerHandle(FileDescriptor request_fd,
-			HashMap<String, String> request_md, ObjectRequestsTable requestTable)
-			throws StorletException {
-		super(request_fd, request_md);
-		this.containerName = request_md.get("storlet_container_name");
-		if (this.containerName == null)
-			throw new StorletException(
-					"StorletContainerHandle init with no container name");
-		this.requestTable = requestTable;
-	}
+    public StorletContainerHandle(FileDescriptor request_fd,
+            HashMap<String, String> request_md, ObjectRequestsTable requestTable)
+            throws StorletException {
+        super(request_fd, request_md);
+        this.containerName = request_md.get("storlet_container_name");
+        if (this.containerName == null)
+            throw new StorletException(
+                    "StorletContainerHandle init with no container name");
+        this.requestTable = requestTable;
+    }
 
-	public String getName() {
-		return containerName;
-	}
+    public String getName() {
+        return containerName;
+    }
 
-	@SuppressWarnings("unchecked")
-	public StorletObjectOutputStream getObjectOutputStream(String objectName)
-			throws StorletException {
-		StorletObjectOutputStream objectStream = null;
-		String key = containerName + objectName + new Date().getTime();
-		JSONObject jRequestObj = new JSONObject();
-		jRequestObj.put("object_name", objectName);
-		jRequestObj.put("container_name", containerName);
-		jRequestObj.put("key", key);
+    @SuppressWarnings("unchecked")
+    public StorletObjectOutputStream getObjectOutputStream(String objectName)
+            throws StorletException {
+        StorletObjectOutputStream objectStream = null;
+        String key = containerName + objectName + new Date().getTime();
+        JSONObject jRequestObj = new JSONObject();
+        jRequestObj.put("object_name", objectName);
+        jRequestObj.put("container_name", containerName);
+        jRequestObj.put("key", key);
 
-		ObjectRequestEntry requestEntry = requestTable.Insert(key);
+        ObjectRequestEntry requestEntry = requestTable.Insert(key);
 
-		try {
-			stream.write(jRequestObj.toString().getBytes());
-		} catch (IOException e) {
-			throw new StorletException(
-					"Failed to serialize object descriptor request "
-							+ e.toString());
-		}
+        try {
+            stream.write(jRequestObj.toString().getBytes());
+        } catch (IOException e) {
+            throw new StorletException(
+                    "Failed to serialize object descriptor request "
+                            + e.toString());
+        }
 
-		try {
-			objectStream = requestEntry.get();
-		} catch (InterruptedException e) {
-			throw new StorletException(
-					"Exception while waiting for request entry"
-							+ e.getMessage());
-		}
-		requestTable.Remove(key);
-		return objectStream;
-	}
+        try {
+            objectStream = requestEntry.get();
+        } catch (InterruptedException e) {
+            throw new StorletException(
+                    "Exception while waiting for request entry"
+                            + e.getMessage());
+        }
+        requestTable.Remove(key);
+        return objectStream;
+    }
 
-	public void close() {
-		try {
-			stream.close();
-		} catch (IOException e) {
+    public void close() {
+        try {
+            stream.close();
+        } catch (IOException e) {
 
-		}
-	}
+        }
+    }
 }

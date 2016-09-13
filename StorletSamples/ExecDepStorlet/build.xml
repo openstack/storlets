@@ -14,43 +14,36 @@
 -->
 
 <project>
-
-	<target name="clean">
-		<delete dir="bin" />
-	</target>
-
-	<target name="java">
-		<mkdir dir="bin" />
-		<javac srcdir="src" destdir="bin" 
-			   classpath="../../Engine/SCommon/bin/SCommon.jar" 
-			   includeantruntime="false" />
-	</target>
-
-	<target name="csrc" depends="jar">
-		<echo message="int main(){return 42;}" file="bin/get42.c" />
-	</target>
-	
-	<target name="exe" depends="csrc">
-		<exec dir="." executable="gcc">
-			<arg line="-o bin/get42 " />
-			<arg line="bin/get42.c" />
-		</exec>
-	</target>
-
-	<target name="jar" depends="java">
-		<jar destfile="execdepstorlet-1.0.jar" basedir="bin">
-			<manifest>
-				<attribute name="Main-Class" 
-					       value="org.openstack.storlet.ExecDepStorlet" />
-			</manifest>
-		</jar>
-		<move file="execdepstorlet-1.0.jar" todir="bin" />
-	</target>
-
-	<target name="text" depends="jar">
-		<echo message="Some junk content" file="bin/junk.txt" />
-	</target>
-
-	<target name="build" depends="clean,jar,exe,text">
-	</target>
+    <target name="clean">
+        <delete dir="bin" />
+    </target>
+    <target name="java">
+        <mkdir dir="bin" />
+        <javac srcdir="src" destdir="bin"
+               classpath="../../Engine/SCommon/bin/SCommon.jar"
+               includeantruntime="false" />
+    </target>
+    <target name="csrc" depends="jar">
+        <echo message="int main(){return 42;}" file="bin/get42.c" />
+    </target>
+    <target name="exe" depends="csrc">
+        <exec dir="." executable="gcc">
+            <arg line="-o bin/get42 " />
+            <arg line="bin/get42.c" />
+        </exec>
+    </target>
+    <target name="jar" depends="java">
+        <jar destfile="execdepstorlet-1.0.jar" basedir="bin">
+            <manifest>
+                <attribute name="Main-Class"
+                           value="org.openstack.storlet.ExecDepStorlet" />
+            </manifest>
+        </jar>
+        <move file="execdepstorlet-1.0.jar" todir="bin" />
+    </target>
+    <target name="text" depends="jar">
+        <echo message="Some junk content" file="bin/junk.txt" />
+    </target>
+    <target name="build" depends="clean,jar,exe,text">
+    </target>
 </project>

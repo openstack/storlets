@@ -31,40 +31,40 @@
   */
 
 int main(int argc, char **argv) {
-	char command[4096];
-	char container_name[256];
-	char container_image[256];
-	char mount_dir1[1024];
-	char mount_dir2[1024];
+    char command[4096];
+    char container_name[256];
+    char container_image[256];
+    char mount_dir1[1024];
+    char mount_dir2[1024];
 
-	if (argc != 5) {
-		fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2\n",
-			argv[0]);
-		return 1;
-	}
+    if (argc != 5) {
+        fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2\n",
+            argv[0]);
+        return 1;
+    }
 
-	snprintf(container_name,(size_t)256,"%s",argv[1]);
-	snprintf(container_image,(size_t)256,"%s",argv[2]);
-	snprintf(mount_dir1,(size_t)1024, "%s", argv[3]);
-	snprintf(mount_dir2,(size_t)1024, "%s", argv[4]);
+    snprintf(container_name,(size_t)256,"%s",argv[1]);
+    snprintf(container_image,(size_t)256,"%s",argv[2]);
+    snprintf(mount_dir1,(size_t)1024, "%s", argv[3]);
+    snprintf(mount_dir2,(size_t)1024, "%s", argv[4]);
 
-	int ret;
-	setresuid(0,0,0);
-	setresgid(0,0,0);
-	sprintf(command,"/usr/bin/docker stop -t 1 %s",container_name);
-	ret = system(command);
+    int ret;
+    setresuid(0,0,0);
+    setresgid(0,0,0);
+    sprintf(command,"/usr/bin/docker stop -t 1 %s",container_name);
+    ret = system(command);
 
-	sprintf(command,"/usr/bin/docker rm %s",container_name);
-	ret = system(command);
+    sprintf(command,"/usr/bin/docker rm %s",container_name);
+    ret = system(command);
 
-	sprintf(command,
-			"/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -i -t %s",
-			container_name,
-			mount_dir1,
-			mount_dir2,
-			container_image);
-	ret = system(command);
-	if (ret)
-	    return(EXIT_FAILURE);
-	return(EXIT_SUCCESS);
+    sprintf(command,
+            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -i -t %s",
+            container_name,
+            mount_dir1,
+            mount_dir2,
+            container_image);
+    ret = system(command);
+    if (ret)
+        return(EXIT_FAILURE);
+    return(EXIT_SUCCESS);
 }

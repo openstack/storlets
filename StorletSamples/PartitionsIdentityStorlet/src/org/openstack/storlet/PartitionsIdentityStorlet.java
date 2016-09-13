@@ -66,149 +66,149 @@ import org.openstack.storlet.common.StorletUtils;
  *     described in (1)
  */
 public class PartitionsIdentityStorlet implements IStorlet {
-	long m_start, m_end, m_length;
-	int m_max_record_line;
-	boolean m_firstPartition;
-	BufferedReader m_br = null;
+    long m_start, m_end, m_length;
+    int m_max_record_line;
+    boolean m_firstPartition;
+    BufferedReader m_br = null;
 
         long m_total_lines_emitted = 0;
 
-	StorletLogger m_log;
+    StorletLogger m_log;
 
-	private void safeClose(OutputStream os, InputStream is) {
-		try {
-			if (m_br != null) m_br.close();
-		} catch (IOException e) {
-		}
-		try {
-			if (os != null) os.close();
-		} catch (IOException e) {
-		}
-		try {
-			if (is != null) os.close();
-		} catch (IOException e) {
-		}
-	}
+    private void safeClose(OutputStream os, InputStream is) {
+        try {
+            if (m_br != null) m_br.close();
+        } catch (IOException e) {
+        }
+        try {
+            if (os != null) os.close();
+        } catch (IOException e) {
+        }
+        try {
+            if (is != null) os.close();
+        } catch (IOException e) {
+        }
+    }
 
-	private void parseInputParameters(Map<String, String> parameters) throws Exception {
-		if (parameters.get("start") != null) {
-			m_start = Long.parseLong(parameters.get("start"));
-		} else {
-			m_log.emitLog("Missing mandatory start parameter");
-			throw new Exception("Missing mandatory start parameter");
-		}
-		if (parameters.get("end") != null) {
-			m_end = Long.parseLong(parameters.get("end"));
-		} else {
-			m_log.emitLog("Missing mandatory end parameter");
-			throw new Exception("Missing mandatory end parameter");
-		}
-		if (parameters.get("max_record_line") != null) {
-			m_max_record_line = Integer.parseInt(parameters.get("max_record_line"));
-		} else {
-			m_log.emitLog("Missing mandatory max_record_line parameter");
-			throw new Exception("Missing mandatory max_record_line parameter");
-		}
-		if (parameters.get("first_partition") != null) {
-			m_firstPartition = Boolean.parseBoolean(parameters.get("first_partition"));
-		} else {
-			m_log.emitLog("Missing mandatory first_partition parameter");
-			throw new Exception("Missing mandatory first_partition parameter");
-		}
-		m_length = m_end - m_start;
-	}
+    private void parseInputParameters(Map<String, String> parameters) throws Exception {
+        if (parameters.get("start") != null) {
+            m_start = Long.parseLong(parameters.get("start"));
+        } else {
+            m_log.emitLog("Missing mandatory start parameter");
+            throw new Exception("Missing mandatory start parameter");
+        }
+        if (parameters.get("end") != null) {
+            m_end = Long.parseLong(parameters.get("end"));
+        } else {
+            m_log.emitLog("Missing mandatory end parameter");
+            throw new Exception("Missing mandatory end parameter");
+        }
+        if (parameters.get("max_record_line") != null) {
+            m_max_record_line = Integer.parseInt(parameters.get("max_record_line"));
+        } else {
+            m_log.emitLog("Missing mandatory max_record_line parameter");
+            throw new Exception("Missing mandatory max_record_line parameter");
+        }
+        if (parameters.get("first_partition") != null) {
+            m_firstPartition = Boolean.parseBoolean(parameters.get("first_partition"));
+        } else {
+            m_log.emitLog("Missing mandatory first_partition parameter");
+            throw new Exception("Missing mandatory first_partition parameter");
+        }
+        m_length = m_end - m_start;
+    }
 
-	private int consumeFirstLine(OutputStream os) throws IOException {
-		String line;
-		line = m_br.readLine();
-		if (line == null) {
-			m_log.emitLog("m_br fully consumed on first line");
-			throw new IOException("m_br fully consumed on first line");
-		}
-		if (m_firstPartition == true) {
+    private int consumeFirstLine(OutputStream os) throws IOException {
+        String line;
+        line = m_br.readLine();
+        if (line == null) {
+            m_log.emitLog("m_br fully consumed on first line");
+            throw new IOException("m_br fully consumed on first line");
+        }
+        if (m_firstPartition == true) {
                         m_total_lines_emitted += 1;
-			//m_log.emitLog("This is the first partition, writing first line");
-			//m_log.emitLog("wrote: " + new String(line.getBytes(),"UTF-8") + "\n");
-			os.write(line.getBytes());
-                	os.write('\n');
-		} else {
-			//m_log.emitLog("This is NOT the first partition, skipping first line");
-		}
+            //m_log.emitLog("This is the first partition, writing first line");
+            //m_log.emitLog("wrote: " + new String(line.getBytes(),"UTF-8") + "\n");
+            os.write(line.getBytes());
+                    os.write('\n');
+        } else {
+            //m_log.emitLog("This is NOT the first partition, skipping first line");
+        }
 
-		return line.length() + 1;
-	}
+        return line.length() + 1;
+    }
 
-	@Override
-	public void invoke(ArrayList<StorletInputStream> inputStreams,
-			ArrayList<StorletOutputStream> outputStreams,
-			Map<String, String> parameters, StorletLogger log)
-			throws StorletException {
-		m_log = log;
-		m_log.emitLog("PartitionsIdentityStorlet Invoked");
+    @Override
+    public void invoke(ArrayList<StorletInputStream> inputStreams,
+            ArrayList<StorletOutputStream> outputStreams,
+            Map<String, String> parameters, StorletLogger log)
+            throws StorletException {
+        m_log = log;
+        m_log.emitLog("PartitionsIdentityStorlet Invoked");
 
                 StorletObjectOutputStream sos = null;
                 OutputStream os = null;
                 InputStream is = null;
                 try {
-		    sos = (StorletObjectOutputStream)outputStreams.get(0);
-		    sos.setMetadata(new HashMap<String, String>());
-		    os = sos.getStream();
-		    is = inputStreams.get(0).getStream();
-		} catch (Exception ex) {
-		        m_log.emitLog("Failed to get streams from Storlet invoke inputs");
-			safeClose(os, is);
+            sos = (StorletObjectOutputStream)outputStreams.get(0);
+            sos.setMetadata(new HashMap<String, String>());
+            os = sos.getStream();
+            is = inputStreams.get(0).getStream();
+        } catch (Exception ex) {
+                m_log.emitLog("Failed to get streams from Storlet invoke inputs");
+            safeClose(os, is);
                         return;
-		}
+        }
 
-		/*
-		 * Get mandatory parameters
-		 */
-		try {
-			parseInputParameters(parameters);
-		} catch (Exception ex) {
-		        m_log.emitLog("Failed to initialize input stream");
-			safeClose(os, is);
+        /*
+         * Get mandatory parameters
+         */
+        try {
+            parseInputParameters(parameters);
+        } catch (Exception ex) {
+                m_log.emitLog("Failed to initialize input stream");
+            safeClose(os, is);
                         return;
-		}
+        }
 
-		String line;
-		int lineLength = 0;
-		try {
-			m_br = new BufferedReader(new InputStreamReader(is));
-		} catch (Exception ex) {
-		        m_log.emitLog("Failed to initialize input stream");
+        String line;
+        int lineLength = 0;
+        try {
+            m_br = new BufferedReader(new InputStreamReader(is));
+        } catch (Exception ex) {
+                m_log.emitLog("Failed to initialize input stream");
                         safeClose(os, is);
                         return;
                 }
 
                 try {
-			lineLength = consumeFirstLine(os);
-		} catch (Exception ex) {
-		        m_log.emitLog("Failed to consume first line");
+            lineLength = consumeFirstLine(os);
+        } catch (Exception ex) {
+                m_log.emitLog("Failed to consume first line");
                         safeClose(os, is);
                         return;
                 }
 
-		m_length -= lineLength;
-		try {
-			// We allow m_length to get to -1 so as to read an extra record
-			// if m_end points exactly to an end of a record.
-			while ( ((line = m_br.readLine()) != null) && (m_length >= -1) ) {
+        m_length -= lineLength;
+        try {
+            // We allow m_length to get to -1 so as to read an extra record
+            // if m_end points exactly to an end of a record.
+            while ( ((line = m_br.readLine()) != null) && (m_length >= -1) ) {
                                 m_total_lines_emitted += 1;
-				os.write(line.getBytes());
-				os.write('\n');
-				//m_log.emitLog("m_length is " + m_length);
-				//m_log.emitLog("wrote: " + new String(line.getBytes(),"UTF-8") + "\n");
-				m_length -= (line.length() + 1);
-			}
+                os.write(line.getBytes());
+                os.write('\n');
+                //m_log.emitLog("m_length is " + m_length);
+                //m_log.emitLog("wrote: " + new String(line.getBytes(),"UTF-8") + "\n");
+                m_length -= (line.length() + 1);
+            }
                         if (m_length > 0)
-			    m_log.emitLog("Got a null line while not consuming all range");
+                m_log.emitLog("Got a null line while not consuming all range");
 
-		} catch (Exception ex) {
-			m_log.emitLog("Exception while consuming range " + Arrays.toString(ex.getStackTrace()) );
-		} finally {
+        } catch (Exception ex) {
+            m_log.emitLog("Exception while consuming range " + Arrays.toString(ex.getStackTrace()) );
+        } finally {
                         safeClose(os, is);
-		}
+        }
                 m_log.emitLog("Total lines emitted: " + m_total_lines_emitted);
-	}
+    }
 }

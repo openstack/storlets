@@ -14,17 +14,17 @@
 -->
 
 <project>
-	<target name="container_restart">
+    <target name="container_restart">
         <mkdir dir="bin" />
-		<exec dir="." executable="gcc">
-			<arg line="-o bin/restart_docker_container restart_docker_container.c" />
-		</exec>
-	</target>
+        <exec dir="." executable="gcc">
+            <arg line="-o bin/restart_docker_container restart_docker_container.c" />
+        </exec>
+    </target>
 
-	<target name="clean">
+    <target name="clean">
         <delete dir="bin" />
-	</target>
+    </target>
 
-	<target name="build" depends="container_restart">
-	</target>
+    <target name="build" depends="container_restart">
+    </target>
 </project>

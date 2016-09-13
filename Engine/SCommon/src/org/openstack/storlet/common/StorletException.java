@@ -20,12 +20,12 @@
 package org.openstack.storlet.common;
 
 public class StorletException extends Exception {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
 
-	public StorletException(String message) {
-		super(message);
-	}
+    public StorletException(String message) {
+        super(message);
+    }
 }

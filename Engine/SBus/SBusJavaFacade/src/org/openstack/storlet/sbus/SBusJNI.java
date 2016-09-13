@@ -15,9 +15,9 @@
  */
 
 /*============================================================================
- DD-MMM-2014	eranr     Initial implementation as sChannel.
+ DD-MMM-2014    eranr     Initial implementation as sChannel.
  Introducing wrapping structures.
- 30-Jun-2014	evgenyl		Switching to SBus. Code refactoring.
+ 30-Jun-2014    evgenyl     Switching to SBus. Code refactoring.
  Simplifying API. Extracting business logic.
  ===========================================================================*/
 
@@ -30,21 +30,21 @@ package org.openstack.storlet.sbus;
  * See SBusJNI.c for the implementation
  * */
 public class SBusJNI {
-	static {
-		System.loadLibrary("jsbus");
-	}
+    static {
+        System.loadLibrary("jsbus");
+    }
 
-	public native void startLogger(final String strLogLevel, final String contId);
+    public native void startLogger(final String strLogLevel, final String contId);
 
-	public native void stopLogger();
+    public native void stopLogger();
 
-	public native int createSBus(final String strBusName);
+    public native int createSBus(final String strBusName);
 
-	public native int listenSBus(int nBus);
+    public native int listenSBus(int nBus);
 
-	public native int sendRawMessage(final String strBusName,
-			final SBusRawMessage Msg);
+    public native int sendRawMessage(final String strBusName,
+            final SBusRawMessage Msg);
 
-	public native SBusRawMessage receiveRawMessage(int nBus);
+    public native SBusRawMessage receiveRawMessage(int nBus);
 }
 /* ============================== END OF FILE =============================== */

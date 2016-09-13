@@ -1,5 +1,5 @@
 ===================================
-Storlet writing and deploying guide 
+Storlet writing and deploying guide
 ===================================
 Currently, storlets must be written in Java. Writing a storlet involves
 implementing a single method interface and following some simple rules and best
@@ -29,7 +29,7 @@ The interface has a single method that looks like this:
 
 Below is a class diagram illustrating the classes involved in the above API.
 
-..  image:: images/java_prog_model.jpg 
+..  image:: images/java_prog_model.jpg
     :height: 960px
     :width: 1216 px
     :scale: 50 %
@@ -213,7 +213,7 @@ variables or via command line parameters. To make the commands more readable we
 use environment variables as shown below. The actual values are aligned with the
 development environment installation instructions_
 
-.. _instructions: engine_dev_installation.html 
+.. _instructions: engine_dev_installation.html
 
 ::
 
