@@ -53,8 +53,9 @@ public class STaskFactory {
         String command = dtg.getCommand();
 
         if (command.equals("SBUS_CMD_HALT")) {
-            this.logger_.trace("createStorletTask: " + "received HALT command");
-            ResObj = new SHaltTask(logger_);
+            this.logger_.trace("createStorletTask: "
+                    + "received Halt command");
+            ResObj = createHaltTask(dtg);
         } else if (command.equals("SBUS_CMD_EXECUTE")) {
             this.logger_.trace("createStorletTask: "
                     + "received EXECUTE command");
@@ -233,6 +234,40 @@ public class STaskFactory {
             this.logger_.trace("createCancelTask: "
                     + "Returning StorletCancelTask");
             ResObj = new SCancelTask(sOut, logger_, taskId);
+        }
+        return ResObj;
+    }
+
+    private SHaltTask createHaltTask(ServerSBusInDatagram dtg) {
+        SHaltTask ResObj = null;
+        boolean bStatus = true;
+
+        if (1 != dtg.getNFiles()) {
+            this.logger_.error("createHaltTask: "
+                    + "Wrong fd count for descriptor command. "
+                    + "Expected 1, got " + dtg.getNFiles());
+            bStatus = false;
+        }
+        this.logger_.trace("createHaltTask: #FDs is good");
+
+        if (bStatus) {
+            String strFDType = dtg.getFilesMetadata()[0].get("storlets").get("type");
+            if (!strFDType.equals("SBUS_FD_SERVICE_OUT")) {
+                this.logger_.error("createHaltTask: "
+                        + "Wrong fd type for Halt command. "
+                        + "Expected SBUS_FD_SERVICE_OUT " + " got "
+                        + strFDType);
+                bStatus = false;
+            }
+            this.logger_.trace("createHaltTask: "
+                + "fd metadata is good. Creating object stream");
+        }
+
+        if (bStatus) {
+            OutputStream sOut = new FileOutputStream(dtg.getFiles()[0]);
+            // parse descriptor stuff
+            this.logger_.trace("createHaltTask: " + "Returning StorletHaltTask");
+            ResObj = new SHaltTask(sOut, logger_);
         }
         return ResObj;
     }
