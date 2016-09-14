@@ -33,6 +33,10 @@ cluster_config.json
 
 # auto created on build
 Engine/dependencies/
+Engine/SBus/SBusJavaFacade/org_openstack_storlet_sbus_SBusJNI.h
+
+# Storlets build
+bin
 
 # Unit test / coverage reports
 .coverage

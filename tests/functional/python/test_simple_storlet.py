@@ -14,23 +14,17 @@
 # limitations under the License.
 
 from swiftclient import client
-from tests.functional import StorletFunctionalTest
+from tests.functional.python import StorletPythonFunctionalTest
 
 
-class TestSimpleStorlet(StorletFunctionalTest):
+class TestSimpleStorlet(StorletPythonFunctionalTest):
     def setUp(self):
-        self.storlet_dir = 'python/simple'
-        self.storlet_name = 'simple.py'
-        self.storlet_main = 'simple.SimpleStorlet'
         self.storlet_log = 'simple.log'
-        self.headers = {}
-        self.storlet_file = 'source.txt'
         self.content = 'abcdefghijklmonp'
-        self.container = 'myobjects'
-        self.dep_names = []
         self.additional_headers = {}
-        self.language = 'Python'
-        super(TestSimpleStorlet, self).setUp(self.language)
+        super(TestSimpleStorlet, self).setUp('simple', 'simple.py',
+                                             'simple.SimpleStorlet',
+                                             'myobjects', 'source.txt')
 
     def test_get(self):
         resp = dict()
