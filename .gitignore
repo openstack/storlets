@@ -29,8 +29,10 @@ install/storlets/prepare_host
 install/storlets/deploy/
 install/storlets/prepare_vars.yml
 install/swift/vars.yml
+install/swift/hosts
 cluster_config.json
 install/swift/hosts
+Engine/SMScripts/bin/
 
 # auto created on build
 Engine/dependencies/

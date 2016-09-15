@@ -34,6 +34,8 @@
         "storlets_default_tenant_name": "{{ storlets_default_tenant_name }}",
         "storlets_default_tenant_user_name": "{{ storlets_default_tenant_user_name }}",
         "storlets_default_tenant_user_password": "{{ storlets_default_tenant_user_password }}",
+        "storlets_default_tenant_member_user" : "tester_member",
+        "storlets_default_tenant_member_password" : "member",
         "base_image_maintainer": "root",
         "base_os_image": "ubuntu_14.04",
         "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",

@@ -14,9 +14,11 @@ Limitations under the License.
 -------------------------------------------------------------------------'''
 
 import threading
-from swiftclient import client as c
+from swiftclient import client as swift_client
+from swiftclient import ClientException
 from nose.plugins.attrib import attr
 from tests.functional.java import StorletJavaFunctionalTest
+from tools.utils import get_member_auth
 
 
 class myTestThread (threading.Thread):
@@ -41,11 +43,20 @@ class TestTestStorlet(StorletJavaFunctionalTest):
                                            'myobjects',
                                            '')
 
-        c.put_object(self.url,
-                     self.token,
-                     self.container,
-                     'test_object',
-                     'some content')
+        self.member_url, self.member_token = get_member_auth(self.conf)
+
+        swift_client.put_object(self.url,
+                                self.token,
+                                self.container,
+                                'test_object',
+                                'some content')
+
+    def tearDown(self):
+        headers = {'X-Container-Read': ''}
+        swift_client.post_container(self.url,
+                                    self.token,
+                                    'myobjects',
+                                    headers)
 
     def invokeTestStorlet(self, op, withlog=False):
         headers = {'X-Run-Storlet': self.storlet_name}
@@ -56,17 +67,22 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         params = 'op={0}&param2=val2'.format(op)
         resp_dict = dict()
         try:
-            resp_headers, gf = c.get_object(self.url, self.token, 'myobjects',
-                                            'test_object', None, None, params,
-                                            resp_dict, headers)
+            resp_headers, gf = swift_client.get_object(self.url, self.token,
+                                                       'myobjects',
+                                                       'test_object',
+                                                       None, None, params,
+                                                       resp_dict, headers)
             get_text = gf
             get_response_status = resp_dict.get('status')
 
             if withlog is True:
-                resp_headers, gf = c.get_object(self.url, self.token,
-                                                'storletlog', 'test.log',
-                                                None, None, None, None,
-                                                headers)
+                resp_headers, gf = swift_client.get_object(self.url,
+                                                           self.token,
+                                                           'storletlog',
+                                                           'test.log',
+                                                           None, None,
+                                                           None, None,
+                                                           headers)
                 self.assertEqual(resp_headers.get('status'), 200)
                 gf.read()
                 self.assertEqual(resp_headers.get('status') == 200)
@@ -107,8 +123,46 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         for t in mythreads:
             t.join()
 
+    @attr('slow')
     def test_parallel_print(self):
         self.invokeTestStorletinParallel()
+
+    def test_storlet_acl_get_fail(self):
+        headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
+        exc_pattern = '^.*403 Forbidden.*$'
+        with self.assertRaisesRegexp(ClientException, exc_pattern):
+            swift_client.get_object(self.member_url, self.member_token,
+                                    'myobjects', 'test_object',
+                                    headers=headers)
+
+    def test_storlet_acl_get_success(self):
+        headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
+        exc_pattern = '^.*403 Forbidden.*$'
+        with self.assertRaisesRegexp(ClientException, exc_pattern):
+            swift_client.get_object(self.member_url, self.member_token,
+                                    'myobjects', 'test_object',
+                                    headers=headers)
+
+        headers = {'X-Storlet-Container-Read': self.conf.member_user,
+                   'X-Storlet-Name': self.storlet_name}
+        swift_client.post_container(self.url,
+                                    self.token,
+                                    'myobjects',
+                                    headers)
+        swift_client.head_container(self.url,
+                                    self.token,
+                                    'myobjects')
+        headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
+        resp_dict = dict()
+        swift_client.get_object(self.member_url,
+                                self.member_token,
+                                'myobjects', 'test_object',
+                                response_dict=resp_dict,
+                                headers=headers)
+        self.assertEqual(resp_dict['status'], 200)
 
 
 class TestTestStorletOnProxy(TestTestStorlet):

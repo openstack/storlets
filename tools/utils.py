@@ -93,7 +93,7 @@ def deploy_storlet(url, token, storlet, storlet_main_class, dependencies,
     put_storlet_executable_dependencies(url, token, dependencies)
 
 
-def get_auth(conf):
+def get_auth(conf, user, passwd):
     """
     Get token string to access to swift
 
@@ -102,11 +102,21 @@ def get_auth(conf):
     """
     auth_url = conf.auth_uri
     tenant = conf.tenant_name
-    user = conf.user
-    passwd = conf.password
     os_options = {'tenant_name': tenant,
                   'region_name': conf.region}
     url, token = client.get_auth(auth_url, tenant + ':' + user, passwd,
                                  os_options=os_options,
                                  auth_version=conf.auth_version)
     return url, token
+
+
+def get_admin_auth(conf):
+    admin_user = conf.admin_user
+    admin_passwd = conf.admin_password
+    return get_auth(conf, admin_user, admin_passwd)
+
+
+def get_member_auth(conf):
+    member_user = conf.member_user
+    member_passd = conf.member_password
+    return get_auth(conf, member_user, member_passd)

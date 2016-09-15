@@ -13,8 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(eranr): Chaneg the below to use Ansible os_project_facts
 - name: Get the tenant id from Keystone
-  shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ tenant_name }} | awk '{print $2}'
+  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} project list | grep {{ tenant_name }} | awk '{print $2}'
   register: tenant_id
 
 - name: docker pull

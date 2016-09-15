@@ -46,12 +46,20 @@ class ClusterConfig(object):
         return self.conf['all']['storlets_default_tenant_name']
 
     @property
-    def user(self):
+    def admin_user(self):
         return self.conf['all']['storlets_default_tenant_user_name']
 
     @property
-    def password(self):
+    def admin_password(self):
         return self.conf['all']['storlets_default_tenant_user_password']
+
+    @property
+    def member_user(self):
+        return self.conf['all']['storlets_default_tenant_member_user']
+
+    @property
+    def member_password(self):
+        return self.conf['all']['storlets_default_tenant_member_password']
 
     @property
     def region(self):

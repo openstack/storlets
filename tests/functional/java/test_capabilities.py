@@ -24,8 +24,8 @@ class TestCapabilities(StorletBaseFunctionalTest):
 
     def test_get_capabilities(self):
         conn = swift_client.Connection(self.conf.auth_uri,
-                                       self.conf.user,
-                                       self.conf.password,
+                                       self.conf.admin_user,
+                                       self.conf.admin_password,
                                        insecure=True,
                                        tenant_name=self.conf.tenant_name,
                                        auth_version=self.conf.auth_version)

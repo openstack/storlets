@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # Limitations under the License.
 #---------------------------------------------------------------------------
-
+# TODO(eranr): Change thebelow to use Ansible os_project_facts module
 - name: Get the defaut tenant id from Keystone
-  shell: keystone --os-endpoint={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} tenant-list | grep {{ storlets_default_tenant_name }} | awk '{print $2}'
+  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} project list | grep {{ storlets_default_tenant_name }} | awk '{print $2}'
   register: tenant_id
 
 - name: Print the tenant id whose container we are processing
