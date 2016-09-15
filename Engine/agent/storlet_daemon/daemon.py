@@ -15,13 +15,14 @@
 import logging
 from logging.handlers import SysLogHandler
 import errno
-import json
 import os
 import pwd
 import sys
 import uuid
 from sbus import SBus
 from sbus.command import SBUS_CMD_PREFIX
+from storlet_daemon.files import StorletInputFile, StorletRangeInputFile, \
+    StorletOutputFile, StorletLogger
 
 
 EXIT_SUCCESS = 0
@@ -34,178 +35,6 @@ def command_handler(func):
     """
     func.is_command_handler = True
     return func
-
-
-class StorletError(Exception):
-    pass
-
-
-class StorletLoggerError(StorletError):
-    pass
-
-
-class StorletLogger(object):
-
-    def __init__(self, storlet_name, fd):
-        self.fd = fd
-        self.storlet_name = storlet_name
-        self.log_file = os.fdopen(self.fd, 'w')
-
-    @property
-    def closed(self):
-        return self.log_file.closed
-
-    def close(self):
-        self.log_file.close()
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
-
-    def _emit_log(self, level, msg):
-        msg = '%s %s: %s' % (self.storlet_name, level, msg)
-        self.log_file.write(msg)
-
-    def debug(self, msg):
-        self._emit_log('DEBUG', msg)
-
-    def info(self, msg):
-        self._emit_log('INFO', msg)
-
-    def warning(self, msg):
-        self._emit_log('WARN', msg)
-
-    warn = warning
-
-    def error(self, msg):
-        self._emit_log('ERROR', msg)
-
-    def exception(self, msg):
-        raise NotImplementedError()
-
-
-class StorletInputFile(object):
-    def __init__(self, fd):
-        self.fd = fd
-        self.fobj = os.fdopen(self.fd, 'r')
-        self.buf = b''
-
-    @property
-    def closed(self):
-        return self.fobj.closed
-
-    def close(self):
-        self.fobj.close()
-
-    def seek(self, offset, whence=0):
-        self.fobj.seek(offset, whence)
-        self.buf = b''
-
-    def next(self):
-        return self.read()
-
-    def read(self, size=-1):
-        if size >= 0:
-            if len(self.buf) >= size:
-                data = self.buf[:size]
-                self.buf = self.buf[size:]
-            else:
-                data = self.buf + self.fobj.read(size - len(self.buf))
-                self.buf = b''
-        else:
-            data = self.buf + self.fobj.read()
-            self.buf = b''
-        return data
-
-    def readline(self, size=-1):
-        data = b''
-        while b'\n' not in data and (size < 0 or len(data) < size):
-            if size < 0:
-                chunk = self.read(1024)
-            else:
-                chunk = self.read(size - len(data))
-            if not chunk:
-                break
-            data += chunk
-        if b'\n' in data:
-            data, sep, rest = data.partition(b'\n')
-            data += sep
-            self.buf = rest + self.buf
-        return data
-
-    def readlines(self, sizehint=-1):
-        lines = []
-        while True:
-            line = self.readline(sizehint)
-            if not line:
-                break
-            lines.append(line)
-            if sizehint >= 0:
-                sizehint += len(line)
-                if sizehint <= 0:
-                    break
-        return lines
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self):
-        self.close()
-
-
-class StorletRangeInputFile(StorletInputFile):
-    def __init__(self, fd, start, end):
-        super(StorletRangeInputFile, self).__init__(fd)
-        self.start = start
-        self.end = end
-        self.point = 0
-        self.seek(0)
-
-    def seek(self, offset, whence=0):
-        if whence == 0:
-            self.point = self.start + offset
-        elif whence == 1:
-            self.point = self.point + offset
-        elif whence == 2:
-            self.point = self.end - offset
-        else:
-            ValueError('Invalice whence parameter')
-
-        self.point = min(max(self.point, self.start), self.end)
-        self.fobj.seek(self.point, 0)
-        self.buf = b''
-
-    def read(self, size=-1):
-        if size < -1:
-            size = self.end - self.point
-        else:
-            size = min(size, self.end - self.point)
-        if not size:
-            return ''
-
-        data = super(StorletRangeInputFile, self).read(size)
-        self.point += len(data)
-        return data
-
-
-class MetadataFile(object):
-
-    def __init__(self, fd):
-        self.fd = fd
-        self.used = False
-
-    def dump(self, metadata):
-        if self.used:
-            raise StorletError('You can not dump metadata twice')
-
-        with os.fdopen(self.fd, 'w') as f:
-            f.write(json.dumps(metadata))
-        self.used = True
-
-    def close(self):
-        os.close(self.fd)
 
 
 class Daemon(object):
@@ -294,30 +123,20 @@ class Daemon(object):
             outfile.write('True: OK')
         return True
 
-    def _safe_close_fd(self, fd):
-        try:
-            os.close(fd)
-        except OSError as err:
-            if err.errno != errno.EBADF:
-                self.logger.exception('Failed to close fd: %d' % fd)
-                raise
-            pass
-
-    def _safe_close_fds(self, fds):
-        for fd in fds:
-            self._safe_close_fd(fd)
-
-    def _safe_close_file(self, fobj):
-        try:
-            fobj.close()
-        except OSError as e:
-            if e.errno != errno.EBADF:
-                raise
-            pass
-
     def _safe_close_files(self, files):
         for fobj in files:
-            self._safe_close_file(fobj)
+            if not fobj.closed:
+                self.logger.warning('Fd %d is not closed inside storlet, '
+                                    'so close it' % fobj.fileno())
+                fobj.close()
+
+    def _create_input_file(self, st_md, in_md, in_fd):
+        start = st_md.get('start')
+        end = st_md.get('end')
+        if start is not None and end is not None:
+            return StorletRangeInputFile(in_md, in_fd, int(start), int(end))
+        else:
+            return StorletInputFile(in_md, in_fd)
 
     @command_handler
     def execute(self, dtg):
@@ -332,11 +151,12 @@ class Daemon(object):
         with os.fdopen(task_id_out_fd, 'w') as outfile:
             outfile.write(task_id)
 
-        in_fds = dtg.object_in_fds
+        storlet_md = dtg.object_in_storlet_metadata
+        params = dtg.params
         in_md = dtg.object_in_metadata
+        in_fds = dtg.object_in_fds
         out_md_fds = dtg.object_metadata_out_fds
         out_fds = dtg.object_out_fds
-        params = dtg.params
         logger_fd = dtg.logger_out_fd
 
         pid = os.fork()
@@ -345,10 +165,14 @@ class Daemon(object):
                               (pid, task_id))
             self.task_id_to_pid[task_id] = pid
 
-            self._safe_close_fds(in_fds)
-            self._safe_close_fds(out_md_fds)
-            self._safe_close_fds(out_fds)
-            self._safe_close_fd(logger_fd)
+            for fd in dtg.fds:
+                # We do not use fds in main process, so close them
+                try:
+                    os.close(fd)
+                except OSError as e:
+                    if e.errno != errno.EBADF:
+                        raise
+                    pass
         else:
             try:
                 self.logger.debug('Start storlet invocation')
@@ -358,30 +182,24 @@ class Daemon(object):
                                   % (in_fds, in_md, out_md_fds, out_fds,
                                      logger_fd))
 
-                storlet_md = dtg.object_in_storlet_metadata
-                in_files = []
-                for st_md, in_fd in zip(storlet_md, in_fds):
-                    start = st_md.get('start')
-                    end = st_md.get('end')
-                    if start is not None and end is not None:
-                        in_files.append(
-                            StorletRangeInputFile(in_fd, int(start), int(end)))
-                    else:
-                        in_files.append(StorletInputFile(in_fd))
+                in_files = [self._create_input_file(st_md, md, in_fd)
+                            for st_md, md, in_fd
+                            in zip(storlet_md, in_md, in_fds)]
 
-                out_md_files = [MetadataFile(fd) for fd in out_md_fds]
-                out_files = [os.fdopen(fd, 'w') for fd in out_fds]
+                out_files = [StorletOutputFile(out_md_fd, out_fd)
+                             for out_md_fd, out_fd
+                             in zip(out_md_fds, out_fds)]
 
                 self.logger.debug('Start storlet execution')
-                with StorletLogger(self.storlet_name, logger_fd) as logger:
-                    handler = self.storlet_cls(logger)
-                    handler(in_md, in_files, out_md_files, out_files, params)
+                with StorletLogger(self.storlet_name, logger_fd) as slogger:
+                    handler = self.storlet_cls(slogger)
+                    handler(in_files, out_files, params)
                 self.logger.debug('Completed')
             except Exception:
                 self.logger.exception('Error in storlet invocation')
             finally:
+                # Make sure that all fds are closed
                 self._safe_close_files(in_files)
-                self._safe_close_files(out_md_files)
                 self._safe_close_files(out_files)
                 sys.exit()
         return True
