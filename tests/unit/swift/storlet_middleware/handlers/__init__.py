@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import mock
 import unittest
 
@@ -24,24 +23,15 @@ from tests.unit.swift import FakeLogger
 from tests.unit.swift.storlet_middleware import FakeApp
 
 
-# TODO(takashi): take these values from config file
-DEFAULT_CONFIG = {
-    'storlet_container': 'storlet',
-    'storlet_dependency': 'dependency',
-    'storlet_timeout': '40',
-    'storlet_gateway_module': 'stub',
-    'storlet_gateway_conf': '/etc/swift/storlet_stub_gateway.conf',
-    'execution_server': 'proxy'}
-
-
 def create_handler_config(exec_server):
     return {'execution_server': exec_server,
             'gateway_module': StorletGatewayStub}
 
 
 class BaseTestStorletMiddleware(unittest.TestCase):
-    def setUp(self):
-        self.conf = copy.copy(DEFAULT_CONFIG)
+    def setUp(self, exec_server='proxy'):
+        self.exec_server = exec_server
+        self.conf = create_handler_config(exec_server)
         self.base_app = FakeApp()
 
     def tearDown(self):

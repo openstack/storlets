@@ -21,9 +21,9 @@ from storlet_middleware.handlers.base import StorletBaseHandler, \
 
 
 class StorletObjectHandler(StorletBaseHandler):
-    def __init__(self, request, conf, app, logger):
+    def __init__(self, request, conf, gateway_conf, app, logger):
         super(StorletObjectHandler, self).__init__(
-            request, conf, app, logger)
+            request, conf, gateway_conf, app, logger)
         # object need the gateway module only execution
         if (self.is_storlet_execution):
             self._setup_gateway()

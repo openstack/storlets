@@ -21,8 +21,29 @@ from six import StringIO
 from swift.common.swob import Request
 from storlet_gateway.common.exceptions import FileManagementError
 from storlet_middleware.handlers import StorletBaseHandler
-from storlet_middleware.handlers.base import SwiftFileManager
+from storlet_middleware.handlers.base import get_container_names, \
+    SwiftFileManager
 from tests.unit.swift import FakeLogger
+
+
+class TestUtils(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_get_container_names(self):
+        # Use default values
+        self.assertEqual(
+            {'storlet': 'storlet', 'dependency': 'dependency',
+             'log': 'storletlog'},
+            get_container_names({}))
+
+        # Use explicit values
+        self.assertEqual(
+            {'storlet': 'conta', 'dependency': 'contb', 'log': 'contc'},
+            get_container_names(
+                {'storlet_container': 'conta',
+                 'storlet_dependency': 'contb',
+                 'storlet_logcontainer': 'contc'}))
 
 
 class TestSwiftFileManager(unittest.TestCase):
@@ -141,14 +162,10 @@ class TestStorletBaseHandler(unittest.TestCase):
             req = Request.blank(
                 path, environ={'REQUEST_METHOD': method},
                 headers=headers)
-            try:
+            with self.assertRaises(NotImplementedError):
                 StorletBaseHandler(
-                    req, mock.MagicMock(), mock.MagicMock(), mock.MagicMock())
-            except NotImplementedError:
-                pass
-            except Exception as e:
-                self.fail('Unexpected Error: %s raised with %s, %s, %s' %
-                          (repr(e), path, method, headers))
+                    req, mock.MagicMock(), mock.MagicMock(),
+                    mock.MagicMock(), mock.MagicMock())
 
         for method in ('PUT', 'GET', 'POST'):
             for path in ('', '/v1', '/v1/a', '/v1/a/c', '/v1/a/c/o'):

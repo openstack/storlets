@@ -25,8 +25,7 @@ from tests.unit.swift.storlet_middleware.handlers import \
 
 class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
     def setUp(self):
-        super(TestStorletMiddlewareObject, self).setUp()
-        self.conf['execution_server'] = 'object'
+        super(TestStorletMiddlewareObject, self).setUp(exec_server='object')
 
     def test_call_unsupported_method(self):
         def call(method):
@@ -172,6 +171,7 @@ class TestStorletObjectHandler(unittest.TestCase):
     def setUp(self):
         self.handler_class = StorletObjectHandler
         self.conf = create_handler_config('object')
+        self.gateway_conf = {}
 
     def test_init_handler(self):
         req = Request.blank(
@@ -179,7 +179,8 @@ class TestStorletObjectHandler(unittest.TestCase):
             headers={'X-Backend-Storlet-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         handler = self.handler_class(
-            req, self.conf, mock.MagicMock(), mock.MagicMock())
+            req, self.conf, self.gateway_conf, mock.MagicMock(),
+            mock.MagicMock())
         # FIXME: stil hold api version 0 at ObjectHandler but will be
         #        deprecated if it's never used.
         self.assertEqual('0', handler.api_version)

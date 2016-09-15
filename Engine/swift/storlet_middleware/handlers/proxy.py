@@ -39,9 +39,9 @@ CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
 
 
 class StorletProxyHandler(StorletBaseHandler):
-    def __init__(self, request, conf, app, logger):
+    def __init__(self, request, conf, gateway_conf, app, logger):
         super(StorletProxyHandler, self).__init__(
-            request, conf, app, logger)
+            request, conf, gateway_conf, app, logger)
         self.storlet_containers = [self.storlet_container,
                                    self.storlet_dependency]
 

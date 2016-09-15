@@ -1,5 +1,4 @@
 [DEFAULT]
-storlet_logcontainer = storletlog
 lxc_root = /home/docker_device/scopes
 cache_dir = /home/docker_device/cache/scopes
 log_dir = /home/docker_device/logs/scopes
