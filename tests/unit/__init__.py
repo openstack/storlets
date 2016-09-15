@@ -12,10 +12,12 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-from tempfile import mkdtemp
-from shutil import rmtree
+import sys
+import traceback
 import functools
+from collections import defaultdict
+from shutil import rmtree
+from tempfile import mkdtemp
 
 
 def with_tempdir(f):
@@ -39,3 +41,36 @@ class MockSBus(object):
     def send(self, path, datagram):
         # return success code
         return 0
+
+
+class FakeLogger(object):
+    def __init__(self, *args, **kwargs):
+        self._log_lines = defaultdict(list)
+
+    def _print_log(self, level, msg):
+        self._log_lines[level.lower()].append(msg)
+        print('%s: %s' % (level, msg))
+
+    def get_log_lines(self, level):
+        return self._log_lines[level.lower()]
+
+    def debug(self, msg):
+        self._print_log('DEBUG', msg)
+
+    def info(self, msg):
+        self._print_log('INFO', msg)
+
+    def warning(self, msg):
+        self._print_log('WARN', msg)
+
+    warn = warning
+
+    def error(self, msg):
+        self._print_log('ERROR', msg)
+
+    def exception(self, msg):
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        exc_msg = traceback.format_exception(exc_type, exc_value,
+                                             exc_traceback)
+        new_msg = '%s: %s' % (msg, exc_msg)
+        self._print_log('EXCEPTION', new_msg)

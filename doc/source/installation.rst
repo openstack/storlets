@@ -109,7 +109,7 @@ storlets with EC and encryption. Valid values are true / false
 
 Install
 -------
-to perform the installation follow these steps:
+To perform the installation follow these steps:
 
 #. Create a hosts file as described above
 #. Edit the file install/storlets/common.yml according to the above

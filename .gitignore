@@ -1,6 +1,7 @@
 *.py[cod]
 
 # C extensions
+*.o
 *.so
 
 # Packages
@@ -35,11 +36,16 @@ install/swift/hosts
 Engine/SMScripts/bin/
 
 # auto created on build
-Engine/dependencies/
-Engine/SBus/SBusJavaFacade/org_openstack_storlet_sbus_SBusJNI.h
+src/java/dependencies/
+src/java/SBus/org_openstack_storlet_sbus_SBusJNI.h
 
 # Storlets build
-bin
+*.class
+*.jar
+StorletSamples/java/*/bin
+
+# scripts build
+scripts/restart_docker_container
 
 # Unit test / coverage reports
 .coverage

@@ -21,6 +21,7 @@ MAINTAINER {{ base_image_maintainer }}
 # to prevent docker images from including apt cache file.
 RUN apt-get update && \
     apt-get install python -y && \
+    apt-get install git -y && \
     apt-get install software-properties-common -y && \
     add-apt-repository ppa:openjdk-r/ppa -y && \
     apt-get update && \

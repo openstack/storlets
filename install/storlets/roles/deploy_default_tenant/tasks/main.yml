@@ -18,7 +18,8 @@
   register: tenant_id
 
 - name: Print the tenant id whose container we are processing
-  debug: msg="{{ tenant_id.stdout_lines[0] }}"
+  debug:
+    msg: "{{ tenant_id.stdout_lines[0] }}"
 
 - name: Enable the default tenant for storlets
   command: swift

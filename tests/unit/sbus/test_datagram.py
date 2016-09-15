@@ -15,8 +15,8 @@
 
 import json
 import unittest
-import sbus.file_description as sbus_fd
-from sbus.datagram import FDMetadata, SBusDatagram
+import storlets.sbus.file_description as sbus_fd
+from storlets.sbus.datagram import FDMetadata, SBusDatagram
 
 
 class TestFDMetadata(unittest.TestCase):

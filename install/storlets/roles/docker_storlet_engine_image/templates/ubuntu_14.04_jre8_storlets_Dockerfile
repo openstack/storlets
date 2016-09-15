@@ -17,20 +17,33 @@ FROM {{ inventory_hostname }}:{{ docker_registry_port }}/{{base_os_image}}_jre8
 
 MAINTAINER {{ base_image_maintainer }}
 
+# Create swift user/group
 RUN [ "groupadd", "-g", "{{ swift_group_id }}", "swift" ]
 RUN [ "useradd", "-u" , "{{ swift_user_id }}", "-g", "{{ swift_group_id }}", "swift" ]
 
-ADD sbus-1.0.linux-x86_64.tar.gz            /
-RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/sbus*
+# Copy files
+COPY ["logback.xml", "init_container.sh", "/opt/storlets/"]
 
-COPY sbus.so                                            /usr/local/lib/python2.7/dist-packages/
+RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
+RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]
 
-COPY ["SBusJavaFacade.jar", "libjsbus.so", "SDaemon.jar", "SCommon.jar", "logback.xml", "init_container.sh", "/opt/storlets/"]
+# Install c java resources
+COPY ["libsbus.so", "/usr/local/lib/storlets/"]
 
-ADD storlets_agent-1.0.linux-x86_64.tar.gz      /
+# Install storlets java resources
+COPY ["SBusJavaFacade.jar", "libjsbus.so", "SDaemon.jar", "SCommon.jar", "/opt/storlets/"]
 
-RUN ["chmod", "0744", "/opt/storlets/SBusJavaFacade.jar", "/opt/storlets/SDaemon.jar", "/opt/storlets/SCommon.jar", "/opt/storlets/logback.xml"]
-RUN ["chmod", "0755", "/usr/local/bin/storlets-daemon-factory", "/opt/storlets/libjsbus.so", "/usr/local/lib/python2.7/dist-packages/sbus.so", "/opt/storlets/init_container.sh"]
+# Install pip
+COPY ["get-pip.py", "/opt/storlets"]
+RUN ["python",  "/opt/storlets/get-pip.py"]
+ENV PYTHONWARNINGS="ignore:a true SSLContext object"
 
-CMD ["prod", "/mnt/channels/factory_pipe","DEBUG"]
+# Install python codes
+COPY ["storlets", "/opt/storlets/"]
+RUN cd /opt/storlets/ && \
+    pip install -r requirements.txt && \
+    python setup.py install
+
+CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
+
 ENTRYPOINT ["/opt/storlets/init_container.sh"]

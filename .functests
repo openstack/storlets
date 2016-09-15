@@ -14,6 +14,8 @@ if [ "$FLAVOR" != "jenkins" ] && [ "$FLAVOR" != "dev" ]; then
 fi
 shift
 
+ant build_storlets
+
 SRC_DIR=$(python -c "import os; print os.path.dirname(os.path.realpath('$0'))")
 cd ${SRC_DIR}/tests/functional
 if [ "$FLAVOR" == "jenkins" ]; then

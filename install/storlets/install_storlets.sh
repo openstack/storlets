@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -eu
-# echo "Running hosts cluster_check playbook"
+echo "Running hosts cluster_check playbook"
 ansible-playbook -s -i storlets_dynamic_inventory.py cluster_check.yml
 
 echo "Running hosts docker_cluster playbook"

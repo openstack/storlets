@@ -21,7 +21,7 @@ from tests.functional.java import BIN_DIR
 class TestExecDepStorlet(StorletBaseFunctionalTest):
     def setUp(self):
         super(TestExecDepStorlet, self).setUp()
-        self.deploy_storlet_path = '../../tools/deploy_storlet.py'
+        self.deploy_storlet_path = '../../storlets/tools/deploy_storlet.py'
         self.execdep_storlet_path = '%s/java/%s/%s' % (PATH_TO_STORLETS,
                                                        'ExecDepStorlet',
                                                        BIN_DIR)

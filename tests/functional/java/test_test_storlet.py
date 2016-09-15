@@ -17,8 +17,8 @@ import threading
 from swiftclient import client as swift_client
 from swiftclient import ClientException
 from nose.plugins.attrib import attr
+from storlets.tools.utils import get_member_auth
 from tests.functional.java import StorletJavaFunctionalTest
-from tools.utils import get_member_auth
 
 
 class myTestThread (threading.Thread):

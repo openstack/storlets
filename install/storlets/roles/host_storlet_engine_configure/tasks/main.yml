@@ -25,7 +25,9 @@
     mode: 0644
 
 - name: copy install script
-  copy: src="{{ item }}" dest={{ engine_install_dir  }}
+  copy:
+    src: "{{ item }}"
+    dest: "{{ engine_install_dir  }}"
   with_items:
    - ../../common_files/swift_config.py
 

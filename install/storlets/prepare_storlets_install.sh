@@ -40,8 +40,12 @@ sudo apt-get install -y ant
 sudo apt-get install -y python
 sudo apt-get install -y python-setuptools
 
-# Build Storlets
-ant build
+sudo ./install_libs.sh
+
+# Note(takashi): Currently we need to use tar ball to storelet repo
+#                files, to avoid slow perfomance of copy module
+#                when dealing with a directory
+tar czf /tmp/storlets.tar.gz .
 
 # The rest of the operations are all relative to
 # install/storlets/

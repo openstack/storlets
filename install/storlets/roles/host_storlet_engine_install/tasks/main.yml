@@ -13,23 +13,52 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- name: install python facade on host
-  unarchive: owner=root group=root mode=0755 dest=/ src={{ SBusPythonFacade_dir }}/dist/{{ SBusPythonFacade_egg_dist }}
+- name: Copy python code tar ball
+  copy:
+    src: "/tmp/storlets.tar.gz"
+    dest: "/tmp"
+
+- name: Create temp directory for python code
+  file:
+    path: "/tmp/storlets_src"
+    state: directory
+
+- name: Unarchive python code tar ball
+  unarchive:
+    src: "/tmp/storlets.tar.gz"
+    dest: "/tmp/storlets_src/"
+
+- name: Change permission of install scripts
+  file:
+    path: "/tmp/storlets_src/install_libs.sh"
+    mode: "0755"
+
+- name: Install C/Java codes on remote host
+  shell: "/tmp/storlets_src/install_libs.sh"
+  args:
+    chdir: "/tmp/storlets_src"
   become: true
 
-- name: install sbus transport layer on host
-  copy: src={{ SBusTransportLayer_dir }}/{{ sbus_so }} dest=/{{python_dist_packages_dir}} owner=root group=root mode=0755
+- name: Install python requirements
+  shell: "pip install -r /tmp/storlets_src/requirements.txt"
+  args:
+    chdir: "/tmp/storlets_src"
   become: true
 
-- name: install swift middleware on host
-  unarchive: owner=root group=root mode=0755 dest=/ src={{ swift_middleware_dir }}/dist/{{ swift_middleware_egg_dist }}
+- name: Install Python codes on remote host
+  command: "python setup.py install"
+  args:
+    chdir: "/tmp/storlets_src"
   become: true
 
-- stat: path={{ docker_device }}/scripts
-  register: st
 - name: Create scripts directory
-  file: path="{{ docker_device }}/scripts/" state=directory owner="{{ swift_run_time_user }}" group="{{ swift_run_time_group }}" mode=0755
-  when: not st.stat.exists
+  file:
+    path: "{{ docker_device }}/scripts/"
+    state: directory
+    owner: "{{ swift_run_time_user }}"
+    group: "{{ swift_run_time_group }}"
+    mode: 0755
+  become: true
 
 - name: install runtime scripts used by swift middleware
   copy:
@@ -39,6 +68,12 @@
     owner: root
     group: root
   with_items:
-    - "Engine/SMScripts/bin/restart_docker_container"
-    - "Engine/SMScripts/send_halt_cmd_to_daemon_factory.py"
+    - "scripts/restart_docker_container"
+    - "scripts/send_halt_cmd_to_daemon_factory.py"
+  become: true
+
+- name: Remove code repository from remote host
+  file:
+    path: "/tmp/storlets_src"
+    state: absent
   become: true

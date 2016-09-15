@@ -130,16 +130,20 @@ We need the following for Docker
     sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
     update-rc.d docker defaults
 
-Get and build the storlets code
--------------------------------
+Get and install the storlets code
+---------------------------------
 
 ::
 
     cd $HOME
     git clone https://github.com/openstack/storlets.git
     cd storlets
-    ant build
+    sudo ./install_libs.sh
+    sudo python setup.py install
+    tar czf /tmp/storlets.tar.gz .
     cd -
+
+.. note:: You don't need sudo for 'python setup.py install' when installing the storlets package into your python virtualenv.
 
 Build the Docker image to be used for running storlets
 ------------------------------------------------------
@@ -156,11 +160,11 @@ Step 2: Create a Docker image with Java
 
     mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8
     cd $HOME/docker_repos/ubuntu_14.04_jre8
-    cp $HOME/storlets/Engine/dependencies/logback-classic-1.1.2.jar .
-    cp $HOME/storlets/Engine/dependencies/logback-core-1.1.2.jar .
-    cp $HOME/storlets/Engine/dependencies/slf4j-api-1.7.7.jar .
-    cp $HOME/storlets/Engine/dependencies/json_simple-1.1.jar .
-    cp $HOME/storlets/Engine/dependencies/logback.xml .
+    cp $HOME/storlets/src/java/dependencies/logback-classic-1.1.2.jar .
+    cp $HOME/storlets/src/java/dependencies/logback-core-1.1.2.jar .
+    cp $HOME/storlets/src/java/dependencies/slf4j-api-1.7.7.jar .
+    cp $HOME/storlets/src/java/dependencies/json_simple-1.1.jar .
+    cp $HOME/storlets/src/java/dependencies/logback.xml .
     cd -
 
 Create the file: $HOME/docker_repos/ubuntu_14.04_jre8/Dockerfile
@@ -211,14 +215,16 @@ Step 3: Augment the above created image with the storlets stuff
 
     mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8_storlets
     cd $HOME/docker_repos/ubuntu_14.04_jre8_storlets
-    cp $HOME/storlets/Engine/SBus/SBusJavaFacade/bin/libjsbus.so .
-    cp $HOME/storlets/Engine/SBus/SBusJavaFacade/bin/SBusJavaFacade.jar .
-    cp $HOME/storlets/Engine/SBus/SBusPythonFacade/dist/SBusPythonFacade-1.0.linux-x86_64.tar.gz .
-    cp $HOME/storlets/Engine/SBus/SBusTransportLayer/bin/sbus.so .
-    cp $HOME/storlets/Engine/SDaemon/bin/SDaemon.jar .
-    cp $HOME/storlets/Engine/SCommon/bin/SCommon.jar .
-    cp $HOME/storlets/Engine/agent/dist/storlets_agent-1.0.linux-x86_64.tar.gz .
+    cp $HOME/storlets/src/java/SBus/bin/libjsbus.so .
+    cp $HOME/storlets/src/java/SBus/bin/SBusJavaFacade.jar .
+    cp $HOME/storlets/src/java/SDaemon/bin/SDaemon.jar .
+    cp $HOME/storlets/src/java/SCommon/bin/SCommon.jar .
+    cp $HOME/storlets/src/c/sbus/libsbus.so .
     cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/init_container.sh .
+    cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/logback.xml .
+    wget https://bootstrap.pypa.io/get-pip.py
+    cp /tmp/storlets.tar.gz .
+    tar -xvf storlets.tar.gz
     cd -
 
 Create the file: $HOME/docker_repos/ubuntu_14.04_jre8_storlets/Dockerfile
@@ -233,31 +239,31 @@ with the following content:
     RUN [ "groupadd", "-g", "1003", "swift" ]
     RUN [ "useradd", "-u" , "1003", "-g", "1003", "swift" ]
 
-    ADD SBusPythonFacade-1.0.linux-x86_64.tar.gz            /
-    RUN chmod -R 0755 /usr/local/lib/python2.7/dist-packages/SBusPythonFacade*
+    # Copy files
+    COPY ["logback.xml", "init_container.sh", "/opt/storlets/"]
 
-    COPY sbus.so                                            /usr/local/lib/python2.7/dist-packages/
-    RUN ["chmod", "0755", "/usr/local/lib/python2.7/dist-packages/sbus.so"]
-
-    COPY SBusJavaFacade.jar                                 /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/SBusJavaFacade.jar"]
-
-    COPY libjsbus.so                                        /opt/storlets/
-    RUN ["chmod", "0755", "/opt/storlets/libjsbus.so"]
-
-    COPY SDaemon.jar                                        /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/SDaemon.jar"]
-
-    COPY SCommon.jar                                        /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/SCommon.jar"]
-
-    ADD storlets_agent-1.0.linux-x86_64.tar.gz      /
-    RUN ["chmod", "0755", "/usr/local/bin/storlets-daemon-factory"]
-
-    COPY init_container.sh                                  /opt/storlets/
+    RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
     RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]
 
-    CMD ["prod", "/mnt/channels/factory_pipe","DEBUG"]
+    # Install c java resources
+    COPY ["libsbus.so", "/usr/local/lib/storlets/"]
+
+    # Install storlets java resources
+    COPY ["SBusJavaFacade.jar", "libjsbus.so", "SDaemon.jar", "SCommon.jar", "/opt/storlets/"]
+
+    # Install pip
+    COPY ["get-pip.py", "/opt/storlets"]
+    RUN ["python",  "/opt/storlets/get-pip.py"]
+    ENV PYTHONWARNINGS="ignore:a true SSLContext object"
+
+    # Install python codes
+    COPY ["storlets", "/opt/storlets/"]
+    RUN cd /opt/storlets/ && \
+        pip install -r requirements.txt && \
+        python setup.py install
+
+    CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
+
     ENTRYPOINT ["/opt/storlets/init_container.sh"]
 
 Build the image
@@ -303,26 +309,6 @@ Build the image
     sudo docker build -q -t <account id> .
     cd -
 
-Install the storlets middleware components
-------------------------------------------
-Install the SBus components used for comuunication between the host and container
-
-::
-
-    cp $HOME/storlets/SBusPythonFacade/dist/SBusPythonFacade-1.0.linux-x86_64.tar.gz /tmp
-    cd /tmp
-    sudo tar -C / -xvf SBusPythonFacade-1.0.linux-x86_64.tar.gz
-    sudo cp $HOME/storlets/Engine/SBus/SBusTransportLayer/bin/sbus.so /usr/local/lib/python2.7/dist-packages/sbus.so
-    sudo chown $USER:$USER /usr/local/lib/python2.7/dist-packages/sbus.so
-
-Install the swift middleware
-
-::
-
-    cp $HOME/storlets/Engine/swift/dist/storlets-1.0.linux-x86_64.tar.gz /tmp
-    cd /tmp
-    sudo tar -C / -xvf storlets-1.0.linux-x86_64.tar.gz
-
 Create the storlets run time environment
 ----------------------------------------
 Create the run time directory
@@ -341,10 +327,10 @@ require root privileges.
 
     mkdir $STORLETS_HOME/scripts
     cd STORLETS_HOME/scripts
-    cp $HOME/storlets/Engine/SMScripts/bin/restart_docker_container .
+    cp $HOME/scripts/restart_docker_container .
     sudo chown root:root restart_docker_container
     sudo chmod 04755 restart_docker_container
-    cp $HOME/storlets/Engine/SMScripts/send_halt_cmd_to_daemon_factory.py .
+    cp $HOME/scripts/send_halt_cmd_to_daemon_factory.py .
     sudo chown root:root send_halt_cmd_to_daemon_factory.py
     sudo chmod 04755 send_halt_cmd_to_daemon_factory.py
 

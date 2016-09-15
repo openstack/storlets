@@ -15,10 +15,9 @@
 # limitations under the License.
 
 import unittest
-from tools.cluster_config_parser import ClusterConfig
-from tools.utils import get_admin_auth,\
-    deploy_storlet, put_local_file
 from swiftclient import client as swiftclient
+from storlets.tools.cluster_config_parser import ClusterConfig
+from storlets.tools.utils import deploy_storlet, get_admin_auth, put_local_file
 
 CONFIG_FILE = '../../cluster_config.json'
 PATH_TO_STORLETS = '../../StorletSamples'

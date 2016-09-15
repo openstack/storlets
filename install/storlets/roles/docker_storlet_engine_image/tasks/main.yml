@@ -15,46 +15,52 @@
 
 - name: Create Repository for building the image
   file:
-    path: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
+    path: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets"
     state: directory
     mode: 0755
     owner: root
 
-- name: Copy SBus resources
-  copy:
-    src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
-  with_items:
-    - "Engine/SBus/SBusJavaFacade/bin/libjsbus.so"
-    - "Engine/SBus/SBusJavaFacade/bin/SBusJavaFacade.jar"
-    - "Engine/SBus/SBusPythonFacade/dist/sbus-1.0.linux-x86_64.tar.gz"
-    - "Engine/SBus/SBusTransportLayer/bin/sbus.so"
+- name: Get pip install script
+  get_url:
+    url: "https://bootstrap.pypa.io/get-pip.py"
+    dest: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets"
 
-- name: Copy SDaemon resources
+- name: Copy c resources
   copy:
     src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
+    dest: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets"
   with_items:
-    - "Engine/SDaemon/bin/SDaemon.jar"
+    - "src/c/sbus/libsbus.so"
 
-- name: Copy SCommon resources
+- name: Copy java resources
   copy:
-    src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
+    src:  "{{ storlet_source_dir }}/{{ item }}"
+    dest: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets"
   with_items:
-    - "Engine/SCommon/bin/SCommon.jar"
+    - "src/java/SBus/bin/libjsbus.so"
+    - "src/java/SBus/bin/SBusJavaFacade.jar"
+    - "src/java/SCommon/bin/SCommon.jar"
+    - "src/java/SDaemon/bin/SDaemon.jar"
 
-- name: Copy Daemon Factory resources
+- name: Copy python code tar ball
   copy:
-    src: "{{ storlet_source_dir }}/{{ item }}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
-  with_items:
-    - "Engine/agent/dist/storlets_agent-1.0.linux-x86_64.tar.gz"
+    src: "/tmp/storlets.tar.gz"
+    dest: "/tmp"
+
+- name: Create a directory for python code
+  file:
+    path: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets/storlets"
+    state: directory
+
+- name: Unarchive python code tar ball
+  unarchive:
+    src: "/tmp/storlets.tar.gz"
+    dest: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets/storlets"
 
 - name: Copy Init Container Script
   copy:
     src: "{{item}}"
-    dest: /data/registry/repositories/{{ base_os_image }}_jre8_storlets
+    dest: "/data/registry/repositories/{{ base_os_image }}_jre8_storlets/"
   with_items:
     - init_container.sh
     - logback.xml

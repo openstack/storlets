@@ -23,13 +23,7 @@
 
 - hosts: storlet-proxy:storlet-storage
   roles:
+    - role: docker_client
     - role: host_storlet_engine_install
-      swift_middleware_dir: "{{ storlet_source_dir  }}/Engine/swift"
-      swift_middleware_egg_dist: storlets-1.0.linux-x86_64.tar.gz
-      SBus_dir: "{{ storlet_source_dir  }}/Engine/SBus"
-      SBusTransportLayer_dir: "{{ SBus_dir }}/SBusTransportLayer"
-      sbus_so: bin/sbus.so
-      SBusPythonFacade_dir: "{{ SBus_dir }}/SBusPythonFacade/"
-      SBusPythonFacade_egg_dist: sbus-1.0.linux-x86_64.tar.gz
     - role: host_storlet_engine_configure
       engine_install_dir: /tmp/swift/

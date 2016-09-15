@@ -17,11 +17,20 @@
 <project>
     <!-- Storlets Engine build /-->
     <target name="build_engine">
-        <ant dir="Engine" target="build" />
+        <ant dir="src/java" target="build" />
     </target>
 
     <target name="clean_engine">
-        <ant dir="Engine" target="clean" />
+        <ant dir="src/java" target="clean" />
+    </target>
+
+    <!-- Storlets Engine install /-->
+    <target name="install_engine">
+        <ant dir="src/java" target="install" />
+    </target>
+
+    <target name="uninstall_engine">
+        <ant dir="src/java" target="uninstall" />
     </target>
 
     <!-- Storlets Samples build -->
@@ -35,9 +44,11 @@
 
     <!-- Overall build -->
     <target name="build" depends="build_engine, build_storlets" />
-    <target name="clean" depends="clean_engine, clean_storlets">
-        <delete dir="bin" />
-        </target>
+    <target name="clean" depends="clean_engine, clean_storlets" />
+
+    <!-- Overall install -->
+    <target name="install" depends="install_engine" />
+    <target name="uninstall" depends="uninstall_engine" />
 
     <!--            Deploy          -->
     <!-- To execute the below tasks you must have:
@@ -49,7 +60,7 @@
             <arg value="-s"/>
             <arg value="-i"/>
             <arg value="storlets_dynamic_inventory.py"/>
-            <arg value="host_storlet_engine.yml"/>
+            <arg value="host_side_storlet_engine.yml"/>
         </exec>
     </target>
 
@@ -63,5 +74,4 @@
     </target>
 
     <target name="deploy" depends="deploy_host_engine, deploy_container_engine"/>
-
 </project>

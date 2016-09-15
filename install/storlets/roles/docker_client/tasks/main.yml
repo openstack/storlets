@@ -16,37 +16,60 @@
 - name: Test for missing packages
   shell: dpkg --get-selections | grep aufs-tools | wc -l
   register: aufs
+  become: yes
 
 - shell: dpkg --get-selections | grep linux-image-extra | wc -l
   register: linux_image_extra
+  become: yes
 
 - shell: dpkg --get-selections | grep docker-engine | awk {'print $2'} | grep -w install | wc -l
   register: docker_engine
+  become: yes
 
 - command: uname -r
   register: uname
-- apt: name=linux-image-extra-{{ uname.stdout_lines[0] }} update-cache=yes force=yes
+- apt:
+    name: linux-image-extra-{{ uname.stdout_lines[0] }}
+    update-cache: yes
+    force: yes
   when: "'0' in linux_image_extra.stdout_lines[0]"
 
-- apt: name=aufs-tools=1:3.2+20130722-1.1 update-cache=yes force=yes
+- apt:
+    name: aufs-tools=1:3.2+20130722-1.1
+    update-cache: yes
+    force: yes
   when: "'0' in aufs.stdout_lines[0]"
+  become: yes
 
 - name: Set Docker Ubuntu Repo Key
-  apt_key: keyserver=hkp://p80.pool.sks-keyservers.net:80 id=58118E89F3A912897C070ADBF76221572C52609D state=present
+  apt_key:
+    keyserver: hkp://p80.pool.sks-keyservers.net:80
+    id: 58118E89F3A912897C070ADBF76221572C52609D
+    state: present
   ignore_errors: True
   when: "'0' in docker_engine.stdout_lines[0]"
+  become: yes
 
 - name: Install Apt Transport HTTPS
   apt: name=apt-transport-https state=present update-cache=yes force=yes
   when: "'0' in docker_engine.stdout_lines[0]"
+  become: yes
 
 - name: Add Docker Apt repository
-  apt_repository: repo='deb https://apt.dockerproject.org/repo ubuntu-trusty main' state=present
+  apt_repository:
+    repo: 'deb https://apt.dockerproject.org/repo ubuntu-trusty main'
+    state: present
   when: "'0' in docker_engine.stdout_lines[0]"
+  become: yes
 
 - name: Install Docker Client
-  apt: name=docker-engine state=present update-cache=yes force=yes
+  apt:
+    name: docker-engine
+    state: present
+    update-cache: yes
+    force: yes
   when: "'0' in docker_engine.stdout_lines[0]"
+  become: yes
 
 # There seem to be a bug in the installation where config files are not installed.
 # Might be a bug in the un-install where docket thinks it is upgrading.
@@ -101,7 +124,9 @@
 
 - name: Stop Docker Daemon
   shell: bash -c "/usr/sbin/service docker stop"
+  become: yes
   ignore_errors: yes
 
 - name: Restart Docker Daemon
   shell: bash -c "/usr/sbin/service docker start"
+  become: yes

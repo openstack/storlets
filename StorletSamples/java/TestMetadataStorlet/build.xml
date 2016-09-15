@@ -21,7 +21,7 @@
         <javac srcdir="src/org/openstack/storlet/testmetadatastorlet" destdir="bin" includeantruntime="false">
             <classpath>
                 <pathelement
-                    path="../../../Engine/SCommon/bin/SCommon.jar"/>
+                    path="../../../src/java/SCommon/bin/SCommon.jar"/>
             </classpath>
         </javac>
         <jar destfile="bin/testmetadatastorlet-1.0.jar"

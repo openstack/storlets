@@ -24,7 +24,7 @@
     <target name="java">
         <mkdir dir="bin" />
         <javac srcdir="src" destdir="bin"
-           classpath="../../../Engine/SCommon/bin/SCommon.jar"
+           classpath="../../../src/java/SCommon/bin/SCommon.jar"
                includeantruntime="false" />
     </target>
 

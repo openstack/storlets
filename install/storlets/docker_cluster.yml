@@ -13,12 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-- hosts: docker:storlet-proxy:storlet-storage
-  roles:
-  - role: docker_client
-
 - hosts: docker
   roles:
+  - role: docker_client
   - role: docker_registry
   - role: docker_base_jre_image
   - role: docker_storlet_engine_image

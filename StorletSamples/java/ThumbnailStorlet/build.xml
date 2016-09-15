@@ -22,7 +22,7 @@
         <mkdir dir="bin" />
         <javac srcdir="src" destdir="bin" includeantruntime="false">
             <classpath>
-                <pathelement path="../../../Engine/SCommon/bin/SCommon.jar"/>
+                <pathelement path="../../../src/java/SCommon/bin/SCommon.jar"/>
             </classpath>
         </javac>
     </target>
