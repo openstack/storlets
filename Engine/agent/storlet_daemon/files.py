@@ -179,8 +179,11 @@ class StorletRangeInputFile(StorletInputFile):
         super(StorletRangeInputFile, self).__init__(md, fd)
         self.start = start
         self.end = end
-        self.point = 0
-        self.read(self.start)
+        # TODO(takashi): Currently we use range input file only for zero copy
+        #                case, so can execute seek on fd. Myabe we need some
+        #                mechanism to confirm the fd is seekable.
+        self.obj_file.seek(self.start, 0)
+        self.point = self.start
 
     def _read(self, size=-1):
         if size >= 0:
