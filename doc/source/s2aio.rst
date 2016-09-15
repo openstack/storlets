@@ -19,7 +19,8 @@ replacing the last command with:
 
 If you do not have Docker installed on your host, the above script
 will install it and set docker to use "vfs" as the docker storage driver
-which typically is aufs. If you have Docker installed you must change its
+(instead of the default "aufs" storage driver). If you already have
+Docker installed, you may need to change its
 storage driver to "vfs". The created Docker container runs yet another
-container. Running Docker in Docker requires the usage of the "vfs" storage
+container. Running Docker in Docker may require the usage of the "vfs" storage
 device.
