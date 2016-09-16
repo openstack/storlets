@@ -20,10 +20,10 @@ class StorletGatewayStub(StorletGatewayBase):
 
     request_class = StorletRequest
 
-    def __init__(self, sconf, logger, scope):
-        super(StorletGatewayStub, self).__init__(sconf, logger, scope)
+    def __init__(self, conf, logger, scope):
+        super(StorletGatewayStub, self).__init__(conf, logger, scope)
         self.logger = logger
-        self.sconf = sconf
+        self.conf = conf
         self.scope = scope
 
     @classmethod

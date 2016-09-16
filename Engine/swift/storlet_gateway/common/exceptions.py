@@ -24,10 +24,6 @@ class StorletTimeout(Timeout, StorletRuntimeException):
     pass
 
 
-class StorletConfigError(Exception):
-    pass
-
-
 class FileManagementError(Exception):
     pass
 

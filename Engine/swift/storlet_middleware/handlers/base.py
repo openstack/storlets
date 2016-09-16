@@ -30,6 +30,12 @@ class NotStorletExecution(NotStorletRequest):
     pass
 
 
+def get_container_names(conf):
+    return {'storlet': conf.get('storlet_container', 'storlet'),
+            'dependency': conf.get('storlet_dependency', 'dependency'),
+            'log': conf.get('storlet_logcontainer', 'storletlog')}
+
+
 class SwiftFileManager(FileManager):
 
     def __init__(self, account, storlet_container, dependency_container,
@@ -142,10 +148,11 @@ class StorletBaseHandler(object):
     """
     request = _request_instance_property()
 
-    def __init__(self, request, conf, app, logger):
+    def __init__(self, request, conf, gateway_conf, app, logger):
         """
         :param request: swob.Request instance
-        :param conf: gatway conf dict
+        :param conf: middleware conf dict
+        :param gateway_conf: gatway conf dict
         :param app: wsgi Application
         :param logger: logger instance
         """
@@ -154,11 +161,15 @@ class StorletBaseHandler(object):
         self.app = app
         self.logger = logger
         self.conf = conf
+        self.gateway_conf = gateway_conf
         self.gateway_class = self.conf['gateway_module']
         self.sreq_class = self.gateway_class.request_class
-        self.storlet_container = conf.get('storlet_container', 'storlet')
-        self.storlet_dependency = conf.get('storlet_dependency', 'dependency')
-        self.log_container = conf.get('storlet_logcontainer', 'storletlog')
+        self.storlet_execute_on_proxy = \
+            config_true_value(conf.get('storlet_execute_on_proxy', 'false'))
+        containers = get_container_names(conf)
+        self.storlet_container = containers['storlet']
+        self.storlet_dependency = containers['dependency']
+        self.log_container = containers['log']
         self.client_conf_file = '/etc/swift/storlet-proxy-server.conf'
 
     def _setup_gateway(self):
@@ -167,7 +178,7 @@ class StorletBaseHandler(object):
 
         """
         self.gateway = self.gateway_class(
-            self.conf, self.logger, self.scope)
+            self.gateway_conf, self.logger, self.scope)
         self._update_storlet_parameters_from_headers()
 
     def _extract_vaco(self):
@@ -278,7 +289,7 @@ class StorletBaseHandler(object):
     @property
     def execute_on_proxy(self):
         return (self._has_run_on_proxy_header() or
-                self.conf['storlet_execute_on_proxy_only'])
+                self.storlet_execute_on_proxy)
 
     @property
     def execute_range_on_proxy(self):

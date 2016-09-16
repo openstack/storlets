@@ -16,7 +16,6 @@ Limitations under the License.
 import os
 import shutil
 
-from storlet_gateway.common.exceptions import StorletConfigError
 from storlet_gateway.common.stob import StorletRequest
 from storlet_gateway.gateways.base import StorletGatewayBase
 from storlet_gateway.gateways.docker.runtime import RunTimePaths, \
@@ -35,9 +34,6 @@ The API is made of:
     validate_storlet_registration
     validate_dependency_registration
     invocation_flow
-(3) parse_gateway_conf parses the docker gateway specific configuration. While
-    it is part of the API, it is implemented as a static method as the parsing
-    of the configuration takes place before the StorletGateway is instantiated
 ---------------------------------------------------------------------------"""
 
 
@@ -91,16 +87,15 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     request_class = DockerStorletRequest
 
-    def __init__(self, sconf, logger, scope):
+    def __init__(self, conf, logger, scope):
         """
-        :param sconf: a dict for storlets conf
+        :param conf: a dict for gateway conf
         :param logger: a logger instance
         :param scope: scope name to identify the container
         """
-        super(StorletGatewayDocker, self).__init__(sconf, logger, scope)
-        # TODO(eranr): Add sconf defaults, and get rid of validate_conf below
-        self.storlet_timeout = int(self.sconf['storlet_timeout'])
-        self.paths = RunTimePaths(scope, sconf)
+        super(StorletGatewayDocker, self).__init__(conf, logger, scope)
+        self.storlet_timeout = int(self.conf.get('storlet_timeout', 40))
+        self.paths = RunTimePaths(scope, conf)
 
     @classmethod
     def validate_storlet_registration(cls, params, name):
@@ -185,7 +180,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         :param sreq: DockerStorletRequest instance
         """
-        run_time_sbox = RunTimeSandbox(self.scope, self.sconf, self.logger)
+        run_time_sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
         docker_updated = self.update_docker_container_from_cache(sreq)
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
         self._add_system_params(sreq)
@@ -360,13 +355,3 @@ class StorletGatewayDocker(StorletGatewayBase):
             docker_updated = docker_updated or updated
 
         return docker_updated
-
-
-def validate_conf(middleware_conf):
-    mandatory = ['storlet_logcontainer', 'lxc_root', 'cache_dir',
-                 'log_dir', 'script_dir', 'storlets_dir', 'pipes_dir',
-                 'docker_repo', 'restart_linux_container_timeout']
-    for key in mandatory:
-        if key not in mandatory:
-            raise StorletConfigError("Key {} is missing in "
-                                     "configuration".format(key))

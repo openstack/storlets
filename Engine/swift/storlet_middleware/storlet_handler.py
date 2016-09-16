@@ -14,24 +14,25 @@ Limitations under the License.
 from six.moves import configparser as ConfigParser
 from eventlet import Timeout
 from swift.common.swob import HTTPException, HTTPInternalServerError, wsgify
-from swift.common.utils import config_true_value, get_logger, \
-    register_swift_info
+from swift.common.utils import get_logger, register_swift_info
 from storlet_gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlet_gateway.loader import load_gateway
-from storlet_middleware.handlers.base import NotStorletRequest
+from storlet_middleware.handlers.base import NotStorletRequest, \
+    get_container_names
 from storlet_middleware.handlers import StorletProxyHandler, \
     StorletObjectHandler
 
 
 class StorletHandlerMiddleware(object):
 
-    def __init__(self, app, conf, storlet_conf):
+    def __init__(self, app, conf, gateway_conf):
         self.app = app
         self.logger = get_logger(conf, log_route='storlet_handler')
-        self.exec_server = storlet_conf.get('execution_server')
+        self.exec_server = conf.get('execution_server')
         self.handler_class = self._get_handler(self.exec_server)
-        self.gateway_conf = storlet_conf
+        self.conf = conf
+        self.gateway_conf = gateway_conf
 
     def _get_handler(self, exec_server):
         """
@@ -54,7 +55,7 @@ class StorletHandlerMiddleware(object):
     def __call__(self, req):
         try:
             request_handler = self.handler_class(
-                req, self.gateway_conf, self.app, self.logger)
+                req, self.conf, self.gateway_conf, self.app, self.logger)
             self.logger.debug('storlet_handler call in %s: with %s/%s/%s' %
                               (self.exec_server, request_handler.account,
                                request_handler.container, request_handler.obj))
@@ -87,41 +88,26 @@ class StorletHandlerMiddleware(object):
 
 
 def filter_factory(global_conf, **local_conf):
-    # TODO(takashi): The following gateway config generation should be
-    #                performed using class method of gateway class
     conf = global_conf.copy()
     conf.update(local_conf)
-    storlet_conf = dict()
-    storlet_conf['storlet_timeout'] = conf.get('storlet_timeout', 40)
-    storlet_conf['execution_server'] = conf.get('execution_server', '')
-    storlet_conf['storlet_container'] = \
-        conf.get('storlet_container', 'storlet')
-    storlet_conf['storlet_dependency'] = conf.get('storlet_dependency',
-                                                  'dependency')
-    storlet_conf['storlet_execute_on_proxy_only'] = \
-        config_true_value(conf.get('storlet_execute_on_proxy_only', 'false'))
-    storlet_conf['reseller_prefix'] = conf.get('reseller_prefix', 'AUTH')
 
     module_name = conf.get('storlet_gateway_module', 'stub')
     gateway_class = load_gateway(module_name)
+    conf['gateway_module'] = gateway_class
 
     configParser = ConfigParser.RawConfigParser()
     configParser.read(conf.get('storlet_gateway_conf',
                                '/etc/swift/storlet_stub_gateway.conf'))
-
-    additional_items = configParser.items("DEFAULT")
-    for key, val in additional_items:
-        storlet_conf[key] = val
+    gateway_conf = dict(configParser.items("DEFAULT"))
 
     # TODO(eranr): Add supported storlets languages and
     #  supported storlet API version
-    swift_info = {'storlet_container': storlet_conf['storlet_container'],
-                  'storlet_dependency': storlet_conf['storlet_dependency'],
+    containers = get_container_names(conf)
+    swift_info = {'storlet_container': containers['storlet'],
+                  'storlet_dependency': containers['dependency'],
                   'storlet_gateway_class': gateway_class.__name__}
-
-    storlet_conf["gateway_module"] = gateway_class
     register_swift_info('storlet_handler', False, **swift_info)
 
     def storlet_handler_filter(app):
-        return StorletHandlerMiddleware(app, conf, storlet_conf)
+        return StorletHandlerMiddleware(app, conf, gateway_conf)
     return storlet_handler_filter

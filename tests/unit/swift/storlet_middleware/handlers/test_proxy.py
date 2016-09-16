@@ -42,8 +42,7 @@ def storlet_enabled():
 
 class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
     def setUp(self):
-        super(TestStorletMiddlewareProxy, self).setUp()
-        self.conf['execution_server'] = 'proxy'
+        super(TestStorletMiddlewareProxy, self).setUp(exec_server='proxy')
 
     def test_GET_without_storlets(self):
         def basic_get(path):
@@ -466,6 +465,7 @@ class TestStorletProxyHandler(unittest.TestCase):
     def setUp(self):
         self.handler_class = StorletProxyHandler
         self.conf = create_handler_config('proxy')
+        self.gateway_conf = {}
 
     def test_init_handler(self):
         req = Request.blank(
@@ -474,7 +474,8 @@ class TestStorletProxyHandler(unittest.TestCase):
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         with storlet_enabled():
             handler = self.handler_class(
-                req, self.conf, mock.MagicMock(), mock.MagicMock())
+                req, self.conf, self.gateway_conf,
+                mock.MagicMock(), mock.MagicMock())
 
         self.assertEqual('/v1/acc/cont/obj', handler.request.path)
         self.assertEqual('v1', handler.api_version)
@@ -516,7 +517,8 @@ class TestStorletProxyHandler(unittest.TestCase):
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         with storlet_enabled():
             handler = self.handler_class(
-                req, self.conf, mock.MagicMock(), mock.MagicMock())
+                req, self.conf, self.gateway_conf,
+                mock.MagicMock(), mock.MagicMock())
 
         headers = {'X-Storlet-Key1': 'Value1',
                    'X-Key2': 'Value2',
