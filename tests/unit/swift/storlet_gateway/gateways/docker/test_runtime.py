@@ -27,6 +27,8 @@ from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
 from tests.unit.swift import FakeLogger
 from tests.unit import with_tempdir
+from tests.unit.swift.storlet_gateway.gateways import FakeFileManager
+from exceptions import AssertionError
 
 
 @contextmanager
@@ -341,7 +343,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         storlet_id = 'Storlet-1.0.jar'
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java'}
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
         storlet_request = DockerStorletRequest(
             storlet_id, {}, {}, iter(StringIO()), options=options)
         self.protocol = StorletInvocationProtocol(

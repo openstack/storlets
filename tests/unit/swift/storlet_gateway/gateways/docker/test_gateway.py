@@ -17,6 +17,7 @@ import unittest
 import six
 from six import StringIO
 from tests.unit.swift import FakeLogger
+from tests.unit.swift.storlet_gateway.gateways import FakeFileManager
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest, \
     StorletGatewayDocker
 from tests.unit import MockSBus
@@ -41,7 +42,8 @@ class TestDockerStorletRequest(unittest.TestCase):
         metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java'}
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
 
@@ -53,7 +55,8 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('java', dsreq.storlet_language)
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_language': 'java'}
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
 
@@ -64,6 +67,18 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual([], dsreq.dependencies)
         self.assertEqual('java', dsreq.storlet_language)
 
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_dependency': 'dep1,dep2'}
+        with self.assertRaises(ValueError):
+            DockerStorletRequest(storlet_id, params, metadata,
+                                 iter(StringIO()), options=options)
+
+        options = {'storlet_dependency': 'dep1,dep2',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+        with self.assertRaises(ValueError):
+            DockerStorletRequest(storlet_id, params, metadata,
+                                 iter(StringIO()), options=options)
+
     def test_init_with_range(self):
         storlet_id = 'Storlet-1.0.jar'
         params = {}
@@ -71,6 +86,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 1,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -86,6 +102,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 0,
                    'range_end': 0}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -104,7 +121,8 @@ class TestDockerStorletRequest(unittest.TestCase):
         metadata = {}
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java'}
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      None, 0, options=options)
         self.assertFalse(dsreq.has_range)
@@ -112,6 +130,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 1,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -121,6 +140,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 0,
                    'range_end': 6}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
@@ -364,7 +384,8 @@ use = egg:swift#catch_errors
                    'scope': 'AUTH_account',
                    'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java'}
+                   'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
 
         st_req = DockerStorletRequest(
             storlet_id=self.sobj,

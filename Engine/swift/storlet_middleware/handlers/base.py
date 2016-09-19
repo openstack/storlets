@@ -37,9 +37,21 @@ def get_container_names(conf):
 
 
 class SwiftFileManager(FileManager):
+    """
+    Utility class to manager i/o of storlet-related file from/to swift
+    """
 
     def __init__(self, account, storlet_container, dependency_container,
                  log_container, conf_file, logger):
+        """
+        Construct SwiftFileManager instance
+
+        :param account: swift account
+        :param storlet_container: container to store storlet files
+        :param dependency_container: container to storlet dependency files
+        :param log_container: container to storlet storlet execution log
+        :param logger: logger instance
+        """
         super(SwiftFileManager, self).__init__()
         self.account = account
         self.storlet_container = storlet_container
@@ -82,6 +94,13 @@ class SwiftFileManager(FileManager):
         self.client.upload_object(fobj, self.account, container, headers)
 
     def get_storlet(self, name):
+        """
+        Get storlet file from swift
+
+        :param name: object name
+        :returns: (iterator to read content, None)
+        :raises FileManagementError: when it fails to get the object from swift
+        """
         self.logger.debug('get storlet file %s from swift' % name)
         try:
             headers, data_iter = \
@@ -95,6 +114,13 @@ class SwiftFileManager(FileManager):
             raise FileManagementError('Failed to get storlet file: %s' % name)
 
     def get_dependency(self, name):
+        """
+        Get dependency file from swift
+
+        :param name: object name
+        :returns: (iterator to read content, permission string)
+        :raises FileManagementError: when it fails to get the object from swift
+        """
         self.logger.debug('get dependency file %s from swift' % name)
         try:
             headers, data_iter = \
@@ -111,6 +137,13 @@ class SwiftFileManager(FileManager):
                                       name)
 
     def put_log(self, name, fobj):
+        """
+        Save storlet execution log to swift
+
+        :param name: object name
+        :param fobj: file object for log file
+        :raises FileManagementError: when it fails to put the object to swift
+        """
         self.logger.debug('save log file %s into swift' % name)
         try:
             headers = {'CONTENTTYPE': 'text/plain'}
