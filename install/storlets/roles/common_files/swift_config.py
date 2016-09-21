@@ -176,8 +176,15 @@ def patch_swift_storlet_proxy_file(conf):
 
     for line in fileinput.input(storlet_proxy_server_conf_file, inplace=1):
         if line.startswith('pipeline'):
-            line = 'pipeline = proxy-logging cache storlet_handler slo ' + \
-                   'proxy-logging proxy-server\n'
+            # If there is no proxy-logging in the configuration file, we don't
+            # want to add it to the pipeline. This may cause invalid internal
+            # client configuration (we encountered this problem in a fuel swift
+            # cluster).
+            if 'proxy-logging' in line:
+                line = 'pipeline = proxy-logging cache storlet_handler slo ' + \
+                       'proxy-logging proxy-server\n'
+            else:
+                line = 'pipeline = cache storlet_handler slo proxy-server\n'
         sys.stdout.write(line)
 
     _chown_to_swift(storlet_proxy_server_conf_file)
