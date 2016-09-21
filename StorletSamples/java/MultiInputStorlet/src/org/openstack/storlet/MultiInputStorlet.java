@@ -46,16 +46,18 @@ public class MultiInputStorlet implements IStorlet {
          * Copy metadata into out md
          */
         HashMap<String, String> md = new HashMap<String, String>();
-        HashMap<String, String> object_md;
-        Iterator it;
-        StorletInputStream sis = inputStreams.get(0);
-        object_md = sis.getMetadata();
-        it = object_md.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry pairs = (Map.Entry) it.next();
-            log.emitLog("Putting metadata " + (String) pairs.getKey() + "="
-                        + (String) pairs.getValue());
-            md.put((String) pairs.getKey(), (String) pairs.getValue());
+        for(StorletInputStream psis : inputStreams){
+            HashMap<String, String> object_md;
+            Iterator it;
+
+            object_md = psis.getMetadata();
+            it = object_md.entrySet().iterator();
+            while (it.hasNext()) {
+                Map.Entry pairs = (Map.Entry) it.next();
+                log.emitLog("Putting metadata " + (String) pairs.getKey() + "="
+                            + (String) pairs.getValue());
+                md.put((String) pairs.getKey(), (String) pairs.getValue());
+            }
         }
 
         /*

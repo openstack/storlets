@@ -58,10 +58,12 @@ class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
         copied_obj = 'copied'
         c.put_object(self.url, self.token,
                      self.container, obj,
-                     '0123456789abcd')
+                     '0123456789abcd',
+                     headers={'X-Object-Meta-Key1': 'value1'})
         c.put_object(self.url, self.token,
                      self.container, obj2,
-                     'efghijklmnopqr')
+                     'efghijklmnopqr',
+                     headers={'X-Object-Meta-Key2': 'value2'})
 
         headers = {
             'X-Run-Storlet': self.storlet_name,
@@ -84,6 +86,8 @@ class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
         resp_headers, resp_content = c.get_object(
             self.url, self.token, self.container, copied_obj)
         self.assertEqual(expected_string, resp_content)
+        self.assertEqual('value1', resp_headers['x-object-meta-key1'])
+        self.assertEqual('value2', resp_headers['x-object-meta-key2'])
 
 
 if __name__ == '__main__':

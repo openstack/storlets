@@ -537,6 +537,7 @@ class StorletInvocationProtocol(object):
                     'extra_source no requires data_fd just data_iter')
             self.extra_data_sources.append(
                 {'read_fd': None, 'write_fd': None,
+                 'user_metadata': source.user_metadata,
                  'data_iter': source.data_iter})
 
         if not os.path.exists(storlet_logger_path):
@@ -587,8 +588,11 @@ class StorletInvocationProtocol(object):
                         FDMetadata(SBUS_FD_OUTPUT_OBJECT_METADATA).to_dict(),
                         FDMetadata(SBUS_FD_LOGGER).to_dict()]
 
-        for fd_metadata in self.extra_data_sources:
-            fds_metadata.append(FDMetadata(SBUS_FD_INPUT_OBJECT).to_dict())
+        for source in self.extra_data_sources:
+            fdmd = FDMetadata(SBUS_FD_INPUT_OBJECT)
+            if source['user_metadata']:
+                fdmd.storage_metadata.update(source['user_metadata'])
+            fds_metadata.append(fdmd.to_dict())
         return fds_metadata
 
     @contextmanager
