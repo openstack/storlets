@@ -27,6 +27,12 @@ class TestStorletMiddlewareObject(BaseTestStorletMiddleware):
     def setUp(self):
         super(TestStorletMiddlewareObject, self).setUp(exec_server='object')
 
+    def test_load_app(self):
+        try:
+            self.get_app(self.base_app, self.conf)
+        except Exception:
+            self.fail('Application loading got an error')
+
     def test_call_unsupported_method(self):
         def call(method):
             path = '/sda1/p/AUTH_a/c/o'

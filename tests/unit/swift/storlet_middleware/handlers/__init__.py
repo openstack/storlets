@@ -44,12 +44,6 @@ class BaseTestStorletMiddleware(unittest.TestCase):
             factory = storlet_handler.filter_factory(global_conf, **local_conf)
             return factory(app)
 
-    def test_load_app(self):
-        try:
-            self.get_app(self.base_app, self.conf)
-        except Exception:
-            self.fail('Application loading got an error')
-
     def get_response(self, req):
         app = self.get_app(self.base_app, self.conf)
         return req.get_response(app)
