@@ -275,6 +275,9 @@ class TestRunTimeSandbox(unittest.TestCase):
         self.assertFalse(status)
         self.assertEqual(msg, 'message')
 
+        with self.assertRaises(StorletRuntimeException):
+            self.sbox._parse_sandbox_factory_answer('Foo')
+
     def _check_all_pipese_closed(self, pipes):
         for _pipe in pipes:
             self.assertTrue(_pipe[0].closed)
@@ -287,6 +290,11 @@ class TestRunTimeSandbox(unittest.TestCase):
 
         with _mock_os_pipe(['False:ERROR']) as pipes, _mock_sbus(-1):
             self.assertEqual(self.sbox.ping(), -1)
+            self._check_all_pipese_closed(pipes)
+
+        with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0):
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox.ping()
             self._check_all_pipese_closed(pipes)
 
     def test_wait(self):
@@ -303,6 +311,13 @@ class TestRunTimeSandbox(unittest.TestCase):
                        'time.sleep') as _s:
             self.sbox.wait()
             self.assertEqual(_s.call_count, 1)
+            self._check_all_pipese_closed(pipes)
+
+        with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0), \
+            mock.patch('storlet_gateway.gateways.docker.runtime.'
+                       'time.sleep') as _s:
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox.wait()
             self._check_all_pipese_closed(pipes)
 
         # TODO(takashi): should test timeout case

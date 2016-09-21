@@ -248,10 +248,12 @@ class RunTimeSandbox(object):
         :returns: (status, message)
         """
         two_tokens = str_answer.split(':', 1)
-        b_success = False
-        if two_tokens[0] == 'True':
-            b_success = True
-        return b_success, two_tokens[1]
+        if len(two_tokens) != 2:
+            self.logger.error('Got wrong format about answer over sbus: %s' %
+                              str_answer)
+            raise StorletRuntimeException('Got wrong answer')
+        status = (two_tokens[0] == 'True')
+        return status, two_tokens[1]
 
     def ping(self):
         """
@@ -276,6 +278,7 @@ class RunTimeSandbox(object):
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
             return 1
+        self.logger.error('Failed to ping to daemon factory: %s' % error_txt)
         return 0
 
     def wait(self):
@@ -372,11 +375,13 @@ class RunTimeSandbox(object):
             # TODO(takashi): Why we should rond rc into -1?
             if (rc < 0):
                 return -1
+
             reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
             return 1
+        self.logger.error('Failed to start storlet daemon: %s' % error_txt)
         return 0
 
     def stop_storlet_daemon(self, storlet_id):
@@ -400,6 +405,7 @@ class RunTimeSandbox(object):
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
             return 1
+        self.logger.error('Failed to stop storlet daemon: %s' % error_txt)
         return 0
 
     def get_storlet_daemon_status(self, storlet_id):
@@ -417,11 +423,14 @@ class RunTimeSandbox(object):
                 self.logger.info("Failed to send status command to %s %s" %
                                  (self.scope, storlet_id))
                 return -1
+
             reply = os.read(read_fd, 10)
 
         res, error_txt = self._parse_sandbox_factory_answer(reply)
         if res is True:
             return 1
+        self.logger.error('Failed to get status about storlet daemon: %s' %
+                          error_txt)
         return 0
 
     def activate_storlet_daemon(self, sreq, cache_updated=True):
@@ -689,11 +698,12 @@ class StorletInvocationProtocol(object):
         """
         self._wait_for_read_with_timeout(self.metadata_read_fd)
         flat_json = os.read(self.metadata_read_fd, MAX_METADATA_SIZE)
-        if flat_json is None:
-            return None
         os.close(self.metadata_read_fd)
-        # TODO(takashi): We should validate json format
-        return json.loads(flat_json)
+        try:
+            return json.loads(flat_json)
+        except ValueError:
+            self.logger.excepiton('Failed to load metadata from json')
+            raise StorletRuntimeException('Got invalid format about metadata')
 
     def _wait_for_write_with_timeout(self, fd):
         """
