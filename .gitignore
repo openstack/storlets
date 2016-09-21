@@ -30,6 +30,7 @@ install/storlets/deploy/
 install/storlets/prepare_vars.yml
 install/swift/vars.yml
 cluster_config.json
+install/swift/hosts
 
 # auto created on build
 Engine/dependencies/
