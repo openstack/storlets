@@ -40,7 +40,7 @@ public class MultiInputStorlet implements IStorlet {
             ArrayList<StorletOutputStream> outputStreams,
             Map<String, String> parameters, StorletLogger log)
             throws StorletException {
-        log.emitLog("IdentityStorlet Invoked");
+        log.emitLog("MultiInputStorlet Invoked");
 
         /*
          * Copy metadata into out md
@@ -64,11 +64,7 @@ public class MultiInputStorlet implements IStorlet {
         log.emitLog("Let's concat, anyway");
 
         /*
-         * 1) If the output stream is StorletObjectOutputStream we are in a GET
-         * or PUT scenario where we copy the data and metadata into it. 2) If
-         * the output stream is StorletContainerHandle we are in a Storlet batch
-         * scenario where we first ask for a StorletObjectOutputStream, and then
-         * do the copy.
+         * Obtain the storletObjectOutputStream
          */
         StorletObjectOutputStream storletObjectOutputStream;
         storletObjectOutputStream = (StorletObjectOutputStream) outputStreams.get(0);
@@ -122,6 +118,6 @@ public class MultiInputStorlet implements IStorlet {
                 log.emitLog("Falied to close input steram " + e.getMessage());
             }
         }
-        log.emitLog("IdentityStorlet Invocation done");
+        log.emitLog("MultiInputStorlet Invocation done");
     }
 }

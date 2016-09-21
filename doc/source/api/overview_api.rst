@@ -102,17 +102,20 @@ Storlets can be invoked in 3 ways:
 #. Invocation upon object download.
     In this case the user gets a transformation of the object residing in the store (as opposed to the actual object).
     One use case for GET is anonymization, where the user might not have access to certain data unless it is
-    being anonymized by some storlet.
+    being anonymized by some storlet. Typically, when invoking a storlet upon object download, the storlet will
+    be invoked on a storage node that holds a copy of the object. Exceptions to this rule are detailed below.
 
 #. Invocation upon object upload.
     In this case the data kept in the object store is a transformation of the object uploaded by the user
     (as opposed to the original data or metadata).
     A typical use case is metadata enrichment, where a Storlet extracts format specific metadata from the uploaded data
-    and adds it as Swift metadata.
+    and adds it as Swift metadata. When invoking a storlet upon object upload, the storlet will be invoked on a proxy node,
+    prior to replication. Thus, the computation happens only once, and not once per replica.
 
 #. Invocation upon object copy.
     In this case the storlet acts on data that is in the object store, generating a new object. A typical use case is
-    thumbnail extraction from an existing jpg.
+    thumbnail extraction from an existing jpg. The location where the storlet is invoked on copy (object node or proxy node)
+    is the same as for the download case. 
 
 Below is the API reference of the abovementioned invocations.
 
@@ -152,9 +155,27 @@ To invoke a storlet on a range of an object use the 'X-Storlet-Range' header. Fo
 'X-Storlet-Range' can take any value that Swift can take for the HTTP 'Range' header as described in <http://developer.openstack.org/api-ref-objectstorage-v1.html>.
 Specifying HTTP 'Range' header together with 'X-Run-Storlet' is not allowed, and results in '400 Bad Request'
 
-..note::
+.. note::
 
-   In case the object happens to be an SLO the storlet is invoked over the entire object data
+   In case the object happens to be an SLO the storlet is invoked over the entire object data. Thus, the storlet is invoked on a proxy node.
+
+It is possible to invoke a storlet on GET over more then one object. This is done using the 'X-Storlet-Extra-Resources' header, that can be used
+to specify a comma separated list of object paths of the form <container>/<object>. Currently, cross account extra resources are not supported.
+In the below GET example the multi input storlet will get 3 object input streams.
+
+::
+
+  [GET] /v1/AUTH_1234/my_container/myobject_1
+
+  'X-Run-Storlet': 'multiinputstorlet-1.0.jar'
+  'X-Storlet-Extra-Resources': 'my_other_container/my_other_object', 'my_other_other_container/my_other_other_object'
+  'X-Auth-Token': {authorization_token}
+
+When using 'X-Storlet-Extra-Resources' the storlet is invoked on a proxy node.
+
+.. note::
+
+  Refer to the multi-input-storlet source for writing a storlet that processes multiple inputs.
 
 Invoke a storlet upon object upload
 -----------------------------------
@@ -196,7 +217,19 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
 In the PUT case the storlet acts upon the object appearing in the 'X-Copy-From' header, creating the object appearing in the request path.
 In the COPY case the storlet acts upon the object appeairng in the requets path, crating the object appearing in the 'Destination' header.
 
+Independently of the verb used to invoke a copy, one can add the 'X-Storlet-Extra-Resources' header. Thus, one can e.g. create an
+object which is a concatenation of the copy source and the extra resources. As with the invocation upon downlod, when using extra
+resources, the storlet is invoked on a proxy node.
+
 Currently, specifying any of the headers below while invoking a storlet upon copy will result in '400 Bad Request'
  - 'X-Copy-From-Account'
  - 'Destination-Account'
  - 'X-Fresh-Metadata'
+
+Executing a storlet on proxy servers only
+-----------------------------------------
+Use the 'X-Storlet-Run-On-Proxy' header to enforce the engine to invoke the storlet on the proxy, e.g.:
+
+::
+
+    'X-Storlet-Run-On-Proxy': ''
