@@ -573,10 +573,9 @@ class StorletInvocationProtocol(object):
         """
         Metadata about file descriptors to be passed to container side
         """
-        input_fd_metadata = FDMetadata(SBUS_FD_INPUT_OBJECT)
-        if self.srequest.user_metadata:
-            input_fd_metadata.storage_metadata.update(
-                self.srequest.user_metadata)
+        input_fd_metadata = FDMetadata(
+            SBUS_FD_INPUT_OBJECT,
+            storage_metadata=self.srequest.user_metadata)
         if self.srequest.has_range:
             input_fd_metadata.storlets_metadata['start'] = \
                 str(self.srequest.start)
@@ -589,9 +588,9 @@ class StorletInvocationProtocol(object):
                         FDMetadata(SBUS_FD_LOGGER).to_dict()]
 
         for source in self.extra_data_sources:
-            fdmd = FDMetadata(SBUS_FD_INPUT_OBJECT)
-            if source['user_metadata']:
-                fdmd.storage_metadata.update(source['user_metadata'])
+            fdmd = FDMetadata(
+                SBUS_FD_INPUT_OBJECT,
+                storage_metadata=source['user_metadata'])
             fds_metadata.append(fdmd.to_dict())
         return fds_metadata
 
