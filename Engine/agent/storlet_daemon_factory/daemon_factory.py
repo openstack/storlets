@@ -87,14 +87,16 @@ class DaemonFactory(object):
     processing.
     """
 
-    def __init__(self, path, logger):
+    def __init__(self, path, logger, container_id):
         """
         :param path: Path to the pipe file internal SBus listens to
         :param logger: Logger to dump the information to
+        :param container_id: Container id
         """
 
         self.logger = logger
         self.pipe_path = path
+        self.container_id = container_id
         # Dictionary: map storlet name to pipe name
         self.storlet_name_to_pipe_name = dict()
         # Dictionary: map storlet name to daemon process PID
@@ -103,7 +105,7 @@ class DaemonFactory(object):
         self.NUM_OF_TRIES_PINGING_STARTING_DAEMON = 10
 
     def get_jvm_args(self, daemon_language, storlet_path, storlet_name,
-                     pool_size, uds_path, log_level, container_id):
+                     pool_size, uds_path, log_level):
         """
         produce the list of arguments for JVM process launch
 
@@ -114,7 +116,6 @@ class DaemonFactory(object):
                           pool provides
         :param uds_path: Path to pipe daemon is going to listen to
         :param log_level: Logger verbosity level
-        :param container_id: container id
 
         :returns: (A list of the JVM arguments, A list of environ parameters)
         """
@@ -146,14 +147,14 @@ class DaemonFactory(object):
                'LD_LIBRARY_PATH': str_library_path}
 
         pargs = ['/usr/bin/java', str_daemon_main_class, storlet_name,
-                 uds_path, log_level, str(pool_size), container_id]
+                 uds_path, log_level, str(pool_size), self.container_id]
         return pargs, env
 
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
-                        pool_size, uds_path, log_level, container_id):
+                        pool_size, uds_path, log_level):
         str_daemon_main_file = '/usr/local/bin/storlets-daemon'
         pargs = [str_daemon_main_file, storlet_name, uds_path, log_level,
-                 str(pool_size), container_id]
+                 str(pool_size), self.container_id]
 
         python_path = os.path.join('/home/swift/', storlet_name)
         if os.environ.get('PYTHONPATH'):
@@ -250,7 +251,7 @@ class DaemonFactory(object):
             os.close(write_fd)
 
     def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
-                             pool_size, uds_path, log_level, container_id):
+                             pool_size, uds_path, log_level):
         """
         Start storlet daemon process
 
@@ -262,7 +263,6 @@ class DaemonFactory(object):
                           pool provides
         :param uds_path: Path to pipe daemon is going to listen to
         :param log_level: Logger verbosity level
-        :param container_id: container id
 
         :returns: True if it starts a new subprocess
                   False if there already exists a running process
@@ -270,11 +270,11 @@ class DaemonFactory(object):
         if daemon_language.lower() in ['java']:
             pargs, env = self.get_jvm_args(
                 daemon_language, storlet_path, storlet_name,
-                pool_size, uds_path, log_level, container_id)
+                pool_size, uds_path, log_level)
         elif daemon_language.lower() == 'python':
             pargs, env = self.get_python_args(
                 daemon_language, storlet_path, storlet_name,
-                pool_size, uds_path, log_level, container_id)
+                pool_size, uds_path, log_level)
         else:
             raise SDaemonError(
                 'Got unsupported daemon language: %s' % daemon_language)
@@ -484,13 +484,13 @@ class DaemonFactory(object):
             raise SDaemonError('Failed to wait {0}'.format(storlet_name))
 
     @command_handler
-    def start_daemon(self, container_id, prms):
+    def start_daemon(self, prms):
         storlet_name = prms['storlet_name']
         try:
             if self.process_start_daemon(
                     prms['daemon_language'], prms['storlet_path'],
                     storlet_name, prms['pool_size'],
-                    prms['uds_path'], prms['log_level'], container_id):
+                    prms['uds_path'], prms['log_level']):
                 msg = 'OK'
             else:
                 msg = '{0} is already running'.format(storlet_name)
@@ -501,7 +501,7 @@ class DaemonFactory(object):
             return CommandFailure(str(e))
 
     @command_handler
-    def stop_daemon(self, container_id, prms):
+    def stop_daemon(self, prms):
         storlet_name = prms['storlet_name']
         try:
             pid, code = self.process_kill(storlet_name)
@@ -514,7 +514,7 @@ class DaemonFactory(object):
             return CommandFailure(msg)
 
     @command_handler
-    def daemon_status(self, container_id, prms):
+    def daemon_status(self, prms):
         storlet_name = prms['storlet_name']
         try:
             if self.get_process_status_by_name(storlet_name):
@@ -528,7 +528,7 @@ class DaemonFactory(object):
             return CommandFailure(str(e))
 
     @command_handler
-    def stop_daemons(self, container_id, prms):
+    def stop_daemons(self, prms):
         try:
             self.process_kill_all()
             return CommandSuccess('OK', False)
@@ -537,7 +537,7 @@ class DaemonFactory(object):
             return CommandFailure(str(e), False)
 
     @command_handler
-    def halt(self, container_id, prms):
+    def halt(self, prms):
         try:
             terminated = self.shutdown_all_processes()
             msg = '; '.join(['%s: terminated' % x for x in terminated])
@@ -547,7 +547,7 @@ class DaemonFactory(object):
             return CommandFailure(str(e), False)
 
     @command_handler
-    def ping(self, container_id, prms):
+    def ping(self, prms):
         return CommandSuccess('OK')
 
     def get_handler(self, command):
@@ -567,12 +567,11 @@ class DaemonFactory(object):
             raise ValueError('got unknown command %s' % command)
         return handler
 
-    def dispatch_command(self, dtg, container_id):
+    def dispatch_command(self, dtg):
         """
         Parse datagram. React on the request.
 
         :param dtg: Datagram to process
-        :param container_id: container id
 
         :returns: True when it can continue main loop
                   False when it should break main loop
@@ -596,7 +595,7 @@ class DaemonFactory(object):
             resp = CommandFailure(str(e))
         else:
             self.logger.debug('Do %s' % command)
-            resp = handler(container_id, prms)
+            resp = handler(prms)
         finally:
             self.logger.debug('Done')
 
@@ -605,12 +604,11 @@ class DaemonFactory(object):
 
         return resp.iterable
 
-    def main_loop(self, container_id):
+    def main_loop(self):
         """
         The 'internal' loop. Listen to SBus, receive datagram,
         dispatch command, report back.
 
-        :param container_id: container id
         :returns: exit status (SUCCESS/FAILURE)
         """
 
@@ -637,7 +635,7 @@ class DaemonFactory(object):
                 self.logger.error("Failed to receive message. exiting.")
                 return EXIT_FAILURE
 
-            if not self.dispatch_command(dtg, container_id):
+            if not self.dispatch_command(dtg):
                 break
 
         # We left the main loop for some reason. Terminating.
@@ -730,7 +728,7 @@ def main(argv):
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
     # create an instance of daemon_factory
-    factory = DaemonFactory(pipe_path, logger)
+    factory = DaemonFactory(pipe_path, logger, container_id)
 
     # Start the main loop
-    return factory.main_loop(container_id)
+    return factory.main_loop()

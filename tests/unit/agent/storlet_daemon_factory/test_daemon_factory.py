@@ -108,7 +108,9 @@ class TestDaemonFactory(unittest.TestCase):
     def setUp(self):
         self.logger = FakeLogger()
         self.pipe_path = 'path/to/pipe'
-        self.dfactory = DaemonFactory(self.pipe_path, self.logger)
+        self.container_id = 'contid'
+        self.dfactory = DaemonFactory(self.pipe_path, self.logger,
+                                      self.container_id)
 
     def test_get_jvm_args(self):
         dummy_env = {'CLASSPATH': '/default/classpath',
@@ -117,10 +119,11 @@ class TestDaemonFactory(unittest.TestCase):
                         dummy_env):
             pargs, env = self.dfactory.get_jvm_args(
                 'java', 'path/to/storlet/a', 'Storlet-1.0.jar',
-                1, 'path/to/uds/a', 'DEBUG', 'contid')
+                1, 'path/to/uds/a', 'DEBUG')
             self.assertEqual(
                 ['/usr/bin/java', 'org.openstack.storlet.daemon.SDaemon',
-                 'Storlet-1.0.jar', 'path/to/uds/a', 'DEBUG', '1', 'contid'],
+                 'Storlet-1.0.jar', 'path/to/uds/a', 'DEBUG', '1',
+                 self.container_id],
                 pargs)
             self.assertEqual(
                 {'CLASSPATH': '/default/classpath:'
@@ -142,10 +145,10 @@ class TestDaemonFactory(unittest.TestCase):
                         dummy_env):
             pargs, env = self.dfactory.get_python_args(
                 'python', 'path/to/storlet', 'test_storlet.TestStorlet',
-                1, 'path/to/uds', 'DEBUG', 'contid')
+                1, 'path/to/uds', 'DEBUG')
         self.assertEqual(
             ['/usr/local/bin/storlets-daemon', 'test_storlet.TestStorlet',
-             'path/to/uds', 'DEBUG', '1', 'contid'],
+             'path/to/uds', 'DEBUG', '1', self.container_id],
             pargs)
         self.assertEqual(
             {'PYTHONPATH': '/default/pythonpath:'
@@ -276,7 +279,7 @@ class TestDaemonFactory(unittest.TestCase):
             read.return_value = 'True: OK'
             self.assertTrue(self.dfactory.process_start_daemon(
                 'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
-                'TRACE', 'contid'))
+                'TRACE'))
             self.assertEqual({'storleta': 'path/to/uds/a'},
                              self.dfactory.storlet_name_to_pipe_name)
 
@@ -287,13 +290,13 @@ class TestDaemonFactory(unittest.TestCase):
             waitpid.return_value = 0, 0
             self.assertFalse(self.dfactory.process_start_daemon(
                 'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
-                'TRACE', 'contid'))
+                'TRACE'))
 
         # Unsupported language
         with self.assertRaises(SDaemonError):
             self.dfactory.process_start_daemon(
                 'foo', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
-                'TRACE', 'contid')
+                'TRACE')
 
     def test_get_process_status_by_name(self):
         self.dfactory.storlet_name_to_pid = \
@@ -588,7 +591,7 @@ class TestDaemonFactory(unittest.TestCase):
             waitpid.return_value = 0, 0
             send.return_value = 0
             read.return_value = 'True: OK'
-            ret = self.dfactory.start_daemon('contid', prms)
+            ret = self.dfactory.start_daemon(prms)
             self.assertTrue(ret.status)
             self.assertEqual('OK', ret.message)
             self.assertTrue(ret.iterable)
@@ -598,14 +601,14 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = {'storleta': 'path/to/uds/a'}
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 0, 0
-            ret = self.dfactory.start_daemon('contid', prms)
+            ret = self.dfactory.start_daemon(prms)
             self.assertTrue(ret.status)
             self.assertEqual('storleta is already running', ret.message)
             self.assertTrue(ret.iterable)
 
         # Unsupported language
         prms['daemon_language'] = 'foo'
-        ret = self.dfactory.start_daemon('contid', prms)
+        ret = self.dfactory.start_daemon(prms)
         self.assertFalse(ret.status)
         self.assertEqual('Got unsupported daemon language: foo', ret.message)
         self.assertTrue(ret.iterable)
@@ -617,8 +620,7 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path), \
                 mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 1000, 0
-            resp = self.dfactory.stop_daemon(
-                'contid', {'storlet_name': 'storleta'})
+            resp = self.dfactory.stop_daemon({'storlet_name': 'storleta'})
             self.assertTrue(resp.status)
             self.assertEqual('Storlet storleta, PID = 1000, ErrCode = 0',
                              resp.message)
@@ -630,8 +632,7 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path) as kill, \
                 mock.patch(self.waitpid_path):
             kill.side_effect = OSError('ERROR')
-            resp = self.dfactory.stop_daemon(
-                'contid', {'storlet_name': 'storleta'})
+            resp = self.dfactory.stop_daemon({'storlet_name': 'storleta'})
             self.assertFalse(resp.status)
             self.assertEqual('Failed to kill the storlet daemon storleta',
                              resp.message)
@@ -643,16 +644,14 @@ class TestDaemonFactory(unittest.TestCase):
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 0, 0
-            resp = self.dfactory.daemon_status(
-                'contid', {'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
             self.assertTrue(resp.status)
             self.assertEqual('Storlet storleta seems to be OK', resp.message)
             self.assertTrue(resp.iterable)
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 1000, 0
-            resp = self.dfactory.daemon_status(
-                'contid', {'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
             self.assertFalse(resp.status)
             self.assertEqual('No running storlet daemon for storleta',
                              resp.message)
@@ -660,8 +659,7 @@ class TestDaemonFactory(unittest.TestCase):
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = OSError()
-            resp = self.dfactory.daemon_status(
-                'contid', {'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
             self.assertFalse(resp.status)
             self.assertEqual('Unknown error', resp.message)
             self.assertTrue(resp.iterable)
@@ -676,7 +674,7 @@ class TestDaemonFactory(unittest.TestCase):
                 mock.patch(self.waitpid_path):
             send.return_value = 0
             read.return_value = 'True: OK'
-            resp = self.dfactory.halt('contid', {})
+            resp = self.dfactory.halt({})
             self.assertTrue(resp.status)
             self.assertIn('storleta: terminated', resp.message)
             self.assertIn('storletb: terminated', resp.message)
@@ -689,8 +687,7 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path), \
                 mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = [(1000, 0), (1001, 0)]
-            resp = self.dfactory.stop_daemons(
-                'contid', {})
+            resp = self.dfactory.stop_daemons({})
             self.assertTrue(resp.status)
             self.assertEqual('OK', resp.message)
             self.assertFalse(resp.iterable)
