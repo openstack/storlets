@@ -44,6 +44,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
     def setUp(self):
         super(TestStorletMiddlewareProxy, self).setUp(exec_server='proxy')
 
+    def test_load_app(self):
+        try:
+            self.get_app(self.base_app, self.conf)
+        except Exception:
+            self.fail('Application loading got an error')
+
     def test_GET_without_storlets(self):
         def basic_get(path):
             req = Request.blank(
