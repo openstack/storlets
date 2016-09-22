@@ -356,13 +356,12 @@ class RunTimeSandbox(object):
         Start SDaemon process in the scope's sandbox
 
         """
-        prms = {}
-        prms['daemon_language'] = language.lower()
-        prms['storlet_path'] = spath
-        prms['storlet_name'] = storlet_id
-        prms['uds_path'] = self.paths.sbox_storlet_pipe(storlet_id)
-        prms['log_level'] = self.storlet_daemon_debug_level
-        prms['pool_size'] = self.storlet_daemon_thread_pool_size
+        prms = {'daemon_language': language.lower(),
+                'storlet_path': spath,
+                'storlet_name': storlet_id,
+                'uds_path': self.paths.sbox_storlet_pipe(storlet_id),
+                'log_level': self.storlet_daemon_debug_level,
+                'pool_size': self.storlet_daemon_thread_pool_size}
 
         with _open_pipe() as (read_fd, write_fd):
             dtg = ClientSBusOutDatagram.create_service_datagram(
