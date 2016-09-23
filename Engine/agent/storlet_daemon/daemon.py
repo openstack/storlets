@@ -258,7 +258,7 @@ class Daemon(object):
             raise ValueError('got unknown command %s' % command)
         return handler
 
-    def dispatch_command(self, dtg, container_id):
+    def dispatch_command(self, dtg):
         command = dtg.command
         self.logger.debug("Received command {0}".format(command))
 
@@ -271,7 +271,7 @@ class Daemon(object):
             self.logger.debug('Do %s' % command)
             return handler(dtg)
 
-    def main_loop(self, container_id):
+    def main_loop(self):
 
         storlet_name_sp = self.storlet_name.split('.')
         if len(storlet_name_sp) != 2:
@@ -307,7 +307,7 @@ class Daemon(object):
                 self.logger.error("Failed to receive message. exiting")
                 return EXIT_FAILURE
 
-            if not self.dispatch_command(dtg, container_id):
+            if not self.dispatch_command(dtg):
                 break
 
         self.logger.debug('Leaving main loop')
@@ -390,4 +390,4 @@ def main(argv):
     daemon = Daemon(storlet_name, sbus_path, logger, pool_size)
 
     # Start the main loop
-    return daemon.main_loop(container_id)
+    return daemon.main_loop()
