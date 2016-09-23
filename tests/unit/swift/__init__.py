@@ -14,14 +14,19 @@
 # limitations under the License.
 import sys
 import traceback
+from collections import defaultdict
 
 
 class FakeLogger(object):
     def __init__(self, *args, **kwargs):
-        pass
+        self._log_lines = defaultdict(list)
 
     def _print_log(self, level, msg):
+        self._log_lines[level.lower()].append(msg)
         print('%s: %s' % (level, msg))
+
+    def get_log_lines(self, level):
+        return self._log_lines[level.lower()]
 
     def debug(self, msg):
         self._print_log('DEBUG', msg)
