@@ -32,8 +32,9 @@ public class StorletUtils {
         // The first token contains separator, the last shall be thrown.
         strResult = strSubfolders[0];
         int nOfSubF = strSubfolders.length - 1;
-        for (int i = 1; i < nOfSubF; ++i)
+        for (int i = 1; i < nOfSubF; ++i) {
             strResult = strResult + strSep + strSubfolders[i];
+        }
         return strResult;
     }
 }

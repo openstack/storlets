@@ -30,102 +30,104 @@ import java.io.FileInputStream;
  */
 public class RangeFileInputStream extends FileInputStream {
 
-        private final long start;
-        private final long end;
-        private int available;
+    private final long start;
+    private final long end;
+    private int available;
 
-        /**
-         * Constructs a RangeFileInputStream from a file descriptor and a range
-         *
-         * @param fd a FileDescriptor instance used to create the
-         *           wrapped FileInputStream
-         * @param start the beginning of the range.
-         * @param end the end of the range
-         */
-        public RangeFileInputStream(FileDescriptor fd, long start, long end) throws IOException {
-                super(fd);
-                this.start = start;
-                this.end = end;
-                this.available = (int)(end - start) + 1;
-                super.skip(start);
+    /**
+     * Constructs a RangeFileInputStream from a file descriptor and a range
+     *
+     * @param fd a FileDescriptor instance used to create the
+     *           wrapped FileInputStream
+     * @param start the beginning of the range.
+     * @param end the end of the range
+     */
+    public RangeFileInputStream(FileDescriptor fd, long start, long end) throws IOException {
+            super(fd);
+            this.start = start;
+            this.end = end;
+            this.available = (int)(end - start) + 1;
+            super.skip(start);
+    }
+
+    @Override
+    public int available() {
+        return this.available;
+    }
+
+    @Override
+    public int read() throws IOException {
+        if (this.available > 0) {
+            this.available -= 1;
+            return super.read();
+        }
+        else {
+            return -1;
+        }
+    }
+
+    @Override
+    public int read(byte[] b) throws IOException {
+        if (available <= 0) {
+            return -1;
+        }
+        int bytesRead = super.read(b, 0, available);
+        available -= bytesRead;
+        return bytesRead;
+    }
+
+    @Override
+    public int read(byte[] b, int off, int len) throws IOException {
+        if (len == 0) {
+            return 0;
+        }
+        if (available <= 0) {
+            return -1;
         }
 
-        @Override
-        public int available() {
-                return this.available;
+        int lenToRead;
+        if (len > this.available) {
+            lenToRead = available;
+        } else {
+            lenToRead = len;
         }
 
-        @Override
-        public int read() throws IOException {
-                if (this.available > 0) {
-                        this.available -= 1;
-                        return super.read();
-                } else {
-                        return -1;
-                }
+        int bytesRead = super.read(b,off,lenToRead);
+        if (bytesRead > 0) {
+            available -= bytesRead;
+        } else {
+            return -1;
         }
+        return bytesRead;
+    }
 
-        @Override
-        public int read(byte[] b) throws IOException {
-                if (available <= 0) {
-                        return -1;
-                }
-                int bytesRead = super.read(b, 0, available);
-                available -= bytesRead;
-                return bytesRead;
+    @Override
+    public long skip(long n) throws IOException {
+        long toskip;
+        if (n > this.available) {
+            toskip = this.available;
+        } else {
+            toskip = n;
         }
-
-        @Override
-        public int read(byte[] b, int off, int len) throws IOException {
-                if (len == 0) {
-                        return 0;
-                }
-                if (available <= 0) {
-                        return -1;
-                }
-                int lenToRead;
-                if (len > this.available) {
-                        lenToRead = available;
-                } else {
-                        lenToRead = len;
-                }
-
-                int bytesRead = super.read(b,off,lenToRead);
-                if (bytesRead > 0) {
-                        available -= bytesRead;
-                } else {
-                        return -1;
-                }
-                return bytesRead;
+        long skipped = super.skip(toskip);
+        if (skipped > 0) {
+            this.available -= skipped;
         }
+        return skipped;
+    }
 
-        @Override
-        public long skip(long n) throws IOException {
-                long toskip;
-                if (n > this.available) {
-                        toskip = this.available;
-                } else {
-                        toskip = n;
-                }
-                long skipped = super.skip(toskip);
-                if (skipped > 0) {
-                        this.available -= skipped;
-                }
-                return skipped;
-        }
+    @Override
+    public void mark(int readlimit) {
+        return;
+    }
 
-        @Override
-        public void mark(int readlimit) {
-                return;
-        }
+    @Override
+    public void reset() throws IOException {
+        throw new IOException();
+    }
 
-        @Override
-        public void reset() throws IOException {
-                throw new IOException();
-        }
-
-        @Override
-        public boolean markSupported() {
-                return false;
-        }
+    @Override
+    public boolean markSupported() {
+        return false;
+    }
 }

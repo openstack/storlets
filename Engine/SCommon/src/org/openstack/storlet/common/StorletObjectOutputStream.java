@@ -48,7 +48,7 @@ public class StorletObjectOutputStream extends StorletOutputStream {
     }
 
     public void closeMD(){
-        try{
+        try {
             MetadataStream_.close();
         } catch (IOException e) {
         }

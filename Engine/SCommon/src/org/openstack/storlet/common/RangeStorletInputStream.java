@@ -31,11 +31,11 @@ import org.openstack.storlet.common.RangeFileInputStream;
  */
 public class RangeStorletInputStream extends StorletInputStream {
 
-        public RangeStorletInputStream(FileDescriptor fd,
-                                       HashMap<String, String> md,
-                                       long start,
-                                       long end) throws IOException {
-                super(md);
-                stream = (InputStream)(new RangeFileInputStream(fd, start, end));
-        }
+    public RangeStorletInputStream(FileDescriptor fd,
+                                   HashMap<String, String> md,
+                                   long start,
+                                   long end) throws IOException {
+        super(md);
+        stream = (InputStream)(new RangeFileInputStream(fd, start, end));
+    }
 }

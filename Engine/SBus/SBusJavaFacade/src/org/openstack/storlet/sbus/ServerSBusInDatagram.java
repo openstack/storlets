@@ -127,7 +127,8 @@ public class ServerSBusInDatagram {
                 populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
             }
             if (!jsonobject.containsKey("storlets")) {
-            } else {
+            }
+            else {
                 populateMetadata(storletsMetadata, (JSONObject)jsonobject.get("storlets"));
             }
             this.metadata[i].put("storage", storageMetadata);
@@ -137,20 +138,20 @@ public class ServerSBusInDatagram {
     }
 
     public FileDescriptor[] getFiles() {
-                return fds;
-        }
+        return fds;
+    }
 
-        public int getNFiles() {
-                return numFDs;
-        }
+    public int getNFiles() {
+        return numFDs;
+    }
 
-        public String getCommand() {
-                return command;
-        }
+    public String getCommand() {
+        return command;
+    }
 
-        public HashMap<String, String> getExecParams() {
-                return params;
-        }
+    public HashMap<String, String> getExecParams() {
+        return params;
+    }
 
     public String getTaskId() {
         return taskID;
