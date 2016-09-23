@@ -25,6 +25,7 @@ import json
 # This python module implements the client side objects as follows:
 # ClientSBusOutDatagram - Serializing client commands
 # ServerSBusInDatagram - De-serializing client commands
+# ServerSBusOutDatagram - Serializing server commands
 # ClientSBusInDatagram - De-srializing server response
 
 import sbus.file_description as sbus_fd
@@ -56,6 +57,15 @@ class SBusDatagram(object):
     Basic class for all SBus datagrams
     """
     def __init__(self, command, fds, metadata, params=None, task_id=None):
+        """
+        :param command: A string encoding the command to send
+        :param fds: An array of file descriptors to pass with the command
+        :param md: An array of dictionaries, where the i'th dictionary is the
+                   metadata of the i'th fd.
+        :param params: A optional dictionary with parameters for the command
+                       execution
+        :param task_id: An optional string task id
+        """
         self.command = command
         if len(fds) != len(metadata):
             raise ValueError('Length mismatch fds:%s metadata:%s' %
@@ -89,21 +99,6 @@ class ClientSBusOutDatagram(SBusDatagram):
 
     """
 
-    def __init__(self, command, fds, md, params=None, task_id=None):
-        """ Constructs ClientSBusOutDatagram
-
-        :param command: A string encoding the command to send
-        :param fds: An array of file descriptors to pass with the command
-        :param md: An array of dictionaries, where the i'th dictionary is the
-                   metadata of the i'th fd.
-        :param params: A optional dictionary with parameters for the command
-                       execution
-        :param task_id: An optional string task id
-
-        """
-        super(ClientSBusOutDatagram, self).__init__(
-            command, fds, md, params, task_id)
-
     @staticmethod
     def create_service_datagram(command, outfd, params=None, task_id=None):
         md = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
@@ -135,19 +130,6 @@ class ServerSBusInDatagram(SBusDatagram):
     same parameters.
 
     """
-    def __init__(self, fds, str_md, str_cmd_params):
-        """
-        :param fds: An array of file descriptors to pass with the command
-        :param str_md: serialized metadata
-        :param str_cmd_params: serialized command parameters
-        """
-        md = json.loads(str_md)
-        cmd_params = json.loads(str_cmd_params)
-        command = cmd_params.get('command')
-        params = cmd_params.get('params')
-        task_id = cmd_params.get('task_id')
-        super(ServerSBusInDatagram, self).__init__(
-            command, fds, md, params, task_id)
 
     def _find_fds(self, fdtype):
         ret = []
@@ -197,6 +179,22 @@ class ServerSBusInDatagram(SBusDatagram):
         return [md['storlets'] for md in self.metadata
                 if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
+    @classmethod
+    def build_from_raw_message(cls, fds, str_md, str_cmd_params):
+        """
+        Build ServerSBusOutDatagram from raw message recieved over sbus
+
+        :param fds: An array of file descriptors to pass with the command
+        :param str_md: serialized metadata
+        :param str_cmd_params: serialized command parameters
+        """
+        metadata = json.loads(str_md)
+        cmd_params = json.loads(str_cmd_params)
+        command = cmd_params.get('command')
+        params = cmd_params.get('params')
+        task_id = cmd_params.get('task_id')
+        return cls(command, fds, metadata, params, task_id)
+
 
 # Curerrently we have no Server to Client commands
 # This serves as a place holder should we want to bring the
@@ -204,6 +202,11 @@ class ServerSBusInDatagram(SBusDatagram):
 # In the past this was used for a allowing a storlet
 # to create new objects via a PUT on container
 # with X-Run-Storlet.
-class ClientSBusInDatagram(object):
+class ClientSBusInDatagram(SBusDatagram):
     def __init__(self):
-        raise NotImplementedError
+        raise NotImplementedError()
+
+
+class ServerSBusOutDatagram(SBusDatagram):
+    def __init__(self):
+        raise NotImplementedError()

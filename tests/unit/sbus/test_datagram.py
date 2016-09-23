@@ -45,6 +45,8 @@ class TestFDMetadata(unittest.TestCase):
 
 
 class TestSBusDatagram(unittest.TestCase):
+    dtg_cls = SBusDatagram
+
     def setUp(self):
         self.command = 'COMMAND'
         self.types = [sbus_fd.SBUS_FD_SERVICE_OUT,
@@ -66,12 +68,8 @@ class TestSBusDatagram(unittest.TestCase):
                            {'skey%d' % i: 'svalue%d' % i}).to_dict())
         self.params = {'param1': 'paramvalue1'}
         self.task_id = 'id'
-        self.dtg = self._create_datagram()
-
-    def _create_datagram(self):
-        return SBusDatagram(
-            self.command, self.fds, self.metadata, self.params,
-            self.task_id)
+        self.dtg = self.dtg_cls(self.command, self.fds, self.metadata,
+                                self.params, self.task_id)
 
     def test_init(self):
         self.assertEqual(self.command, self.dtg.command)
@@ -91,13 +89,7 @@ class TestSBusDatagram(unittest.TestCase):
 
 
 class TestClientSBusOutDatagram(TestSBusDatagram):
-    def setUp(self):
-        super(TestClientSBusOutDatagram, self).setUp()
-
-    def _create_datagram(self):
-        return ClientSBusOutDatagram(
-            self.command, self.fds, self.metadata, self.params,
-            self.task_id)
+    dtg_cls = ClientSBusOutDatagram
 
     def test_serialized_metadata(self):
         self.assertEqual(self.metadata,
@@ -130,18 +122,8 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
                            'storage': {}}], dtg.metadata)
 
 
-class TestServerSBusInOutDatagram(TestSBusDatagram):
-    def setUp(self):
-        super(TestServerSBusInOutDatagram, self).setUp()
-
-    def _create_datagram(self):
-        md_json = json.dumps(self.metadata)
-        cmd_params = {'command': self.command,
-                      'params': self.params,
-                      'task_id': self.task_id}
-        cmd_params = json.dumps(cmd_params)
-        return ServerSBusInDatagram(
-            self.fds, md_json, cmd_params)
+class TestServerSBusInDatagram(TestSBusDatagram):
+    dtg_cls = ServerSBusInDatagram
 
     def test_find_fds(self):
         self.assertEqual(
@@ -176,6 +158,19 @@ class TestServerSBusInOutDatagram(TestSBusDatagram):
 
     def test_object_in_fds(self):
         self.assertEqual([8, 9], self.dtg.object_in_fds)
+
+    def test_build_from_raw_message(self):
+        str_metadata = json.dumps(self.metadata)
+        str_cmd_params = json.dumps(self.dtg.cmd_params)
+
+        dtg = self.dtg_cls.build_from_raw_message(
+            self.fds, str_metadata, str_cmd_params)
+
+        self.assertEqual(self.command, dtg.command)
+        self.assertEqual(self.fds, dtg.fds)
+        self.assertEqual(self.metadata, dtg.metadata)
+        self.assertEqual(self.params, dtg.params)
+        self.assertEqual(self.task_id, dtg.task_id)
 
 
 if __name__ == '__main__':
