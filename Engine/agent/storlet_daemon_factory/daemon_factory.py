@@ -23,7 +23,7 @@ import subprocess
 import time
 
 from sbus import SBus
-from sbus.datagram import ClientSBusOutDatagram
+from sbus.datagram import SBusDatagram
 from sbus.command import SBUS_CMD_PREFIX, SBUS_CMD_HALT, SBUS_CMD_PING
 
 
@@ -229,7 +229,7 @@ class DaemonFactory(object):
                           format(storlet_name, storlet_pipe_name))
         read_fd, write_fd = os.pipe()
         try:
-            dtg = ClientSBusOutDatagram.create_service_datagram(
+            dtg = SBusDatagram.create_service_datagram(
                 SBUS_CMD_PING, write_fd)
             for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
                 ret = SBus.send(storlet_pipe_name, dtg)
@@ -454,7 +454,7 @@ class DaemonFactory(object):
 
         read_fd, write_fd = os.pipe()
         try:
-            dtg = ClientSBusOutDatagram.create_service_datagram(
+            dtg = SBusDatagram.create_service_datagram(
                 SBUS_CMD_HALT, write_fd)
             rc = SBus.send(storlet_pipe_name, dtg)
             os.close(write_fd)

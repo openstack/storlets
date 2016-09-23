@@ -15,19 +15,6 @@
 import copy
 import json
 
-# Designating the host side as the client side and the storlet side
-# as the server side, the IPC between the client and server requires
-# 4 different serialization / de-serialization objects:
-# 1. Serializing client commands (client side)
-# 2. De-srializing client commands (server side)
-# 3. Serializing server response (server side)
-# 4. De-srializing server response (client side)
-# This python module implements the client side objects as follows:
-# ClientSBusOutDatagram - Serializing client commands
-# ServerSBusInDatagram - De-serializing client commands
-# ServerSBusOutDatagram - Serializing server commands
-# ClientSBusInDatagram - De-srializing server response
-
 import sbus.file_description as sbus_fd
 
 
@@ -54,17 +41,21 @@ class FDMetadata(object):
 
 class SBusDatagram(object):
     """
-    Basic class for all SBus datagrams
+    The manager class for the datagram passed over sbus protocol
     """
+
     def __init__(self, command, fds, metadata, params=None, task_id=None):
         """
+        Create SBusDatagram instance
+
         :param command: A string encoding the command to send
         :param fds: An array of file descriptors to pass with the command
         :param md: An array of dictionaries, where the i'th dictionary is the
                    metadata of the i'th fd.
         :param params: A optional dictionary with parameters for the command
                        execution
-        :param task_id: An optional string task id
+        :param task_id: An optional string task id. This is currently used for
+                        cancel command
         """
         self.command = command
         if len(fds) != len(metadata):
@@ -74,6 +65,50 @@ class SBusDatagram(object):
         self.metadata = metadata
         self.params = params
         self.task_id = task_id
+
+    @classmethod
+    def create_service_datagram(cls, command, outfd, params=None,
+                                task_id=None):
+        """
+        Create datagram which only has one service out fd
+
+        This method is used to create datagram for some command type, which
+        only needs one service out fd. Currently we can use this function for
+        the following commands.
+         - SBUS_CMD_HALT
+         - SBUS_CMD_START_DAEMON
+         - SBUS_CMD_STOP_DAEMON
+         - SBUS_CMD_DAEMON_STATUS
+         - SBUS_CMD_STOP_DAEMONS
+         - SBUS_CMD_PING
+         - SBUS_CMD_CANCEL
+
+        :param command: command type
+        :param outfd: service out fd
+        :param params: A optional dictionary with parameters for the command
+                       execution
+        :param task_id: An optional string task id
+        """
+        # TODO(takashi): Maybe we can get rid of this function
+        md = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
+        fds = [outfd]
+        return cls(command, fds, md, params, task_id)
+
+    @classmethod
+    def build_from_raw_message(cls, fds, str_md, str_cmd_params):
+        """
+        Build SBusDatagram from raw message recieved over sbus
+
+        :param fds: An array of file descriptors to pass with the command
+        :param str_md: serialized metadata
+        :param str_cmd_params: serialized command parameters
+        """
+        metadata = json.loads(str_md)
+        cmd_params = json.loads(str_cmd_params)
+        command = cmd_params.get('command')
+        params = cmd_params.get('params')
+        task_id = cmd_params.get('task_id')
+        return cls(command, fds, metadata, params, task_id)
 
     @property
     def num_fds(self):
@@ -88,23 +123,6 @@ class SBusDatagram(object):
             cmd_params['task_id'] = self.task_id
         return cmd_params
 
-
-class ClientSBusOutDatagram(SBusDatagram):
-    """Serializes a command to be sent on the wire.
-
-    The outgoing message is parsed by the ServerSBusInDatagram.
-    The message structure is illustrated in
-    SBusJavaFacade.ServerSBusInDatagram.
-    Once constructed, there are accessors for the serilized data.
-
-    """
-
-    @staticmethod
-    def create_service_datagram(command, outfd, params=None, task_id=None):
-        md = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
-        fds = [outfd]
-        return ClientSBusOutDatagram(command, fds, md, params, task_id)
-
     @property
     def serialized_cmd_params(self):
         return json.dumps(self.cmd_params)
@@ -113,25 +131,13 @@ class ClientSBusOutDatagram(SBusDatagram):
     def serialized_metadata(self):
         return json.dumps(self.metadata)
 
-    def __str__(self):
-        return 'num_fds=%s, md=%s, cmd_params=%s' % (
-            self.num_fds,
-            str(self.serialized_metadata),
-            str(self.serialized_cmd_params))
-
-
-class ServerSBusInDatagram(SBusDatagram):
-    """De-Serializes a command coming form the wire.
-
-    The incoming message is serilized by the ClinetSBusOutDatagram.
-    The message structure is illustrated in
-    SBusJavaFacade.ServerSBusInDatagram.
-    SBusJavaFacade.ServerSBusInDatagram is the Java equivalent, having the
-    same parameters.
-
-    """
-
     def _find_fds(self, fdtype):
+        """
+        Get a list of file descriptors for the given fd type
+
+        :param fdtype: file descriptor type
+        :returns: a list of file descriptors
+        """
         ret = []
         for i in xrange(len(self.metadata)):
             if self.metadata[i]['storlets']['type'] == fdtype:
@@ -139,10 +145,19 @@ class ServerSBusInDatagram(SBusDatagram):
         return ret
 
     def _find_fd(self, fdtype):
+        """
+        Get a single file descriptor for the given fd type
+
+        :param fdtype: file descriptor type
+        :returns: one file descriptor
+        """
         ret = self._find_fds(fdtype)
         if not ret:
             return None
         else:
+            # TODO(takashi): we should raise error if we get multiple fds
+            #                for given type. This is to be done when we add
+            #                fd validation.
             return ret[0]
 
     @property
@@ -179,34 +194,8 @@ class ServerSBusInDatagram(SBusDatagram):
         return [md['storlets'] for md in self.metadata
                 if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
-    @classmethod
-    def build_from_raw_message(cls, fds, str_md, str_cmd_params):
-        """
-        Build ServerSBusOutDatagram from raw message recieved over sbus
-
-        :param fds: An array of file descriptors to pass with the command
-        :param str_md: serialized metadata
-        :param str_cmd_params: serialized command parameters
-        """
-        metadata = json.loads(str_md)
-        cmd_params = json.loads(str_cmd_params)
-        command = cmd_params.get('command')
-        params = cmd_params.get('params')
-        task_id = cmd_params.get('task_id')
-        return cls(command, fds, metadata, params, task_id)
-
-
-# Curerrently we have no Server to Client commands
-# This serves as a place holder should we want to bring the
-# function back:
-# In the past this was used for a allowing a storlet
-# to create new objects via a PUT on container
-# with X-Run-Storlet.
-class ClientSBusInDatagram(SBusDatagram):
-    def __init__(self):
-        raise NotImplementedError()
-
-
-class ServerSBusOutDatagram(SBusDatagram):
-    def __init__(self):
-        raise NotImplementedError()
+    def __str__(self):
+        return 'num_fds=%s, md=%s, cmd_params=%s' % (
+            self.num_fds,
+            str(self.serialized_metadata),
+            str(self.serialized_cmd_params))

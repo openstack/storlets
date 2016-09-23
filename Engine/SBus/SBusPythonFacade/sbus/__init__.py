@@ -14,7 +14,7 @@
 # limitations under the License.
 
 import ctypes
-from sbus.datagram import ServerSBusInDatagram
+from sbus.datagram import SBusDatagram
 
 from ctypes import c_char_p
 from ctypes import c_int
@@ -119,7 +119,7 @@ class SBus(object):
         str_params = str_params[0:n_params]
 
         # Construct actual result datagram
-        return ServerSBusInDatagram.build_from_raw_message(
+        return SBusDatagram.build_from_raw_message(
             h_files, str_metadata, str_params)
 
     @staticmethod

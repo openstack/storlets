@@ -16,8 +16,7 @@
 import json
 import unittest
 import sbus.file_description as sbus_fd
-from sbus.datagram import FDMetadata, SBusDatagram, \
-    ClientSBusOutDatagram, ServerSBusInDatagram
+from sbus.datagram import FDMetadata, SBusDatagram
 
 
 class TestFDMetadata(unittest.TestCase):
@@ -45,8 +44,6 @@ class TestFDMetadata(unittest.TestCase):
 
 
 class TestSBusDatagram(unittest.TestCase):
-    dtg_cls = SBusDatagram
-
     def setUp(self):
         self.command = 'COMMAND'
         self.types = [sbus_fd.SBUS_FD_SERVICE_OUT,
@@ -68,7 +65,7 @@ class TestSBusDatagram(unittest.TestCase):
                            {'skey%d' % i: 'svalue%d' % i}).to_dict())
         self.params = {'param1': 'paramvalue1'}
         self.task_id = 'id'
-        self.dtg = self.dtg_cls(self.command, self.fds, self.metadata,
+        self.dtg = SBusDatagram(self.command, self.fds, self.metadata,
                                 self.params, self.task_id)
 
     def test_init(self):
@@ -87,10 +84,6 @@ class TestSBusDatagram(unittest.TestCase):
                           'task_id': self.task_id},
                          self.dtg.cmd_params)
 
-
-class TestClientSBusOutDatagram(TestSBusDatagram):
-    dtg_cls = ClientSBusOutDatagram
-
     def test_serialized_metadata(self):
         self.assertEqual(self.metadata,
                          json.loads(self.dtg.serialized_metadata))
@@ -103,7 +96,7 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
                          json.loads(self.dtg.serialized_cmd_params))
 
     def test_create_service_datagram(self):
-        dtg = ClientSBusOutDatagram.create_service_datagram(
+        dtg = SBusDatagram.create_service_datagram(
             self.command, 1, self.params, self.task_id)
         self.assertEqual(self.params, dtg.params)
         self.assertEqual(self.command, dtg.command)
@@ -112,7 +105,7 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
         self.assertEqual([{'storlets': {'type': sbus_fd.SBUS_FD_SERVICE_OUT},
                            'storage': {}}], dtg.metadata)
 
-        dtg = ClientSBusOutDatagram.create_service_datagram(
+        dtg = SBusDatagram.create_service_datagram(
             self.command, 1)
         self.assertIsNone(dtg.params)
         self.assertEqual(self.command, dtg.command)
@@ -120,10 +113,6 @@ class TestClientSBusOutDatagram(TestSBusDatagram):
         self.assertEqual([1], dtg.fds)
         self.assertEqual([{'storlets': {'type': sbus_fd.SBUS_FD_SERVICE_OUT},
                            'storage': {}}], dtg.metadata)
-
-
-class TestServerSBusInDatagram(TestSBusDatagram):
-    dtg_cls = ServerSBusInDatagram
 
     def test_find_fds(self):
         self.assertEqual(
@@ -163,7 +152,7 @@ class TestServerSBusInDatagram(TestSBusDatagram):
         str_metadata = json.dumps(self.metadata)
         str_cmd_params = json.dumps(self.dtg.cmd_params)
 
-        dtg = self.dtg_cls.build_from_raw_message(
+        dtg = SBusDatagram.build_from_raw_message(
             self.fds, str_metadata, str_cmd_params)
 
         self.assertEqual(self.command, dtg.command)

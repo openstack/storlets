@@ -17,7 +17,7 @@ import os
 import sys
 
 from sbus import SBus
-from sbus.datagram import ClientSBusOutDatagram
+from sbus.datagram import SBusDatagram
 from sbus.command import SBUS_CMD_HALT
 
 
@@ -37,7 +37,7 @@ def main(argv):
     daemon_factory_pipe_name = argv[1]
     try:
         fi, fo = os.pipe()
-        halt_dtg = ClientSBusOutDatagram.create_service_datagram(
+        halt_dtg = SBusDatagram.create_service_datagram(
             SBUS_CMD_HALT, fo)
         n_status = SBus.send(daemon_factory_pipe_name, halt_dtg)
         if n_status < 0:
