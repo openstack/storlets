@@ -38,7 +38,7 @@ def main(argv):
         usage()
         return -1
     conf = ClusterConfig(argv[0])
-    url, token = get_auth(conf)
+    url, token = get_auth(conf, conf.admin_user, conf.admin_password)
     sys.stdout.write("Enter absolute path to storlet jar file: ")
     storlet_jar = sys.stdin.readline().rstrip()
     print("Your jar file contains the following classes:")

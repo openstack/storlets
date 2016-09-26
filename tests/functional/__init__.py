@@ -16,8 +16,8 @@
 
 import unittest
 from tools.cluster_config_parser import ClusterConfig
-from tools.utils import get_auth, deploy_storlet,\
-    put_local_file
+from tools.utils import get_admin_auth,\
+    deploy_storlet, put_local_file
 from swiftclient import client as swiftclient
 
 CONFIG_FILE = '../../cluster_config.json'
@@ -28,6 +28,7 @@ class StorletBaseFunctionalTest(unittest.TestCase):
     def setUp(self):
         self.conf_file = CONFIG_FILE
         self.conf = ClusterConfig(CONFIG_FILE)
+        self.url, self.token = get_admin_auth(self.conf)
         super(StorletBaseFunctionalTest, self).setUp()
 
 
@@ -55,7 +56,6 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
         self.container = container
         self.storlet_file = storlet_file
         self.headers = headers or {}
-        self.url, self.token = get_auth(self.conf)
         self.acct = self.url.split('/')[4]
         self.deps = []
         if dep_names:

@@ -26,9 +26,10 @@ except ImportError:
     from swift.common.constraints import check_copy_from_header, \
         check_destination_header
 from swift.common.swob import HTTPBadRequest, HTTPUnauthorized, \
-    HTTPMethodNotAllowed, HTTPPreconditionFailed
+    HTTPMethodNotAllowed, HTTPPreconditionFailed, HTTPForbidden
 from swift.common.utils import config_true_value, public, FileLikeIter, \
     list_from_csv, split_path
+from swift.common.middleware.acl import clean_acl
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from storlet_middleware.handlers.base import StorletBaseHandler, \
@@ -38,6 +39,8 @@ from storlet_middleware.handlers.base import StorletBaseHandler, \
 CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
                     'IF_UNMODIFIED_SINCE']
 
+REFERER_PREFIX = 'storlets'
+
 
 class StorletProxyHandler(StorletBaseHandler):
     def __init__(self, request, conf, gateway_conf, app, logger):
@@ -45,7 +48,11 @@ class StorletProxyHandler(StorletBaseHandler):
             request, conf, gateway_conf, app, logger)
         self.storlet_containers = [self.storlet_container,
                                    self.storlet_dependency]
+        self.agent = 'ST'
         self.extra_sources = []
+
+        # A very initial hook for blocking requests
+        self._should_block(request)
 
         if not self.is_storlet_request:
             # This is not storlet-related request, so pass it
@@ -62,16 +69,30 @@ class StorletProxyHandler(StorletBaseHandler):
             raise HTTPBadRequest('Account disabled for storlets',
                                  request=self.request)
 
-        if self.is_storlet_object_update:
+        if self.is_storlet_acl_update:
+            self.acl_string = self._validate_acl_update(self.request)
+        elif self.is_storlet_object_update:
             # TODO(takashi): We have to validate metadata in COPY case
             self._validate_registration(self.request)
             raise NotStorletExecution()
-        else:
-            # if self.is_storlet_execution
+        elif self.is_storlet_execution:
             self._setup_gateway()
+        else:
+            raise NotStorletExecution()
+
+    def _should_block(self, request):
+        # Currently, we have only one reason to block
+        # requests at such an early stage of the processing:
+        # we block requests with referer that have the internal prefix
+        # of:
+        if not request.referer:
+            return
+        if REFERER_PREFIX in request.referer:
+            raise HTTPForbidden('Referrer containing %s'
+                                ' is not allowed' % REFERER_PREFIX)
 
     def _parse_vaco(self):
-        return self.request.split_path(4, 4, rest_with_last=True)
+        return self.request.split_path(3, 4, rest_with_last=True)
 
     def is_proxy_runnable(self, resp):
         """
@@ -90,12 +111,18 @@ class StorletProxyHandler(StorletBaseHandler):
 
     @property
     def is_storlet_request(self):
-        return self.is_storlet_execution or self.is_storlet_object_update
+        return (self.is_storlet_execution or self.is_storlet_object_update
+                or self.is_storlet_acl_update)
 
     @property
     def is_storlet_object_update(self):
         return (self.container in self.storlet_containers and self.obj
                 and self.request.method in ['PUT', 'POST'])
+
+    @property
+    def is_storlet_acl_update(self):
+        return (self.request.method == 'POST' and not self.obj and
+                'X-Storlet-Container-Read' in self.request.headers)
 
     @property
     def is_put_copy_request(self):
@@ -136,6 +163,49 @@ class StorletProxyHandler(StorletBaseHandler):
             self.logger.exception('Bad parameter')
             raise HTTPBadRequest(e.message)
 
+    def _build_acl_string(self, user, storlet):
+        acl_string = '%s.%s_%s' % (REFERER_PREFIX, user, storlet)
+        return acl_string
+
+    def _validate_acl_update(self, req):
+        """
+        Validate the request has the necessary headers for a
+        storlet ACL update
+
+        :params req: swob.Request instance
+        :return: the resulting acl string that hould be added
+        :raises HTTPBadRequest: If a header is missing or mulformed
+        """
+        # Make sure we are not meddling with the storlet containers
+        if self.container in self.storlet_containers:
+            msg = 'storlet ACL update cannot be a storlet container'
+            raise HTTPBadRequest(msg)
+
+        # Make sure the expected headers are supplied
+        user_name = req.headers.get("X-Storlet-Container-Read", None)
+        storlet_name = req.headers.get("X-Storlet-Name", None)
+        if not user_name or not storlet_name:
+            msg = 'storlet ACL update request is missing a mandatory header'
+            raise HTTPBadRequest(msg)
+
+        # Make sure the resulting acl is valid
+        acl_string = '.r:%s' % self._build_acl_string(user_name, storlet_name)
+        try:
+            clean_acl('X-Container-Read', acl_string)
+        except ValueError as e:
+            msg = ('storlet ACL update request has invalid values %s'
+                   % e.message)
+            raise HTTPBadRequest(msg)
+
+        # Make sure the resulting acl permits a single entity
+        if ',' in acl_string:
+            msg = ('storlet ACL update request has '
+                   'mulformed storlet or user name')
+            raise HTTPBadRequest(msg)
+
+        # The request is valid. Keep the ACL string
+        return acl_string
+
     def verify_access_to_storlet(self):
         """
         Verify access to the storlet object
@@ -161,7 +231,7 @@ class StorletProxyHandler(StorletBaseHandler):
         storlet_req = make_subrequest(
             new_env, 'HEAD', spath,
             headers={'X-Auth-Token': auth_token},
-            swift_source='SE')
+            swift_source=self.agent)
 
         resp = storlet_req.get_response(self.app)
         if not resp.is_success:
@@ -217,7 +287,7 @@ class StorletProxyHandler(StorletBaseHandler):
                     sub_req = make_subrequest(
                         self.request.environ,
                         'GET', '/'.join(swift_path),
-                        agent='ST')
+                        agent=self.agent)
                     sub_resp = sub_req.get_response(self.app)
                     # TODO(kota_): make this in another green thread
                     # expicially, in parallel with primary GET
@@ -257,6 +327,25 @@ class StorletProxyHandler(StorletBaseHandler):
                 self.request.headers['X-Storlet-Range']
 
         original_resp = self.request.get_response(self.app)
+        if original_resp.status_int == 403:
+            # The user is unauthoried to read from the container.
+            # It might be, however, that the user is permitted
+            # to read given that the required storlet is executed.
+            if not self.request.environ['HTTP_X_USER_NAME']:
+                # The requester is not even an authenticated user.
+                self.logger.info(('Storlet run request by an'
+                                  ' authenticated user'))
+                raise HTTPUnauthorized('User is not authorized')
+
+            user_name = self.request.environ['HTTP_X_USER_NAME']
+            storlet_name = self.request.headers['X-Run-Storlet']
+            internal_referer = '//%s' % self._build_acl_string(user_name,
+                                                               storlet_name)
+            self.logger.info(('Got 403 for original GET %s request. '
+                              'Trying with storlet internal referer %s' %
+                              (self.request.path, internal_referer)))
+            self.request.referrer = self.request.referer = internal_referer
+            original_resp = self.request.get_response(self.app)
 
         if original_resp.is_success:
             # The get request may be a SLO object GET request.
@@ -406,3 +495,36 @@ class StorletProxyHandler(StorletBaseHandler):
 
         return self.base_handle_copy_request(self.container, self.obj,
                                              dest_container, dest_object)
+
+    @public
+    def POST(self):
+        """
+        POST handler on Proxy
+        Deals with storlet ACL updates
+        """
+
+        # Get the current container's ACL
+        # We perform a sub request rather than get_container_info
+        # since get_container_info bypasses authorization, and we
+        # prefer to be on the safe side.
+        target = ['', self.api_version, self.account, self.container]
+        sub_req = make_subrequest(self.request.environ,
+                                  'HEAD', '/'.join(target),
+                                  agent=self.agent)
+        sub_resp = sub_req.get_response(self.app)
+        if sub_resp.status_int != 204:
+            self.logger.info("Failed to retreive container metadata")
+            return HTTPUnauthorized(('Unauthorized to get or modify '
+                                     'the container ACL'))
+
+        # Add the requested ACL
+        read_acl = sub_resp.headers.get("X-Container-Read", None)
+        if read_acl:
+            new_read_acl = ','.join([read_acl, self.acl_string])
+        else:
+            new_read_acl = self.acl_string
+
+        self.request.headers['X-Container-Read'] = new_read_acl
+        resp = self.request.get_response(self.app)
+        self.logger.info("Got post response, %s" % resp.status)
+        return resp

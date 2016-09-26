@@ -283,7 +283,8 @@ class StorletBaseHandler(object):
 
         :return: Whether storlet should be executed
         """
-        return 'X-Run-Storlet' in self.request.headers
+        return ('X-Run-Storlet' in self.request.headers and
+                self.obj)
 
     @property
     def is_range_request(self):

@@ -233,3 +233,33 @@ Use the 'X-Storlet-Run-On-Proxy' header to enforce the engine to invoke the stor
 ::
 
     'X-Storlet-Run-On-Proxy': ''
+
+=============
+Storlets ACLs
+=============
+
+Storlets ACLs are an extension to Swift's container read acl that allow to give users access to data through a storlet.
+In other words, a certain user may not have access to read objects from a container unless the access is done through
+a specific storlet. Setting storlets ACLs is done using the POST verb on a container as follows:
+
+::
+
+  [POST] /v1/{account}/{container}
+
+::
+
+  X-Storlet-Container-Read: {user_name}
+  X-Storlet-Name: {storlet_name}
+  X-Auth-Token: {authorization_token}
+
+#. The user_name must be a user defined in Keystone, that can retrieve a valid token.
+
+#. The storlet_name is the name of the storlet through which access is permitted. This name
+    should match the name specified when running a storlet (see storlet invocation above)
+
+#. The authorization_token is a token of the POST request initiator, which must have
+    privilege to set the container ACL
+
+Currently, a storlet ACL can be set only for a single user. Storlets ACLs can be viewed
+as any other container read ACL by performing HEAD request on the container. The ACL
+will be shown as .r:storlets.<user_name>_<storlet_name> as part of the Container-Read-ACL.
