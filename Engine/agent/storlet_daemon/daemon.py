@@ -29,6 +29,10 @@ EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 
 
+class StorletDaemonException(Exception):
+    pass
+
+
 def command_handler(func):
     """
     Decorator for handler functions for command
@@ -38,15 +42,37 @@ def command_handler(func):
 
 
 class Daemon(object):
+    """
+    Daemon class to run python program on storlet container
+
+    :param storlet_name: the program name string which formatted as
+                         'module.class'. Note that nested module
+                         (e.g. module.submodule.class) is not allowed.
+    :param sbus_path: path string to sbus
+    :param logger: a logger instance
+    :param pool_size: an integer for concurrency running the storlet apps
+    """
 
     def __init__(self, storlet_name, sbus_path, logger, pool_size):
-        self.storlet_name = storlet_name
+        self.storlet_name = str(storlet_name)
+
+        try:
+            module_name, cls_name = self.storlet_name.split('.')
+        except ValueError:
+            raise ValueError("Invalid storlet name %s" % storlet_name)
+
+        try:
+            module = __import__(module_name, fromlist=[cls_name])
+            self.storlet_cls = getattr(module, cls_name)
+        except (ImportError, AttributeError):
+            raise StorletDaemonException(
+                "Failed to load storlet %s" % self.storlet_name)
+
         self.sbus_path = sbus_path
         self.logger = logger
         self.pool_size = pool_size
         self.task_id_to_pid = {}
         self.chunk_size = 16
-        self.storlet_cls = None
 
     def _cleanup_pids(self):
         """
@@ -121,7 +147,8 @@ class Daemon(object):
         out_fd = dtg.service_out_fd
         with os.fdopen(out_fd, 'w') as outfile:
             outfile.write('True: OK')
-        return True
+        # To stop the daemon listening, return False here
+        return False
 
     def _safe_close_files(self, files):
         for fobj in files:
@@ -272,23 +299,9 @@ class Daemon(object):
             return handler(dtg)
 
     def main_loop(self):
-
-        storlet_name_sp = self.storlet_name.split('.')
-        if len(storlet_name_sp) != 2:
-            self.logger.error("Invalid storlet name %s. exiting" %
-                              self.storlet_name)
-            return EXIT_FAILURE
-
-        module_name = storlet_name_sp[0]
-        cls_name = storlet_name_sp[1]
-
-        try:
-            module = __import__(module_name, fromlist=[cls_name])
-            self.storlet_cls = getattr(module, cls_name)
-        except (ImportError, AttributeError):
-            self.logger.exception("Failed to load storlet %s" %
-                                  self.storlet_name)
-            return EXIT_FAILURE
+        """
+        Main loop to run storlet application
+        """
 
         sbus = SBus()
         fd = sbus.create(self.sbus_path)
@@ -387,7 +400,11 @@ def main(argv):
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
     # create an instance of storlet daemon
-    daemon = Daemon(storlet_name, sbus_path, logger, pool_size)
+    try:
+        daemon = Daemon(storlet_name, sbus_path, logger, pool_size)
+    except Exception as e:
+        logger.error(e.message)
+        return EXIT_FAILURE
 
     # Start the main loop
     return daemon.main_loop()
