@@ -21,7 +21,8 @@ from contextlib import contextmanager
 from six import StringIO
 from stat import ST_MODE
 
-from storlet_gateway.common.exceptions import StorletRuntimeException
+from storlet_gateway.common.exceptions import StorletRuntimeException, \
+    StorletTimeout
 from storlet_gateway.gateways.docker.gateway import DockerStorletRequest
 from storlet_gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
@@ -355,6 +356,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
     def setUp(self):
         self.pipe_path = tempfile.mktemp()
         self.log_file = tempfile.mktemp()
+        self.logger = FakeLogger()
         storlet_id = 'Storlet-1.0.jar'
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
@@ -363,7 +365,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         storlet_request = DockerStorletRequest(
             storlet_id, {}, {}, iter(StringIO()), options=options)
         self.protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1)
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger)
 
     def tearDown(self):
         for path in [self.pipe_path, self.log_file]:
@@ -420,14 +422,14 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         storlet_request = DockerStorletRequest(
             storlet_id, {}, {}, iter(StringIO()), options=options)
         protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1)
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger)
         self.assertEqual(5, len(protocol.remote_fds))
 
         # extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
             storlet_id, {}, {}, iter(StringIO()), options=options)
         protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1,
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request])
         self.assertEqual(6, len(protocol.remote_fds))
 
@@ -435,9 +437,49 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         storlet_request = DockerStorletRequest(
             storlet_id, {}, {}, iter(StringIO()), options=options)
         protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1,
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request] * 3)
         self.assertEqual(8, len(protocol.remote_fds))
+
+    def test_open_writer_with_invalid_fd(self):
+        invalid_fds = (
+            (None, TypeError), (-1, ValueError), ('blah', TypeError))
+
+        for invalid_fd, expected_error in invalid_fds:
+            with mock.patch('os.close') as mock_close:
+                with self.assertRaises(expected_error):
+                    with self.protocol._open_writer(invalid_fd):
+                        pass
+                # writer attempts to close fd via os call
+                self.assertEqual(1, mock_close.call_count)
+
+    def _test_writer_with_exception(self, exception_cls):
+        mock_writer = mock.MagicMock()
+        with mock.patch('os.fdopen') as mock_fdopen, \
+                mock.patch('os.close') as mock_close:
+            mock_fdopen.return_value = mock_writer
+
+            def raise_in_the_context():
+                with self.protocol._open_writer(1):
+                    raise exception_cls()
+
+            # writer context doesn't suppress any exception
+            self.assertRaises(exception_cls, raise_in_the_context)
+
+        # sanity
+        self.assertEqual(1, mock_fdopen.call_count)
+        self.assertEqual(0, mock_close.call_count)
+
+        # writer was closed
+        self.assertEqual(1, mock_writer.close.call_count)
+
+    def test_writer_raise_while_in_writer_context(self):
+        # basic storlet timeout
+        self._test_writer_with_exception(StorletTimeout)
+        # unexpected IOError
+        self._test_writer_with_exception(IOError)
+        # else
+        self._test_writer_with_exception(Exception)
 
 
 if __name__ == '__main__':

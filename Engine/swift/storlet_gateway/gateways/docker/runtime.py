@@ -502,12 +502,13 @@ class StorletInvocationProtocol(object):
     :param storlet_pipe_path: path string to pipe
     :param storlet_logger_path: path string to log file
     :param timeout: integer of timeout for waiting the resp from container
+    :param logger: logger instance
     :param extra_sources (WIP): a list of StorletRequest instances
                                 which keep data_iter for adding extra source
                                 as data stream
     """
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout, extra_sources=None, logger=None):
+                 timeout, logger, extra_sources=None):
         self.srequest = srequest
         self.storlet_pipe_path = storlet_pipe_path
         self.storlet_logger_path = storlet_logger_path
@@ -752,14 +753,6 @@ class StorletInvocationProtocol(object):
         if fd not in w:
             raise StorletRuntimeException('Write fd is not ready')
 
-    def _write_with_timeout(self, writer, chunk):
-        try:
-            with StorletTimeout(self.timeout):
-                writer.write(chunk)
-        except StorletTimeout:
-            writer.close()
-            raise
-
     def _close_input_data_descriptors(self):
         fds = [self._input_data_read_fd, self._input_data_write_fd]
         self._safe_close(fds)
@@ -807,19 +800,42 @@ class StorletInvocationProtocol(object):
 
     @contextmanager
     def _open_writer(self, fd):
-        writer = os.fdopen(fd, 'w')
+        try:
+            writer = os.fdopen(fd, 'w')
+        except (OSError, TypeError, ValueError):
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            try:
+                os.close(fd)
+            except Exception:
+                # any error is ok to close this operation because even if it
+                # happens, we cannot do anything.
+                pass
+            six.reraise(exc_type, exc_value, exc_traceback)
+
         try:
             yield writer
-        except OSError as e:
-            if self.logger:
-                self.logger.exception('opening fd failed: %s', e.message)
-            raise
         finally:
             writer.close()
-        # NOTE(takashi): writer.close() also closes fd, so we don't have to
-        #                close fd again.
+            # NOTE(takashi): writer.close() also closes fd, so we don't have to
+            #                close fd again.
 
     def _write_input_data(self, fd, data_iter):
-        with self._open_writer(fd) as writer:
-            for chunk in data_iter:
-                self._write_with_timeout(writer, chunk)
+        try:
+            # double try/except block saving from unexpected errors
+            try:
+                with self._open_writer(fd) as writer:
+                    for chunk in data_iter:
+                        with StorletTimeout(self.timeout):
+                            writer.write(chunk)
+            except (OSError, TypeError, ValueError):
+                self.logger.exception('fdopen failed')
+            except IOError:
+                # this will happen at sort of broken pipe while writer.write
+                self.logger.exception('IOError with writing fd %s' % fd)
+            except StorletTimeout:
+                self.logger.exception(
+                    'Timeout (%s)s with writing fd %s' % (self.timeout, fd))
+        except Exception:
+            # _write_input_data is designed to run eventlet thread
+            # so that we should catch and suppress it here
+            self.logger.exception('Unexpected error at writing input data')
