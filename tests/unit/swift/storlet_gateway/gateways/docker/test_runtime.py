@@ -350,6 +350,17 @@ class TestRunTimeSandbox(unittest.TestCase):
                 self.sbox.restart()
             self.sbox.wait = _wait
 
+    def test_get_storlet_classpath(self):
+        storlet_id = 'Storlet.jar'
+        storlet_main = 'org.openstack.storlet.Storlet'
+        dependencies = ['dep1', 'dep2']
+        self.assertEqual(
+            self.sbox._get_storlet_classpath(storlet_main, storlet_id,
+                                             dependencies),
+            '/home/swift/org.openstack.storlet.Storlet/Storlet.jar:'
+            '/home/swift/org.openstack.storlet.Storlet/dep1:'
+            '/home/swift/org.openstack.storlet.Storlet/dep2')
+
 
 class TestStorletInvocationProtocol(unittest.TestCase):
     def setUp(self):
