@@ -1,15 +1,10 @@
-=======================
 Storlet Engine Overview
 =======================
-
-----------
-Components
-----------
 At the high level the storlet engine is made of the components described below. See illustration.
 
 
 The storlet middleware
-======================
+----------------------
 The storlet middleware is a Swift WSGI middleware that intercepts storlet invocation
 requests and routes the input data and the computation output into and out of the Docker
 container where the storlet is executed. This middleware needs to be in both the
@@ -24,7 +19,7 @@ Moreover, part of the storlet middleware configuration is what
 class implementation of the API we refer to as "storlet docker gateway".
 
 Swift accounts
-==============
+--------------
 The storlet engine is tightly coupled with accounts in Swift in the following manners:
 
 #. In order to invoke a storlet on a data object residing in some Swift account, that account
@@ -40,7 +35,7 @@ The storlet engine is tightly coupled with accounts in Swift in the following ma
    accounts. The Docker image name must be the account id to which it belongs.
 
 The Docker image
-================
+----------------
 As mentioned above there is a Docker image per account that is enabled for storlets.
 At a high level this image containes:
 
@@ -58,14 +53,13 @@ At a high level this image containes:
    it has the definition of the invoke API the storlet must implement. 
 
 The storlet bus
-===============
+---------------
 The storlet bus is a communication channel between the storlet middleware in the Swift side 
 and the factory daemon and storlet daemon in the Docker container.
 For each Docker container (or Swift account) there is a communication channel with the storlet factory of that container.
 For each storlet daemon in the container there is a communication channel on which is listens for invocations. These channels are
 based on unix domain sockets.
 
-------------------------------------------
 The storlet engine components illustration
 ------------------------------------------
 
@@ -75,14 +69,13 @@ The storlet engine components illustration
    :scale: 50
    :alt: alternate text
 
-----
 Flow
-----
+====
 
 To tie everything together we illustrate an end-to-end scenario.
 
 Writing and Deploying a storlet
-===============================
+-------------------------------
 The flow begins with writing a storlet followed by deploying it.
 writing and deploying a storlet is covered in the writing and
 deploying storlets guide_.
@@ -90,7 +83,7 @@ deploying storlets guide_.
 .. _guide: writing_and_deploying_storlets.html
 
 Invoking a Storlet
-==================
+------------------
 A Storlet can be invoked on object download, upload or copy operations (GET, PUT, and COPY respectively).
 For the flow description lets assume that we wish to invoke the
 storlet on an object download. This involves doing a Swift GET request with the
@@ -98,7 +91,7 @@ additional header "X-Run-Storlet" which specifies the storlet to invoke,
 e.g. "X-Run-Storlet: compress-1.0.jar".
 
 Handling the request at the proxy server
-========================================
+----------------------------------------
 Seeing the "X-Run-Storlet" header the storlert_middleware at the proxy intercepts
 the request and performs a HEAD on the storlet specified by the user.
 This HEAD operation facilitates:
@@ -115,7 +108,7 @@ with the request being routed to an object server that holds a replica of the ob
 specified in the GET uri.
 
 Handling the request at the object server
-=========================================
+-----------------------------------------
 Seeing the "X-Run-Storlet" header the storlert_middleware at the object server intecepts
 the request and perform the following two phased flow:
 

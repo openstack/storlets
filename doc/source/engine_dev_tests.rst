@@ -1,4 +1,3 @@
-=============================
 Development and Testing Guide
 =============================
 
@@ -10,7 +9,6 @@ the development environment installation instructions_ or in the getting started
 .. _instructions: engine_dev_installation.html
 .. _guide: getting_started.html
 
---------
 Building
 --------
 The storlets repository consists of code written in Python, Java and C. We have chose ant to serve as a 'make' tool for all of the code.
@@ -32,7 +30,6 @@ The main build task in build.xml is dependent on two other build tasks:
   #. The Java SCommon code, which has the storlet interface declaration, as well as the accompanying classes appearing in the interface. This code
      is compiled to a .jar that is required both in the Docker image as well as for building storlets.
 
----------
 Deploying
 ---------
 Two additional tasks of interest in our build.xml are the deploy_host_engine and deploy_container_engine.
@@ -45,7 +42,6 @@ These tasks are based on the Ansible installation scripts and do the following:
    in the cluster_config.json and distribute it to all nodes as defined in
    the configuration.
 
------------------
 Running the Tests
 -----------------
 

@@ -1,106 +1,50 @@
-===================================
 Storlet writing and deploying guide
 ===================================
-Currently, storlets must be written in Java. Writing a storlet involves
-implementing a single method interface and following some simple rules and best
-practices described below.
+
+Storlets can be written either in Java or in Python. This guide
+is a language independent starting point for writing
+and deploying storlets. The Java_ and Python_ specific guides
+complement this guide and should be read next after this one.
+
+.. _Java: writing_and_deploying_java_storlets.html
+.. _Python: writing_and_deploying_python_storlets.html
+
+
+Writing a storlet involves implementing a single function referred to
+as invoke (the exact name varies between languages).
+
+Typically, the invoke operation gets an input stream and an
+output stream. The input stream will contain the data either being uploaded
+(in case the storlet is invoked during upload) or being downloaded (when
+the invocation is done during download). The input stream is accompanied with
+metadata that reflects the Swift user defined metadata. The output stream
+exposes a way to write back not only the storlet output data, but also the
+metadata. The input and output streams are exposed to the storlet code
+in a way that is native to the language being used.
 
 Once the storlet is written and tested it can be uploaded as an object to a
-designated container (called 'storlet' by default). In addition in case the
-storlet is dependent on some Java library, that library can be uploaded as a
-dependency of the storlet. It is assumed that storlet dependencies are small
-(on the order of few MBs), heavier dependencies should be part of the Docker
-image.
+designated container (called 'storlet' by default). Storlet code external
+dependencies such as Java libraries or Python modules can be uploaded as well.
+It is assumed, however, that storlet dependencies are relatively small
+(on the order of few MBs). Heavier dependencies should be part of the Docker
+image. Deploying storlets and dependencies are covered below.
 
-To write a storlet you will need the SCommon.jar which is being built as part of
-the storlets build process as described in the development and testing guide_
+There are various implementations of storlets in the StorletSamples/java
+and StorletSamples/python directories. These storlets are used by the engine's
+functional tests.
 
-.. _guide: engine_dev_tests.html
+The next two sections describe storlet writing and deploying guidelines that are
+indpendent of the language used.
 
-Import the .jar to a Java project in Eclipse and implement the
-org.openstack.storlet.common.IStorlet interface.
-The interface has a single method that looks like this:
-
-::
-
-  public void invoke(ArrayList<StorletInputStream> inStreams,
-                     ArrayList<StorletOutputStream> outStreams,
-                     Map<String,String> parameters, StorletLogger logger) throws StorletException;
-
-Below is a class diagram illustrating the classes involved in the above API.
-
-..  image:: images/java_prog_model.jpg
-    :height: 960px
-    :width: 1216 px
-    :scale: 50 %
-    :alt: Programming Model Class Diagram
-    :align: center
-
-#. The StorleInputStream is used to stream object's data into the storlet.
-   An instance of the class is provided whenever the Storlet gets an object as
-   an input. Practically, it is used in all storlet invocation scenarios to
-   stream in the object's data and metadata. To consume the data call getStream()
-   to get a java.io.InputStream on which you can just read(). To consume the
-   metadata call the getMetadata() method.
-#. The StorleOutputStream is a base class for the StorletObjectOutputStream.
-   The actual instance received by the storlet will always be StorletObjectOutputStream.
-#. StorletObjectOutputStream. In all invocation scenarios the storlet is
-   called with an instance of this class.
-
-   - Use the setMetadata method to set the Object's metadata.
-   - Use getStream to get a java.io.OutputStream on which you can just write()
-     the content of the object.
-   - Notice that setMetadata must be called. Also, it must be called before
-     writing the data. Additional guidelines on using StorletObjectOutputStream
-     are given below.
-#. StorletLogger. The StorletLogger class supports a single method called emitLog,
-   and accepts a String. The storlet logs are written to the host machine.
-
-When invoked via the Swift REST API the invoke method
-will be called as follows:
-
-#. The inStreams array would include a single element of type StorleInputStream
-   representing the object appearing in the request's URI.
-#. The outStreams would include a single element of type StorleObjectOutputStream
-   representing the response returned to the user.
-#. The parameters map includes execution parameters sent. These parameters can be
-   specified in the storlet execution request.
-#. A StorletLogger instance.
-
-==========================
 Storlet Writing Guidelines
 ==========================
-Below are some guidelines for writing a storlet. Some of them are musts, some are
-recommendations, and some are tips.
+Independent of the language used for writing a storlet, there are several guidelines
+to follow. Some of them are musts and some are recommendations.
 
------
-Musts
------
-#. The storlet code must be thread safe and re-enterant. The invoke method will
-   be called many times and potentially in parallel.
-#. Once the storlet has finished writing the response, it is important to close
-   the output stream. Failing to do so will result in a timeout. Specifically,
-   close the java.io.OutputStream obtained from the call to getStreasm()
-#. With the current implementation, a storlet must start to respond within 40
-   seconds of invocation. Otherwise, Swift would timeout. Moreover, the storlet
-   must output something every 40 seconds so as not to timeout. This is a
-   mechanism to ensure that the storlet code does not get stuck. Note that
-   outputting an empty string does not do the job in terms of resetting the 40
-   seconds timeout.
-#. For StorletObjectOutputStream, the call to setMetadata must happen before the
-   storlet starts streaming out the output data. Note the applicability of the 40
-   seconds timeout here as well.
-#. The total size of metadata given to setMetadata (when serialized as a string)
-   should not exceed 4096 Bytes
-#. While Swift uses the prefix X-Object-Meta to specify that a certain header
-   reflects a metadata key, the key itself should not begin with that prefix.
-   More specifically, metadata keys passed to setMetadata should not have that
-   prefix (unless this is really part of the key)
-
----------------
 Recommendations
 ---------------
-#. Storlets are tailored for stream processing, that is, process the input as it
+
+#. Storlets are tailored for stream processing, that is, they process the input as it
    is read and produce output while still reading. In other words a 'merge sort'
    of the content of an object is not a good example for a storlet as it requires
    to read all the content into memory (random reads are not an option as the
@@ -109,103 +53,103 @@ Recommendations
    into memory or doing very intensive computations would have impact on the overall
    system performance.
 
-#. While this might be obvious it is advisable to test the storlet prior to its
-   deployment.
+#. While this might be obvious make sure to unit test your storlet prior to deploying it.
 
-----
-Tips
-----
-#. The storlets are executed in an open-jdk 8 environment. Thus, any dependencies
-   that the storlet code requires which are outside of open-jdk 8 should be
-   stated as storlet dependencies and uploaded with the storlet. Exact details
-   are found in the deployment section below.
+Musts
+-----
 
-#. In some cases the storlet may need to know the path where the storlet .jar
-   as well as the dependencies are kept inside the Linux container. One reason
-   may be the need to invoke a binary dependency. To get that path use the
-   following code:
+#. The storlet code must be thread safe and re-enterant. The invoke method will
+   be called many times and potentially in parallel.
 
-   ::
+#. Once the storlet has finished writing the response, it is important to close
+   the output stream. Failing to do so will result in a timeout.
 
-     // Get the path of this class image
-     String strJarPath = StorletUtils.getClassFolder(this.getClass());
+#. A storlet must start to respond within 40 seconds of invocation. Otherwise,
+   Swift would timeout. Moreover, the storlet must output something every 40 seconds
+   so as not to timeout. This is a mechanism to ensure that the storlet code does not
+   get stuck. Note that outputting an empty string does not do the job in terms of
+   resetting the 40 seconds timeout.
 
-----------------
-Storlet Examples
-----------------
-There are various implementations of storlets in the StorletSamples
-directory. These are used in the engine's functional tests
-In the below example, we will be using the identity storlet
-found under StorletSamples/IdentityStorlet
+#. The storlet must write metadata to the output stream, and must do so before it
+   starts streaming out the data. A typical implementation would read the
+   input metadata and use it as a basis for the metadata being written.
+   Note the applicability of the 40 seconds timeout here as well.
 
-=======================
-How to Deploy a storlet
-=======================
-In this paragraph we cover:
+#. The total size of metadata that can be set (when serialized as a string)
+   must not exceed 4096 Bytes
 
-#. The principles behind storlet deployment, plus examples.
-#. A Swift client example for uploading a storlet.
-#. A python example for uploading a storlet.
+#. While Swift uses the prefix X-Object-Meta to specify that a certain header
+   reflects a metadata key, the key itself should not begin with that prefix.
+   More specifically, metadata keys being set by the storlet should not have that
+   prefix (unless this is really part of the key)
 
------------------------------
-Storlet Deployment Principles
------------------------------
-
-The compiled class that implements the storlet needs to be wrapped in a .jar.
-This jar must not include the SCommon.jar. Any jars that the class implementation
-is dependent on should be uploaded as separate jars as shown in the deployment
-section below.
+Storlet Deployment Guidelines
+=============================
 
 Storlet deployment is essentially uploading the storlet and its dependencies to
-designated containers in the account we are working with. While a storlet and a
+designated containers in the account you are working with. While a storlet and a
 dependency are regular Swift objects, they must carry some metadata used by the
 storlet engine. When a storlet is first executed, the engine fetches the necessary
-objects from Swift and puts them is a directory accessible by the Docker container.
+objects from Swift and puts them in a directory accessible to the Docker container.
 Note that the dependencies are meant to be small. Having a large list of dependencies
 or a very large dependency may result in a timeout on the first attempt to execute a
 storlet. If this happens, just re-send the request again.
 
-We consider two types of dependencies: libraries and executables. libraries would
-typically be .jar files the storlet code is dependent on. Alternatively, one can
-have a binary dependency, that the storlet code can execute.
+We support two types of dependencies:
 
-Following the Identity storlet example, we have 2 objects to upload:
+#. External libraries or modules that
+   are native to the storlet langauge
 
-#. The storlet packaged in a .jar. In our case the jar was named:
-   identitystorlet-1.0.jar The jar needs to be uploaded to a container named
-   storlet. The name of the uploaded storlet must be of the form <name>-<version>.
-   The metadata that must accompany a storlet is as follows:
+#. Executables dependency that the storlet code
+   can execute.
+
+Storlet Object Metadata
+-----------------------
+Uploading a storlet must be done to a designated container, called by default "storlet". The uploaded object
+must carry the following metadata. See the specific langauge guides for more information.
 
    ::
 
-        X-Object-Meta-Storlet-Language - currently must be 'java'
+        X-Object-Meta-Storlet-Language - must be 'python' or 'java'
         X-Object-Meta-Storlet-Interface-Version - currenltly we have a single version '1.0'
-        X-Object-Meta-Storlet-Dependency - A comma separated list of dependencies. In our case: 'get42'
         X-Object-Meta-Storlet-Object-Metadata - Currently, not in use, but must appear. Use the value 'no'
-        X-Object-Meta-Storlet-Main - The name of the class that implements the IStorlet API. In our case: 'org.openstack.storlet.identity.IdentityStorlet'
+        X-Object-Meta-Storlet-Main - The name of the class that implements the invoke operation
 
-#. The binary file that the storlet code is dependent on. In our case it is a
-   binary called get42. The binary should be uploaded to a container named
-   dependency. The dependency metadata fields appear below. Note the permissions
-   header. This header is required so that the engine will chmod it accordingly
-   when placed in the container so that the storlet would be able to execute it.
+Optional metadata item is:
 
-   ::
+  ::
 
-        X-Object-Meta-Storlet-Dependency-Version - While the engine currently does not parse this header, it must appear.
-        X-Object-Meta-Storlet-Dependency-Permissions - An optional metadata field, where the user can state the permissions
-          given to the dependency when it is copied to the Linux container. This is helpful for binary dependencies invoked by the
-          storlet. For a binary dependency once can specify: '0755'
+        X-Object-Meta-Storlet-Dependency - A comma separated list of dependencies.
 
 If one wishes to update the storlet just upload again, the engine would recognize
 the update and bring the updated code.
 
-Important: Currently, dependency updates are not recognized, only the Storlet
-code itself can be updated.
+Dependency Object Metadata
+--------------------------
+Uploading a dependency must be done to a designated container, called by default "dependency". The uploaded object
+must carry the following metadata.
 
---------------------------------------
-Deploying a Storlet using Swift Client
---------------------------------------
+   ::
+
+        X-Object-Meta-Storlet-Dependency-Version - While the engine currently does not parse this header, it must appear.
+
+Optional metadata item is:
+
+   ::
+
+        X-Object-Meta-Storlet-Dependency-Permissions - The permissions given to the dependency when it is copied to the
+        Docker container. This is helpful for binary dependencies invoked by the storlet.
+        For a binary dependency once can specify: '0755'
+
+
+.. note:: Currently, dependency updates are not recognized.
+
+
+Deploying a Storlet using Swift Client cli
+------------------------------------------
+We show below how to deploy a storlet using the Swift client cli.
+The example uses a Java storlet. The differences from deploying a
+Python storlet are minor and we highlight them where required.
 
 When using the Swift client one needs to provide the credentials, as well as the
 authentication URI. The credentials can be supplied either via environment
@@ -243,10 +187,15 @@ Here is the Swift client command for uploading the storlet. some notes:
   -H "X-Object-Meta-Storlet-Main:org.openstack.storlet.identity.IdentityStorlet" \
   -H "X-Object-Meta-Storlet-Dependency:get42"
 
+.. note:: When deploying a Python storlet the name of the object (identitystorlet-1.0.jar in the above) has a different format
+          Otherwise, "X-Object-Meta-Storlet-Language" is "Python", and "X-Object-Meta-Storlet-Main" has a different format.
+          Please refer to Python_ for the exact details.
+
 Here is the Swift client command for uploading the get42 dependency. Again,
 some notes:
 
 #. The container name used here is the first parameter for the upload command and is 'dependency'.
+
 #. We use the optional permissions header as this is a binary .
 
 ::
@@ -255,9 +204,8 @@ some notes:
   -H "X-Object-Meta-Storlet-Dependency-Version:1.0" \
   -H "X-Object-Meta-Storlet-Dependency-Permissions:0755"
 
--------------------------------
-Deploying a Storlet with Python
--------------------------------
+Deploying a Storlet using the Python Swift Client
+-------------------------------------------------
 
 Here is a code snippet that uploads both the storlet as well as the dependencies.
 The code assumes v2 authentication, and was tested against a Swift cluster with:
@@ -266,6 +214,10 @@ The code assumes v2 authentication, and was tested against a Swift cluster with:
    password is 'testing'
 #. Under the service account there are already 'storlet' and 'dependency'
    containers.
+
+The example uses a Java storlet. The differences from deploying a
+Python storlet are minor and are the same as the differences highlighted
+in the deployment using Swift client section above.
 
 ::
 

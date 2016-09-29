@@ -1,4 +1,3 @@
-===============
 Storlets API v1
 ===============
 The storlets API is an extension of the Swift API. In some cases we use
@@ -234,7 +233,6 @@ Use the 'X-Storlet-Run-On-Proxy' header to enforce the engine to invoke the stor
 
     'X-Storlet-Run-On-Proxy': ''
 
-=============
 Storlets ACLs
 =============
 

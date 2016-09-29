@@ -14,7 +14,6 @@
       License for the specific language governing permissions and limitations
       under the License.
 
-===================================
 Welcome to storlets' documentation!
 ===================================
 
@@ -67,6 +66,8 @@ Storlets Developers
    :maxdepth: 1
 
    writing_and_deploying_storlets
+   writing_and_deploying_java_storlets
+   writing_and_deploying_python_storlets
 
 Storlets Deployers
 ==================

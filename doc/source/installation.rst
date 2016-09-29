@@ -1,9 +1,8 @@
-=====================
 Storlets Installation
 =====================
 
 Background
-==========
+----------
 
 Storlets installation (and build) assume an existing Swift cluster that works with Keystone.
 The installation consists of the following components:
@@ -36,7 +35,7 @@ At a high level the installation consists of the following steps:
 #. Install a set of storlets management scripts. Done on a designated node having a storlet management role.
 
 hosts file example
-==================
+------------------
 
 ::
 
@@ -66,7 +65,7 @@ Few notes:
 #. It is recommended that the memcache servers on the proxy servers would be accessible from the storage nodes.
 
 common.yml
-==========
+----------
 Below are the entries of interest of common.yml
 
 Special attention should be given to the swift user and group IDs. Make sure they are identical on all hosts and match what is defined in the common.yml file.
@@ -109,7 +108,7 @@ storlets with EC and encryption. Valid values are true / false
   storlet_execute_on_proxy_only: false
 
 Install
-=======
+-------
 to perform the installation follow these steps:
 
 #. Create a hosts file as described above

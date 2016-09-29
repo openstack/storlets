@@ -1,11 +1,9 @@
-====================
 Storlets Terminology
 ====================
 The overall storlets mechanism involves a lot of moving parts as well as
 poeple or roles involved throughout the usage of the system. We give below
 a definition of the various terms used throughout the documentation.
 
--------
 Storlet
 -------
 A storlet is the binary code deployed as a Swift object. Invoking a storlet
@@ -26,7 +24,6 @@ In a nutshell this interface consists of an input stream, an output stream and a
 The storlet is assumed to read from the input stream, do its thing, and write the result
 to the output stream.
 
-------------------
 Storlet Invocation
 ------------------
 A storlet invocation is a user request wishing to perform a storlet computation
@@ -43,7 +40,6 @@ different ways:
    data object, where the storlet's output is kept in a newly crerated object. In a regular
    Swift copy the newly created object is a identical to the source object.
 
-------------------
 The Storlet Engine
 ------------------
 The storlet engine is the underlying mechanism that can take a storlet as a Swift object
@@ -52,9 +48,8 @@ In a nutshell the engine intercepts invocation requests, route the input data st
 the storlet and receives back the storlet output stream. The engine is implemented as a Swift
 middleware.
 
------
 Roles
------
+=====
 
 Storlet Developer
 -----------------
