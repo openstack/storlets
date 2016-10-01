@@ -15,7 +15,6 @@
 import unittest
 import eventlet
 import mock
-import json
 from storlet_daemon.daemon import (
     Daemon, EXIT_SUCCESS, StorletDaemonException)
 from sbus.datagram import ServerSBusInDatagram
@@ -100,13 +99,12 @@ class TestStorletDaemon(unittest.TestCase):
             fake_import.return_value = FakeModule()
             daemon = Daemon(
                 'fakeModule.FakeClass', 'fake_path', self.logger, 16)
-        command_json = json.dumps({'command': stop_command})
         scenario = [
             ('create', 1),
             ('listen', 1),
-            # TODO(kota_): obviously, we need to refector the SBusDatagram
-            # because its child doesn't support parent syntax each other.
-            ('receive', ServerSBusInDatagram([], '{}', command_json)),
+            ('receive', ServerSBusInDatagram(command=stop_command,
+                                             fds=[], metadata=[],
+                                             params=None, task_id=None)),
         ]
 
         fake_sbus_class = create_fake_sbus_class(scenario)
