@@ -432,6 +432,25 @@ class RunTimeSandbox(object):
                           error_txt)
         return 0
 
+    def _get_storlet_classpath(self, storlet_main, storlet_id, dependencies):
+        """
+        Get classpath required to run storlet application
+
+        :param storlet_main: Main class name of the storlet
+        :param storlet_id: Name of the storlet file
+        :param dependencies: A list of dependency file
+        :returns: classpath string
+        """
+        class_path = os.path.join(self.paths.sbox_storlet_exec(storlet_main),
+                                  storlet_id)
+
+        dep_path_list = \
+            [os.path.join(self.paths.sbox_storlet_exec(storlet_main),
+                          dep)
+             for dep in dependencies]
+
+        return class_path + ':' + ':'.join(dep_path_list)
+
     def activate_storlet_daemon(self, sreq, cache_updated=True):
         storlet_daemon_status = \
             self.get_storlet_daemon_status(sreq.storlet_main)
@@ -465,14 +484,13 @@ class RunTimeSandbox(object):
 
         if (storlet_daemon_status == 0):
             self.logger.debug('Going to start storlet daemon!')
-            class_path = \
-                '/home/swift/%s/%s' % (sreq.storlet_main, sreq.storlet_id)
-            for dep in sreq.dependencies:
-                class_path = '%s:/home/swift/%s/%s' % \
-                             (class_path, sreq.storlet_main, dep)
+
+            # TODO(takashi): This is not needed for python application
+            classpath = self._get_storlet_classpath(
+                sreq.storlet_main, sreq.storlet_id, sreq.dependencies)
 
             daemon_status = \
-                self.start_storlet_daemon(class_path, sreq.storlet_main,
+                self.start_storlet_daemon(classpath, sreq.storlet_main,
                                           sreq.storlet_language)
 
             if daemon_status != 1:

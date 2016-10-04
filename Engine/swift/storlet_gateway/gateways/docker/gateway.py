@@ -224,7 +224,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :params params: Request parameters
         """
         sreq.params['storlet_execution_path'] = self. \
-            paths.sbox_storlet_exec(sreq.options['storlet_main'])
+            paths.sbox_storlet_exec(sreq.storlet_main)
 
     def _upload_storlet_logs(self, slog_path, sreq):
         """
