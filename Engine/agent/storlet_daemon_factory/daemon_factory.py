@@ -12,8 +12,8 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import errno
+from functools import partial
 import logging
 from logging.handlers import SysLogHandler
 import os
@@ -56,14 +56,8 @@ class CommandResponse(Exception):
         return '%s: %s' % (str(self.status), self.message)
 
 
-class CommandSuccess(CommandResponse):
-    def __init__(self, message, iterable=True):
-        super(CommandSuccess, self).__init__(True, message, iterable)
-
-
-class CommandFailure(CommandResponse):
-    def __init__(self, message, iterable=True):
-        super(CommandFailure, self).__init__(False, message, iterable)
+CommandSuccess = partial(CommandResponse, True)
+CommandFailure = partial(CommandResponse, False)
 
 
 class SDaemonError(Exception):
