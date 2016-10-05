@@ -205,8 +205,8 @@ class StorletGatewayDocker(StorletGatewayBase):
                                               storlet_pipe_path,
                                               slog_path,
                                               self.storlet_timeout,
-                                              extra_sources=extra_sources,
-                                              logger=self.logger)
+                                              self.logger,
+                                              extra_sources=extra_sources)
 
         sresp = sprotocol.communicate()
 
