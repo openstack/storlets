@@ -1,4 +1,3 @@
-============
 Introduction
 ============
 The Swift account manager can supply a Docker image in which the account's storlets
@@ -15,7 +14,6 @@ following:
 The idea is that a user supplied docker image would contain dependencies
 required by storlets in the form of libraries.
 
-============
 Logical Flow
 ============
 The flow of deploying an account manager tailored Docker image to Swift involves
@@ -39,7 +37,7 @@ Below are the steps of this flow:
 The sections below describe in detail the steps taken by the account manager.
 
 Downloading the Docker Image
-============================
+----------------------------
 Downloading the Docker image involves a simple retrieval of a Swift object. To
 get the exact name of the object just list the docker_images container in the
 account. The name will carry the base OS system and engine language binding run
@@ -93,7 +91,7 @@ In the below we show:
        X-Trans-Id: tx794e21cd40b544e6a377b-00544bfed3
 
 Tuning the Docker Image
-=======================
+-----------------------
 To tune the Docker image, Docker must be used. To install please refer to
 http://docs.docker.com/installation/
 
@@ -199,7 +197,7 @@ engine but rather the /bin/bash from which we can run ffmpeg
 
 
 Uploading the Docker Image
-==========================
+--------------------------
 1. Use docker save to save the image as a tar file:
 
 .. code-block:: bash

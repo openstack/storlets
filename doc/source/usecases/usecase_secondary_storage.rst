@@ -1,4 +1,3 @@
-==================================
 Queriable "Secondary Storage" Data
 ==================================
 It is said that the primary use case for object stores is to serve as secondary

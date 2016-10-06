@@ -1,4 +1,3 @@
-====================================
 Installing a Development Environment
 ====================================
 This guide gives a step by step installation instructions that are simpler
@@ -28,9 +27,8 @@ This process has been tested on Ubuntu 14.04 using Swift 2.7.0.
     pip install --upgrade pbr
     pip install --upgrade setuptools
 
------------------------
 Make Swift use Keystone
------------------------
+=======================
 
 SAIO uses tmpauth as an auth middleware. While storlets do not have a
 direct dependency on the auth middleware used, Keystone seems to be
@@ -139,9 +137,8 @@ Now do:
     source .bashrc
     swift stat
 
-----------------
 Install Storlets
-----------------
+================
 
 Install Dependencies
 --------------------
@@ -513,7 +510,6 @@ We use the swift cli as follows:
   --os-tenant-name=test \
   storletlog
 
-------------------------
 Run the functional tests
 ------------------------
 The functional tests upload various storlets and execute them.
