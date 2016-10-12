@@ -49,8 +49,9 @@ class SBusDatagram(object):
         Create SBusDatagram instance
 
         :param command: A string encoding the command to send
-        :param fds: An array of file descriptors to pass with the command
-        :param md: An array of dictionaries, where the i'th dictionary is the
+        :param fds: A list of file descriptors (integer) to pass with
+                    the command
+        :param md: A list of dictionaries, where the i'th dictionary is the
                    metadata of the i'th fd.
         :param params: A optional dictionary with parameters for the command
                        execution
@@ -84,7 +85,7 @@ class SBusDatagram(object):
          - SBUS_CMD_CANCEL
 
         :param command: command type
-        :param outfd: service out fd
+        :param outfd: service out fd integer
         :param params: A optional dictionary with parameters for the command
                        execution
         :param task_id: An optional string task id
@@ -99,9 +100,10 @@ class SBusDatagram(object):
         """
         Build SBusDatagram from raw message recieved over sbus
 
-        :param fds: An array of file descriptors to pass with the command
-        :param str_md: serialized metadata
-        :param str_cmd_params: serialized command parameters
+        :param fds: A list of file descriptors (integer) to pass with
+                    the command
+        :param str_md: json serialized metadata dict
+        :param str_cmd_params: json serialized command parameters dict
         """
         metadata = json.loads(str_md)
         cmd_params = json.loads(str_cmd_params)
@@ -130,35 +132,6 @@ class SBusDatagram(object):
     @property
     def serialized_metadata(self):
         return json.dumps(self.metadata)
-
-    def _find_fds(self, fdtype):
-        """
-        Get a list of file descriptors for the given fd type
-
-        :param fdtype: file descriptor type
-        :returns: a list of file descriptors
-        """
-        ret = []
-        for i in xrange(len(self.metadata)):
-            if self.metadata[i]['storlets']['type'] == fdtype:
-                ret.append(self.fds[i])
-        return ret
-
-    def _find_fd(self, fdtype):
-        """
-        Get a single file descriptor for the given fd type
-
-        :param fdtype: file descriptor type
-        :returns: one file descriptor
-        """
-        ret = self._find_fds(fdtype)
-        if not ret:
-            return None
-        else:
-            # TODO(takashi): we should raise error if we get multiple fds
-            #                for given type. This is to be done when we add
-            #                fd validation.
-            return ret[0]
 
     @property
     def service_out_fd(self):
@@ -193,6 +166,35 @@ class SBusDatagram(object):
     def object_in_storlet_metadata(self):
         return [md['storlets'] for md in self.metadata
                 if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
+
+    def _find_fds(self, fdtype):
+        """
+        Get a list of file descriptors for the given fd type
+
+        :param fdtype: file descriptor type
+        :returns: a list of file descriptors
+        """
+        ret = []
+        for i in xrange(len(self.metadata)):
+            if self.metadata[i]['storlets']['type'] == fdtype:
+                ret.append(self.fds[i])
+        return ret
+
+    def _find_fd(self, fdtype):
+        """
+        Get a single file descriptor for the given fd type
+
+        :param fdtype: file descriptor type
+        :returns: one file descriptor (integer)
+        """
+        ret = self._find_fds(fdtype)
+        if not ret:
+            return None
+        else:
+            # TODO(takashi): we should raise error if we get multiple fds
+            #                for given type. This is to be done when we add
+            #                fd validation.
+            return ret[0]
 
     def __str__(self):
         return 'num_fds=%s, md=%s, cmd_params=%s' % (
