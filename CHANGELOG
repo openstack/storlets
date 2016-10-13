@@ -1,3 +1,27 @@
+storlets (0.3.0, Openstack Newton)
+
+  * Python support for writing storlets. This large
+    chunk of work involved refactoring, improving and
+    unit testing much of the code that deals with
+    storlets invocation in general.
+
+  * Storlets can be invoked on multiple objects. Multiple
+    objects can be specified when invoking a storlet on GET/COPY.
+    With multiple inputs, the storlet is invoked on the proxy with
+    multiple input streams (as opposed to the traditional single input
+    stream).
+
+  * Introduction of Storlets ACLs. The storlet middleware now supports
+    a POST verb for allowing a certain user READ access to a container
+    ony via a certain storlet. Thus, a user which has no read access
+    to a container can get access only if the request has the appropriate
+    storlet specified in the X-Run-Storlet header.
+
+  * Aligning the storlets team procedures and repo towards becoming part
+    of the bit tent. This includes moving the weekly meetings to
+    #openstack-meeting, change the review process to include 2 reviewers,
+    initial py35 test env, etc.
+
 storlets (0.2.0, Openstack Mitaka)
 
   * First storlets release since it was open sourced.
