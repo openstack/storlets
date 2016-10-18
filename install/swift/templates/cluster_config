@@ -58,7 +58,7 @@
             "installation_source": "git",
             "swift_git": "https://github.com/openstack/swift.git",
             "swift_git_dir": "/tmp/git/swift",
-            "swift_git_tag": "2.9.0"
+            "swift_git_tag": "HEAD"
         }
     },
     "swift-ring-builder": {
