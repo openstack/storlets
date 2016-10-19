@@ -662,6 +662,8 @@ class StorletInvocationProtocol(object):
         """
         fds = [self.data_write_fd, self.metadata_write_fd,
                self.execution_str_write_fd]
+        if not self.srequest.has_fd:
+            fds.append(self.input_data_read_fd)
         fds.extend([source['read_fd'] for source in self.extra_data_sources])
         self._safe_close(fds)
 
