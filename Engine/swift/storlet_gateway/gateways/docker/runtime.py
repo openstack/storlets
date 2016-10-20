@@ -663,7 +663,8 @@ class StorletInvocationProtocol(object):
         fds = [self.data_write_fd, self.metadata_write_fd,
                self.execution_str_write_fd]
         fds.extend([source['read_fd'] for source in self.extra_data_sources])
-        self._safe_close(fds)
+        for fd in fds:
+            os.close(fd)
 
     def _close_local_side_descriptors(self):
         """
@@ -694,6 +695,19 @@ class StorletInvocationProtocol(object):
         """
         Send an execution command to the remote daemon factory
         """
+        with self.storlet_logger.activate(),\
+                self._activate_invocation_descriptors():
+            self._send_execute_command()
+        self._wait_for_read_with_timeout(self.execution_str_read_fd)
+        # TODO(kota_): need an assertion for task_id format
+        self.task_id = os.read(self.execution_str_read_fd, 10)
+        os.close(self.execution_str_read_fd)
+
+    def _send_execute_command(self):
+        """
+        Send execute command to the remote daemon factory to invoke storlet
+        execution
+        """
         dtg = SBusDatagram(
             SBUS_CMD_EXECUTE,
             self.remote_fds,
@@ -703,13 +717,6 @@ class StorletInvocationProtocol(object):
 
         if (rc < 0):
             raise StorletRuntimeException("Failed to send execute command")
-
-        self._close_remote_side_descriptors()
-
-        self._wait_for_read_with_timeout(self.execution_str_read_fd)
-        # TODO(kota_): need an assertion for task_id format
-        self.task_id = os.read(self.execution_str_read_fd, 10)
-        os.close(self.execution_str_read_fd)
 
     def _wait_for_read_with_timeout(self, fd):
         """
@@ -777,9 +784,7 @@ class StorletInvocationProtocol(object):
 
     def communicate(self):
         try:
-            with self.storlet_logger.activate(),\
-                    self._activate_invocation_descriptors():
-                self._invoke()
+            self._invoke()
 
             if not self.srequest.has_fd:
                 self._wait_for_write_with_timeout(self._input_data_write_fd)
