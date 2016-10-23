@@ -400,9 +400,9 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             pipes = iter(pipes)
 
             # data write is not directly closed
-            # data read is closed by remote
+            # data read is closed
             input_data_read_fd, input_data_write_fd = next(pipes)
-            self.assertFalse(input_data_read_fd.closed)
+            self.assertTrue(input_data_read_fd.closed)
             self.assertFalse(input_data_write_fd.closed)
 
             # data write is closed but data read is still open
