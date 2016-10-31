@@ -2,123 +2,93 @@ Installing a Development Environment
 ====================================
 This guide gives a step by step installation instructions that are simpler
 then what the s2aio.sh script does (e.g. it does not involve a docker registry
-installation and configuration). Performing those instructions, as oppose to
-just running s2aio.sh, can help in better inderstanding the overall system.
+installation and configuration).
 
-The guide assumes that you already have installed SAIO as described
-in http://docs.openstack.org/developer/swift/development_saio.html
-It further assumes that you used a partition for storage that is
-mounted on /mnt/sdb1, and that the proxy port is 8080.
+The below steps must be executed using a passwordless sudoer user.
 
-.. note::
+Install Swift and Keystone using devstack
+-----------------------------------------
 
-    This guide assumes that the user executing these instructions
-    is the same user who installed SAIO. Specifically, it assumes
-    that $USER would evaluate to the same user who instslled SAIO.
-
-This process has been tested on Ubuntu 14.04 using Swift 2.7.0.
-
-.. note::
-
-    Completing the  SAIO installation on Ubuntu 14.04 requires an newer version of pip, setuptools and pbr.
-    To upgrade pip see
-    http://unix.stackexchange.com/questions/36710/how-can-i-upgrade-pip-on-ubuntu-10-04
-    To upgrade setuptools and pbr just do:
-    pip install --upgrade pbr
-    pip install --upgrade setuptools
-
-Make Swift use Keystone
-=======================
-
-SAIO uses tmpauth as an auth middleware. While storlets do not have a
-direct dependency on the auth middleware used, Keystone seems to be
-the de-facto standard in deployments, and so we use it.
-
-Keystone Installation
----------------------
-Below we use the ubuntu mitaka cloud archive.
-As a rule of thumb, use the archive closest to the
-installed SAIO version
+Clone devstack:
 
 ::
 
-    sudo apt-get install --upgrade software-properties-common
-    sudo add-apt-repository cloud-archive:mitaka
-    sudo apt-get update
-    sudo apt-get install keystone
-    sudo sed -i 's/#admin_token = <None>/admin_token = ADMIN/g' /etc/keystone/keystone.conf
-    sudo service keystone restart
+    git clone git://github.com/openstack-dev/devstack.git
 
-To configure Keystone you would also need to:
+Create a localrc file under the devstack repository root directory:
 
 ::
 
-    sudo apt-get install python-openstackclient
+    ENABLE_HTTPD_MOD_WSGI_SERVICES=False
+    KEYSTONE_IP=127.0.0.1
+    SWIFT_IP=127.0.0.1
+    ENABLED_SERVICES=key,swift,mysql
+    ADMIN_USER=admin
+    ADMIN_PASSWORD=$ADMIN_USER
+    ADMIN_PROJECT=ADMIN_USER
+    DATABASE_PASSWORD=admin
+    RABBIT_PASSWORD=$ADMIN_PASSWORD
+    SERVICE_PASSWORD=$ADMIN_PASSWORD
 
+    OS_IDENTITY_API_VERSION=2
+    OS_AUTH_URL="http://$KEYSTONE_IP:5000/v2.0"
+    OS_USERNAME=$ADMIN_USER
+    OS_USER_DOMAIN_ID=default
+    OS_PASSWORD=$ADMIN_PASSWORD
+    OS_PROJECT_NAME=$ADMIN_USER
+    OS_PROJECT_DOMAIN_ID=default
+    OS_REGION_NAME=RegionOne
 
-Initial Keystone Configutation
-------------------------------
-The following creates the identity and object store service together with their endpoints.
-Note the usage of port 8080 in the object store public url. If your SAIO uses another port
-change the below command accordingly.
+    SERVICE_HOST=$SWIFT_IP
+    SWIFT_SERVICE_PROTOCOL=http
+    SWIFT_DEFAULT_BIND_PORT=8080
+    SWIFT_SERVICE_LOCAL_HOST=$SERVICE_HOST
+    SWIFT_SERVICE_LISTEN_ADDRESS=$SERVICE_HOST
+    # Use minimum 2GB for running the storlets tests
+    SWIFT_LOOPBACK_DISK_SIZE=20G
+    SWIFT_HASH=1234567890
+
+Run the stack.sh script.
+Before proceeding, we need to stop the
+swift instances that were executed by the
+stack.sh. From the same directory do:
+
+::
+    source functions
+    source lib/swift
+    stop_swift
+
+Finally, add the swift devices to fstab:
 
 ::
 
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ service create identity
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ endpoint create --publicurl http://127.0.0.1:5000/v2.0 --adminurl http://127.0.0.1:35357/v2.0 identity
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ service create object-store
-    openstack --os-url http://127.0.0.1:35357/v2.0/ --os-token ADMIN endpoint create --publicurl 'http://127.0.0.1:8080/v1/AUTH_$(tenant_id)s' object-store
+    sudo sh -c 'echo "/opt/stack/data/swift/drives/images/swift.img /opt/stack/data/swift/drives/sdb1 xfs loop" >> /etc/fstab'
 
-Create a Swift admin user. The Swift proxy will use this user to authorize tokens with Keystone
+Configure a user and project in Keystone
+----------------------------------------
 
-::
-
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ role create admin
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ project create service
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ user create swift --password passw0rd
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ role add --user swift --project service admin
-
-Create a Swift end user that is admin. The admin role is necessary as we want a user that can create containers and set account metadata
+We use the opnstack cli to configure a user and project
+used by the storlets functional tests. We start by
+defining some environment variables:
 
 ::
 
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ project create test
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ user create tester --password testing
-    openstack --os-token ADMIN --os-url http://127.0.0.1:35357/v2.0/ role add --user tester --project test admin
+    export OS_IDENTITY_API_VERSION=2
+    export OS_AUTH_URL="http://$KEYSTONE_IP:5000/v2.0"
+    export OS_USERNAME=$ADMIN_USER
+    export OS_USER_DOMAIN_ID=default
+    export OS_PASSWORD=$ADMIN_PASSWORD
+    export OS_PROJECT_NAME=$ADMIN_USER
+    export OS_PROJECT_DOMAIN_ID=default
+    export OS_REGION_NAME=RegionOne
 
-Configure Swift to work with Keystone
--------------------------------------
-Edit the file /etc/swift/proxy-server.conf as follows:
-
-1. Use keystone instead of tmpauth
-
-::
-
-    sudo sed -i '0,/tempauth/{s/tempauth/authtoken keystoneauth/}' /etc/swift/proxy-server.conf
-
-2. Add the following blocks at the end of /etc/swift/proxy-server.conf
+We now create the project and user:
 
 ::
 
-    [filter:authtoken]
-    paste.filter_factory = keystonemiddleware.auth_token:filter_factory
-    auth_url=http://127.0.0.1:35357
-    auth_type=password
-    insecure=true
-    project_name=service
-    username=swift
-    password=passw0rd
-    delay_auth_decision = True
-
-    [filter:keystoneauth]
-    use = egg:swift#keystoneauth
-
-Restart the proxy server
-
-::
-
-    sudo swift-init proxy-server restart
-
+    openstack project create test
+    openstack user create --project test --password testing tester
+    openstack role add --user tester --project test admin
 
 We now test that the setup by having the user 'tester' to stat the account 'test'. We use the Swift client cli.
 A convenient way to do so is to edit the user's .bashrc adding the lines:
@@ -526,26 +496,18 @@ content.
 ::
 
     {
-        "groups" : {
-            "storlet-mgmt": [ "127.0.0.1" ],
-            "storlet-proxy": [ "127.0.0.1" ],
-            "storlet-storage": [ "127.0.0.1" ],
-            "docker": [ "127.0.0.1" ]
-        },
         "all" : {
             "docker_device": "/home/docker_device",
             "storlet_source_dir": "~/storlets",
-            "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
-            "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
-            "keystone_endpoint_host": "127.0.0.1",
-            "keystone_admin_url": "http://127.0.0.1:35357/v2.0",
             "keystone_public_url": "http://127.0.0.1:5000/v2.0",
             "swift_endpoint_host": "127.0.0.1",
             "swift_public_url": "http://127.0.0.1:8080/v1",
             "storlets_enabled_attribute_name": "storlet-enabled",
             "storlets_default_tenant_name": "test",
             "storlets_default_tenant_user_name": "tester",
-            "storlets_default_tenant_user_password": "testing"
+            "storlets_default_tenant_user_password": "testing",
+            "storlets_default_tenant_member_user": "tester_member",
+            "storlets_default_tenant_member_password": "member",
         }
     }
 

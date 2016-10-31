@@ -15,11 +15,12 @@
 
 # TODO(eranr): Chaneg the below to use Ansible os_project_facts
 - name: Get the tenant id from Keystone
-  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} project list | grep {{ tenant_name }} | awk '{print $2}'
+  shell: openstack --os-auth-url={{keystone_public_url}} --os-username={{keystone_admin_user}} --os-password={{keystone_admin_password}} --os-project-name={{keystone_admin_project}} project list | grep {{ tenant_name }} | awk '{print $2}'
   register: tenant_id
 
 - name: docker pull
   command: docker pull {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}
+  become: true
 
 - name: shutdown_container
   shell: "/usr/bin/python {{ docker_device }}/scripts/send_halt_cmd_to_daemon_factory.py {{ docker_device }}/pipes/scopes/AUTH_{{ tenant_id.stdout_lines[0] }}/factory_pipe"

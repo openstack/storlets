@@ -15,7 +15,7 @@
 
 # TODO(eranr): Change the below to use Ansible os_project_facts
 - name: Get the tenant id from Keystone
-  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} project list | grep {{ tenant_name }} | awk '{print $2}'
+  shell: openstack --os-auth-url={{ keystone_public_url }} --os-username={{ keystone_admin_user }} --os-password={{ keystone_admin_password }} --os-project-name={{ keystone_admin_project }} project list | grep {{ tenant_name }} | awk '{print $2}'
   register: tenant_id
 
 - name: create the tenant specific docker image step 1 - create repo dir
@@ -24,6 +24,7 @@
     dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
     owner: root
     mode: 0755
+  become: true
 
 - name: create the tenant specific docker image step 2 - create Docker file
   template:
@@ -31,13 +32,16 @@
     dest: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}/Dockerfile"
     owner: root
     mode: 0755
+  become: true
 
 - name: "Build the image {{ tenant_id.stdout_lines[0] }}"
   command: "docker build -q -t {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
   args:
     chdir: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
   register: command_result
+  become: true
   failed_when: "'sha256:' not in command_result.stdout"
 
 - name: Push the image to the global registry
   command: "docker push {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"
+  become: true

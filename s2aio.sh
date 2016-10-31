@@ -37,9 +37,6 @@ if [ ! -f ~/.ssh/id_rsa.pub ]; then
     ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
 fi
 
-# TODO: move gcc to swift-installation
-sudo apt-get install -y gcc --force-yes
-
 if [ "$TARGET" == "docker" ]; then
     # install docker
     sudo apt-get install apt-transport-https aufs-tools=1:3.2+20130722-1.1 linux-image-extra-`uname -r` -y --force-yes
@@ -61,6 +58,7 @@ if [ "$TARGET" == "docker" ]; then
     fi
     export S2AIO_IP=`sudo docker exec s2aio ifconfig | grep "inet addr" | head -1 | awk '{print $2}' | awk -F":" '{print $2}'`
 
+    sudo docker exec s2aio sh -c "echo deb http://us.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse >> /etc/apt/sources.list"
     sudo docker exec s2aio apt-get update
     sudo docker exec s2aio apt-get install software-properties-common -y --force-yes
     sudo docker exec s2aio apt-add-repository -y ppa:ansible/ansible
@@ -77,11 +75,18 @@ if [ "$TARGET" == "docker" ]; then
     ssh-keygen -R $S2AIO_IP -f ~/.ssh/known_hosts
     ssh-keyscan  -H $S2AIO_IP >> ~/.ssh/known_hosts
 
-    # Install Swift
-    cd install/swift
-    ./install_swift.sh docker $S2AIO_IP loop0
+    sudo docker exec s2aio useradd stack
+    sudo docker exec s2aio mkdir /home/stack
+    sudo docker exec s2aio bash -c 'grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||\
+                                    echo "#includedir /etc/sudoers.d" >> /etc/sudoers'
+    sudo docker exec s2aio bash -c '( umask 226 && echo "stack ALL=(ALL) NOPASSWD:ALL" >\
+                                      /etc/sudoers.d/50_stack_sh )'
+    sudo docker cp install/swift/install_swift.sh s2aio:/home/stack/install_swift.sh
+    sudo docker cp install/swift/localrc.sample s2aio:/home/stack/localrc.sample
+    sudo docker exec s2aio chown -R stack:stack /home/stack
+    sudo docker exec --user stack s2aio chmod -R 0755 /home/stack
+    sudo docker exec --user stack s2aio /home/stack/install_swift.sh docker $S2AIO_IP $FLAVOR
     sudo docker exec s2aio service rsyslog restart
-    cd -
 else
     export S2AIO_IP='127.0.0.1'
 
@@ -106,7 +111,7 @@ else
 
     # Install Swift
     cd install/swift
-    ./install_swift.sh host $S2AIO_IP loop0
+    ./install_swift.sh host $S2AIO_IP $FLAVOR
     cd -
 fi
 

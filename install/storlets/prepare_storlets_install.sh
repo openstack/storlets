@@ -66,8 +66,9 @@ else
         sed -i 's/<MGMT_USER>/root/g' deploy/installation_vars.yml
         sed -i 's/127.0.0.1/'$SWIFT_IP'/g' deploy/installation_vars.yml
     fi
-    sed -i 's/<SWIFT_RUNTIME_USER>/swift/g' deploy/installation_vars.yml
-    sed -i 's/<SWIFT_RUNTIME_GROUP>/swift/g' deploy/installation_vars.yml
+    sed -i 's/<SWIFT_RUNTIME_USER>/'$USER'/g' deploy/installation_vars.yml
+    sed -i 's/<SWIFT_RUNTIME_GROUP>/'$USER'/g' deploy/installation_vars.yml
+    sed -i 's/<SWIFT_RUNTIME_DIR>/\/opt\/stack\/data\/swift\/run/g' deploy/installation_vars.yml
     if [ "$FLAVOR" == "jenkins" ]; then
         sed -i 's/<STORLETS_REPO_ROOT>/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' deploy/installation_vars.yml
     else

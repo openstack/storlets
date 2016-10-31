@@ -42,5 +42,5 @@
          python swift_config.py install swift_middleware_conf "{{ swift_run_time_user }}"
 
 - name: restart swift
-  shell: swift-init all restart
+  shell: swift-init --run-dir="{{swift_run_time_dir}}" all restart
   ignore_errors: yes

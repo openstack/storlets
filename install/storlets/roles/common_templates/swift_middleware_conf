@@ -3,8 +3,8 @@ proxy_server_conf_file = /etc/swift/proxy-server.conf
 storlet_proxy_server_conf_file = /etc/swift/storlet-proxy-server.conf
 
 [object-confs]
-#object_server_conf_files = /etc/swift/object-server/1.conf, /etc/swift/object-server/2.conf, /etc/swift/object-server/3.conf, /etc/swift/object-server/4.conf
-object_server_conf_files = /etc/swift/object-server.conf
+object_server_conf_files = /etc/swift/object-server/1.conf, /etc/swift/object-server/2.conf, /etc/swift/object-server/3.conf, /etc/swift/object-server/4.conf
+#object_server_conf_files = /etc/swift/object-server.conf
 
 [common-confs]
 storlet_middleware = {{ storlet_middleware }}

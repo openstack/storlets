@@ -26,10 +26,12 @@ storlets_default_tenant_name: "test"
 storlets_default_tenant_user_name: "tester"
 storlets_default_tenant_user_password: "testing"
 keystone_endpoint_host: 127.0.0.1
-keystone_admin_token: ADMIN
-keystone_admin_password: passw0rd
+keystone_admin_user: admin
+keystone_admin_password: admin
+keystone_admin_project: admin
 swift_endpoint_host: 127.0.0.1
-swift_endpoint_port: 80
+swift_endpoint_port: 8080
 swift_run_time_user: <SWIFT_RUNTIME_USER>
 swift_run_time_group: <SWIFT_RUNTIME_GROUP>
+swift_run_time_dir: <SWIFT_RUNTIME_DIR>
 docker_device: /home/docker_device

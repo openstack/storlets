@@ -1,22 +1,13 @@
 #!/bin/bash
 
 set -eu
-# Invokes the Swift install process that is based on
-# https://github.com/Open-I-Beam/swift-install
-# with appropriate pre install preparations
-# This is a dev oriented Swift installation that
-# uses Keystone and a single device for all rings.
-# TODO: Move swift ansible scripts pull from here
-# to the swift-install module
+# Invokes a devstack install that consists of
+# keyastone and swift.
 
-# The script takes a block device name as an optional parameter
-# The device name can be either 'loop0' or any block device under /dev
-# that can be formatted and mounted as a Swift device.
-# The script assume it 'can sudo'
-
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 [target] [ip] [device-name]"
+if [ "$#" -ne 2 ] && [ "$#" -ne 3 ]; then
+    echo "Usage: $0 [target] [ip] [flavour]"
     echo "target = host | docker"
+    echo "optionally specify flavour=dev installation"
     exit
 fi
 
@@ -27,50 +18,68 @@ if [ "$TARGET" != "host" ] && [ "$TARGET" != "docker" ]; then
 fi
 
 SWIFT_IP=$2
-DEVICE=$3
-if [ $DEVICE != 'loop0' ] &&  [ ! -b "/dev/$DEVICE" ]; then
-    echo "$DEVICE is not a block device"
-    exit
-fi
 
-REPODIR='/tmp'
-REPODIR_REPLACE='\/tmp'
-
-echo "$DEVICE will be used as a block device for Swift"
-if [ ! -e vars.yml ]; then
-    cp vars.yml-sample vars.yml
-    sudo sed -i 's/<set device!>/'$DEVICE'/g' vars.yml
-    sudo sed -i 's/<set dir!>/'$REPODIR_REPLACE'/g' vars.yml
-    sudo sed -i 's/<set ip!>/'$SWIFT_IP'/g' vars.yml
-fi
-
-if [ $TARGET == 'docker' ]; then
-    cat > hosts <<EOF
-[s2aio]
-$SWIFT_IP
-
-[s2aio:vars]
-ansible_ssh_user=root
-EOF
-    ssh root@$SWIFT_IP 'if [ ! -f ~/.ssh/id_rsa ]; then ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""; fi'
-    ssh root@$SWIFT_IP 'cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys'
+if [ "$#" -eq 3 ]; then
+    FLAVOR=$3
 else
-    cat > hosts <<EOF
-    [s2aio]
-    $SWIFT_IP
-EOF
+    FLAVOR=''
 fi
 
-ansible-playbook -i hosts prepare_swift_install.yml
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+DEVSTACK_DIR=~/devstack
+
+# checkout devstack, run it and add fstab entry
+if [ ! -e $DEVSTACK_DIR ]; then
+    git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+    cp $DIR/localrc.sample $DEVSTACK_DIR/localrc
+    sed -i 's/<set ip!>/'$SWIFT_IP'/g' $DEVSTACK_DIR/localrc
+    if [ $FLAVOR = 'dev' ]; then
+        sed -i 's/<set db password!>/admin/g' $DEVSTACK_DIR/localrc
+    else
+        sed -i '/<set db password!>/d' $DEVSTACK_DIR/localrc
+    fi
+fi
+
+# run devstack
+cd $DEVSTACK_DIR
+
+# This is an ugly hack to overcome
+# devstack installation problem in docker
+# TODO(eranr): address this after
+# adding a devstack plugin to storlets!
+if [ "$TARGET" == "docker" ]; then
+    set +e
+    ./stack.sh
+    sudo service mysql start
+    set -e
+fi
+./stack.sh
+# stack.sh starts swift in a non-standard manner
+# we thus stop it before continuing
+set +u
+source functions
+source lib/swift
+stop_swift
+set -u
+cd -
+
+# add tester, testing, test which is admin
+source $DEVSTACK_DIR/localrc
+project_test_created=$(openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | wc -l)
+if [ $project_test_created -eq 0 ]; then
+    openstack project create $SWIFT_DEFAULT_PROJECT
+fi
+user_tester_created=$(openstack user list | grep -w $SWIFT_DEFAULT_USER | wc -l)
+if [ $user_tester_created -eq 0 ]; then
+    openstack user create --project $SWIFT_DEFAULT_PROJECT --password $SWIFT_DEFAULT_USER_PWD $SWIFT_DEFAULT_USER
+    openstack role add --user $SWIFT_DEFAULT_USER --project $SWIFT_DEFAULT_PROJECT admin
+fi
+
+# add entry to fstab
+mount_added=$(grep swift.img /etc/fstab | wc -l)
+if [ $mount_added -eq 0 ]; then
+    sudo sh -c 'echo "/opt/stack/data/swift/drives/images/swift.img /opt/stack/data/swift/drives/sdb1 xfs loop" >> /etc/fstab'
+fi
 
 set +eu
-# NOTE: Right now, swift-install/provisioning has some tasks to kill no
-# running processes (e.g. swift-init proxy stop for clean environment) and
-# it will make a non zero exit code causes gate failure so remove set -eu
-# trusting those script. (Hopefully, it could be solved in the script)
-if [ $TARGET == 'host' ]; then
-    cd $REPODIR/swift-install/provisioning
-    ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml
-else
-    ssh root@$SWIFT_IP "bash -c 'cd /tmp/swift-install/provisioning ; ansible-playbook -s -i swift_dynamic_inventory.py main-install.yml'"
-fi

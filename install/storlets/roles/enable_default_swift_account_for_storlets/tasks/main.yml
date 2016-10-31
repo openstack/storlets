@@ -13,15 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TODO(eranr): Remove this once we move to work with Ansible os_user, os_project_facts
-- name: Install dependencies
-  apt:
-    pkg: "{{ item }}"
-    state: present
-  with_items:
-    - python-swiftclient
-    - python-openstackclient
-
 # TODO(eran): Get the enabled flag name from config file
 - name: Set account metadata in swift -- enable storlets
   command: swift post
@@ -72,20 +63,12 @@
            --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
            docker_images
 
-# TODO(eranr): Use ansible os_user instead of openstackclient.
-# The below seems to have a problem with the auth parameters.
-#  os_user:
-#    auth_type: v2token
-#    auth: url="{{ keystone_admin_url }}" token="{{ keystone_admin_token }}" tenant_name="{{ storlets_default_tenant_name }}"
-#    name: "{{ storlets_default_tenant_member_user }}"
-#    password: "{{ storlets_default_tenant_member_password }}"
-
 - name: test if need to create member user
-  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} user list --project "{{ storlets_default_tenant_name }}" | grep "{{ storlets_default_tenant_member_user }}" | wc -l
+  shell: openstack --os-auth-url={{ keystone_public_url }} --os-username={{ keystone_admin_user }} --os-password={{ keystone_admin_password }} --os-project-name={{ keystone_admin_project }} user list --project "{{ storlets_default_tenant_name }}" | grep "{{ storlets_default_tenant_member_user }}" | wc -l
   register: member_user
 
 - debug: msg="{{ member_user }}"
 
 - name: Create member user
-  shell: openstack --os-url={{ keystone_admin_url }} --os-token={{ keystone_admin_token }} user create --project "{{ storlets_default_tenant_name }}" --password "{{ storlets_default_tenant_member_password }}" --enable "{{ storlets_default_tenant_member_user }}"
+  shell: openstack --os-auth-url={{ keystone_public_url }} --os-username={{ keystone_admin_user }} --os-password={{ keystone_admin_password }} --os-project-name={{ keystone_admin_project }} user create --project "{{ storlets_default_tenant_name }}" --password "{{ storlets_default_tenant_member_password }}" --enable "{{ storlets_default_tenant_member_user }}"
   when: "'0' in member_user.stdout"

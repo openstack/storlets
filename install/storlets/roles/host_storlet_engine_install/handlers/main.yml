@@ -14,7 +14,7 @@
 #---------------------------------------------------------------------------
 
 - name: restart swift
-  shell: swift-init all {{ item }}
+  shell: swift-init --run-dir="{{swift_run_time_dir}}" all {{ item }}
   with_items:
        - stop
        - start
