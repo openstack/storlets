@@ -17,6 +17,7 @@ import mock
 import os
 import unittest
 import tempfile
+import errno
 from contextlib import contextmanager
 from six import StringIO
 from stat import ST_MODE
@@ -56,6 +57,8 @@ def _mock_os_pipe(bufs):
             return ret
 
         def close(self):
+            if self.closed:
+                raise OSError(errno.EBADF, os.strerror(errno.EBADF))
             self.closed = True
 
     def fake_os_read(fd, size):
@@ -392,9 +395,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         with _mock_sbus(0), _mock_os_pipe([''] * pipe_called) as pipes:
             with mock.patch.object(
                     self.protocol, '_wait_for_read_with_timeout'):
-                with self.protocol.storlet_logger.activate(), \
-                        self.protocol._activate_invocation_descriptors():
-                    self.protocol._invoke()
+                self.protocol._invoke()
 
             self.assertEqual(pipe_called, len(pipes))
             pipes = iter(pipes)
