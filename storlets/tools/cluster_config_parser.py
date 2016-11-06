@@ -32,35 +32,39 @@ class ClusterConfig(object):
     def __init__(self, config_path):
         conf_string = open(config_path, 'r').read()
         self.conf = json.loads(conf_string)
-        self._auth_version = '2.0'
+        self._auth_version = '3'
 
     # TODO(eran) get rid of returning raw conf
     def get_conf(self):
         return self.conf
 
     @property
+    def domain_name(self):
+        return self.conf['all']['keystone_default_domain']
+
+    @property
     def auth_uri(self):
         return self.conf['all']['keystone_public_url']
 
     @property
-    def tenant_name(self):
-        return self.conf['all']['storlets_default_tenant_name']
+    def project_name(self):
+        return self.conf['all']['storlets_default_project_name']
 
     @property
     def admin_user(self):
-        return self.conf['all']['storlets_default_tenant_user_name']
+        return self.conf['all']['storlets_default_project_user_name']
 
     @property
     def admin_password(self):
-        return self.conf['all']['storlets_default_tenant_user_password']
+        return self.conf['all']['storlets_default_project_user_password']
 
     @property
     def member_user(self):
-        return self.conf['all']['storlets_default_tenant_member_user']
+        return self.conf['all']['storlets_default_project_member_user']
 
     @property
     def member_password(self):
-        return self.conf['all']['storlets_default_tenant_member_password']
+        return self.conf['all']['storlets_default_project_member_password']
 
     @property
     def region(self):

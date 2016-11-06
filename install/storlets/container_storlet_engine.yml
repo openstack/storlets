@@ -17,4 +17,4 @@
 - hosts: docker
   roles:
   - role: docker_storlet_engine_image
-  - role: deploy_default_tenant
+  - role: deploy_default_project

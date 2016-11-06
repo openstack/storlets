@@ -103,10 +103,11 @@ def get_auth(conf, user, passwd):
     :returns: (swift endpoint url, token string)
     """
     auth_url = conf.auth_uri
-    tenant = conf.tenant_name
-    os_options = {'tenant_name': tenant,
+    project = conf.project_name
+    os_options = {'user_domain_name': conf.domain_name,
+                  'project_name': conf.project_name,
                   'region_name': conf.region}
-    url, token = client.get_auth(auth_url, tenant + ':' + user, passwd,
+    url, token = client.get_auth(auth_url, project + ':' + user, passwd,
                                  os_options=os_options,
                                  auth_version=conf.auth_version)
     return url, token

@@ -24,13 +24,14 @@ storlets_management_user: <MGMT_USER>
 storlet_management_account: "storlet_management"
 storlet_management_admin_username: "storlet_manager"
 storlet_manager_admin_password: "storlet_manager"
-storlets_default_tenant_name: "test"
-storlets_default_tenant_user_name: "tester"
-storlets_default_tenant_user_password: "testing"
+storlets_default_project_name: "test"
+storlets_default_project_user_name: "tester"
+storlets_default_project_user_password: "testing"
 keystone_endpoint_host: 127.0.0.1
 keystone_admin_user: admin
 keystone_admin_password: admin
 keystone_admin_project: admin
+keystone_default_domain: default
 swift_endpoint_host: 127.0.0.1
 swift_endpoint_port: 8080
 swift_run_time_user: <SWIFT_RUNTIME_USER>

@@ -17,37 +17,41 @@
 - name: Set account metadata in swift -- enable storlets
   command: swift post
            --os-auth-url="{{ keystone_public_url }}"
-           --os-username="{{ storlets_default_tenant_user_name }}"
-           --os-password="{{ storlets_default_tenant_user_password }}"
-           --os-tenant-name="{{ storlets_default_tenant_name }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
            --meta "Storlet-Enabled:True"
 
 # TODO(eran): Get the log container name from config file
 - name: create the Swift log container
   command: swift post
            --os-auth-url="{{ keystone_public_url }}"
-           --os-username="{{ storlets_default_tenant_user_name }}"
-           --os-password="{{ storlets_default_tenant_user_password }}"
-           --os-tenant-name="{{ storlets_default_tenant_name }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
            log
 
 # TODO(eran): Get the storlet container name from config file
 - name: create the Swift storlet container
   command: swift post
            --os-auth-url="{{ keystone_public_url }}"
-           --os-username="{{ storlets_default_tenant_user_name }}"
-           --os-password="{{ storlets_default_tenant_user_password }}"
-           --os-tenant-name="{{ storlets_default_tenant_name }}"
-           --read-acl "{{ storlets_default_tenant_name }}:{{ storlets_default_tenant_member_user }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
+           --read-acl "{{ storlets_default_project_name }}:{{ storlets_default_project_member_user }}"
            storlet
 
 # TODO(eran): Get the dependency container name from config file
 - name: create the Swift dependency container
   command: swift post
            --os-auth-url="{{ keystone_public_url }}"
-           --os-username="{{ storlets_default_tenant_user_name }}"
-           --os-password="{{ storlets_default_tenant_user_password }}"
-           --os-tenant-name="{{ storlets_default_tenant_name }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
            dependency
 
 # TODO(eran): Get the docker_images container name from config file
@@ -56,19 +60,20 @@
 - name: create the Swift docker_images container
   command: swift post
            --os-auth-url="{{ keystone_public_url }}"
-           --os-username="{{ storlets_default_tenant_user_name }}"
-           --os-password="{{ storlets_default_tenant_user_password }}"
-           --os-tenant-name="{{ storlets_default_tenant_name }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
            --read-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
            --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
            docker_images
 
 - name: test if need to create member user
-  shell: openstack --os-auth-url={{ keystone_public_url }} --os-username={{ keystone_admin_user }} --os-password={{ keystone_admin_password }} --os-project-name={{ keystone_admin_project }} user list --project "{{ storlets_default_tenant_name }}" | grep "{{ storlets_default_tenant_member_user }}" | wc -l
+  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user list --project "{{ storlets_default_project_name }}" | grep "{{ storlets_default_project_member_user }}" | wc -l
   register: member_user
 
 - debug: msg="{{ member_user }}"
 
 - name: Create member user
-  shell: openstack --os-auth-url={{ keystone_public_url }} --os-username={{ keystone_admin_user }} --os-password={{ keystone_admin_password }} --os-project-name={{ keystone_admin_project }} user create --project "{{ storlets_default_tenant_name }}" --password "{{ storlets_default_tenant_member_password }}" --enable "{{ storlets_default_tenant_member_user }}"
+  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user create --project "{{ storlets_default_project_name }}" --password "{{ storlets_default_project_member_password }}" --enable "{{ storlets_default_project_member_user }}"
   when: "'0' in member_user.stdout"

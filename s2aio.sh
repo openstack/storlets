@@ -126,6 +126,8 @@ cd -
 cp install/storlets/deploy/cluster_config.json .
 sudo chown $USER:$USER cluster_config.json
 
-echo "export OS_USERNAME=tester; export OS_PASSWORD=testing;" >> ~/.bashrc
-echo "export OS_TENANT_NAME=test; export OS_AUTH_URL=http://"$S2AIO_IP":5000/v2.0" >> ~/.bashrc
+echo "export OS_IDENTITY_API_VERSION=3" >> ~/.bashrc
+echo "export OS_USERNAME=tester; export OS_PASSWORD=testing" >> ~/.bashrc
+echo "export OS_PROJECT_NAME=test; OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
+echo "export OS_AUTH_URL=http://"$S2AIO_IP":5000/v3" >> ~/.bashrc
 set +eu

@@ -1,0 +1,111 @@
+#---------------------------------------------------------------------------
+# Copyright IBM Corp. 2015, 2015 All Rights Reserved
+# Copyright (c) 2010-2016 OpenStack Foundation
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# Limitations under the License.
+#---------------------------------------------------------------------------
+# TODO(eranr): Change thebelow to use Ansible os_project_facts module
+- name: Get the defaut project id from Keystone
+  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} project list | grep {{ storlets_default_project_name }} | awk '{print $2}'
+  register: project_id
+
+- name: Print the project id whose container we are processing
+  debug:
+    msg: "{{ project_id.stdout_lines[0] }}"
+
+- name: Enable the default project for storlets
+  command: swift
+           --os-auth-url="{{ keystone_public_url }}"
+           --os-username="{{ storlets_default_project_user_name }}"
+           --os-password="{{ storlets_default_project_user_password }}"
+           --os-project-name="{{ storlets_default_project_name }}"
+           --os-project-domain-name="{{ keystone_default_domain }}"
+           post
+           --meta "Storlet-Enabled:True"
+
+- name: Create Repository for building the image
+  file:
+    path: /data/registry/repositories/default_project_image
+    state: directory
+    mode: 0755
+    owner: root
+
+- name: Create default_project_image Docker file
+  stat: path=/data/registry/repositories/default_project_image/Dockerfile
+  register: st0
+
+- template:
+    src: "default_project_image_Dockerfile"
+    dest: "/data/registry/repositories/default_project_image/Dockerfile"
+    owner: root
+    mode: 0644
+  when: not st0.stat.exists
+
+- name: Find the default project image id
+  shell: docker images | grep "{{project_id.stdout_lines[0]}}" | awk '{print $3}'
+  register: image_id
+- name: Image id found is
+  debug: msg="{{image_id}}"
+
+- name: Find the default project image id
+  shell: docker images | grep "{{project_id.stdout_lines[0]}}" | wc -l
+  register: image_exists
+- name: Image exists is
+  debug: msg="{{image_exists}}"
+
+# If the image id exists, set project_container_running
+# according to the docker ps output
+- name: Test if the default project container is running
+  shell: docker ps | grep "{{image_id.stdout_lines[0]}}" | wc -l
+  register: project_container_running
+  when: "'1' in image_exists.stdout_lines[0]"
+
+- name: Container running state is
+  debug: msg="{{project_container_running}}"
+
+# If the image id exists, set project_container_exists
+# according to the docker ps -a output
+- name: Test if the default project container exists
+  shell: docker ps -a | grep "{{image_id.stdout_lines[0]}}" | wc -l
+  register: project_container_exists
+  when: "'1' in image_exists.stdout_lines[0]"
+
+- name: Container existance state is
+  debug: msg="{{project_container_exists}}"
+
+# If project_container_exists get its id
+- name: Get the container id
+  shell: docker ps -a | grep "{{image_id.stdout}}" | awk '{print $2}'
+  register: container_id
+  when: "project_container_exists.stdout is defined and '1' in project_container_exists.stdout"
+
+- name: Container ID is
+  debug: msg="{{container_id}}"
+
+- name: Stop the default project container
+  command: docker stop -t 1 "{{ container_id.stdout }}"
+  when: "project_container_running.stdout is defined and '1' in project_container_running.stdout"
+
+- name: Remove the default project container
+  command: docker rm "{{ container_id.stdout }}"
+  when: "project_container_exists.stdout is defined and '1' in project_container_exists.stdout"
+
+- name: Remove the default project container image
+  command: "docker rmi {{image_id.stdout}}"
+  when: "'1' in image_exists.stdout"
+
+- name: Build the new default project container image
+  command: "docker build -t {{ project_id.stdout_lines[0] }} ."
+  args:
+    chdir: "/data/registry/repositories/default_project_image"
+  register: command_result
+  failed_when: "'Successfully built' not in command_result.stdout"

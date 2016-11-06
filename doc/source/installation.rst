@@ -86,8 +86,8 @@ storlets with EC and encryption. Valid values are true / false
 
   # Keystone access information
   keystone_endpoint_host: 127.0.0.1
-  keystone_admin_url: http://{{ keystone_endpoint_host }}:35357/v2.0
-  keystone_public_url: http://{{ keystone_endpoint_host }}:5000/v2.0
+  keystone_admin_url: http://{{ keystone_endpoint_host }}:35357/v3
+  keystone_public_url: http://{{ keystone_endpoint_host }}:5000/v3
   keystone_admin_token: ADMIN
   keystone_admin_password: passw0rd
 
@@ -97,9 +97,9 @@ storlets with EC and encryption. Valid values are true / false
   storlet_manager_admin_password: storlet_manager
 
   # Information for creating a Storlet enabled account
-  storlets_default_tenant_name: service
-  storlets_default_tenant_user_name: swift
-  storlets_default_tenant_user_password: passw0rd
+  storlets_default_project_name: test
+  storlets_default_project_user_name: tester
+  storlets_default_project_user_password: testing
 
   swift_user_id: 1003
   swift_group_id: 1003

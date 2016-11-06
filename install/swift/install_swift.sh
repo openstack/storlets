@@ -5,7 +5,7 @@ set -eu
 # keyastone and swift.
 
 if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 [target] [ip] [flavour]"
+    echo "Usage: $0 [target] [ip]"
     echo "target = host | docker"
     exit
 fi

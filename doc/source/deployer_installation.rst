@@ -102,7 +102,10 @@ deployment example.
     storlets_default_tenant_user_name: "tester"
     storlets_default_tenant_user_password: "testing"
     keystone_endpoint_host: 192.168.56.200
-    keystone_admin_token: ADMIN
+    keystone_admin_user: admin
+    keystone_admin_password: admin
+    keystone_admin_project: admin
+    keystone_default_domain: default
     swift_endpoint_host: 192.168.56.210
     swift_endpoint_port: 80
     swift_run_time_user: swift
@@ -158,14 +161,16 @@ that do not appear in the above configurable installation_vars.yml
           "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
           "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
           "keystone_endpoint_host": "{{ keystone_endpoint_host }}",
-          "keystone_admin_url": "http://{{ keystone_endpoint_host }}:35357/v2.0",
-          "keystone_public_url": "http://{{ keystone_endpoint_host }}:5000/v2.0",
-          "keystone_admin_token": "{{ keystone_admin_token }}",
+          "keystone_public_url": "http://{{ keystone_endpoint_host }}:5000/v3",
           "keystone_admin_password": "{{ keystone_admin_password }}",
+          "keystone_admin_user": "{{keystone_admin_user}}",
+          "keystone_admin_project": "{{keystone_admin_project}}",
+          "keystone_default_domain": "{{keystone_default_domain}}",
           "swift_endpoint_host": "{{ swift_endpoint_host }}",
           "swift_public_url": "http://{{ swift_endpoint_host }}:{{ swift_endpoint_port }}/v1",
           "swift_run_time_user" : "{{ swift_run_time_user }}",
           "swift_run_time_group" : "{{ swift_run_time_group }}",
+          "swift_run_time_dir": "{{ swift_run_time_dir }}",
           "storlets_management_user": "{{ storlets_management_user }}",
           "storlet_management_account": "{{ storlet_management_account }}",
           "storlet_management_admin_username": "{{ storlet_management_admin_username }}",
@@ -183,9 +188,11 @@ that do not appear in the above configurable installation_vars.yml
           "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",
           "swift_user_id": "1003",
           "swift_group_id": "1003",
-          "storlets_default_tenant_name": "{{ storlets_default_tenant_name }}",
-          "storlets_default_tenant_user_name": "{{ storlets_default_tenant_user_name }}",
-          "storlets_default_tenant_user_password": "{{ storlets_default_tenant_user_password }}",
+          "storlets_default_project_name": "{{ storlets_default_tenant_name }}",
+          "storlets_default_project_user_name": "{{ storlets_default_tenant_user_name }}",
+          "storlets_default_project_user_password": "{{ storlets_default_tenant_user_password }}",
+          "storlets_default_project_member_user" : "tester_member",
+          "storlets_default_project_member_password" : "member",
           "storlet_middleware": "storlet_handler",
           "storlet_container": "storlet",
           "storlet_dependency": "dependency",
@@ -219,9 +226,8 @@ that do not appear in the above configurable installation_vars.yml
 
     - "keystone_endpoint_host": The host where keystone is installed. The value of this entry is an Ansible variable,
       which is specified in 'install/storlets/deploy/installation_vars.yml'
-    - "keystone_admin_url": The Keystone administration url. This entry makes use of the keystone endpoint host defined above.
     - "keystone_public_url": The Keystone public url. This entry makes use of the keystone endpoint host defined above.
-    - "keystone_admin_token": The token with which keystone admin cli can be executed.
+    - "keystone_admin_user": The Keystone administration user
     - "keystone_admin_password": Currently not used. Serves for future alternative to the token.
 
   - Swift related variables:
@@ -261,9 +267,9 @@ that do not appear in the above configurable installation_vars.yml
     - "storlets_image_name_suffix". The suffix used for the base image that containes the storlets stuff.
     - "swift_user_id", "swift_group_id". The user and group id of a Docker container user that is used to run the storlets daemons.
 
-  - The default tenant parameters created by the installation process:
+  - The default swift project parameters created by the installation process:
 
-   - "storlets_default_tenant_name", "storlets_default_tenant_user_name", "storlets_default_tenant_user_password"
+   - "storlets_default_project_name", "storlets_default_project_user_name", "storlets_default_project_user_password"
 
   - The config paramaters of the storlet middleware:
 

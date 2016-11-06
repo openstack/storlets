@@ -13,6 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM {{ tenant_image_name }}
-
-MAINTAINER root
+- hosts: storlet-mgmt
+  roles:
+  - role: enable_default_swift_account_for_storlets
+  - role: create_default_project_docker_image
+    project_image_name: "{{ base_os_image }}_jre8_storlets"
+    project_name: "{{ storlets_default_project_name }}"

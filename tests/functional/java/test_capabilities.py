@@ -23,11 +23,14 @@ class TestCapabilities(StorletBaseFunctionalTest):
         super(TestCapabilities, self).setUp()
 
     def test_get_capabilities(self):
+        _os_options = {
+            'project_name': self.conf.project_name
+        }
         conn = swift_client.Connection(self.conf.auth_uri,
                                        self.conf.admin_user,
                                        self.conf.admin_password,
                                        insecure=True,
-                                       tenant_name=self.conf.tenant_name,
+                                       os_options=_os_options,
                                        auth_version=self.conf.auth_version)
         info = conn.get_capabilities()
         self.assertIn('storlet_handler', info)
