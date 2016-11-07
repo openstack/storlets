@@ -27,7 +27,8 @@ import json
 from contextlib import contextmanager
 
 from storlets.sbus import SBus
-from storlets.sbus.datagram import FDMetadata, SBusDatagram
+from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram, \
+    SBusExecuteDatagram
 from storlets.sbus import file_description as sbus_fd
 from storlets.sbus import command as sbus_cmd
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
@@ -262,9 +263,10 @@ class RunTimeSandbox(object):
         pipe_path = self.paths.host_factory_pipe()
 
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(
+            dtg = SBusServiceDatagram(
                 sbus_cmd.SBUS_CMD_PING,
-                write_fd)
+                [write_fd],
+                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()])
             rc = SBus.send(pipe_path, dtg)
             if (rc < 0):
                 return -1
@@ -360,9 +362,10 @@ class RunTimeSandbox(object):
                 'pool_size': self.storlet_daemon_thread_pool_size}
 
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(
+            dtg = SBusServiceDatagram(
                 sbus_cmd.SBUS_CMD_START_DAEMON,
-                write_fd,
+                [write_fd],
+                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
                 prms)
 
             pipe_path = self.paths.host_factory_pipe()
@@ -384,9 +387,10 @@ class RunTimeSandbox(object):
         Stop SDaemon process in the scope's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(
+            dtg = SBusServiceDatagram(
                 sbus_cmd.SBUS_CMD_STOP_DAEMON,
-                write_fd,
+                [write_fd],
+                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
                 {'storlet_name': storlet_id})
             pipe_path = self.paths.host_factory_pipe()
             rc = SBus.send(pipe_path, dtg)
@@ -408,9 +412,10 @@ class RunTimeSandbox(object):
         Get the status of SDaemon process in the scope's sandbox
         """
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(
+            dtg = SBusServiceDatagram(
                 sbus_cmd.SBUS_CMD_DAEMON_STATUS,
-                write_fd,
+                [write_fd],
+                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
                 {'storlet_name': storlet_id})
             pipe_path = self.paths.host_factory_pipe()
             rc = SBus.send(pipe_path, dtg)
@@ -682,9 +687,10 @@ class StorletInvocationProtocol(object):
         Cancel on-going storlet execution
         """
         with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusDatagram.create_service_datagram(
+            dtg = SBusServiceDatagram(
                 sbus_cmd.SBUS_CMD_CANCEL,
-                write_fd,
+                [write_fd],
+                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
                 None,
                 self.task_id)
             rc = SBus.send(self.storlet_pipe_path, dtg)
@@ -710,7 +716,7 @@ class StorletInvocationProtocol(object):
         Send execute command to the remote daemon factory to invoke storlet
         execution
         """
-        dtg = SBusDatagram(
+        dtg = SBusExecuteDatagram(
             sbus_cmd.SBUS_CMD_EXECUTE,
             self.remote_fds,
             self.remote_fds_metadata,

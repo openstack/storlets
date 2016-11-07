@@ -17,7 +17,8 @@ import eventlet
 import mock
 from storlet_daemon.daemon import (
     Daemon, EXIT_SUCCESS, StorletDaemonException)
-from sbus.datagram import SBusDatagram
+from sbus.datagram import FDMetadata, SBusServiceDatagram
+from sbus.file_description import SBUS_FD_SERVICE_OUT
 import sbus.command
 
 from tests.unit.swift import FakeLogger
@@ -99,12 +100,13 @@ class TestStorletDaemon(unittest.TestCase):
             fake_import.return_value = FakeModule()
             daemon = Daemon(
                 'fakeModule.FakeClass', 'fake_path', self.logger, 16)
+        metadata = [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()]
         scenario = [
             ('create', 1),
             ('listen', 1),
-            ('receive', SBusDatagram(command=stop_command,
-                                     fds=[], metadata=[],
-                                     params=None, task_id=None)),
+            ('receive', SBusServiceDatagram(command=stop_command, fds=[1],
+                                            metadata=metadata,
+                                            params=None, task_id=None)),
         ]
 
         fake_sbus_class = create_fake_sbus_class(scenario)
