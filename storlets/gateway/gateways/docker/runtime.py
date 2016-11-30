@@ -762,7 +762,7 @@ class StorletInvocationProtocol(object):
         try:
             return json.loads(flat_json)
         except ValueError:
-            self.logger.excepiton('Failed to load metadata from json')
+            self.logger.exception('Failed to load metadata from json')
             raise StorletRuntimeException('Got invalid format about metadata')
 
     def _wait_for_write_with_timeout(self, fd):
