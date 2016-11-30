@@ -13,9 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import errno
-from functools import partial
-import logging
-from logging.handlers import SysLogHandler
 import os
 import pwd
 import signal
@@ -24,73 +21,29 @@ import time
 
 from storlets.sbus import SBus
 from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
-from storlets.sbus.command import SBUS_CMD_PREFIX, SBUS_CMD_HALT, SBUS_CMD_PING
+from storlets.sbus.command import SBUS_CMD_HALT, SBUS_CMD_PING
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
-
-
-EXIT_SUCCESS = 0
-EXIT_FAILURE = 1
-
-
-class CommandResponse(Exception):
-    """
-    The result of command execution
-    """
-
-    def __init__(self, status, message, iterable=True):
-        """
-        Constract CommandResponse instance
-
-        :param status: task status
-        :param message: message to be returned and logged
-        :param iterable: wheter we can keep SDaemon process running
-        """
-        self.status = status
-        self.message = message
-        self.iterable = iterable
-
-    @property
-    def report_message(self):
-        """
-        Create log message to be returned to gateway
-        """
-        return '%s: %s' % (str(self.status), self.message)
-
-
-CommandSuccess = partial(CommandResponse, True)
-CommandFailure = partial(CommandResponse, False)
+from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
+    CommandSuccess, CommandFailure, SBusServer
+from storlets.agent.common.utils import get_logger
 
 
 class SDaemonError(Exception):
     pass
 
 
-def command_handler(func):
+class StorletDaemonFactory(SBusServer):
     """
-    Decorator for handler functions for command
-    """
-    func.is_command_handler = True
-    return func
-
-
-class DaemonFactory(object):
-    """
-    This class acts as the manager for storlet daemons.
-
-    It listens to commands and reacts on them in an internal loop.
-    As for now (01-Dec-2014) it is a single thread, synchronous
-    processing.
+    An SBusServer implementation for storlets application factory
     """
 
-    def __init__(self, path, logger, container_id):
+    def __init__(self, sbus_path, logger, container_id):
         """
-        :param path: Path to the pipe file internal SBus listens to
+        :param sbus_path: Path to the pipe file internal SBus listens to
         :param logger: Logger to dump the information to
         :param container_id: Container id
         """
-
-        self.logger = logger
-        self.pipe_path = path
+        super(StorletDaemonFactory, self).__init__(sbus_path, logger)
         self.container_id = container_id
         # Dictionary: map storlet name to pipe name
         self.storlet_name_to_pipe_name = dict()
@@ -164,17 +117,17 @@ class DaemonFactory(object):
         :param pargs: Arguments for the JVM
         :param env: Environment value
         :param storlet_name: Name of the storlet to be executed
+
+        :raises StorletDaemonError: when it fails to start subprocess, or it
+                                    can not check the status of the subprocess
+                                    launched
         """
+        str_pargs = ' '.join(pargs)
+        self.logger.debug('Starting subprocess: pargs:{0} env:{1}'
+                          .format(str_pargs, env))
+        # TODO(takashi): We had better use contextmanager
+        # TODO(takashi): Where is this closed?
         try:
-            self.logger.debug('START_DAEMON: actual invocation')
-            self.logger.debug('START_DAEMON: about to start subprocess'
-                              ' for %s' % storlet_name)
-            str_pargs = ' '.join(pargs)
-            self.logger.debug('START_DAEMON: pargs = %s' % str_pargs)
-            self.logger.debug('START_DAEMON: env = %s' % env)
-            # TODO(takashi): We had better use contextmanager
-            # TODO(takashi): Where is this closed?
-            # TODO(takashi): Should we really use this?
             dn = open(os.devnull, 'w')
             daemon_p = subprocess.Popen(
                 pargs, stdout=dn, stderr=subprocess.PIPE,
@@ -182,39 +135,36 @@ class DaemonFactory(object):
             logger_p = subprocess.Popen(
                 'logger', stdin=daemon_p.stderr, stdout=dn, stderr=dn,
                 close_fds=True, shell=False)
-            jvm_pid = daemon_p.pid
-            # Wait for the JVM initializes itself
-            time.sleep(1)
-            self.logger.debug('Daemon process ID is: {0}'.format(jvm_pid))
-            self.logger.debug('Logger process ID is: {0}'.format(logger_p.pid))
+        except OSError:
+            self.logger.exception('Unable to start subprocess')
+            raise SDaemonError('Unable to start the storlet daemon {0}'.
+                               format(storlet_name))
 
-            # Does JVM run?
-            try:
-                status = self.get_process_status_by_pid(jvm_pid, storlet_name)
-            except SDaemonError:
-                self.logger.exception('Failed to get status for the storlet '
-                                      'daemon {0}'.format(storlet_name))
-                raise
+        # Wait for the storlet daemon initializes itself
+        time.sleep(1)
+        self.logger.debug('Started the storlet daemon {0} with pid {1}'
+                          .format(daemon_p.pid, logger_p.pid))
 
-            if status:
-                self.logger.debug('Keeping JVM PID in' +
-                                  'storlet_name_to_pid[{0}] = {1}'.
-                                  format(storlet_name, jvm_pid))
-                # Keep JVM PID
-                self.storlet_name_to_pid[storlet_name] = jvm_pid
-                if not self.wait_for_daemon_to_initialize(storlet_name):
-                    raise SDaemonError('No response from Daemon')
-                self.logger.debug('START_DAEMON: just occurred')
-            else:
-                self.logger.error('Started the storlet daemon for {0}, but '
-                                  'can not check its status'.
-                                  format(storlet_name))
-                raise SDaemonError('Failed to start the sdaemon for {0}'.
-                                   format(storlet_name))
-        except Exception:
-            self.logger.exception('Failed to start subprocess %s' % str(pargs))
-            raise SDaemonError('Failed to start the sdaemon for {0}'
+        # Does the storlet daemon keep running?
+        try:
+            status = self.get_process_status_by_pid(daemon_p.pid,
+                                                    storlet_name)
+        except SDaemonError:
+            raise SDaemonError('The storlet daemon {0} is terminated'
                                .format(storlet_name))
+
+        if status:
+            # Keep PID of the storlet daemon subprocess
+            self.storlet_name_to_pid[storlet_name] = daemon_p.pid
+            if not self.wait_for_daemon_to_initialize(storlet_name):
+                raise SDaemonError('No response from the storlet daemon '
+                                   '{0}'.format(storlet_name))
+        else:
+            self.logger.error('Started the storlet daemon for {0}, but '
+                              'can not check its status'.
+                              format(storlet_name))
+            raise SDaemonError('The storlet daemon {0} is started '
+                               'but not responsive'.format(storlet_name))
 
     def wait_for_daemon_to_initialize(self, storlet_name):
         """
@@ -264,7 +214,7 @@ class DaemonFactory(object):
         :returns: True if it starts a new subprocess
                   False if there already exists a running process
         """
-        if daemon_language.lower() in ['java']:
+        if daemon_language.lower() == 'java':
             pargs, env = self.get_jvm_args(
                 daemon_language, storlet_path, storlet_name,
                 pool_size, uds_path, log_level)
@@ -283,11 +233,12 @@ class DaemonFactory(object):
         self.logger.debug('Validating that {0} is not already running'.
                           format(storlet_name))
         if self.get_process_status_by_name(storlet_name):
-            self.logger.debug('the storlet daemon for {0} is already running'.
+            self.logger.debug('The storlet daemon for {0} is already running'.
                               format(storlet_name))
             return False
         else:
-            self.logger.debug('{0} is not running. About to spawn process'.
+            self.logger.debug('The storlet daemon {0} is not running. '
+                              'Spawn the storlet daemon'.
                               format(storlet_name))
             self.spawn_subprocess(pargs, env, storlet_name)
             return True
@@ -299,17 +250,11 @@ class DaemonFactory(object):
         :param storlet_name: Storlet name we are checking the daemon for
         :returns: process status (True/False)
         """
-        self.logger.debug('Get status for storlet {0}'.
-                          format(storlet_name))
-        self.logger.debug('storlet_name_to_pid has {0}'.
-                          format(str(self.storlet_name_to_pid.keys())))
         daemon_pid = self.storlet_name_to_pid.get(storlet_name)
-        self.logger.debug('Pid for storlet {0} is {1}'.
-                          format(storlet_name, str(daemon_pid)))
         if daemon_pid is not None:
             return self.get_process_status_by_pid(daemon_pid, storlet_name)
         else:
-            self.logger.debug('Storlet name {0} not found in map'.
+            self.logger.debug('The storlet daemon {0} is not found in map'.
                               format(storlet_name))
             return False
 
@@ -321,7 +266,7 @@ class DaemonFactory(object):
         :param storlet_name: Storlet name we are checking the daemon for
         :returns: process status (True/False)
         """
-        self.logger.debug('Get status for storlet {0}, pid {1}'.
+        self.logger.debug('Get status for the storlet daemon {0}, pid {1}'.
                           format(storlet_name, str(daemon_pid)))
         try:
             pid, rc = os.waitpid(daemon_pid, os.WNOHANG)
@@ -331,24 +276,23 @@ class DaemonFactory(object):
             # If the storlet daemon crashed
             # we may get here ECHILD for which
             # we want to return False
-            if err.errno == errno.ECHILD:
-                return False
-            elif err.errno == errno.ESRCH:
+            if err.errno in (errno.ECHILD, errno.ESRCH):
                 return False
             elif err.errno == errno.EPERM:
                 raise SDaemonError(
-                    'No permission to access the storlet daemon for {0}'.
+                    'No permission to access the storlet daemon {0}'.
                     format(storlet_name))
             else:
                 self.logger.exception(
-                    'Failed to access the storlet daemon for {0}'.
+                    'Failed to access the storlet daemon {0}'.
                     format(storlet_name))
                 raise SDaemonError('Unknown error')
 
         if not pid and not rc:
             return True
         else:
-            self.logger.debug('The storlet daemon is terminated')
+            self.logger.debug('The storlet daemon {0} is terminated'
+                              .format(storlet_name))
             return False
 
     def process_kill(self, storlet_name):
@@ -360,26 +304,27 @@ class DaemonFactory(object):
         :returns: (pid, return code)
         :raises SDaemonError: when failed to kill the storlet daemon
         """
-        self.logger.debug('kill the storlet daemon {0}'.format(storlet_name))
         dmn_pid = self.storlet_name_to_pid.get(storlet_name)
-        self.logger.debug('Daemon PID is: {0}'.format(dmn_pid))
-        if dmn_pid is not None:
-            try:
-                os.kill(dmn_pid, signal.SIGKILL)
-                obtained_pid, obtained_code = os.waitpid(dmn_pid, os.WNOHANG)
-                self.logger.debug(
-                    'killed the storlet daemon {0}, PID = {1} ErrCode = {2}'.
-                    format(storlet_name, obtained_pid, obtained_code))
-                self.storlet_name_to_pid.pop(storlet_name)
-                return obtained_pid, obtained_code
-            except OSError:
-                self.logger.exception(
-                    'Error when sending kill signal to the storlet daemon %s' %
-                    storlet_name)
-                raise SDaemonError('Failed to send kill signal to {0}'
-                                   .format(storlet_name))
-        else:
+        self.logger.debug('Kill the storlet daemon {0} with pid {1}'
+                          .format(storlet_name, dmn_pid))
+
+        if dmn_pid is None:
             raise SDaemonError('{0} is not found'.format(storlet_name))
+
+        try:
+            os.kill(dmn_pid, signal.SIGKILL)
+            obtained_pid, obtained_code = os.waitpid(dmn_pid, os.WNOHANG)
+            self.logger.debug(
+                'Killed the storlet daemon {0}, PID = {1} ErrCode = {2}'.
+                format(storlet_name, obtained_pid, obtained_code))
+            self.storlet_name_to_pid.pop(storlet_name)
+            return obtained_pid, obtained_code
+        except OSError:
+            self.logger.exception(
+                'Error when sending kill signal to the storlet daemon %s' %
+                storlet_name)
+            raise SDaemonError('Failed to send kill signal to the storlet '
+                               'daemon {0}'.format(storlet_name))
 
     def process_kill_all(self, try_all=True):
         """
@@ -394,7 +339,7 @@ class DaemonFactory(object):
             try:
                 self.process_kill(storlet_name)
             except SDaemonError:
-                self.logger.exception('Failed to stop one storlet daemon {0}'
+                self.logger.exception('Failed to stop the storlet daemon {0}'
                                       .format(storlet_name))
                 if try_all:
                     failed.append(storlet_name)
@@ -421,8 +366,8 @@ class DaemonFactory(object):
                 self.shutdown_process(storlet_name)
                 terminated.append(storlet_name)
             except SDaemonError:
-                self.logger.exception('Failed to shutdown storlet daemon %s' %
-                                      storlet_name)
+                self.logger.exception('Failed to shutdown storlet daemon {0}'
+                                      .format(storlet_name))
                 if try_all:
                     failed.append(storlet_name)
                 else:
@@ -465,11 +410,13 @@ class DaemonFactory(object):
             os.close(write_fd)
             if rc < 0:
                 raise SDaemonError(
-                    'Failed to send halt to {0}'.format(storlet_name))
+                    'Failed to send halt command to the storlet daemon {0}'
+                    .format(storlet_name))
             resp = os.read(read_fd, 128)
             if not resp.startswith('True'):
                 raise SDaemonError(
-                    'Failed to send halt to {0}'.format(storlet_name))
+                    'Failed to send halt command to the storlet daemon {0}'
+                    .format(storlet_name))
         finally:
             os.close(read_fd)
 
@@ -480,219 +427,79 @@ class DaemonFactory(object):
             self.logger.exception(
                 'Error when waiting the storlet daemon {0}'.format(
                     storlet_name))
-            raise SDaemonError('Failed to wait {0}'.format(storlet_name))
+            raise SDaemonError('Failed to wait the storlet daemon {0}'
+                               .format(storlet_name))
 
     @command_handler
-    def start_daemon(self, prms):
-        storlet_name = prms['storlet_name']
+    def start_daemon(self, dtg):
+        params = dtg.params
+        storlet_name = params['storlet_name']
         try:
             if self.process_start_daemon(
-                    prms['daemon_language'], prms['storlet_path'],
-                    storlet_name, prms['pool_size'],
-                    prms['uds_path'], prms['log_level']):
+                    params['daemon_language'], params['storlet_path'],
+                    storlet_name, params['pool_size'],
+                    params['uds_path'], params['log_level']):
                 msg = 'OK'
             else:
                 msg = '{0} is already running'.format(storlet_name)
             return CommandSuccess(msg)
-        except SDaemonError as e:
+        except SDaemonError as err:
             self.logger.exception('Failed to start the sdaemon for {0}'
                                   .format(storlet_name))
-            return CommandFailure(str(e))
+            return CommandFailure(err.message)
 
     @command_handler
-    def stop_daemon(self, prms):
-        storlet_name = prms['storlet_name']
+    def stop_daemon(self, dtg):
+        params = dtg.params
+        storlet_name = params['storlet_name']
         try:
             pid, code = self.process_kill(storlet_name)
             msg = 'Storlet {0}, PID = {1}, ErrCode = {2}'.format(
                 storlet_name, pid, code)
-            return CommandSuccess(msg, True)
-        except SDaemonError:
-            msg = 'Failed to kill the storlet daemon %s' % storlet_name
-            self.logger.exception(msg)
-            return CommandFailure(msg)
+            return CommandSuccess(msg)
+        except SDaemonError as err:
+            self.logger.exception('Failed to kill the storlet daemon %s' %
+                                  storlet_name)
+            return CommandFailure(err.message)
 
     @command_handler
-    def daemon_status(self, prms):
-        storlet_name = prms['storlet_name']
+    def daemon_status(self, dtg):
+        params = dtg.params
+        storlet_name = params['storlet_name']
         try:
             if self.get_process_status_by_name(storlet_name):
-                msg = 'Storlet {0} seems to be OK'.format(storlet_name)
+                msg = 'The storlet daemon {0} seems to be OK'.format(
+                    storlet_name)
                 return CommandSuccess(msg)
             else:
-                msg = 'No running storlet daemon for {0}'.format(storlet_name)
+                msg = 'No running storlet daemons for {0}'.format(storlet_name)
                 return CommandFailure(msg)
-        except SDaemonError as e:
-            self.logger.exception('Failed to get daemon status')
-            return CommandFailure(str(e))
+        except SDaemonError as err:
+            self.logger.exception('Failed to get status of the storlet '
+                                  'daemon %s' % storlet_name)
+            return CommandFailure(err.message)
 
     @command_handler
-    def stop_daemons(self, prms):
+    def stop_daemons(self, dtg):
         try:
             self.process_kill_all()
             return CommandSuccess('OK', False)
-        except SDaemonError as e:
+        except SDaemonError as err:
             self.logger.exception('Failed to stop some storlet daemons')
-            return CommandFailure(str(e), False)
+            return CommandFailure(err.message, False)
 
     @command_handler
-    def halt(self, prms):
+    def halt(self, dtg):
         try:
             terminated = self.shutdown_all_processes()
             msg = '; '.join(['%s: terminated' % x for x in terminated])
             return CommandSuccess(msg, False)
-        except SDaemonError as e:
+        except SDaemonError as err:
             self.logger.exception('Failed to halt some storlet daemons')
-            return CommandFailure(str(e), False)
+            return CommandFailure(err.message, False)
 
-    @command_handler
-    def ping(self, prms):
-        return CommandSuccess('OK')
-
-    def get_handler(self, command):
-        """
-        Decide handler function correspoiding to the received command
-
-        :param command: command
-        :returns: handler function
-        """
-        if not command.startswith(SBUS_CMD_PREFIX):
-            raise ValueError('got unknown command %s' % command)
-        func_name = command[len(SBUS_CMD_PREFIX):].lower()
-        try:
-            handler = getattr(self, func_name)
-            getattr(handler, 'is_command_handler')
-        except AttributeError:
-            raise ValueError('got unknown command %s' % command)
-        return handler
-
-    def dispatch_command(self, dtg):
-        """
-        Parse datagram. React on the request.
-
-        :param dtg: Datagram to process
-
-        :returns: True when it can continue main loop
-                  False when it should break main loop
-        """
-        command = dtg.command
-        prms = dtg.params
-        self.logger.debug("Received command {0}".format(command))
-
-        outfd = dtg.service_out_fd
-        if outfd is None:
-            self.logger.error("Received message does not have outfd."
-                              " continuing.")
-            return True
-
-        self.logger.debug("Received outfd %d" % outfd)
-
-        try:
-            handler = self.get_handler(command)
-        except ValueError as e:
-            self.logger.exception('Failed to decide handler')
-            resp = CommandFailure(str(e))
-        else:
-            self.logger.debug('Do %s' % command)
-            resp = handler(prms)
-        finally:
-            self.logger.debug('Done')
-
-        with os.fdopen(outfd, 'w') as outfile:
-            self.log_and_report(outfile, resp)
-
-        return resp.iterable
-
-    def main_loop(self):
-        """
-        The 'internal' loop. Listen to SBus, receive datagram,
-        dispatch command, report back.
-
-        :returns: exit status (SUCCESS/FAILURE)
-        """
-
-        # Create SBus. Listen and process requests
-        sbus = SBus()
-        fd = sbus.create(self.pipe_path)
-        if fd < 0:
-            self.logger.error("Failed to create SBus. exiting.")
-            return EXIT_FAILURE
-
-        while True:
-            rc = sbus.listen(fd)
-            if rc < 0:
-                self.logger.error("Failed to wait on SBus. exiting.")
-                return EXIT_FAILURE
-            self.logger.debug("Wait returned")
-
-            dtg = sbus.receive(fd)
-            # TODO(eranr):
-            # Should we really be exitting here.
-            # If so should we exit the container altogether, so
-            # that it gets restarted?
-            if dtg is None:
-                self.logger.error("Failed to receive message. exiting.")
-                return EXIT_FAILURE
-
-            if not self.dispatch_command(dtg):
-                break
-
-        # We left the main loop for some reason. Terminating.
-        self.logger.debug('Leaving main loop')
-        return EXIT_SUCCESS
-
-    def log_and_report(self, outfile, resp):
-        """
-        Send result result description message back to swift middleware
-
-        :param outfile : Output channel to send the message to
-        :param resp: CommandResponse instance
-        """
-        answer = resp.report_message
-        self.logger.debug(' Just processed command')
-        self.logger.debug(' Going to answer: %s' % answer)
-        try:
-            outfile.write(answer)
-            self.logger.debug(" ... and still alive")
-        except Exception:
-            self.logger.debug('Problem while writing response %s' % answer)
-
-
-def start_logger(logger_name, log_level, container_id):
-    """
-
-    Initialize logging of this process and set logger format
-
-    :param logger_name: The name to report with
-    :param log_level: The verbosity level. This should be selected
-    :param container_id: container id
-    """
-    logging.raiseExceptions = False
-    log_level = log_level.upper()
-
-    # NOTE(takashi): currently logging.WARNING is defined as the same value
-    #                as logging.WARN, so we can properly handle WARNING here
-    try:
-        level = getattr(logging, log_level)
-    except AttributeError:
-        level = logging.ERROR
-
-    logger = logging.getLogger("CONT #" + container_id + ": " + logger_name)
-
-    if log_level == 'OFF':
-        logging.disable(logging.CRITICAL)
-    else:
-        logger.setLevel(level)
-
-    log_handler = SysLogHandler('/dev/log')
-    str_format = '%(name)-12s: %(levelname)-8s %(funcName)s' + \
-                 ' %(lineno)s [%(process)d, %(threadName)s]' + \
-                 ' %(message)s'
-    formatter = logging.Formatter(str_format)
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(level)
-    logger.addHandler(log_handler)
-    return logger
+    def _terminate(self):
+        pass
 
 
 def usage():
@@ -712,12 +519,12 @@ def main(argv):
         usage()
         return EXIT_FAILURE
 
-    pipe_path = argv[0]
+    sbus_path = argv[0]
     log_level = argv[1]
     container_id = argv[2]
 
     # Initialize logger
-    logger = start_logger("daemon-factory", log_level, container_id)
+    logger = get_logger("daemon-factory", log_level, container_id)
     logger.debug("Daemon factory started")
     SBus.start_logger("DEBUG", container_id=container_id)
 
@@ -727,7 +534,7 @@ def main(argv):
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
     # create an instance of daemon_factory
-    factory = DaemonFactory(pipe_path, logger, container_id)
+    factory = StorletDaemonFactory(sbus_path, logger, container_id)
 
     # Start the main loop
     return factory.main_loop()

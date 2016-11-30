@@ -14,93 +14,24 @@
 # limitations under the License.
 
 import errno
-import logging
 import mock
 import unittest
-from six import StringIO
 
-import storlets.sbus.command as sbus_cmd
+from storlets.sbus import command as sbus_cmd
+from storlets.agent.daemon_factory.server import SDaemonError, \
+    StorletDaemonFactory
 
 from tests.unit import FakeLogger
-from storlets.agent.daemon_factory.manager import CommandResponse, \
-    CommandSuccess, CommandFailure, SDaemonError, DaemonFactory, start_logger
+from tests.unit.agent.common import test_server
 
 
-class TestCommandResponse(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_init(self):
-        resp = CommandResponse(True, 'ok')
-        self.assertTrue(resp.status)
-        self.assertEqual('ok', resp.message)
-        self.assertTrue(resp.iterable)
-
-        resp = CommandResponse(False, 'error', False)
-        self.assertFalse(resp.status)
-        self.assertEqual('error', resp.message)
-        self.assertFalse(resp.iterable)
-
-    def test_report_message(self):
-        resp = CommandResponse(True, 'msg', True)
-        self.assertEqual('True: msg', resp.report_message)
+class DummyDatagram(object):
+    def __init__(self, prms=None):
+        self.params = prms or {}
 
 
-class TestCommandSuccess(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_init(self):
-        resp = CommandSuccess('ok')
-        self.assertTrue(resp.status)
-        self.assertEqual('ok', resp.message)
-        self.assertTrue(resp.iterable)
-
-
-class TestCommandFailure(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_init(self):
-        resp = CommandFailure('error')
-        self.assertFalse(resp.status)
-        self.assertEqual('error', resp.message)
-        self.assertTrue(resp.iterable)
-
-
-class TestLogger(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def test_start_logger(self):
-        sio = StringIO()
-        logger = logging.getLogger('CONT #abcdef: test')
-        logger.addHandler(logging.StreamHandler(sio))
-
-        # set log level as INFO
-        logger = start_logger('test', 'INFO', 'abcdef')
-        self.assertEqual(logging.INFO, logger.level)
-        # INFO message is recorded with INFO leg level
-        logger.info('test1')
-        self.assertEqual('test1\n', sio.getvalue())
-        # DEBUG message is not recorded with INFO leg level
-        logger.debug('test2')
-        self.assertEqual('test1\n', sio.getvalue())
-
-        # set log level as DEBUG
-        logger = start_logger('test', 'DEBUG', 'abcdef')
-        self.assertEqual(logging.DEBUG, logger.level)
-        # DEBUG message is recorded with DEBUG leg level
-        logger.debug('test3')
-        self.assertEqual(sio.getvalue(), 'test1\ntest3\n')
-
-        # If the level parameter is unknown, use ERROR as log level
-        logger = start_logger('test', 'foo', 'abcdef')
-        self.assertEqual(logging.ERROR, logger.level)
-
-
-class TestDaemonFactory(unittest.TestCase):
-    base_path = 'storlets.agent.daemon_factory.manager'
+class TestStorletDaemonFactory(unittest.TestCase):
+    base_path = 'storlets.agent.daemon_factory.server'
     kill_path = base_path + '.os.kill'
     waitpid_path = base_path + '.os.waitpid'
     sbus_path = base_path + '.SBus'
@@ -109,13 +40,13 @@ class TestDaemonFactory(unittest.TestCase):
         self.logger = FakeLogger()
         self.pipe_path = 'path/to/pipe'
         self.container_id = 'contid'
-        self.dfactory = DaemonFactory(self.pipe_path, self.logger,
-                                      self.container_id)
+        self.dfactory = StorletDaemonFactory(self.pipe_path, self.logger,
+                                             self.container_id)
 
     def test_get_jvm_args(self):
         dummy_env = {'CLASSPATH': '/default/classpath',
                      'LD_LIBRARY_PATH': '/default/ld/library/path'}
-        with mock.patch('storlets.agent.daemon_factory.manager.os.environ',
+        with mock.patch('storlets.agent.daemon_factory.server.os.environ',
                         dummy_env):
             pargs, env = self.dfactory.get_jvm_args(
                 'java', 'path/to/storlet/a', 'Storlet-1.0.jar',
@@ -144,7 +75,7 @@ class TestDaemonFactory(unittest.TestCase):
 
     def test_get_python_args(self):
         dummy_env = {'PYTHONPATH': '/default/pythonpath'}
-        with mock.patch('storlets.agent.daemon_factory.manager.os.environ',
+        with mock.patch('storlets.agent.daemon_factory.server.os.environ',
                         dummy_env):
             pargs, env = self.dfactory.get_python_args(
                 'python', 'path/to/storlet', 'test_storlet.TestStorlet',
@@ -340,8 +271,8 @@ class TestDaemonFactory(unittest.TestCase):
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = OSError(errno.EPERM, '')
-            exc_pattern = '^No permission to access the storlet daemon' + \
-                          ' for storleta$'
+            exc_pattern = ('^No permission to access the storlet daemon'
+                           ' storleta$')
             with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.get_process_status_by_pid(1000, 'storleta')
             self.assertEqual(1, waitpid.call_count)
@@ -450,7 +381,8 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path) as kill, \
                 mock.patch(self.waitpid_path) as waitpid:
             kill.side_effect = OSError()
-            exc_pattern = '^Failed to send kill signal to storlet[a-b]$'
+            exc_pattern = ('^Failed to send kill signal to the storlet daemon '
+                           'storlet[a-b]$')
             with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.process_kill_all(False)
             self.assertEqual(1, kill.call_count)
@@ -506,7 +438,8 @@ class TestDaemonFactory(unittest.TestCase):
                 mock.patch(self.waitpid_path) as waitpid:
             send.return_value = -1
             read.return_value = 'True: OK'
-            exc_pattern = '^Failed to send halt to storlet[a-b]$'
+            exc_pattern = ('^Failed to send halt command to the storlet '
+                           'daemon storlet[a-b]$')
             with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.shutdown_all_processes(False)
             self.assertEqual(1, send.call_count)
@@ -595,7 +528,7 @@ class TestDaemonFactory(unittest.TestCase):
             waitpid.return_value = 0, 0
             send.return_value = 0
             read.return_value = 'True: OK'
-            ret = self.dfactory.start_daemon(prms)
+            ret = self.dfactory.start_daemon(DummyDatagram(prms))
             self.assertTrue(ret.status)
             self.assertEqual('OK', ret.message)
             self.assertTrue(ret.iterable)
@@ -605,14 +538,14 @@ class TestDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = {'storleta': 'path/to/uds/a'}
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 0, 0
-            ret = self.dfactory.start_daemon(prms)
+            ret = self.dfactory.start_daemon(DummyDatagram(prms))
             self.assertTrue(ret.status)
             self.assertEqual('storleta is already running', ret.message)
             self.assertTrue(ret.iterable)
 
         # Unsupported language
         prms['daemon_language'] = 'foo'
-        ret = self.dfactory.start_daemon(prms)
+        ret = self.dfactory.start_daemon(DummyDatagram(prms))
         self.assertFalse(ret.status)
         self.assertEqual('Got unsupported daemon language: foo', ret.message)
         self.assertTrue(ret.iterable)
@@ -624,7 +557,8 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path), \
                 mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 1000, 0
-            resp = self.dfactory.stop_daemon({'storlet_name': 'storleta'})
+            resp = self.dfactory.stop_daemon(
+                DummyDatagram({'storlet_name': 'storleta'}))
             self.assertTrue(resp.status)
             self.assertEqual('Storlet storleta, PID = 1000, ErrCode = 0',
                              resp.message)
@@ -636,10 +570,12 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path) as kill, \
                 mock.patch(self.waitpid_path):
             kill.side_effect = OSError('ERROR')
-            resp = self.dfactory.stop_daemon({'storlet_name': 'storleta'})
+            resp = self.dfactory.stop_daemon(
+                DummyDatagram({'storlet_name': 'storleta'}))
             self.assertFalse(resp.status)
-            self.assertEqual('Failed to kill the storlet daemon storleta',
-                             resp.message)
+            self.assertEqual(
+                'Failed to send kill signal to the storlet daemon storleta',
+                resp.message)
             self.assertTrue(resp.iterable)
 
     def test_daemon_status(self):
@@ -648,22 +584,26 @@ class TestDaemonFactory(unittest.TestCase):
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 0, 0
-            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status(
+                DummyDatagram({'storlet_name': 'storleta'}))
             self.assertTrue(resp.status)
-            self.assertEqual('Storlet storleta seems to be OK', resp.message)
+            self.assertEqual('The storlet daemon storleta seems to be OK',
+                             resp.message)
             self.assertTrue(resp.iterable)
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.return_value = 1000, 0
-            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status(
+                DummyDatagram({'storlet_name': 'storleta'}))
             self.assertFalse(resp.status)
-            self.assertEqual('No running storlet daemon for storleta',
+            self.assertEqual('No running storlet daemons for storleta',
                              resp.message)
             self.assertTrue(resp.iterable)
 
         with mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = OSError()
-            resp = self.dfactory.daemon_status({'storlet_name': 'storleta'})
+            resp = self.dfactory.daemon_status(
+                DummyDatagram({'storlet_name': 'storleta'}))
             self.assertFalse(resp.status)
             self.assertEqual('Unknown error', resp.message)
             self.assertTrue(resp.iterable)
@@ -678,7 +618,7 @@ class TestDaemonFactory(unittest.TestCase):
                 mock.patch(self.waitpid_path):
             send.return_value = 0
             read.return_value = 'True: OK'
-            resp = self.dfactory.halt({})
+            resp = self.dfactory.halt(DummyDatagram())
             self.assertTrue(resp.status)
             self.assertIn('storleta: terminated', resp.message)
             self.assertIn('storletb: terminated', resp.message)
@@ -691,51 +631,21 @@ class TestDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path), \
                 mock.patch(self.waitpid_path) as waitpid:
             waitpid.side_effect = [(1000, 0), (1001, 0)]
-            resp = self.dfactory.stop_daemons({})
+            resp = self.dfactory.stop_daemons(DummyDatagram())
             self.assertTrue(resp.status)
             self.assertEqual('OK', resp.message)
             self.assertFalse(resp.iterable)
 
-    def test_get_handler(self):
-        # start daemon
-        self.assertEqual(
-            self.dfactory.start_daemon,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_START_DAEMON))
-        # stop daemon
-        self.assertEqual(
-            self.dfactory.stop_daemon,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_STOP_DAEMON))
-        # daemon status
-        self.assertEqual(
-            self.dfactory.daemon_status,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_DAEMON_STATUS))
-        # stop daemons
-        self.assertEqual(
-            self.dfactory.stop_daemons,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_STOP_DAEMONS))
-        # halt
-        self.assertEqual(
-            self.dfactory.halt,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_HALT))
-        # ping
-        self.assertEqual(
-            self.dfactory.ping,
-            self.dfactory.get_handler(
-                sbus_cmd.SBUS_CMD_PING))
-        # invalid
-        with self.assertRaises(ValueError):
-            self.dfactory.get_handler('FOO')
-        # unknown
-        with self.assertRaises(ValueError):
-            self.dfactory.get_handler('SBUS_CMD_UNKNOWN')
-        # not command handler
-        with self.assertRaises(ValueError):
-            self.dfactory.get_handler('SBUS_CMD_GET_JVM_ARGS')
+
+class TestSBusServerMain(test_server.TestSBusServerMain):
+
+    def _get_test_server(self):
+        return StorletDaemonFactory(self.sbus_path, self.logger, 'contid')
+
+    def test_main_loop_successful_stop(self):
+        # SBUS_CMD_HALT is for working to stop requested from
+        # storlet_middleware
+        self._test_main_loop_stop(sbus_cmd.SBUS_CMD_HALT)
 
 
 if __name__ == '__main__':

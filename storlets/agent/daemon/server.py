@@ -12,8 +12,6 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
-from logging.handlers import SysLogHandler
 import errno
 import os
 import pwd
@@ -21,30 +19,20 @@ import sys
 import uuid
 import signal
 from storlets.sbus import SBus
-from storlets.sbus.command import SBUS_CMD_PREFIX
+from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
+    CommandSuccess, CommandFailure, SBusServer
+from storlets.agent.common.utils import get_logger
 from storlets.agent.daemon.files import StorletInputFile, \
     StorletRangeInputFile, StorletOutputFile, StorletLogger
 
 
-EXIT_SUCCESS = 0
-EXIT_FAILURE = 1
-
-
-class StorletDaemonException(Exception):
+class StorletDaemonLoadError(Exception):
     pass
 
 
-def command_handler(func):
+class StorletDaemon(SBusServer):
     """
-    Decorator for handler functions for command
-    """
-    func.is_command_handler = True
-    return func
-
-
-class Daemon(object):
-    """
-    Daemon class to run python program on storlet container
+    An SBusServer implementation for python storlets applications
 
     :param storlet_name: the program name string which formatted as
                          'module.class'. Note that nested module
@@ -55,8 +43,9 @@ class Daemon(object):
     """
 
     def __init__(self, storlet_name, sbus_path, logger, pool_size):
-        self.storlet_name = str(storlet_name)
+        super(StorletDaemon, self).__init__(sbus_path, logger)
 
+        self.storlet_name = str(storlet_name)
         try:
             module_name, cls_name = self.storlet_name.split('.')
         except ValueError:
@@ -66,11 +55,9 @@ class Daemon(object):
             module = __import__(module_name, fromlist=[cls_name])
             self.storlet_cls = getattr(module, cls_name)
         except (ImportError, AttributeError):
-            raise StorletDaemonException(
+            raise StorletDaemonLoadError(
                 "Failed to load storlet %s" % self.storlet_name)
 
-        self.sbus_path = sbus_path
-        self.logger = logger
         self.pool_size = pool_size
         self.task_id_to_pid = {}
         self.chunk_size = 16
@@ -142,14 +129,6 @@ class Daemon(object):
                           'terminated')
         while len(self.task_id_to_pid):
             self._wait_child_process()
-
-    @command_handler
-    def halt(self, dtg):
-        out_fd = dtg.service_out_fd
-        with os.fdopen(out_fd, 'w') as outfile:
-            outfile.write('True: OK')
-        # To stop the daemon listening, return False here
-        return False
 
     def _safe_close_files(self, files):
         for fobj in files:
@@ -230,140 +209,29 @@ class Daemon(object):
                 self._safe_close_files(in_files)
                 self._safe_close_files(out_files)
                 sys.exit()
-        return True
-
-    @command_handler
-    def descriptor(self, dtg):
-        # NOTE(takashi): Currently we don't use this one, but we need to
-        #                implement this maybe when we implement multi output
-        #                support
-        self.logger.error('Descriptor operation is not implemented')
-        out_fd = dtg.service_out_fd
-        with os.fdopen(out_fd, 'w') as outfile:
-            outfile.write('False: Descriptor operation is not implemented')
-        return True
-
-    @command_handler
-    def ping(self, dtg):
-        out_fd = dtg.service_out_fd
-        with os.fdopen(out_fd, 'w') as outfile:
-            outfile.write('True: OK')
-        return True
+        return CommandSuccess('OK')
 
     @command_handler
     def cancel(self, dtg):
-        out_fd = dtg.service_out_fd
         task_id = dtg.task_id
+        if task_id not in self.task_id_to_pid:
+            return CommandFailure('Task id %s is not found' % task_id, False)
+
         pid = self.task_id_to_pid.get(task_id)
-        with os.fdopen(out_fd, 'w') as outfile:
-            if not pid:
-                outfile.write('False: BAD')
-            else:
-                try:
-                    os.kill(pid, signal.SIGTERM)
-                    self._remove_pid(pid)
-                    outfile.write('True: OK')
-                except OSError:
-                    self.logger.exception('Failed to kill subprocess: %d' %
-                                          pid)
-                    outfile.write('False: ERROR')
-        return False
-
-    def get_handler(self, command):
-        """
-        Decide handler function correspoiding to the received command
-
-        :param command: command
-        :returns: handler function
-        """
-        if not command.startswith(SBUS_CMD_PREFIX):
-            raise ValueError('got unknown command %s' % command)
-        func_name = command[len(SBUS_CMD_PREFIX):].lower()
         try:
-            handler = getattr(self, func_name)
-            getattr(handler, 'is_command_handler')
-        except AttributeError:
-            raise ValueError('got unknown command %s' % command)
-        return handler
+            os.kill(pid, signal.SIGTERM)
+            self._remove_pid(pid)
+            return CommandSuccess('Cancelled task %s' % task_id, False)
+        except OSError:
+            self.logger.exception('Failed to kill subprocess: %d' % pid)
+            return CommandFailure('Failed to cancel task %s' % task_id, False)
 
-    def dispatch_command(self, dtg):
-        command = dtg.command
-        self.logger.debug("Received command {0}".format(command))
+    @command_handler
+    def halt(self, dtg):
+        return CommandSuccess('OK', False)
 
-        try:
-            handler = self.get_handler(command)
-        except ValueError:
-            self.logger.exception('Failed to decide handler')
-            return True
-        else:
-            self.logger.debug('Do %s' % command)
-            return handler(dtg)
-
-    def main_loop(self):
-        """
-        Main loop to run storlet application
-        """
-
-        sbus = SBus()
-        fd = sbus.create(self.sbus_path)
-        if fd < 0:
-            self.logger.error("Failed to create SBus. exiting.")
-            return EXIT_FAILURE
-
-        while True:
-            rc = sbus.listen(fd)
-            if rc < 0:
-                self.logger.error("Failed to wait on SBus. exiting.")
-                return EXIT_FAILURE
-
-            dtg = sbus.receive(fd)
-            if dtg is None:
-                self.logger.error("Failed to receive message. exiting")
-                return EXIT_FAILURE
-
-            if not self.dispatch_command(dtg):
-                break
-
-        self.logger.debug('Leaving main loop')
+    def _terminate(self):
         self._wait_all_child_processes()
-        return EXIT_SUCCESS
-
-
-def start_logger(logger_name, log_level, container_id):
-    """
-
-    Initialize logging of this process and set logger format
-
-    :param logger_name: The name to report with
-    :param log_level: The verbosity level. This should be selected
-    :param container_id: container id
-    """
-    logging.raiseExceptions = False
-    log_level = log_level.upper()
-
-    # NOTE(takashi): currently logging.WARNING is defined as the same value
-    #                as logging.WARN, so we can properly handle WARNING here
-    try:
-        level = getattr(logging, log_level)
-    except AttributeError:
-        level = logging.ERROR
-
-    logger = logging.getLogger("CONT #" + container_id + ": " + logger_name)
-
-    if log_level == 'OFF':
-        logging.disable(logging.CRITICAL)
-    else:
-        logger.setLevel(level)
-
-    log_handler = SysLogHandler('/dev/log')
-    str_format = '%(name)-12s: %(levelname)-8s %(funcName)s' + \
-                 ' %(lineno)s [%(process)d, %(threadName)s]' + \
-                 ' %(message)s'
-    formatter = logging.Formatter(str_format)
-    log_handler.setFormatter(formatter)
-    log_handler.setLevel(level)
-    logger.addHandler(log_handler)
-    return logger
 
 
 def usage():
@@ -391,7 +259,7 @@ def main(argv):
     container_id = argv[4]
 
     # Initialize logger
-    logger = start_logger("storlets-daemon", log_level, container_id)
+    logger = get_logger("storlets-daemon", log_level, container_id)
     logger.debug("Storlet Daemon started")
     SBus.start_logger("DEBUG", container_id=container_id)
 
@@ -402,7 +270,7 @@ def main(argv):
 
     # create an instance of storlet daemon
     try:
-        daemon = Daemon(storlet_name, sbus_path, logger, pool_size)
+        daemon = StorletDaemon(storlet_name, sbus_path, logger, pool_size)
     except Exception as e:
         logger.error(e.message)
         return EXIT_FAILURE
