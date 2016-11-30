@@ -13,23 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import unittest
+import os
+import os.path
+from shutil import rmtree
+from tempfile import mkdtemp
+import eventlet
+import json
 import six
 from six import StringIO
+
+import mock
+import unittest
+
 from swift.common.swob import Request, Response
 from swift.common.utils import FileLikeIter
+
+from storlets.sbus.client import SBusResponse
+
 from tests.unit import FakeLogger
 from tests.unit.gateway.gateways import FakeFileManager
 from storlets.gateway.gateways.docker.gateway import DockerStorletRequest, \
     StorletGatewayDocker
 from tests.unit import MockSBus
-import os
-import os.path
-from tempfile import mkdtemp
-from shutil import rmtree
-import mock
-import json
-import eventlet
 
 
 class MockInternalClient(object):
@@ -412,12 +417,6 @@ use = egg:swift#catch_errors
         # TODO(kota_): need more efficient way for emuration of return value
         # from SDaemon
         value_generator = iter([
-            # Firt is for confirmation for SDaemon running
-            'True: daemon running confirmation',
-            # Second is stop SDaemon in activation
-            'True: stop daemon',
-            # Third is start SDaemon again in activation
-            'True: start daemon',
             # Forth is return value for invoking as task_id
             'This is task id',
             # Fifth is for getting meta
@@ -451,6 +450,7 @@ use = egg:swift#catch_errors
         # SBus -> mock SBus.send() for container communication
         # os.read -> mock reading the file descriptor from container
         # select.slect -> mock fd communication which can be readable
+        @mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient')
         @mock.patch('storlets.gateway.gateways.docker.runtime.SBus', MockSBus)
         @mock.patch('storlets.gateway.gateways.docker.runtime.os.read',
                     mock_read)
@@ -461,7 +461,10 @@ use = egg:swift#catch_errors
         @mock.patch('storlets.gateway.common.stob.os.read',
                     mock_read)
         @mock.patch(invocation_protocol, mock_writer)
-        def test_invocation_flow():
+        def test_invocation_flow(client):
+            client.ping.return_value = SBusResponse(True, 'OK')
+            client.stop_daemon.return_value = SBusResponse(True, 'OK')
+            client.start_daemon.return_value = SBusResponse(True, 'OK')
             sresp = self.gateway.invocation_flow(st_req, extra_sources)
             eventlet.sleep(0.1)
             file_like = FileLikeIter(sresp.data_iter)

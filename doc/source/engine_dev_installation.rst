@@ -280,9 +280,6 @@ require root privileges.
     cp $HOME/scripts/restart_docker_container .
     sudo chown root:root restart_docker_container
     sudo chmod 04755 restart_docker_container
-    cp $HOME/scripts/send_halt_cmd_to_daemon_factory.py .
-    sudo chown root:root send_halt_cmd_to_daemon_factory.py
-    sudo chmod 04755 send_halt_cmd_to_daemon_factory.py
 
 The run time directory will be later populated by the middleware with:
  #. storlets - Docker container mapped directories keeping storlet jars

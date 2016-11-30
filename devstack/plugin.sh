@@ -299,11 +299,8 @@ install_storlets_code() {
     sudo chown "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" "$STORLETS_DOCKER_DEVICE"/scripts
     sudo chmod 0755 "$STORLETS_DOCKER_DEVICE"/scripts
     sudo cp scripts/restart_docker_container "$STORLETS_DOCKER_DEVICE"/scripts/
-    sudo cp scripts/send_halt_cmd_to_daemon_factory.py "$STORLETS_DOCKER_DEVICE"/scripts/
     sudo chmod 04755 "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
     sudo chown root:root "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
-    sudo chmod 04755 "$STORLETS_DOCKER_DEVICE"/scripts/send_halt_cmd_to_daemon_factory.py
-    sudo chown root:root "$STORLETS_DOCKER_DEVICE"/scripts/send_halt_cmd_to_daemon_factory.py
 
     cd -
 }
