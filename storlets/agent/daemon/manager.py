@@ -19,6 +19,7 @@ import os
 import pwd
 import sys
 import uuid
+import signal
 from storlets.sbus import SBus
 from storlets.sbus.command import SBUS_CMD_PREFIX
 from storlets.agent.daemon.files import StorletInputFile, \
@@ -259,7 +260,7 @@ class Daemon(object):
                 outfile.write('False: BAD')
             else:
                 try:
-                    os.kill(pid)
+                    os.kill(pid, signal.SIGTERM)
                     self._remove_pid(pid)
                     outfile.write('True: OK')
                 except OSError:

@@ -631,7 +631,6 @@ use = egg:swift#xprofile
 # storlet_dependency = dependency
 # storlet_logcontainer = storletlog
 # storlet_execute_on_proxy_only = false
-# storlet_timeout = 40
 # storlet_gateway_module = docker
 # storlet_gateway_conf = /etc/swift/storlet_stub_gateway.conf
 # execution_server = proxy

@@ -8,3 +8,4 @@ storlets_dir = {{ docker_device }}/storlets/scopes
 pipes_dir = {{ docker_device }}/pipes/scopes
 docker_repo = ""
 restart_linux_container_timeout = {{ restart_linux_container_timeout }}
+storlet_timeout = {{ storlet_timeout }}

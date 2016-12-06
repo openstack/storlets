@@ -278,10 +278,12 @@ that do not appear in the above configurable installation_vars.yml
     - "storlet_dependency". The name of the container where dependencies are uploaded to.
     - "storlet_log". Curently not in use. Placeholder for future log upload feature.
     - "storlet_images". The name of the container for uploading user tailored images.
-    - "storlet_timeout". The time Swift gives the a storlet to start producung output.
     - "storlet_gateway_module". The class implementing the storlets plugin used. Currently, we have only one
       such plugin.
     - "storlet_execute_on_proxy_only". Controls whether storlets will run only on the proxy servers.
+
+  - The config parameters of the storlet gateway plugin
+
+    - "storlet_timeout". The time Swift gives the a storlet to start producung output.
     - "restart_linux_container_timeout": The number of times the middleware tries to spwans a Docker container
       before giving up.
-

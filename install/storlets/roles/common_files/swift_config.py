@@ -146,8 +146,6 @@ def patch_swift_config_file(conf, conf_file, service):
                     conf.get('common-confs', 'storlet_container'))
             f.write('storlet_dependency = %s\n' %
                     conf.get('common-confs', 'storlet_dependency'))
-            f.write('storlet_timeout = %s\n' %
-                    conf.get('common-confs', 'storlet_timeout'))
             f.write('storlet_gateway_module = %s\n' %
                     conf.get('common-confs', 'storlet_gateway_module'))
             f.write('storlet_gateway_conf = %s\n' %

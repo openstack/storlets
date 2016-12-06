@@ -359,7 +359,6 @@ do the following:
     use = egg:storlets#storlet_handler
     storlet_container = storlet
     storlet_dependency = dependency
-    storlet_timeout = 40
     storlet_gateway_module = docker
     storlet_gateway_conf = /etc/swift/storlet_docker_gateway.conf
     storlet_execute_on_proxy_only = false
@@ -384,7 +383,6 @@ otherwise the file is typically /etc/swift/object-server.conf
     use = egg:storlets#storlet_handler
     storlet_container = storlet
     storlet_dependency = dependency
-    storlet_timeout = 40
     storlet_gateway_module = docker
     storlet_gateway_conf = /etc/swift/storlet_docker_gateway.conf
     storlet_execute_on_proxy_only = false
@@ -404,6 +402,7 @@ with the following content:
     script_dir = /home/docker_device/scripts
     storlets_dir = /home/docker_device/storlets/scopes
     pipes_dir = /home/docker_device/pipes/scopes
+    storlet_timeout = 40
     docker_repo =
     restart_linux_container_timeout = 3
 
