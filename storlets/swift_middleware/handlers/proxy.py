@@ -450,7 +450,7 @@ class StorletProxyHandler(StorletBaseHandler):
         params = self.verify_access_to_storlet()
         self.augment_storlet_request(params)
         if self.is_put_copy_request:
-            self. _validate_copy_request()
+            self._validate_copy_request()
             src_container, src_obj = check_copy_from_header(self.request)
             dest_container = self.container
             dest_object = self.obj
