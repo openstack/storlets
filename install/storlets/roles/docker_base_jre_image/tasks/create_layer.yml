@@ -21,7 +21,7 @@
     mode: 0644
 
 - name: Build the image {{ layer_suffix }}
-  command: "docker build -q -t {{ inventory_hostname }}:{{ docker_registry_port }}/{{ base_os_image }}_{{ layer_suffix }} ."
+  command: "docker build -q -t {{ base_os_image }}_{{ layer_suffix }} ."
   args:
     chdir: "/data/registry/repositories/{{ base_os_image }}_{{ layer_suffix }}"
   register: command_result

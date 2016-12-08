@@ -25,20 +25,37 @@
 - shell: dpkg --get-selections | grep docker-engine | awk {'print $2'} | grep -w install | wc -l
   register: docker_engine
   become: yes
+  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'trusty'"
+
+- shell: dpkg --get-selections | grep docker.io | awk {'print $2'} | grep -w install | wc -l
+  register: docker_engine
+  become: yes
+  when: "ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
 
 - command: uname -r
   register: uname
-- apt:
+
+- name: install necessary linux-image-extra
+  apt:
     name: linux-image-extra-{{ uname.stdout_lines[0] }}
     update-cache: yes
     force: yes
   when: "'0' in linux_image_extra.stdout_lines[0]"
 
-- apt:
+- name: install aufs-tools
+  apt:
     name: aufs-tools=1:3.2+20130722-1.1
     update-cache: yes
     force: yes
-  when: "'0' in aufs.stdout_lines[0]"
+  when: "'0' in aufs.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'trusty'"
+  become: yes
+
+- name: install aufs-tools
+  apt:
+    name: aufs-tools
+    update-cache: yes
+    force: yes
+  when: "'0' in aufs.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
   become: yes
 
 - name: Set Docker Ubuntu Repo Key
@@ -59,7 +76,14 @@
   apt_repository:
     repo: 'deb https://apt.dockerproject.org/repo ubuntu-trusty main'
     state: present
-  when: "'0' in docker_engine.stdout_lines[0]"
+  when: "'0' in docker_engine.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'trusty'"
+  become: yes
+
+- name: Add Docker Apt repository
+  apt_repository:
+    repo: 'deb https://apt.dockerproject.org/repo ubuntu-xenial main'
+    state: present
+  when: "'0' in docker_engine.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'trusty'"
   become: yes
 
 - name: Install Docker Client
@@ -68,7 +92,16 @@
     state: present
     update-cache: yes
     force: yes
-  when: "'0' in docker_engine.stdout_lines[0]"
+  when: "'0' in docker_engine.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'trusty'"
+  become: yes
+
+- name: Install Docker Client
+  apt:
+    name: docker.io
+    state: present
+    update-cache: yes
+    force: yes
+  when: "'0' in docker_engine.stdout_lines[0] and ansible_distribution == 'Ubuntu' and ansible_distribution_release == 'xenial'"
   become: yes
 
 # There seem to be a bug in the installation where config files are not installed.
@@ -84,7 +117,7 @@
   lineinfile:
     dest: /etc/default/docker
     regexp: "^DOCKER_OPTS.*"
-    line: DOCKER_OPTS="-g {{ docker_device }}/docker --insecure-registry {{ groups['docker'][0]}}:{{ docker_registry_port }}"
+    line: DOCKER_OPTS="-g {{ docker_device }}/docker"
     backup: yes
     state: present
   when: st1.stat.exists and '0' in edited.stdout
@@ -109,18 +142,6 @@
 - name: Install initd config from template
   template: src=etc_init.d_docker dest=/etc/init.d/docker owner=root mode=0755
   when: not st4.stat.exists
-
-# Patch the docker config files to use the insecure registry
-- name: ADD --insecure {{ groups['docker'][0] }}:{{ docker_registry_port }} to docker daemon defaults
-  shell: grep DOCKER_OPTS /etc/default/docker | wc -l
-  register: opt_lines_count
-
-- lineinfile:
-    dest: /etc/default/docker
-    state: present
-    line: DOCKER_OPTS="$DOCKER_OPTS --insecure-registry {{ groups['docker'][0] }}:{{ docker_registry_port }}"
-    insertafter: "^DOCKER_OPTS="
-  when: "'2' in opt_lines_count.stdout"
 
 - name: Stop Docker Daemon
   shell: bash -c "/usr/sbin/service docker stop"

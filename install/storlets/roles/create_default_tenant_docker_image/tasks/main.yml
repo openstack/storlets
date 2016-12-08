@@ -35,13 +35,9 @@
   become: true
 
 - name: "Build the image {{ tenant_id.stdout_lines[0] }}"
-  command: "docker build -q -t {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
+  command: "docker build -q -t {{ tenant_id.stdout_lines[0] }} ."
   args:
     chdir: "/data/registry/repositories/{{ tenant_id.stdout_lines[0] }}"
   register: command_result
   become: true
   failed_when: "'sha256:' not in command_result.stdout"
-
-- name: Push the image to the global registry
-  command: "docker push {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"
-  become: true

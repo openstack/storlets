@@ -16,6 +16,5 @@
 - hosts: docker
   roles:
   - role: docker_client
-  - role: docker_registry
   - role: docker_base_jre_image
   - role: docker_storlet_engine_image

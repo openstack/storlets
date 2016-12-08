@@ -4,10 +4,9 @@ set -eu
 # Invokes a devstack install that consists of
 # keyastone and swift.
 
-if [ "$#" -ne 2 ] && [ "$#" -ne 3 ]; then
+if [ "$#" -ne 2 ]; then
     echo "Usage: $0 [target] [ip] [flavour]"
     echo "target = host | docker"
-    echo "optionally specify flavour=dev installation"
     exit
 fi
 
@@ -19,12 +18,6 @@ fi
 
 SWIFT_IP=$2
 
-if [ "$#" -eq 3 ]; then
-    FLAVOR=$3
-else
-    FLAVOR=''
-fi
-
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 DEVSTACK_DIR=~/devstack
@@ -34,11 +27,7 @@ if [ ! -e $DEVSTACK_DIR ]; then
     git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
     cp $DIR/localrc.sample $DEVSTACK_DIR/localrc
     sed -i 's/<set ip!>/'$SWIFT_IP'/g' $DEVSTACK_DIR/localrc
-    if [ $FLAVOR = 'dev' ]; then
-        sed -i 's/<set db password!>/admin/g' $DEVSTACK_DIR/localrc
-    else
-        sed -i '/<set db password!>/d' $DEVSTACK_DIR/localrc
-    fi
+    sed -i 's/<set db password!>/admin/g' $DEVSTACK_DIR/localrc
 fi
 
 # run devstack

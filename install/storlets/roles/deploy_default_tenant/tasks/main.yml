@@ -102,11 +102,8 @@
   when: "'1' in image_exists.stdout"
 
 - name: Build the new default tenant container image
-  command: "docker build -t {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }} ."
+  command: "docker build -t {{ tenant_id.stdout_lines[0] }} ."
   args:
     chdir: "/data/registry/repositories/default_tenant_image"
   register: command_result
   failed_when: "'Successfully built' not in command_result.stdout"
-
-- name: Push the default_tenant_image into the repository
-  command: "docker push {{ inventory_hostname }}:{{ docker_registry_port }}/{{ tenant_id.stdout_lines[0] }}"

@@ -6,5 +6,5 @@ log_dir = {{ docker_device }}/logs/scopes
 script_dir = {{ docker_device }}/scripts
 storlets_dir = {{ docker_device }}/storlets/scopes
 pipes_dir = {{ docker_device }}/pipes/scopes
-docker_repo = {{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}
+docker_repo = ""
 restart_linux_container_timeout = {{ restart_linux_container_timeout }}

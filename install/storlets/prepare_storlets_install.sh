@@ -74,7 +74,8 @@ else
     sed -i 's/<SWIFT_RUNTIME_GROUP>/'$USER'/g' deploy/installation_vars.yml
     sed -i 's/<SWIFT_RUNTIME_DIR>/\/opt\/stack\/data\/swift\/run/g' deploy/installation_vars.yml
     if [ "$FLAVOR" == "jenkins" ]; then
-        sed -i 's/<STORLETS_REPO_ROOT>/\/home\/'$USER'\/workspace\/gate-storlets-functional\//g' deploy/installation_vars.yml
+        source /etc/lsb-release
+        sed -i 's/<STORLETS_REPO_ROOT>/\/home\/'$USER'\/workspace\/gate-storlets-functional-'${DISTRIB_ID,,}'-'$DISTRIB_CODENAME'\//g' deploy/installation_vars.yml
     else
         sed -i 's/<STORLETS_REPO_ROOT>/~\/storlets\//g' deploy/installation_vars.yml
     fi

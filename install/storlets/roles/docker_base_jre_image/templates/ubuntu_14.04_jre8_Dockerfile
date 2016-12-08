@@ -13,7 +13,7 @@
 # Limitations under the License.
 #---------------------------------------------------------------------------
 
-FROM {{ inventory_hostname }}:{{ docker_registry_port }}/ubuntu_14.04
+FROM ubuntu:14.04
 
 MAINTAINER {{ base_image_maintainer }}
 

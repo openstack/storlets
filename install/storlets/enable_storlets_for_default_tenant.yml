@@ -17,10 +17,5 @@
   roles:
   - role: enable_default_swift_account_for_storlets
   - role: create_default_tenant_docker_image
-    tenant_image_name: "{{ hostvars[groups['docker'][0]]['inventory_hostname'] }}:{{ docker_registry_port }}/{{ base_os_image }}_jre8_storlets"
-    tenant_name: "{{ storlets_default_tenant_name }}"
-
-- hosts: storlet-proxy:storlet-storage
-  roles:
-  - role: pull_default_tenant_docker_image
+    tenant_image_name: "{{ base_os_image }}_jre8_storlets"
     tenant_name: "{{ storlets_default_tenant_name }}"

@@ -85,7 +85,7 @@ if [ "$TARGET" == "docker" ]; then
     sudo docker cp install/swift/localrc.sample s2aio:/home/stack/localrc.sample
     sudo docker exec s2aio chown -R stack:stack /home/stack
     sudo docker exec --user stack s2aio chmod -R 0755 /home/stack
-    sudo docker exec --user stack s2aio /home/stack/install_swift.sh docker $S2AIO_IP $FLAVOR
+    sudo docker exec --user stack s2aio /home/stack/install_swift.sh docker $S2AIO_IP
     sudo docker exec s2aio service rsyslog restart
 else
     export S2AIO_IP='127.0.0.1'
@@ -111,7 +111,7 @@ else
 
     # Install Swift
     cd install/swift
-    ./install_swift.sh host $S2AIO_IP $FLAVOR
+    ./install_swift.sh host $S2AIO_IP
     cd -
 fi
 
