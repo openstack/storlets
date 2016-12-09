@@ -1,5 +1,6 @@
 /*----------------------------------------------------------------------------
  * Copyright IBM Corp. 2015, 2015 All Rights Reserved
+ * Copyright (c) 2010-2016 OpenStack Foundation
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,13 +14,6 @@
  * Limitations under the License.
  * ---------------------------------------------------------------------------
  */
-
-/*============================================================================
- DD-MMM-2014    eranr       Initial implementation as sChannel.
- Introducing wrapping structures.
- 30-Jun-2014    evgenyl     Switching to SBus. Code refactoring.
- Simplifying API. Extracting business logic.
- ===========================================================================*/
 
 package org.openstack.storlet.sbus;
 

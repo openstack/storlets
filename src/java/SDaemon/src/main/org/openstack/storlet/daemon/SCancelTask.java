@@ -1,5 +1,6 @@
 /*----------------------------------------------------------------------------
  * Copyright IBM Corp. 2015, 2015 All Rights Reserved
+ * Copyright (c) 2010-2016 OpenStack Foundation
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,9 +15,6 @@
  * ---------------------------------------------------------------------------
  */
 
-/*============================================================================
- 20-Jul-2015    cdoron       Initial implementation.
- ===========================================================================*/
 package org.openstack.storlet.daemon;
 
 import java.io.IOException;
