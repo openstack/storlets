@@ -107,6 +107,20 @@ class SBusDatagramTestMixin(object):
                'task_id': self.task_id}
         self.assertEqual(res, json.loads(self.dtg.serialized_cmd_params))
 
+    def test_check_required_fd_types_mismatch(self):
+        invalid_types = (
+            [],  # empty list
+            ['Invalid'] + self.types,  # invalid type inserted at the first
+            # TODO(kota_): we may want *strict* check (not only checking first
+            #              N items.
+        )
+
+        for invalid_type in invalid_types:
+            with self.assertRaises(ValueError) as cm:
+                self.dtg._check_required_fd_types(invalid_type)
+            self.assertTrue(cm.exception.message.startswith(
+                'Fd type mismatch given_fd_types'))
+
     def test_check_fd_nums(self):
         with self.assertRaises(ValueError):
             self.dtg._check_fd_nums([], self.metadata)
@@ -220,6 +234,14 @@ class TestSBusExecuteDatagram(SBusDatagramTestMixin, unittest.TestCase):
 
     def test_object_in_fds(self):
         self.assertEqual([1], self.dtg.object_in_fds)
+
+    def test_check_required_fd_types_reverse_order_failed(self):
+        types = self.types[:]
+        types.reverse()  # reverse order
+        with self.assertRaises(ValueError) as cm:
+            self.dtg._check_required_fd_types(types)
+        self.assertTrue(
+            cm.exception.message.startswith('Fd type mismatch given_fd_types'))
 
 
 class TestBuildDatagramFromRawMessage(unittest.TestCase):
