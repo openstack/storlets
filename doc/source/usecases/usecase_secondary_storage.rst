@@ -2,7 +2,7 @@ Queriable "Secondary Storage" Data
 ==================================
 It is said that the primary use case for object stores is to serve as secondary
 storage. With the increasing amount of data being gathered and analysed
-(have someone said IoT?) much of this data will make it to seconadry storage.
+(have someone said IoT?) much of this data will make it to secondary storage.
 
 Being kept on secondary storage does not mean that the data does not
 need to be queriable anymore: A recent identified trend may be searched
