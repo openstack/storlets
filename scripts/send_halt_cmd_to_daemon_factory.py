@@ -17,7 +17,8 @@ import os
 import sys
 
 from storlets.sbus import SBus
-from storlets.sbus.datagram import SBusDatagram
+from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
+from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
 from storlets.sbus.command import SBUS_CMD_HALT
 
 
@@ -37,8 +38,10 @@ def main(argv):
     daemon_factory_pipe_name = argv[1]
     try:
         fi, fo = os.pipe()
-        halt_dtg = SBusDatagram.create_service_datagram(
-            SBUS_CMD_HALT, fo)
+        halt_dtg = SBusServiceDatagram(
+            SBUS_CMD_HALT,
+            [fo],
+            [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()])
         n_status = SBus.send(daemon_factory_pipe_name, halt_dtg)
         if n_status < 0:
             print('Sending failed')

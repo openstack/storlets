@@ -14,7 +14,7 @@
 # limitations under the License.
 
 from ctypes import c_char_p, c_int, CDLL, POINTER
-from storlets.sbus.datagram import SBusDatagram
+from storlets.sbus.datagram import build_datagram_from_raw_message
 
 
 class SBus(object):
@@ -116,7 +116,7 @@ class SBus(object):
         str_params = str_params[0:n_params]
 
         # Construct actual result datagram
-        return SBusDatagram.build_from_raw_message(
+        return build_datagram_from_raw_message(
             h_files, str_metadata, str_params)
 
     @staticmethod

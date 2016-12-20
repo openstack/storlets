@@ -16,6 +16,7 @@ import copy
 import json
 
 from storlets.sbus import file_description as sbus_fd
+from storlets.sbus.command import SBUS_CMD_EXECUTE
 
 
 class FDMetadata(object):
@@ -44,6 +45,10 @@ class SBusDatagram(object):
     The manager class for the datagram passed over sbus protocol
     """
 
+    # Each child Datagram should define what fd types are expected with
+    # list format
+    _required_fd_types = None
+
     def __init__(self, command, fds, metadata, params=None, task_id=None):
         """
         Create SBusDatagram instance
@@ -51,66 +56,24 @@ class SBusDatagram(object):
         :param command: A string encoding the command to send
         :param fds: A list of file descriptors (integer) to pass with
                     the command
-        :param md: A list of dictionaries, where the i'th dictionary is the
-                   metadata of the i'th fd.
+        :param metadata: A list of dictionaries, where the i'th dictionary
+                          is the metadata of the i'th fd.
         :param params: A optional dictionary with parameters for the command
                        execution
         :param task_id: An optional string task id. This is currently used for
                         cancel command
         """
+        if type(self) == SBusDatagram:
+            raise NotImplementedError(
+                'SBusDatagram class should not be initialized as bare')
         self.command = command
-        if len(fds) != len(metadata):
-            raise ValueError('Length mismatch fds:%s metadata:%s' %
-                             (len(fds), len(metadata)))
+        self._check_fd_nums(fds, metadata)
+        fd_types = [md['storlets']['type'] for md in metadata]
+        self._check_required_fd_types(fd_types)
         self.fds = fds
         self.metadata = metadata
         self.params = params
         self.task_id = task_id
-
-    @classmethod
-    def create_service_datagram(cls, command, outfd, params=None,
-                                task_id=None):
-        """
-        Create datagram which only has one service out fd
-
-        This method is used to create datagram for some command type, which
-        only needs one service out fd. Currently we can use this function for
-        the following commands.
-         - SBUS_CMD_HALT
-         - SBUS_CMD_START_DAEMON
-         - SBUS_CMD_STOP_DAEMON
-         - SBUS_CMD_DAEMON_STATUS
-         - SBUS_CMD_STOP_DAEMONS
-         - SBUS_CMD_PING
-         - SBUS_CMD_CANCEL
-
-        :param command: command type
-        :param outfd: service out fd integer
-        :param params: A optional dictionary with parameters for the command
-                       execution
-        :param task_id: An optional string task id
-        """
-        # TODO(takashi): Maybe we can get rid of this function
-        md = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
-        fds = [outfd]
-        return cls(command, fds, md, params, task_id)
-
-    @classmethod
-    def build_from_raw_message(cls, fds, str_md, str_cmd_params):
-        """
-        Build SBusDatagram from raw message recieved over sbus
-
-        :param fds: A list of file descriptors (integer) to pass with
-                    the command
-        :param str_md: json serialized metadata dict
-        :param str_cmd_params: json serialized command parameters dict
-        """
-        metadata = json.loads(str_md)
-        cmd_params = json.loads(str_cmd_params)
-        command = cmd_params.get('command')
-        params = cmd_params.get('params')
-        task_id = cmd_params.get('task_id')
-        return cls(command, fds, metadata, params, task_id)
 
     @property
     def num_fds(self):
@@ -132,30 +95,6 @@ class SBusDatagram(object):
     @property
     def serialized_metadata(self):
         return json.dumps(self.metadata)
-
-    @property
-    def service_out_fd(self):
-        return self._find_fd(sbus_fd.SBUS_FD_SERVICE_OUT)
-
-    @property
-    def object_out_fds(self):
-        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT)
-
-    @property
-    def object_metadata_out_fds(self):
-        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA)
-
-    @property
-    def task_id_out_fd(self):
-        return self._find_fd(sbus_fd.SBUS_FD_OUTPUT_TASK_ID)
-
-    @property
-    def logger_out_fd(self):
-        return self._find_fd(sbus_fd.SBUS_FD_LOGGER)
-
-    @property
-    def object_in_fds(self):
-        return self._find_fds(sbus_fd.SBUS_FD_INPUT_OBJECT)
 
     @property
     def object_in_metadata(self):
@@ -196,8 +135,119 @@ class SBusDatagram(object):
             #                fd validation.
             return ret[0]
 
+    def _check_fd_nums(self, fds, metadata):
+        if len(fds) != len(metadata):
+            raise ValueError('Length mismatch fds:%s metadata:%s'
+                             % (len(fds), len(metadata)))
+
+    def _check_required_fd_types(self, given_fd_types):
+        if self._required_fd_types is None:
+            raise NotImplementedError(
+                'SBusDatagram class should define _required_fd_types')
+        # the first len(self._required_fd_types) types should be fit
+        # to the required list
+        if given_fd_types[:len(self._required_fd_types)] != \
+                self._required_fd_types:
+            raise ValueError('Fd type mismatch given_fd_types:%s \
+                             required_fd_types:%s' %
+                             (given_fd_types, self._required_fd_types))
+
     def __str__(self):
         return 'num_fds=%s, md=%s, cmd_params=%s' % (
             self.num_fds,
             str(self.serialized_metadata),
             str(self.serialized_cmd_params))
+
+
+class SBusServiceDatagram(SBusDatagram):
+    """
+    This class deals with datagram which only has one service out fd.
+
+    This class is used to create datagram for some command type, which
+    only needs one service out fd. Currently we can use this class for
+    the following commands.
+     - SBUS_CMD_HALT
+     - SBUS_CMD_START_DAEMON
+     - SBUS_CMD_STOP_DAEMON
+     - SBUS_CMD_DAEMON_STATUS
+     - SBUS_CMD_STOP_DAEMONS
+     - SBUS_CMD_PING
+     - SBUS_CMD_CANCEL
+    """
+    _required_fd_types = [sbus_fd.SBUS_FD_SERVICE_OUT]
+
+    def __init__(self, command, fds, metadata, params=None, task_id=None):
+        super(SBusServiceDatagram, self).__init__(
+            command, fds, metadata, params, task_id)
+
+    @property
+    def service_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_SERVICE_OUT)
+
+
+class SBusExecuteDatagram(SBusDatagram):
+    _required_fd_types = [sbus_fd.SBUS_FD_INPUT_OBJECT,
+                          sbus_fd.SBUS_FD_OUTPUT_TASK_ID,
+                          sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                          sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                          sbus_fd.SBUS_FD_LOGGER]
+
+    def __init__(self, command, fds, metadata, params=None, task_id=None):
+        # TODO(kota_): the args command is not used in ExecuteDatagram
+        #              but it could be worthful to taransparent init
+        #              for other datagram classes.
+        # TODO(takashi): When we add extra output sources, we should
+        #                consider how we can specify the number of the
+        #                extra input/output sources, because currently
+        #                this implementation is based on the idea that
+        #                we only have extra input sources, which is
+        #                added at the end of fd list
+        extra_fd_types = [
+            md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT
+            for md in metadata[len(self._required_fd_types):]]
+
+        if not all(extra_fd_types):
+            raise ValueError(
+                'Extra data should be SBUS_FD_INPUT_OBJECT: %' % metadata)
+
+        super(SBusExecuteDatagram, self).__init__(
+            SBUS_CMD_EXECUTE, fds, metadata, params, task_id)
+
+    @property
+    def object_out_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT)
+
+    @property
+    def object_metadata_out_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA)
+
+    @property
+    def task_id_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_OUTPUT_TASK_ID)
+
+    @property
+    def logger_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_LOGGER)
+
+    @property
+    def object_in_fds(self):
+        return self._find_fds(sbus_fd.SBUS_FD_INPUT_OBJECT)
+
+
+def build_datagram_from_raw_message(fds, str_md, str_cmd_params):
+    """
+    Build SBusDatagram from raw message recieved over sbus
+
+    :param fds: A list of file descriptors (integer) to pass with
+                the command
+    :param str_md: json serialized metadata dict
+    :param str_cmd_params: json serialized command parameters dict
+    """
+    metadata = json.loads(str_md)
+    cmd_params = json.loads(str_cmd_params)
+    command = cmd_params.get('command')
+    params = cmd_params.get('params')
+    task_id = cmd_params.get('task_id')
+    if command == SBUS_CMD_EXECUTE:
+        return SBusExecuteDatagram(command, fds, metadata, params, task_id)
+    return SBusServiceDatagram(command, fds, metadata, params, task_id)
