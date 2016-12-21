@@ -33,10 +33,10 @@ class StorletBaseFunctionalTest(unittest.TestCase):
 
 class StorletFunctionalTest(StorletBaseFunctionalTest):
 
-    def create_container(self):
+    def create_container(self, container):
         response = dict()
         swiftclient.put_container(self.url, self.token,
-                                  self.container, headers=None,
+                                  container, headers=None,
                                   response_dict=response)
         status = response.get('status')
         assert (status >= 200 or status < 300)
@@ -66,7 +66,7 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
                        storlet, self.storlet_main,
                        self.deps, language)
 
-        self.create_container()
+        self.create_container(self.container)
         if self.storlet_file:
             put_local_file(self.url, self.token,
                            self.container,
