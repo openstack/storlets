@@ -158,6 +158,7 @@ class TestSwiftFileManager(unittest.TestCase):
 
 
 class TestStorletBaseHandler(unittest.TestCase):
+
     def test_init_failed_via_base_handler(self):
         def assert_not_implemented(method, path, headers):
             req = Request.blank(
@@ -172,6 +173,31 @@ class TestStorletBaseHandler(unittest.TestCase):
             for path in ('', '/v1', '/v1/a', '/v1/a/c', '/v1/a/c/o'):
                 for headers in ({}, {'X-Run-Storlet': 'Storlet-1.0.jar'}):
                     assert_not_implemented(method, path, headers)
+
+    def test_parameters_from_headers(self):
+        def dummy_rip():
+            def getter(self):
+                return self._request
+
+            def setter(self, request):
+                self._request = request
+
+            return property(getter, setter, doc='mocked prop')
+
+        headers = {'X-Storlet-Parameter-1': '1:2:3:4',
+                   'X-Storlet-parameter-Z': 'A:c'}
+        req = Request.blank(
+            '/v1/a/c/o', environ={'REQUEST_METHOD': 'GET'},
+            headers=headers)
+
+        with mock.patch('storlets.swift_middleware.handlers.base.'
+                        'StorletBaseHandler.request', dummy_rip):
+            handler = StorletBaseHandler(
+                req, mock.MagicMock(), mock.MagicMock(),
+                mock.MagicMock(), mock.MagicMock())
+            handler._update_storlet_parameters_from_headers()
+            self.assertEqual(handler.request.params['1'], '2:3:4')
+            self.assertEqual(handler.request.params['A'], 'c')
 
 
 if __name__ == '__main__':
