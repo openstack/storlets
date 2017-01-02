@@ -22,18 +22,52 @@ import os
 import itertools
 
 
-class FakeConnection(mock.MagicMock):
+class FakeConnection(object):
+    def __init__(self, fake_status=200, fake_headers=None, fake_iter=None):
+        self._fake_status = fake_status
+        self._fake_headers = fake_headers or {}
+        self._fake_iter = fake_iter or iter([])
+
+    def _return_fake_response(self, **kwargs):
+        if 'response_dict' in kwargs:
+            kwargs['response_dict']['status'] = self._fake_status
+            kwargs['response_dict']['headers'] = self._fake_headers
+            kwargs['response_dict']['content_iter'] = self._fake_iter
+
+        if 'resp_chunk_size' in kwargs:
+            resp_body = self._fake_iter
+        else:
+            resp_body = ''.join([chunk for chunk in self._fake_iter])
+
+        return (self._fake_headers, resp_body)
+
+    # Those 3 methods are just for entry point difference from the caller
+    # but all methods returns same response format with updateing response_dict
     def get_object(self, *args, **kwargs):
-        return (mock.MagicMock(), mock.MagicMock())
+        return self._return_fake_response(**kwargs)
+
+    def copy_object(self, *args, **kwargs):
+        return self._return_fake_response(**kwargs)
+
+    def put_object(self, *args, **kwargs):
+        return self._return_fake_response(**kwargs)
 
 
-class TestStorletMagics(unittest.TestCase):
+class MockShell(object):
+    def __init__(self):
+        self.user_ns = {}
+
+    def register(self, var_name, value):
+        self.user_ns[var_name] = value
+
+
+class BaseTestIpythonExtension(object):
     def setUp(self):
-        self.fake_connection = FakeConnection()
         self.magics = StorletMagics()
         # set auth info for keystone
         self.os_original_env = os.environ.copy()
         self._set_auth_environ()
+        self.magics.shell = MockShell()
 
     def tearDown(self):
         os.environ = self.os_original_env.copy()
@@ -48,12 +82,26 @@ class TestStorletMagics(unittest.TestCase):
         os.environ['OS_PROJECT_DOMAIN_NAME'] = 'default'
         os.environ['OS_PROJECT_NAME'] = 'test'
 
+    @mock.patch('storlets.tools.extensions.ipython.Connection')
+    def _call_cell(self, func, line, cell, fake_conn):
+        fake_conn.return_value = self.fake_connection
+        # cell magic
+        func(line, cell)
+
+    @mock.patch('storlets.tools.extensions.ipython.Connection')
+    def _call_line(self, func, line, fake_conn):
+        fake_conn.return_value = self.fake_connection
+        # line magic
+        func(line)
+
+
+class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
+    def setUp(self):
+        super(TestStorletMagicStorletApp, self).setUp()
+        self.fake_connection = FakeConnection()
+
     def _call_storletapp(self, line, cell):
-        # wrap up the get_swift_connection always return mock connection
-        with mock.patch(
-                'storlets.tools.extensions.ipython.Connection') as fake_conn:
-            fake_conn.return_value = self.fake_connection
-            self.magics.storletapp(line, cell)
+        self._call_cell(self.magics.storletapp, line, cell)
 
     def test_storlet_magics(self):
         line = 'test.TestStorlet'
@@ -81,8 +129,7 @@ class TestStorletMagics(unittest.TestCase):
             '--with-invoke option requires --input to run the app',
             cm.exception.message)
 
-    def test_storlet_magics_with_invoke_invalid_input_fail(self):
-        cell = ''
+    def test_storlet_magics_invalid_input_fail(self):
         invalid_input_patterns = (
             'invalid',  # no "path:" prefix
             'path://',  # no container object in the slash
@@ -91,11 +138,10 @@ class TestStorletMagics(unittest.TestCase):
         )
 
         for invalid_input in invalid_input_patterns:
-            line = 'test.TestStorlet --with-invoke --input %s' % invalid_input
             with self.assertRaises(UsageError) as cm:
-                self._call_storletapp(line, cell)
+                self.magics._parse_input_path(invalid_input)
             self.assertEqual(
-                '--input option for --with-invoke must be path format '
+                'swift object path must have the format: '
                 '"path:/<container>/<object>"',
                 cm.exception.message)
 
@@ -163,6 +209,10 @@ class TestStorletMagics(unittest.TestCase):
 
         # v1 doesn't require OS_AUTH_VERSION
         del os.environ['OS_AUTH_VERSION']
+        try:
+            del os.environ['OS_IDENTITY_API_VERSION']
+        except Exception:
+            pass
 
         def _set_v1_auth():
             os.environ['ST_AUTH'] = 'http://localhost/v1/auth'
@@ -184,6 +234,266 @@ class TestStorletMagics(unittest.TestCase):
                     "You need to set ST_AUTH, ST_USER, ST_KEY "
                     "for Swift authentication",
                     e.exception.message)
+
+
+class TestStorletMagicGet(BaseTestIpythonExtension, unittest.TestCase):
+    def setUp(self):
+        super(TestStorletMagicGet, self).setUp()
+        self.fake_connection = FakeConnection()
+
+    def _call_get(self, line):
+        self._call_line(self.magics.get, line)
+
+    def test_get_invalid_args(self):
+        scenarios = [
+            {
+                'line': '--input path:/c/o --storlet a.b',
+                'exception': UsageError,
+                'msg': '-o option is mandatory for the invocation'
+            }, {
+                'line': '--input path:/c/o -o a1234',
+                'exception': UsageError,
+                'msg': '--storlet option is mandatory for the invocation'
+            }, {
+                'line': '--storlet a.b -o a1234',
+                'exception': UsageError,
+                'msg': '--input option is mandatory for the invocation'
+            }, {
+                'line': '--input path/c/o --storlet a.b -o a1234',
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': '--input path:/c/ --storlet a.b -o a1234',
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': '--input path:/c --storlet a.b -o a1234',
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': '--input path:/c/o --storlet a.b -o 1234',
+                'exception': UsageError,
+                'msg': ('The output variable name must be a valid prefix '
+                        'of a python variable, that is, start with a '
+                        'letter')
+            }]
+
+        for scenario in scenarios:
+            with self.assertRaises(UsageError) as e:
+                self._call_get(scenario['line'])
+            self.assertEqual(scenario['msg'], e.exception.message)
+
+    def _test_get(self, line, outvar_name):
+        self._call_get(line)
+        self.assertTrue(outvar_name in self.magics.shell.user_ns)
+        resp = self.magics.shell.user_ns[outvar_name]
+        self.assertEqual({}, resp.headers)
+        self.assertEqual(200, resp.status)
+        self.assertEqual('', ''.join([chunk for chunk in iter(resp)]))
+        self.assertEqual('', resp.content)
+
+    def test_get(self):
+        outvar_name = 'a1234'
+        line = '--input path:/c/o --storlet a.b -o %s' % outvar_name
+        self._test_get(line, outvar_name)
+
+    def test_get_with_input(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = '--input path:/c/o --storlet a.b -o %s -i %s' % (outvar_name,
+                                                                params_name)
+        # register the variable to user_ns
+        self.magics.shell.register(params_name, {'a': 'b'})
+        self._test_get(line, outvar_name)
+
+    def test_get_with_input_error(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = '--input path:/c/o --storlet a.b -o %s -i %s' % (outvar_name,
+                                                                params_name)
+        with self.assertRaises(KeyError):
+            self._test_get(line, outvar_name)
+
+
+class TestStorletMagicCopy(BaseTestIpythonExtension, unittest.TestCase):
+    def setUp(self):
+        super(TestStorletMagicCopy, self).setUp()
+        self.fake_connection = FakeConnection()
+
+    def _call_copy(self, line):
+        self._call_line(self.magics.copy, line)
+
+    def test_copy_invalid_args(self):
+        scenarios = [
+            {
+                'line': '--input path:/c/o --storlet a.b --output path:/c/o',
+                'exception': UsageError,
+                'msg': '-o option is mandatory for the invocation'
+            }, {
+                'line': ('--input path:/c/o --storlet a.b -o 1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('The output variable name must be a valid prefix '
+                        'of a python variable, that is, start with a '
+                        'letter')
+            }, {
+                'line': '--input path:/c/o -o a1234 --output path:/c/o',
+                'exception': UsageError,
+                'msg': '--storlet option is mandatory for the invocation'
+            }, {
+                'line': '--storlet a.b -o a1234 --output path:/c/o',
+                'exception': UsageError,
+                'msg': '--input option is mandatory for the invocation'
+            }, {
+                'line': ('--input path/c/o --storlet a.b -o a1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': ('--input path:/c/ --storlet a.b -o a1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': ('--input path:/c --storlet a.b -o a1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': '--input path:/c --storlet a.b -o a1234 ',
+                'exception': UsageError,
+                'msg': ('--output option is mandatory for the invocation')
+            }, {
+                'line': ('--input path:/c --storlet a.b -o a1234 '
+                         '--output path/c/o'),
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }]
+
+        for scenario in scenarios:
+            with self.assertRaises(UsageError) as e:
+                self._call_copy(scenario['line'])
+            self.assertEqual(scenario['msg'], e.exception.message)
+
+    def _test_copy(self, line, outvar_name):
+        self._call_copy(line)
+        self.assertTrue(outvar_name in self.magics.shell.user_ns)
+        resp = self.magics.shell.user_ns[outvar_name]
+        self.assertEqual({}, resp.headers)
+        self.assertEqual(200, resp.status)
+        # sanity, no body
+        self.assertEqual('', resp.content)
+
+    def test_copy(self):
+        outvar_name = 'a1234'
+        line = ('--input path:/c/o --output path:/c/o '
+                '--storlet a.b -o %s' % outvar_name)
+        self._test_copy(line, outvar_name)
+
+    def test_copy_stdout_with_input(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = ('--input path:/c/o --output path:/c/o '
+                '--storlet a.b -o %s -i %s' % (outvar_name, params_name))
+        self.magics.shell.register(params_name, {'a': 'b'})
+        self._test_copy(line, outvar_name)
+
+    def test_copy_stdout_with_input_error(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = ('--input path:/c/o --output path:/c/o '
+                '--storlet a.b -o %s -i %s' % (outvar_name, params_name))
+        with self.assertRaises(KeyError):
+            self._test_copy(line, outvar_name)
+
+
+class TestStorletMagicPut(BaseTestIpythonExtension, unittest.TestCase):
+    def setUp(self):
+        super(TestStorletMagicPut, self).setUp()
+        self.fake_connection = FakeConnection(201)
+
+    def _call_put(self, line):
+        self._call_line(self.magics.put, line)
+
+    def test_put_invalid_args(self):
+        scenarios = [
+            {
+                'line': '--input /c/o --storlet a.b --output path:/c/o',
+                'exception': UsageError,
+                'msg': '-o option is mandatory for the invocation'
+            }, {
+                'line': ('--input /c/o --storlet a.b -o 1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('The output variable name must be a valid prefix '
+                        'of a python variable, that is, start with a '
+                        'letter')
+            }, {
+                'line': '--input /c/o -o a1234 --output path:/c/o',
+                'exception': UsageError,
+                'msg': '--storlet option is mandatory for the invocation'
+            }, {
+                'line': '--storlet a.b -o a1234 --output path:/c/o',
+                'exception': UsageError,
+                'msg': '--input option is mandatory for the invocation'
+            }, {
+                'line': ('--input /c/o --storlet a.b -o a1234 '
+                         '--output path/c/o'),
+                'exception': UsageError,
+                'msg': ('swift object path must have the format: '
+                        '"path:/<container>/<object>"')
+            }, {
+                'line': ('--input path:c/ --storlet a.b -o a1234 '
+                         '--output path:/c/o'),
+                'exception': UsageError,
+                'msg': ('--input argument must be a full path')
+            }]
+
+        for scenario in scenarios:
+            with self.assertRaises(UsageError) as e:
+                self._call_put(scenario['line'])
+            self.assertEqual(scenario['msg'], e.exception.message)
+
+    def _test_put(self, line, outvar_name):
+        open_name = '%s.open' % 'storlets.tools.extensions.ipython'
+        with mock.patch(open_name, create=True) as mock_open:
+            mock_open.return_value = mock.MagicMock(spec=file)
+            self._call_put(line)
+        self.assertTrue(outvar_name in self.magics.shell.user_ns)
+        resp = self.magics.shell.user_ns[outvar_name]
+        self.assertEqual({}, resp.headers)
+        self.assertEqual(201, resp.status)
+        # sanity, no body
+        self.assertEqual('', resp.content)
+
+    def test_put(self):
+        outvar_name = 'a1234'
+        line = ('--input /c/o --storlet a.b '
+                '--output path:a/b -o %s' % outvar_name)
+        self._test_put(line, outvar_name)
+
+    def test_put_stdout_with_input(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = ('--input /c/o --storlet a.b -o %s -i %s '
+                '--output path:a/b' % (outvar_name, params_name))
+        self.magics.shell.register(params_name, {'a': 'b'})
+        self._test_put(line, outvar_name)
+
+    def test_put_stdout_with_input_error(self):
+        params_name = 'params'
+        outvar_name = 'a1234'
+        line = ('--input /c/o --storlet a.b -o %s -i %s '
+                '--output path:a/b' % (outvar_name, params_name))
+        with self.assertRaises(KeyError):
+            self._test_put(line, outvar_name)
 
 
 if __name__ == '__main__':

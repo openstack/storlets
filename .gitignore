@@ -47,6 +47,9 @@ StorletSamples/java/*/bin
 # scripts build
 scripts/restart_docker_container
 
+# functional tests
+tests/functional/.ipynb_checkpoints/
+
 # Unit test / coverage reports
 .coverage
 .tox

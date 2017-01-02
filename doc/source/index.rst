@@ -51,6 +51,7 @@ Overview and Concepts
    storlets_terminology
    storlet_engine_overview
    api/overview_api
+   ipython_integration
 
 Storlet Engine Developers
 =========================

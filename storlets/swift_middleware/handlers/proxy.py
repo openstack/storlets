@@ -238,7 +238,10 @@ class StorletProxyHandler(StorletBaseHandler):
 
         resp = storlet_req.get_response(self.app)
         if not resp.is_success:
-            raise HTTPUnauthorized('Failed to verify access to the storlet',
+            raise HTTPUnauthorized('Failed to verify access to the storlet. '
+                                   'Either the storlet does not exist or '
+                                   'you are not authorized to run the '
+                                   'storlet.',
                                    request=self.request)
 
         params = self._parse_storlet_params(resp.headers)

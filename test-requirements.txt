@@ -16,6 +16,8 @@ testtools>=0.9.36,!=1.2.0
 python-swiftclient
 python-keystoneclient
 ipython<6.0
+jupyter
+nbformat
 
 ansible
 ansible-lint
