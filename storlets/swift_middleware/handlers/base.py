@@ -368,7 +368,7 @@ class StorletBaseHandler(object):
 
     def _set_metadata_in_headers(self, headers, user_metadata):
         if user_metadata:
-            for key, val in user_metadata.iteritems():
+            for key, val in user_metadata.items():
                 headers['X-Object-Meta-%s' % key] = val
 
     def _call_gateway(self, resp):

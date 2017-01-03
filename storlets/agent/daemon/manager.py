@@ -80,7 +80,7 @@ class Daemon(object):
         Remove pids which are already terminated
         """
         terminated = []
-        for task_id, daemon_pid in self.task_id_to_pid.iteritems():
+        for task_id, daemon_pid in self.task_id_to_pid.items():
             try:
                 pid, rc = os.waitpid(daemon_pid, os.WNOHANG)
                 if pid or rc:
@@ -104,7 +104,7 @@ class Daemon(object):
 
         :param pid: the pid of the terminated process
         """
-        for task_id, daemon_pid in self.task_id_to_pid.iteritems():
+        for task_id, daemon_pid in self.task_id_to_pid.items():
             if daemon_pid == pid:
                 self.task_id_to_pid.pop(task_id)
                 break

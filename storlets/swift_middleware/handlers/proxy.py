@@ -267,7 +267,7 @@ class StorletProxyHandler(StorletBaseHandler):
 
         :param params: paramegers to be augmented to request
         """
-        for key, val in params.iteritems():
+        for key, val in params.items():
             self.request.headers['X-Storlet-' + key] = val
 
     def gather_extra_sources(self):
