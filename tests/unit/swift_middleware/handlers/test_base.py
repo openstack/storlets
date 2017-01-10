@@ -175,7 +175,11 @@ class TestStorletBaseHandler(unittest.TestCase):
                     assert_not_implemented(method, path, headers)
 
     def test_parameters_from_headers(self):
-        def dummy_rip():
+        def mock_request_property():
+            """
+            This is for skipping extract_vaco which causes NotImplementedError
+            if initialize StorletBaseHandler directly.
+            """
             def getter(self):
                 return self._request
 
@@ -191,7 +195,7 @@ class TestStorletBaseHandler(unittest.TestCase):
             headers=headers)
 
         with mock.patch('storlets.swift_middleware.handlers.base.'
-                        'StorletBaseHandler.request', dummy_rip):
+                        'StorletBaseHandler.request', mock_request_property):
             handler = StorletBaseHandler(
                 req, mock.MagicMock(), mock.MagicMock(),
                 mock.MagicMock(), mock.MagicMock())
