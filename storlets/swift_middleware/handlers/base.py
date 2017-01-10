@@ -362,7 +362,7 @@ class StorletBaseHandler(object):
             if param.lower().startswith('x-storlet-parameter'):
                 keyvalue = self.request.headers[param]
                 keyvalue = urllib.unquote(keyvalue)
-                [key, value] = keyvalue.split(':')
+                key, value = keyvalue.split(':', 1)
                 parameters[key] = value
         self.request.params.update(parameters)
 
