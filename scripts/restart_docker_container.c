@@ -56,12 +56,12 @@ int main(int argc, char **argv) {
     snprintf(mount_dir5,(size_t)512, "%s", argv[7]);
 
     int ret;
-    setresuid(0,0,0);
-    setresgid(0,0,0);
-    sprintf(command,"/usr/bin/docker stop -t 1 %s",container_name);
+    setresuid(0, 0, 0);
+    setresgid(0, 0, 0);
+    sprintf(command, "/usr/bin/docker stop -t 1 %s", container_name);
     ret = system(command);
 
-    sprintf(command,"/usr/bin/docker rm %s",container_name);
+    sprintf(command, "/usr/bin/docker rm %s", container_name);
     ret = system(command);
 
     sprintf(command,
@@ -74,7 +74,8 @@ int main(int argc, char **argv) {
             mount_dir5,
             container_image);
     ret = system(command);
-    if (ret)
-        return(EXIT_FAILURE);
-    return(EXIT_SUCCESS);
+    if(ret){
+        return EXIT_FAILURE;
+    }
+    return EXIT_SUCCESS;
 }

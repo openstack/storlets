@@ -314,7 +314,7 @@ class RunTimeSandbox(object):
         Restarts the scope's sandbox using the specified docker image
 
         :param docker_image_name: name of the docker image to start
-        :returns: returned value of restart_docker_container
+        :raises StorletRuntimeException: when failed to restart the container
         """
         if self.docker_repo:
             docker_image_name = '%s/%s' % (self.docker_repo,
@@ -343,9 +343,17 @@ class RunTimeSandbox(object):
                storlet_mount, storlet_python_lib_mount,
                storlet_native_lib_mount, storlet_native_bin_mount]
 
-        self.logger.debug('About to start container %s' % cmd)
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+        stdout, stderr = proc.communicate()
 
-        return subprocess.call(cmd)
+        if stdout:
+            self.logger.debug('STDOUT: %s' % stdout.replace('\n', '#012'))
+        if stderr:
+            self.logger.error('STDERR: %s' % stderr.replace('\n', '#012'))
+
+        if proc.returncode:
+            raise StorletRuntimeException('Failed to restart docker container')
 
     def restart(self):
         """
@@ -355,20 +363,24 @@ class RunTimeSandbox(object):
         self.paths.create_host_pipe_prefix()
 
         docker_image_name = self.scope
-        if self._restart(docker_image_name) == 0:
+        try:
+            self._restart(docker_image_name)
             self.wait()
-            return
+        except StorletTimeout:
+            raise
+        except StorletRuntimeException:
+            # We were unable to start docker container from the tenant image.
+            # Let us try to start docker container from default image.
+            self.logger.exception("Failed to start docker container from "
+                                  "tenant image %s" % docker_image_name)
 
-        # We were unable to start docker container from the tenant image.
-        # Let us try to start docker container from default image.
-        self.logger.info("Failed to start docker container from tenant image "
-                         "%s" % docker_image_name)
-        self.logger.info("Trying to start docker container from default image")
+            # TODO(eranr): move the default tenant image name to a config var
+            docker_image_name = 'ubuntu_16.04_jre8_storlets'
 
-        # TODO(eranr): move the default tenant image name to a config var
-        docker_image_name = 'ubuntu_16.04_jre8_storlets'
-        self._restart(docker_image_name)
-        self.wait()
+            self.logger.info("Trying to start docker container from default "
+                             "image: %s" % docker_image_name)
+            self._restart(docker_image_name)
+            self.wait()
 
     def start_storlet_daemon(
             self, spath, storlet_id, language, language_version=None):
@@ -485,11 +497,7 @@ class RunTimeSandbox(object):
             # Best we can do is execute the container.
             self.logger.debug('Failed to check Storlet daemon status, '
                               'restart Docker container')
-            try:
-                self.restart()
-            except StorletTimeout:
-                raise StorletRuntimeException('Docker container is '
-                                              'not responsive')
+            self.restart()
             storlet_daemon_status = 0
 
         if (cache_updated is True and storlet_daemon_status == 1):
@@ -499,11 +507,7 @@ class RunTimeSandbox(object):
                               'is running. Stopping daemon')
             res = self.stop_storlet_daemon(sreq.storlet_main)
             if res != 1:
-                try:
-                    self.restart()
-                except StorletTimeout:
-                    raise StorletRuntimeException('Docker container is '
-                                                  'not responsive')
+                self.restart()
             else:
                 self.logger.debug('Deamon stopped')
             storlet_daemon_status = 0
