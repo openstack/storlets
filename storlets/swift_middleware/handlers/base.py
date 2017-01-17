@@ -307,7 +307,8 @@ class StorletBaseHandler(object):
         r = self.request.headers['X-Storlet-Range']
         return len(Range(r).ranges) > 1
 
-    def _has_run_on_proxy_header(self):
+    @property
+    def has_run_on_proxy_header(self):
         """
         Check whether there is a header mandating storlet execution on proxy
 
@@ -321,8 +322,22 @@ class StorletBaseHandler(object):
         return False
 
     @property
+    def has_extra_resources_header(self):
+        """
+        Check whether the client specifies multi input storlet execution.
+
+        If the request contains 'X-Storlet-Extra-Resources' header,
+        Storlets gathers multiple object data into the place, which
+        currently should happen in proxy-server.
+
+        :return: Whether the request contains X-Storlet-Extra-Resources header
+        """
+        return 'X-Storlet-Extra-Resources' in self.request.headers
+
+    @property
     def execute_on_proxy(self):
-        return (self._has_run_on_proxy_header() or
+        return (self.has_run_on_proxy_header or
+                self.has_extra_resources_header or
                 self.storlet_execute_on_proxy)
 
     @property

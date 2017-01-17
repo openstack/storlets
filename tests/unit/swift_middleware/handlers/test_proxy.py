@@ -182,7 +182,6 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
 
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
-                       'X-Storlet-Run-On-Proxy': '',
                        'X-Storlet-Extra-Resources': '/c2/o2'}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)

@@ -19,9 +19,10 @@ import unittest
 from hashlib import md5
 
 
-class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
+class TestMultiInputStorlet(StorletJavaFunctionalTest):
     def setUp(self):
-        super(TestMultiInputStorletOnProxy, self).setUp(
+        self.additional_headers = {}
+        super(TestMultiInputStorlet, self).setUp(
             storlet_dir='MultiInputStorlet',
             storlet_name='multiinputstorlet-1.0.jar',
             storlet_main='org.openstack.storlet.multiinput.MultiInputStorlet',
@@ -45,6 +46,7 @@ class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
             '/%s/%s' % (self.container, obj2),
             'X-Storlet-Run-On-Proxy': ''
         }
+        headers.update(self.additional_headers)
 
         resp_headers, resp_content = c.get_object(
             self.url, self.token, self.container, obj,
@@ -72,6 +74,7 @@ class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
             'X-Storlet-Extra-Resources':
             '/%s/%s' % (self.container, obj2),
         }
+        headers.update(self.additional_headers)
 
         expected_string = '0123456789abcdefghijklmnopqr'
         etag = c.put_object(
@@ -88,6 +91,12 @@ class TestMultiInputStorletOnProxy(StorletJavaFunctionalTest):
         self.assertEqual(expected_string, resp_content)
         self.assertEqual('value1', resp_headers['x-object-meta-key1'])
         self.assertEqual('value2', resp_headers['x-object-meta-key2'])
+
+
+class TestMultiInputStorletOnProxy(TestMultiInputStorlet):
+    def setUp(self):
+        super(TestMultiInputStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
 
 
 if __name__ == '__main__':
