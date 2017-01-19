@@ -14,14 +14,13 @@
 # limitations under the License.
 
 import os
-import pexpect
-from tests.functional import StorletBaseFunctionalTest, PATH_TO_STORLETS, \
-    CONSOLE_TIMEOUT
 import unittest
 from storlets.tools import deploy_storlet
+from tests.functional import StorletBaseFunctionalTest, PATH_TO_STORLETS
+from tests.functional.common.mixins import DeployTestMixin, EXPECT, SEND_LINE
 
 
-class TestDeployStorlet(StorletBaseFunctionalTest):
+class TestDeployStorlet(DeployTestMixin, StorletBaseFunctionalTest):
     def setUp(self):
         super(TestDeployStorlet, self).setUp()
         self.deploy_storlet_path = os.path.abspath(deploy_storlet.__file__)
@@ -34,24 +33,20 @@ class TestDeployStorlet(StorletBaseFunctionalTest):
         self.execdep_storlet_dep_file = os.path.join(self.execdep_storlet_path,
                                                      'get42.sh')
 
-        self.timeout = CONSOLE_TIMEOUT
-
-    def test_deploy_storlet_util_python(self):
-        child = pexpect.spawn('python %s %s' % (self.deploy_storlet_path,
-                                                self.conf_file))
-        child.expect('Enter storlet language.*',
-                     timeout=self.timeout)
-        child.sendline('python')
-        child.expect('Enter absolute path to storlet file.*:',
-                     timeout=self.timeout)
-        child.sendline(self.execdep_storlet_file)
-        child.expect('Please enter fully qualified storlet main class.*',
-                     timeout=self.timeout)
-        child.sendline('exec_dep.ExecDepStorlet')
-        child.expect('Please enter dependency.*', timeout=self.timeout)
-        child.sendline(self.execdep_storlet_dep_file)
-        child.sendline('\n')
-        child.expect('Storlet deployment complete.*', timeout=self.timeout)
+        self.scenario = [
+            ('Enter storlet language (java or python): ', EXPECT),
+            ('python', SEND_LINE),
+            ('Enter absolute path to storlet file: ', EXPECT),
+            (self.execdep_storlet_file, SEND_LINE),
+            ('Please enter fully qualified storlet main class '
+             '<filename.ClassName>: ', EXPECT),
+            ('exec_dep.ExecDepStorlet', SEND_LINE),
+            ('Please enter dependency files '
+             '(leave a blank line when you are done): ', EXPECT),
+            (self.execdep_storlet_dep_file, SEND_LINE),
+            ('', SEND_LINE),  # DO NOT send \n but just empty due to sendline
+            ('Storlet deployment complete', EXPECT),
+        ]
 
 
 if __name__ == '__main__':

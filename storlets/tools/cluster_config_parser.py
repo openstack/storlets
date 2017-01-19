@@ -30,7 +30,8 @@ import json
 class ClusterConfig(object):
 
     def __init__(self, config_path):
-        conf_string = open(config_path, 'r').read()
+        with open(config_path, 'r') as f:
+            conf_string = f.read()
         self.conf = json.loads(conf_string)
         self._auth_version = '3'
 

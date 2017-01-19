@@ -138,7 +138,7 @@ class TestStorletMagics(unittest.TestCase):
 
                 self.assertEqual(
                     "You need to set OS_AUTH_URL, OS_USERNAME, OS_PASSWORD "
-                    "OS_PROJECT_NAME for Swift authentication",
+                    "and OS_PROJECT_NAME for Swift authentication",
                     e.exception.message)
 
     def test_storlet_auth_v2_not_supported(self):
