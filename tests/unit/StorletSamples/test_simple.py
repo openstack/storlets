@@ -14,54 +14,10 @@
 # limitations under the License.
 
 from unittest import TestCase
-from cStringIO import StringIO
 from storlet_samples.simple.simple import SimpleStorlet
-import unittest
+from storlets.tools.testtools import FakeStorletFileIn, FakeStorletFileOut
 from tests.unit import FakeLogger
-
-
-class FakeStorletFile(object):
-    def __init__(self):
-        self._call_closed = False
-
-    def close(self):
-        self._call_closed = True
-
-    @property
-    def closed(self):
-        return self._call_closed
-
-
-class FakeStorletFileIn(FakeStorletFile):
-    def __init__(self, input_string, metadata):
-        super(FakeStorletFileIn, self).__init__()
-        self._input_string = StringIO(input_string)
-        self._metadata = metadata
-        self._pos = 0
-
-    def read(self, size=-1):
-        return self._input_string.read(size)
-
-    def get_metadata(self):
-        return self._metadata
-
-
-class FakeStorletFileOut(FakeStorletFile):
-    def __init__(self):
-        super(FakeStorletFileOut, self).__init__()
-        self._output_string = []
-        self._metadata = None
-
-    def write(self, data):
-        self._output_string.append(data)
-
-    def set_metadata(self, metadata):
-        if self._metadata is None:
-            self._metadata = {}
-        self._metadata.update(metadata)
-
-    def read(self):
-        return ''.join(self._output_string)
+import unittest
 
 
 class TestSimpleStorlet(TestCase):
