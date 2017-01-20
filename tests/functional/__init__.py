@@ -21,6 +21,7 @@ from storlets.tools.utils import deploy_storlet, get_admin_auth, put_local_file
 
 CONFIG_FILE = '../../cluster_config.json'
 PATH_TO_STORLETS = '../../StorletSamples'
+CONSOLE_TIMEOUT = 2
 
 
 class StorletBaseFunctionalTest(unittest.TestCase):
