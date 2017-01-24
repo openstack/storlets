@@ -19,25 +19,33 @@ from storlets.sbus import file_description as sbus_fd
 from storlets.sbus.command import SBUS_CMD_EXECUTE
 
 
-class FDMetadata(object):
-    def __init__(self, fdtype, storlets_metadata=None, storage_metadata=None):
+class SBusFileDescriptor(object):
+    """
+    The management class for the file descriptor information
+    """
+
+    def __init__(self, fdtype, fileno, storlets_metadata=None,
+                 storage_metadata=None):
         self.fdtype = fdtype
+        self.fileno = fileno
         self.storlets_metadata = storlets_metadata or {}
         self.storage_metadata = storage_metadata or {}
 
-    def to_dict(self):
+    @property
+    def metadata(self):
         storlets_metadata = copy.deepcopy(self.storlets_metadata)
         storlets_metadata['type'] = self.fdtype
         return {'storlets': storlets_metadata,
                 'storage': self.storage_metadata}
 
     @classmethod
-    def from_dict(cls, metadict):
+    def from_metadata_dict(cls, metadict):
         _metadict = copy.deepcopy(metadict)
         storlets_metadata = _metadict['storlets']
         storage_metadata = _metadict['storage']
+        fileno = _metadict['fileno']
         fdtype = storlets_metadata.pop('type')
-        return cls(fdtype, storlets_metadata, storage_metadata)
+        return cls(fdtype, fileno, storlets_metadata, storage_metadata)
 
 
 class SBusDatagram(object):
@@ -49,15 +57,12 @@ class SBusDatagram(object):
     # list format
     _required_fd_types = None
 
-    def __init__(self, command, fds, metadata, params=None, task_id=None):
+    def __init__(self, command, sfds, params=None, task_id=None):
         """
         Create SBusDatagram instance
 
         :param command: A string encoding the command to send
-        :param fds: A list of file descriptors (integer) to pass with
-                    the command
-        :param metadata: A list of dictionaries, where the i'th dictionary
-                          is the metadata of the i'th fd.
+        :param sfds: A list of SBusFileDescriptor instances
         :param params: A optional dictionary with parameters for the command
                        execution
         :param task_id: An optional string task id. This is currently used for
@@ -67,17 +72,15 @@ class SBusDatagram(object):
             raise NotImplementedError(
                 'SBusDatagram class should not be initialized as bare')
         self.command = command
-        self._check_fd_nums(fds, metadata)
-        fd_types = [md['storlets']['type'] for md in metadata]
+        fd_types = [sfd.fdtype for sfd in sfds]
         self._check_required_fd_types(fd_types)
-        self.fds = fds
-        self.metadata = metadata
+        self.sfds = sfds
         self.params = params
         self.task_id = task_id
 
     @property
     def num_fds(self):
-        return len(self.fds)
+        return len(self.sfds)
 
     @property
     def cmd_params(self):
@@ -93,18 +96,29 @@ class SBusDatagram(object):
         return json.dumps(self.cmd_params)
 
     @property
+    def fds(self):
+        """
+        A list of raw file descriptors
+        """
+        return [sfd.fileno for sfd in self.sfds]
+
+    @property
+    def metadata(self):
+        return [sfd.metadata for sfd in self.sfds]
+
+    @property
     def serialized_metadata(self):
         return json.dumps(self.metadata)
 
     @property
     def object_in_metadata(self):
-        return [md['storage'] for md in self.metadata
-                if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
+        return [sfd.storage_metadata for sfd in self.sfds
+                if sfd.fdtype == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
     @property
     def object_in_storlet_metadata(self):
-        return [md['storlets'] for md in self.metadata
-                if md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT]
+        return [fd.storlets_metadata for fd in self.sfds
+                if fd.fdtype == sbus_fd.SBUS_FD_INPUT_OBJECT]
 
     def _find_fds(self, fdtype):
         """
@@ -113,11 +127,7 @@ class SBusDatagram(object):
         :param fdtype: file descriptor type
         :returns: a list of file descriptors
         """
-        ret = []
-        for i in range(len(self.metadata)):
-            if self.metadata[i]['storlets']['type'] == fdtype:
-                ret.append(self.fds[i])
-        return ret
+        return [sfd.fileno for sfd in self.sfds if sfd.fdtype == fdtype]
 
     def _find_fd(self, fdtype):
         """
@@ -134,11 +144,6 @@ class SBusDatagram(object):
             #                for given type. This is to be done when we add
             #                fd validation.
             return ret[0]
-
-    def _check_fd_nums(self, fds, metadata):
-        if len(fds) != len(metadata):
-            raise ValueError('Length mismatch fds:%s metadata:%s'
-                             % (len(fds), len(metadata)))
 
     def _check_required_fd_types(self, given_fd_types):
         if self._required_fd_types is None:
@@ -176,9 +181,9 @@ class SBusServiceDatagram(SBusDatagram):
     """
     _required_fd_types = [sbus_fd.SBUS_FD_SERVICE_OUT]
 
-    def __init__(self, command, fds, metadata, params=None, task_id=None):
+    def __init__(self, command, sfds, params=None, task_id=None):
         super(SBusServiceDatagram, self).__init__(
-            command, fds, metadata, params, task_id)
+            command, sfds, params, task_id)
 
     @property
     def service_out_fd(self):
@@ -192,7 +197,7 @@ class SBusExecuteDatagram(SBusDatagram):
                           sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
                           sbus_fd.SBUS_FD_LOGGER]
 
-    def __init__(self, command, fds, metadata, params=None, task_id=None):
+    def __init__(self, command, sfds, params=None, task_id=None):
         # TODO(kota_): the args command is not used in ExecuteDatagram
         #              but it could be worthful to taransparent init
         #              for other datagram classes.
@@ -202,16 +207,15 @@ class SBusExecuteDatagram(SBusDatagram):
         #                this implementation is based on the idea that
         #                we only have extra input sources, which is
         #                added at the end of fd list
-        extra_fd_types = [
-            md['storlets']['type'] == sbus_fd.SBUS_FD_INPUT_OBJECT
-            for md in metadata[len(self._required_fd_types):]]
+        extra_fd_types = [sfd.fdtype for sfd in
+                          sfds[len(self._required_fd_types):]]
 
-        if not all(extra_fd_types):
+        if [t for t in extra_fd_types if t != sbus_fd.SBUS_FD_INPUT_OBJECT]:
             raise ValueError(
-                'Extra data should be SBUS_FD_INPUT_OBJECT: %' % metadata)
+                'Extra data should be SBUS_FD_INPUT_OBJECT')
 
         super(SBusExecuteDatagram, self).__init__(
-            SBUS_CMD_EXECUTE, fds, metadata, params, task_id)
+            SBUS_CMD_EXECUTE, sfds, params, task_id)
 
     @property
     def object_out_fds(self):
@@ -248,6 +252,15 @@ def build_datagram_from_raw_message(fds, str_md, str_cmd_params):
     command = cmd_params.get('command')
     params = cmd_params.get('params')
     task_id = cmd_params.get('task_id')
+
+    if len(fds) != len(metadata):
+        raise ValueError('Length mismatch fds: %d != md %d' %
+                         (len(fds), len(metadata)))
+    sfds = []
+    for fileno, md in zip(fds, metadata):
+        md['fileno'] = fileno
+        sfds.append(SBusFileDescriptor.from_metadata_dict(md))
+
     if command == SBUS_CMD_EXECUTE:
-        return SBusExecuteDatagram(command, fds, metadata, params, task_id)
-    return SBusServiceDatagram(command, fds, metadata, params, task_id)
+        return SBusExecuteDatagram(command, sfds, params, task_id)
+    return SBusServiceDatagram(command, sfds, params, task_id)

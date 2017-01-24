@@ -18,7 +18,7 @@ from storlets.sbus import SBus
 from storlets.sbus.command import SBUS_CMD_CANCEL, SBUS_CMD_DAEMON_STATUS, \
     SBUS_CMD_HALT, SBUS_CMD_PING, SBUS_CMD_START_DAEMON, \
     SBUS_CMD_STOP_DAEMON, SBUS_CMD_STOP_DAEMONS
-from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
+from storlets.sbus.datagram import SBusFileDescriptor, SBusServiceDatagram
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
 from storlets.sbus.client.exceptions import SBusClientIOError, \
     SBusClientMalformedResponse, SBusClientSendError
@@ -61,8 +61,8 @@ class SBusClient(object):
         try:
             try:
                 datagram = SBusServiceDatagram(
-                    command, [write_fd],
-                    [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()],
+                    command,
+                    [SBusFileDescriptor(SBUS_FD_SERVICE_OUT, write_fd)],
                     params, task_id)
                 rc = SBus.send(self.socket_path, datagram)
                 if rc < 0:

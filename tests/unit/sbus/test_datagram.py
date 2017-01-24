@@ -16,7 +16,7 @@
 import json
 import unittest
 import storlets.sbus.file_description as sbus_fd
-from storlets.sbus.datagram import FDMetadata, SBusDatagram, \
+from storlets.sbus.datagram import SBusFileDescriptor, SBusDatagram, \
     SBusServiceDatagram, SBusExecuteDatagram, build_datagram_from_raw_message
 from storlets.sbus.command import SBUS_CMD_PING, SBUS_CMD_EXECUTE
 
@@ -29,28 +29,27 @@ ALL_FD_TYPES = [
 ]
 
 
-class TestFDMetadata(unittest.TestCase):
-    def setUp(self):
-        pass
+class TestSBusFileDescriptor(unittest.TestCase):
+    def test_metadata(self):
+        fd = SBusFileDescriptor(
+            'MYTYPE', 1, {'storlets_key': 'storlets_value'},
+            {'storage_key': 'storage_value'})
+        self.assertEqual(
+            {'storlets': {'type': 'MYTYPE', 'storlets_key': 'storlets_value'},
+             'storage': {'storage_key': 'storage_value'}},
+            fd.metadata)
 
-    def test_to_dict(self):
-        md = FDMetadata('MYTYPE', {'storlets_key': 'storlets_value'},
-                        {'storage_key': 'storage_value'})
-        self.assertEqual({'storlets': {'type': 'MYTYPE',
-                                       'storlets_key': 'storlets_value'},
-                          'storage': {'storage_key': 'storage_value'}},
-                         md.to_dict())
-
-    def test_from_dict(self):
-        md = FDMetadata.from_dict(
-            {'storlets': {'type': 'MYTYPE',
-                          'storlets_key': 'storlets_value'},
-             'storage': {'storage_key': 'storage_value'}})
-        self.assertEqual('MYTYPE', md.fdtype)
+    def test_from_metadata_dict(self):
+        fd = SBusFileDescriptor.from_metadata_dict(
+            {'storlets': {'type': 'MYTYPE', 'storlets_key': 'storlets_value'},
+             'storage': {'storage_key': 'storage_value'},
+             'fileno': 1})
+        self.assertEqual(1, fd.fileno)
+        self.assertEqual('MYTYPE', fd.fdtype)
         self.assertEqual({'storlets_key': 'storlets_value'},
-                         md.storlets_metadata)
+                         fd.storlets_metadata)
         self.assertEqual({'storage_key': 'storage_value'},
-                         md.storage_metadata)
+                         fd.storage_metadata)
 
 
 class TestSBusDatagram(unittest.TestCase):
@@ -78,13 +77,12 @@ class SBusDatagramTestMixin(object):
     def setUp(self):
         self.params = {'param1': 'paramvalue1'}
         self.task_id = 'id'
-        self.dtg = self._test_class(self.command, self.fds, self.metadata,
+        self.dtg = self._test_class(self.command, self.sfds,
                                     self.params, self.task_id)
 
     def test_init(self):
         self.assertEqual(self.command, self.dtg.command)
-        self.assertEqual(self.fds, self.dtg.fds)
-        self.assertEqual(self.metadata, self.dtg.metadata)
+        self.assertEqual(self.sfds, self.dtg.sfds)
         self.assertEqual(self.params, self.dtg.params)
         self.assertEqual(self.task_id, self.dtg.task_id)
 
@@ -96,10 +94,6 @@ class SBusDatagramTestMixin(object):
                           'params': self.params,
                           'task_id': self.task_id},
                          self.dtg.cmd_params)
-
-    def test_serialized_metadata(self):
-        self.assertEqual(self.metadata,
-                         json.loads(self.dtg.serialized_metadata))
 
     def test_serialized_cmd_params(self):
         res = {'command': self.command,
@@ -120,10 +114,6 @@ class SBusDatagramTestMixin(object):
                 self.dtg._check_required_fd_types(invalid_type)
             self.assertTrue(cm.exception.args[0].startswith(
                 'Fd type mismatch given_fd_types'))
-
-    def test_check_fd_nums(self):
-        with self.assertRaises(ValueError):
-            self.dtg._check_fd_nums([], self.metadata)
 
     def test_find_fds(self):
         # prepare all fd types and then pop out in the loop below
@@ -161,11 +151,11 @@ class SBusDatagramTestMixin(object):
                 not_in_fd_types.remove(fd_type)
 
         # sanity, not a fd type results in None
-        self.assertIs(None, self.dtg._find_fd('DUMMY_TYPE'))
+        self.assertIsNone(self.dtg._find_fd('DUMMY_TYPE'))
 
         # sanity, no other types are found
         for fd_type in not_in_fd_types:
-            self.assertIs(None, self.dtg._find_fd(fd_type))
+            self.assertIsNone(self.dtg._find_fd(fd_type))
 
 
 class TestSBusServiceDatagram(SBusDatagramTestMixin, unittest.TestCase):
@@ -174,8 +164,7 @@ class TestSBusServiceDatagram(SBusDatagramTestMixin, unittest.TestCase):
     def setUp(self):
         self.command = 'SBUS_CMD_TEST'
         self.types = [sbus_fd.SBUS_FD_SERVICE_OUT]
-        self.fds = [1]
-        self.metadata = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
+        self.sfds = [SBusFileDescriptor(sbus_fd.SBUS_FD_SERVICE_OUT, 1)]
         super(TestSBusServiceDatagram, self).setUp()
 
     def test_service_out_fd(self):
@@ -192,11 +181,11 @@ class TestSBusExecuteDatagram(SBusDatagramTestMixin, unittest.TestCase):
                       sbus_fd.SBUS_FD_OUTPUT_OBJECT,
                       sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
                       sbus_fd.SBUS_FD_LOGGER]
-        self.fds = [i + 1 for i in range(len(self.types))]
-        self.metadata = [FDMetadata(self.types[i],
-                         {'key%d' % i: 'value%d' % i},
-                         {'skey%d' % i: 'svalue%d' % i}).to_dict()
-                         for i in range(len(self.types))]
+        self.sfds = [SBusFileDescriptor(
+            self.types[i], i + 1,
+            {'key%d' % i: 'value%d' % i},
+            {'skey%d' % i: 'svalue%d' % i})
+            for i in range(len(self.types))]
         super(TestSBusExecuteDatagram, self).setUp()
 
     def test_init_extra_sources(self):
@@ -208,17 +197,15 @@ class TestSBusExecuteDatagram(SBusDatagramTestMixin, unittest.TestCase):
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT]
-        fds = [i + 1 for i in range(len(types))]
-        metadata = [FDMetadata(types[i],
-                    {'key%d' % i: 'value%d' % i},
-                    {'skey%d' % i: 'svalue%d' % i}).to_dict()
-                    for i in range(len(types))]
+        fds = [SBusFileDescriptor(types[i], i + 1,
+               {'key%d' % i: 'value%d' % i},
+               {'skey%d' % i: 'svalue%d' % i})
+               for i in range(len(types))]
         dtg = self._test_class(
-            self.command, fds, metadata, self.params, self.task_id)
-        self.assertEqual(dtg.fds, fds)
-        self.assertEqual(dtg.metadata, metadata)
-        self.assertEqual(dtg.params, self.params)
-        self.assertEqual(dtg.task_id, self.task_id)
+            self.command, fds, self.params, self.task_id)
+        self.assertEqual(types, [sfd.fdtype for sfd in dtg.sfds])
+        self.assertEqual(self.params, dtg.params)
+        self.assertEqual(self.task_id, dtg.task_id)
 
     def test_object_out_fds(self):
         self.assertEqual([3], self.dtg.object_out_fds)
@@ -250,20 +237,18 @@ class TestBuildDatagramFromRawMessage(unittest.TestCase):
         # SBusServiceDatagram scenario
         command = SBUS_CMD_PING
         types = [sbus_fd.SBUS_FD_SERVICE_OUT]
-        fds = [1]
-        metadata = [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()]
+        fds = [SBusFileDescriptor(sbus_fd.SBUS_FD_SERVICE_OUT, 1)]
         params = {'param1': 'paramvalue1'}
         task_id = 'id'
         cmd_params = {'command': command, 'params': params, 'task_id': task_id}
 
-        str_metadata = json.dumps(metadata)
+        str_metadata = json.dumps([fd.metadata for fd in fds])
         str_cmd_params = json.dumps(cmd_params)
         dtg = build_datagram_from_raw_message(fds, str_metadata,
                                               str_cmd_params)
 
         self.assertEqual(command, dtg.command)
-        self.assertEqual(fds, dtg.fds)
-        self.assertEqual(metadata, dtg.metadata)
+        self.assertEqual(types, [sfd.fdtype for sfd in dtg.sfds])
         self.assertEqual(params, dtg.params)
         self.assertEqual(task_id, dtg.task_id)
 
@@ -277,23 +262,21 @@ class TestBuildDatagramFromRawMessage(unittest.TestCase):
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT]
-        fds = [i + 1 for i in range(len(types))]
-        metadata = [FDMetadata(types[i],
-                    {'key%d' % i: 'value%d' % i},
-                    {'skey%d' % i: 'svalue%d' % i}).to_dict()
-                    for i in range(len(types))]
+        fds = [SBusFileDescriptor(types[i], i + 1,
+               {'key%d' % i: 'value%d' % i},
+               {'skey%d' % i: 'svalue%d' % i})
+               for i in range(len(types))]
         params = {'param1': 'paramvalue1'}
         task_id = 'id'
         cmd_params = {'command': command, 'params': params, 'task_id': task_id}
 
-        str_metadata = json.dumps(metadata)
+        str_metadata = json.dumps([fd.metadata for fd in fds])
         str_cmd_params = json.dumps(cmd_params)
         dtg = build_datagram_from_raw_message(fds, str_metadata,
                                               str_cmd_params)
 
         self.assertEqual(command, dtg.command)
-        self.assertEqual(fds, dtg.fds)
-        self.assertEqual(metadata, dtg.metadata)
+        self.assertEqual(types, [sfd.fdtype for sfd in dtg.sfds])
         self.assertEqual(params, dtg.params)
         self.assertEqual(task_id, dtg.task_id)
 

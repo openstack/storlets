@@ -28,7 +28,7 @@ from contextlib import contextmanager
 
 from storlets.sbus import SBus
 from storlets.sbus.command import SBUS_CMD_EXECUTE
-from storlets.sbus.datagram import FDMetadata, SBusExecuteDatagram
+from storlets.sbus.datagram import SBusFileDescriptor, SBusExecuteDatagram
 from storlets.sbus import file_description as sbus_fd
 from storlets.sbus.client import SBusClient
 from storlets.sbus.client.exceptions import SBusClientException
@@ -505,8 +505,8 @@ class StorletInvocationProtocol(object):
         self.data_write_fd = None
         self.metadata_read_fd = None
         self.metadata_write_fd = None
-        self.execution_str_read_fd = None
-        self.execution_str_write_fd = None
+        self.taskid_read_fd = None
+        self.taskid_write_fd = None
         self.task_id = None
         self._input_data_read_fd = None
         self._input_data_write_fd = None
@@ -536,47 +536,35 @@ class StorletInvocationProtocol(object):
     @property
     def remote_fds(self):
         """
-        File descriptors to be passed to container side
+        A list of sbus file descirptors passed to remote side
         """
-        remote_fds = [self.input_data_read_fd,
-                      self.execution_str_write_fd,
-                      self.data_write_fd,
-                      self.metadata_write_fd,
-                      self.storlet_logger.getfd()]
-
-        for source in self.extra_data_sources:
-            remote_fds.append(source['read_fd'])
-        return remote_fds
-
-    @property
-    def remote_fds_metadata(self):
-        """
-        Metadata about file descriptors to be passed to container side
-        """
-        input_fd_metadata = FDMetadata(
-            sbus_fd.SBUS_FD_INPUT_OBJECT,
-            storage_metadata=self.srequest.user_metadata)
-        if self.srequest.user_metadata:
-            input_fd_metadata.storage_metadata.update(
-                self.srequest.user_metadata)
+        storlets_metadata = {}
         if self.srequest.has_range:
-            input_fd_metadata.storlets_metadata['start'] = \
-                str(self.srequest.start)
-            input_fd_metadata.storlets_metadata['end'] = \
-                str(self.srequest.end)
-        fds_metadata = [
-            input_fd_metadata.to_dict(),
-            FDMetadata(sbus_fd.SBUS_FD_OUTPUT_TASK_ID).to_dict(),
-            FDMetadata(sbus_fd.SBUS_FD_OUTPUT_OBJECT).to_dict(),
-            FDMetadata(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA).to_dict(),
-            FDMetadata(sbus_fd.SBUS_FD_LOGGER).to_dict()]
+            storlets_metadata.update(
+                {'start': str(self.srequest.start),
+                 'end': str(self.srequest.end)})
+
+        fds = [SBusFileDescriptor(sbus_fd.SBUS_FD_INPUT_OBJECT,
+                                  self.input_data_read_fd,
+                                  storage_metadata=self.srequest.user_metadata,
+                                  storlets_metadata=storlets_metadata),
+               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_TASK_ID,
+                                  self.taskid_write_fd),
+               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                                  self.data_write_fd),
+               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                                  self.metadata_write_fd),
+               SBusFileDescriptor(sbus_fd.SBUS_FD_LOGGER,
+                                  self.storlet_logger.getfd())]
 
         for source in self.extra_data_sources:
-            fdmd = FDMetadata(
+            fd = SBusFileDescriptor(
                 sbus_fd.SBUS_FD_INPUT_OBJECT,
+                source['read_fd'],
                 storage_metadata=source['user_metadata'])
-            fds_metadata.append(fdmd.to_dict())
-        return fds_metadata
+            fds.append(fd)
+
+        return fds
 
     @contextmanager
     def _activate_invocation_descriptors(self):
@@ -599,7 +587,7 @@ class StorletInvocationProtocol(object):
         if not self.srequest.has_fd:
             self._input_data_read_fd, self._input_data_write_fd = os.pipe()
         self.data_read_fd, self.data_write_fd = os.pipe()
-        self.execution_str_read_fd, self.execution_str_write_fd = os.pipe()
+        self.taskid_read_fd, self.taskid_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
 
         for source in self.extra_data_sources:
@@ -627,7 +615,7 @@ class StorletInvocationProtocol(object):
         Close all of the container side descriptors
         """
         fds = [self.data_write_fd, self.metadata_write_fd,
-               self.execution_str_write_fd]
+               self.taskid_write_fd]
         if not self.srequest.has_fd:
             fds.append(self.input_data_read_fd)
         fds.extend([source['read_fd'] for source in self.extra_data_sources])
@@ -639,7 +627,7 @@ class StorletInvocationProtocol(object):
         Close all of the host side descriptors
         """
         fds = [self.data_read_fd, self.metadata_read_fd,
-               self.execution_str_read_fd]
+               self.taskid_read_fd]
         fds.extend([source['write_fd'] for source in self.extra_data_sources])
         self._safe_close(fds)
 
@@ -662,10 +650,10 @@ class StorletInvocationProtocol(object):
         with self.storlet_logger.activate(),\
                 self._activate_invocation_descriptors():
             self._send_execute_command()
-        self._wait_for_read_with_timeout(self.execution_str_read_fd)
+        self._wait_for_read_with_timeout(self.taskid_read_fd)
         # TODO(kota_): need an assertion for task_id format
-        self.task_id = os.read(self.execution_str_read_fd, 10)
-        os.close(self.execution_str_read_fd)
+        self.task_id = os.read(self.taskid_read_fd, 10)
+        os.close(self.taskid_read_fd)
 
     def _send_execute_command(self):
         """
@@ -675,7 +663,6 @@ class StorletInvocationProtocol(object):
         dtg = SBusExecuteDatagram(
             SBUS_CMD_EXECUTE,
             self.remote_fds,
-            self.remote_fds_metadata,
             self.srequest.params)
         rc = SBus.send(self.storlet_pipe_path, dtg)
 

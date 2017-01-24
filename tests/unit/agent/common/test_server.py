@@ -18,7 +18,7 @@ import unittest
 
 from storlets.sbus import command as sbus_cmd
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
-from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
+from storlets.sbus.datagram import SBusFileDescriptor, SBusServiceDatagram
 from storlets.agent.common.server import EXIT_SUCCESS, command_handler, \
     CommandResponse, CommandFailure, CommandSuccess, SBusServer
 from tests.unit import FakeLogger
@@ -150,12 +150,11 @@ class TestSBusServerMain(unittest.TestCase):
         self.server = self._get_test_server()
 
     def _test_main_loop_stop(self, stop_command):
-        metadata = [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()]
+        sfds = [SBusFileDescriptor(SBUS_FD_SERVICE_OUT, 1)]
         scenario = [
             ('create', 1),
             ('listen', 1),
-            ('receive', SBusServiceDatagram(command=stop_command, fds=[1],
-                                            metadata=metadata,
+            ('receive', SBusServiceDatagram(command=stop_command, sfds=sfds,
                                             params=None, task_id=None)),
         ]
 
