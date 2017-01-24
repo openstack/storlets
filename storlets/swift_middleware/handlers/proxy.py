@@ -62,12 +62,11 @@ class StorletProxyHandler(StorletBaseHandler):
         # at the account, anyway
         account_meta = get_account_info(self.request.environ,
                                         self.app)['meta']
-        storlets_enabled = account_meta.get('storlet-enabled',
-                                            'False')
+        storlets_enabled = account_meta.get('storlet-enabled', 'False')
         if not config_true_value(storlets_enabled):
-            self.logger.debug('Account disabled for storlets')
-            raise HTTPBadRequest('Account disabled for storlets',
-                                 request=self.request)
+            msg = 'Account disabled for storlets'
+            self.logger.debug(msg)
+            raise HTTPBadRequest(msg, request=self.request)
 
         if self.is_storlet_acl_update:
             self.acl_string = self._validate_acl_update(self.request)
@@ -85,11 +84,10 @@ class StorletProxyHandler(StorletBaseHandler):
         # requests at such an early stage of the processing:
         # we block requests with referer that have the internal prefix
         # of:
-        if not request.referer:
-            return
-        if REFERER_PREFIX in request.referer:
-            raise HTTPForbidden('Referrer containing %s'
-                                ' is not allowed' % REFERER_PREFIX)
+        if request.referer and REFERER_PREFIX in request.referer:
+            msg = 'Referrer containing %s is not allowed' % REFERER_PREFIX
+            self.logger.debug(msg)
+            raise HTTPForbidden(msg, request=self.request)
 
     def _parse_vaco(self):
         return self.request.split_path(3, 4, rest_with_last=True)
@@ -343,7 +341,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                                                storlet_name)
             self.logger.info(('Got 403 for original GET %s request. '
                               'Trying with storlet internal referer %s' %
-                              (self.request.path, internal_referer)))
+                              (self.path, internal_referer)))
             self.request.referrer = self.request.referer = internal_referer
             original_resp = self.request.get_response(self.app)
 
@@ -500,16 +498,15 @@ class StorletProxyHandler(StorletBaseHandler):
     def POST(self):
         """
         POST handler on Proxy
+
         Deals with storlet ACL updates
         """
-
         # Get the current container's ACL
         # We perform a sub request rather than get_container_info
         # since get_container_info bypasses authorization, and we
         # prefer to be on the safe side.
-        target = ['', self.api_version, self.account, self.container]
         sub_req = make_subrequest(self.request.environ,
-                                  'HEAD', '/'.join(target),
+                                  'HEAD', self.path,
                                   agent=self.agent)
         sub_resp = sub_req.get_response(self.app)
         if sub_resp.status_int != 204:
@@ -518,7 +515,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                      'the container ACL'))
 
         # Add the requested ACL
-        read_acl = sub_resp.headers.get("X-Container-Read", None)
+        read_acl = sub_resp.headers.get("X-Container-Read")
         if read_acl:
             new_read_acl = ','.join([read_acl, self.acl_string])
         else:
@@ -526,5 +523,4 @@ class StorletProxyHandler(StorletBaseHandler):
 
         self.request.headers['X-Container-Read'] = new_read_acl
         resp = self.request.get_response(self.app)
-        self.logger.info("Got post response, %s" % resp.status)
         return resp

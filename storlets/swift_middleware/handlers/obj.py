@@ -82,8 +82,6 @@ class StorletObjectHandler(StorletBaseHandler):
         """
         GET handler on object-server
         """
-        self.logger.debug('GET. Run storlet')
-
         # The proxy may add a Range header in the case
         # where the execution is to be done on proxy only
         # (and X-Storlet-Range header exists)
@@ -113,15 +111,13 @@ class StorletObjectHandler(StorletBaseHandler):
             # either an SLO
             # or storlet-range-request
             # or proxy only mode
-            self.logger.debug('storlet_handler: invocation '
-                              'over %s/%s/%s %s' %
-                              (self.account, self.container, self.obj,
-                               'to be executed on proxy'))
+            self.logger.debug(
+                'storlet_handler: invocation over %s to be executed on proxy'
+                % self.request.path)
             return orig_resp
         else:
             # We apply here the Storlet:
-            self.logger.debug('storlet_handler: invocation '
-                              'over %s/%s/%s %s' %
-                              (self.account, self.container, self.obj,
-                               'to be executed locally'))
+            self.logger.debug(
+                'storlet_handler: invocation over %s to be executed locally'
+                % self.request.path)
             return self.apply_storlet(orig_resp)

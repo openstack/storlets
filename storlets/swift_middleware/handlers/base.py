@@ -249,6 +249,10 @@ class StorletBaseHandler(object):
         return self._api_version
 
     @property
+    def path(self):
+        return self.request.path
+
+    @property
     def account(self):
         return self._account
 
@@ -353,17 +357,15 @@ class StorletBaseHandler(object):
         :return: Whenther the response is a slo one
         """
         self.logger.debug(
-            'Verify if {0}/{1}/{2} is an SLO assembly object'.format(
-                self.account, self.container, self.obj))
+            'Verify if {0} is an SLO assembly object'.format(self.path))
+
         is_slo = 'X-Static-Large-Object' in resp.headers
         if is_slo:
             self.logger.debug(
-                '{0}/{1}/{2} is indeed an SLO assembly '
-                'object'.format(self.account, self.container, self.obj))
+                '{0} is indeed an SLO assembly object'.format(self.path))
         else:
             self.logger.debug(
-                '{0}/{1}/{2} is NOT an SLO assembly object'.format(
-                    self.account, self.container, self.obj))
+                '{0} is NOT an SLO assembly object'.format(self.path))
         return is_slo
 
     def _update_storlet_parameters_from_headers(self):
