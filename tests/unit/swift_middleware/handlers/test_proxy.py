@@ -635,6 +635,36 @@ class TestStorletProxyHandler(unittest.TestCase):
         self.assertNotIn('X-Object-Meta-Storlet-Key3', headers)
         self.assertEqual(headers['X-Object-Meta-Key4'], 'Value4')
 
+    def test_get_storlet_invocation_options(self):
+        req = Request.blank(
+            '/v1/acc/cont/obj',
+            environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                     'X-Storlet-Foo': 'baa'})
+        with storlet_enabled():
+            handler = self.handler_class(
+                req, self.conf, self.gateway_conf, mock.MagicMock(),
+                mock.MagicMock())
+
+        options = handler._get_storlet_invocation_options(req)
+        self.assertEqual('baa', options['storlet_foo'])
+        self.assertFalse(options['generate_log'])
+
+        req = Request.blank(
+            '/v1/acc/cont/obj',
+            environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Run-Storlet': 'Storlet-1.0.jar',
+                     'X-Storlet-Foo': 'baa',
+                     'X-Storlet-Generate-Log': 'True'})
+        with storlet_enabled():
+            handler = self.handler_class(
+                req, self.conf, self.gateway_conf, mock.MagicMock(),
+                mock.MagicMock())
+
+        options = handler._get_storlet_invocation_options(req)
+        self.assertEqual('baa', options['storlet_foo'])
+        self.assertTrue(options['generate_log'])
+
 
 if __name__ == '__main__':
     unittest.main()

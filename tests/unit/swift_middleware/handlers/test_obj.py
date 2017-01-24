@@ -182,7 +182,7 @@ class TestStorletObjectHandler(unittest.TestCase):
     def test_init_handler(self):
         req = Request.blank(
             '/dev/part/acc/cont/obj', environ={'REQUEST_METHOD': 'GET'},
-            headers={'X-Backend-Storlet-Policy-Index': '0',
+            headers={'X-Backend-Storage-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         handler = self.handler_class(
             req, self.conf, self.gateway_conf, mock.MagicMock(),
@@ -196,7 +196,7 @@ class TestStorletObjectHandler(unittest.TestCase):
 
         req = Request.blank(
             '/dev/part/acc2/cont2/obj2', environ={'REQUEST_METHOD': 'GET'},
-            headers={'X-Backend-Storlet-Policy-Index': '0',
+            headers={'X-Backend-Storage-Policy-Index': '0',
                      'X-Run-Storlet': 'Storlet-1.0.jar'})
         handler.request = req
         self.assertEqual('/dev/part/acc2/cont2/obj2', handler.request.path)
@@ -217,6 +217,55 @@ class TestStorletObjectHandler(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             handler.obj = 'obj'
+
+    def test_get_storlet_invocation_options(self):
+        req = Request.blank(
+            '/dev/part/acc/cont/obj',
+            environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storage-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar',
+                     'X-Storlet-Foo': 'baa'})
+        handler = self.handler_class(
+            req, self.conf, self.gateway_conf, mock.MagicMock(),
+            mock.MagicMock())
+
+        options = handler._get_storlet_invocation_options(req)
+        self.assertEqual('baa', options['storlet_foo'])
+        self.assertFalse(options['generate_log'])
+
+        req = Request.blank(
+            '/dev/part/acc/cont/obj',
+            environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storage-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar',
+                     'X-Storlet-Foo': 'baa',
+                     'X-Storlet-Generate-Log': 'True'})
+        handler = self.handler_class(
+            req, self.conf, self.gateway_conf, mock.MagicMock(),
+            mock.MagicMock())
+
+        options = handler._get_storlet_invocation_options(req)
+        self.assertEqual('baa', options['storlet_foo'])
+        self.assertTrue(options['generate_log'])
+
+        req = Request.blank(
+            '/dev/part/acc/cont/obj',
+            environ={'REQUEST_METHOD': 'GET'},
+            headers={'X-Backend-Storage-Policy-Index': '0',
+                     'X-Run-Storlet': 'Storlet-1.0.jar',
+                     'X-Storlet-Foo': 'baa',
+                     'X-Storlet-Range': 'bytes=1-6',
+                     'Range': 'bytes=1-6'})
+        handler = self.handler_class(
+            req, self.conf, self.gateway_conf, mock.MagicMock(),
+            mock.MagicMock())
+
+        options = handler._get_storlet_invocation_options(req)
+        self.assertEqual('baa', options['storlet_foo'])
+        self.assertFalse(options['generate_log'])
+        self.assertNotIn('storlet_range', options)
+        self.assertEqual(1, options['range_start'])
+        self.assertEqual(7, options['range_end'])
 
 
 if __name__ == '__main__':

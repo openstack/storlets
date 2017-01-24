@@ -54,8 +54,12 @@ class StorletObjectHandler(StorletBaseHandler):
         if self.is_storlet_range_request and \
                 not self.is_storlet_multiple_range_request:
             srange = Range(req.headers['X-Storlet-Range'])
+
+            # As we should include the end byte in HTTP Range, here we +1
+            # for the end cursor so that we can treat it as general range
+            # (include start, and exclude end)
             options['range_start'] = srange.ranges[0][0]
-            options['range_end'] = srange.ranges[0][1]
+            options['range_end'] = srange.ranges[0][1] + 1
 
         return options
 
