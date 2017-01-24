@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import mock
+import json
 import unittest
 
 from storlets.sbus import command as sbus_cmd
@@ -37,7 +38,8 @@ class TestCommandResponse(unittest.TestCase):
 
     def test_report_message(self):
         resp = CommandResponse(True, 'msg', True)
-        self.assertEqual('True: msg', resp.report_message)
+        self.assertEqual({'status': True, 'message': 'msg'},
+                         json.loads(resp.report_message))
 
 
 class TestCommandSuccess(unittest.TestCase):

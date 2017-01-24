@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import json
 import os
 from storlets.sbus import SBus
 from storlets.sbus.command import SBUS_CMD_CANCEL, SBUS_CMD_DAEMON_STATUS, \
@@ -47,11 +48,12 @@ class SBusClient(object):
         :param str_response: response string
         :returns: SBusResponse instance
         """
-        two_tokens = str_response.split(':', 1)
-        if len(two_tokens) != 2:
+        try:
+            resp = json.loads(str_response)
+            status = resp['status']
+            message = resp['message']
+        except (ValueError, KeyError):
             raise SBusClientMalformedResponse('Got malformed response')
-        status = (two_tokens[0].lower() == 'true')
-        message = two_tokens[1]
         return SBusResponse(status, message)
 
     def _request(self, command, params=None, task_id=None):

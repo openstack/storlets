@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from functools import partial
+import json
 import os
 
 from storlets.sbus import SBus
@@ -44,7 +45,7 @@ class CommandResponse(Exception):
 
     @property
     def report_message(self):
-        return '%s: %s' % (str(self.status), self.message)
+        return json.dumps({'status': self.status, 'message': self.message})
 
 
 CommandSuccess = partial(CommandResponse, True)

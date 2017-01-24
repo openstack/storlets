@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
 import mock
 import os
 import unittest
@@ -76,20 +77,31 @@ class TestSBusClient(unittest.TestCase):
         self.client = SBusClient(self.pipe_path, 4)
 
     def test_parse_response(self):
-        resp = self.client._parse_response('True:OK')
+        raw_resp = json.dumps({'status': True, 'message': 'OK'})
+        resp = self.client._parse_response(raw_resp)
         self.assertTrue(resp.status)
         self.assertEqual('OK', resp.message)
 
-        resp = self.client._parse_response('False:NG')
+        raw_resp = json.dumps({'status': False, 'message': 'ERROR'})
+        resp = self.client._parse_response(raw_resp)
         self.assertFalse(resp.status)
-        self.assertEqual('NG', resp.message)
+        self.assertEqual('ERROR', resp.message)
 
-        resp = self.client._parse_response('True:Sample:Message')
+        raw_resp = json.dumps({'status': True, 'message': 'Sample:Message'})
+        resp = self.client._parse_response(raw_resp)
         self.assertTrue(resp.status)
         self.assertEqual('Sample:Message', resp.message)
 
         with self.assertRaises(SBusClientMalformedResponse):
-            resp = self.client._parse_response('Foo')
+            self.client._parse_response('Foo')
+
+        raw_resp = json.dumps({'status': True})
+        with self.assertRaises(SBusClientMalformedResponse):
+            self.client._parse_response(raw_resp)
+
+        raw_resp = json.dumps({'message': 'foo'})
+        with self.assertRaises(SBusClientMalformedResponse):
+            self.client._parse_response(raw_resp)
 
     def _check_all_pipes_closed(self, pipes):
         # Make sure that pipes are not empty
@@ -100,19 +112,22 @@ class TestSBusClient(unittest.TestCase):
             self.assertTrue(_pipe[1].closed)
 
     def _test_service_request(self, method, *args, **kwargs):
-        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0):
+        raw_resp = json.dumps({'status': True, 'message': 'OK'})
+        with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(0):
             resp = method(*args, **kwargs)
             self.assertTrue(resp.status)
             self.assertEqual('OK', resp.message)
             self._check_all_pipes_closed(pipes)
 
-        with _mock_os_pipe(['False:ERROR']) as pipes, _mock_sbus(0):
+        raw_resp = json.dumps({'status': False, 'message': 'ERROR'})
+        with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(0):
             resp = method(*args, **kwargs)
             self.assertFalse(resp.status)
             self.assertEqual('ERROR', resp.message)
             self._check_all_pipes_closed(pipes)
 
-        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(-1):
+        raw_resp = json.dumps({'status': True, 'message': 'OK'})
+        with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(-1):
             with self.assertRaises(SBusClientSendError):
                 method(*args, **kwargs)
             self._check_all_pipes_closed(pipes)
