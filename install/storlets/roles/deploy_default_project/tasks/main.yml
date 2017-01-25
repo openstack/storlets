@@ -15,7 +15,7 @@
 #---------------------------------------------------------------------------
 # TODO(eranr): Change thebelow to use Ansible os_project_facts module
 - name: Get the defaut project id from Keystone
-  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} project list | grep {{ storlets_default_project_name }} | awk '{print $2}'
+  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} project list | grep -w {{ storlets_default_project_name }} | awk '{print $2}'
   register: project_id
 
 - name: Print the project id whose container we are processing
@@ -103,8 +103,9 @@
   command: "docker rmi {{image_id.stdout}}"
   when: "'1' in image_exists.stdout"
 
+# To match the gateway runtime scope we need to use only the first 13 chars from project_id.stdout_lines[0]
 - name: Build the new default project container image
-  command: "docker build -t {{ project_id.stdout_lines[0] }} ."
+  command: "docker build -t {{ project_id.stdout_lines[0][0:13] }} ."
   args:
     chdir: "/data/registry/repositories/default_project_image"
   register: command_result
