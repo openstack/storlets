@@ -115,7 +115,7 @@ class DaemonFactory(object):
         :returns: (A list of the JVM arguments, A list of environ parameters)
         """
 
-        str_prfx = "/opt/storlets/"
+        str_prfx = "/usr/local/lib/storlets"
 
         jar_deps = ['logback-classic-1.1.2.jar',
                     'logback-core-1.1.2.jar',
@@ -147,7 +147,7 @@ class DaemonFactory(object):
 
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
                         pool_size, uds_path, log_level):
-        str_daemon_main_file = '/usr/local/bin/storlets-daemon'
+        str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'
         pargs = [str_daemon_main_file, storlet_name, uds_path, log_level,
                  str(pool_size), self.container_id]
 

@@ -37,6 +37,12 @@
         <copy file="../../install/storlets/roles/docker_storlet_engine_image/files/logback.xml"
             tofile="dependencies/logback.xml"/>
     </target>
+    <!-- Install build Dependencies-->
+    <target name="install_dependencies" depends="dependencies">
+        <copy todir="/usr/local/lib/storlets">
+            <fileset dir="dependencies" />
+        </copy>
+    </target>
     <!-- Storlets Engine build -->
     <macrodef name="iterate_engine">
         <attribute name="target" />
@@ -55,7 +61,7 @@
         <iterate_engine target="clean" />
         <delete dir="dependencies" />
     </target>
-    <target name="install" depends="dependencies">
+    <target name="install" depends="install_dependencies">
         <iterate_engine target="install" />
     </target>
     <target name="uninstall">

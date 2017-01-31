@@ -124,7 +124,7 @@ If no further tuning is required above the definitiones in
 'install/storlets/deploy/installation_vars.yml'
 then just run 'sdeploy.sh' from the repository root.
 
-..note::
+.. note::
 
   You must run sdeploy.sh as root.
 
@@ -182,7 +182,6 @@ that do not appear in the above configurable installation_vars.yml
           "storlets_enabled_attribute_name": "storlet-enabled",
           "docker_registry_random_string": "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ1234",
           "docker_registry_port": "5001",
-          "container_install_dir": "/opt/storlets",
           "base_image_maintainer": "root",
           "base_os_image": "ubuntu_14.04",
           "storlets_image_name_suffix": "ubuntu_14.04_jre8_storlets",
@@ -258,8 +257,6 @@ that do not appear in the above configurable installation_vars.yml
 
   - Docker images variables
 
-    - "container_install_dir". This is the directory where all the non-python storlets stuff is installed within
-      the container. This must be a full path (starting with a '/') that does not end with a '/'.
     - "base_image_maintainer". The maintainer of the docker images. Note that the user specified is a user withing
       the Lunix container user namespace.
     - "base_os_image". The base OS image used for the Docker images. Serves as a prefix for the generic images created

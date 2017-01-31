@@ -35,27 +35,4 @@
     owner: root
   when: not st0.stat.exists
 
-- name: Download necessary Java dependencies
-  get_url:
-    url: "{{ item }}"
-    dest: /data/registry/repositories/ubuntu_16.04_jre8
-  retries: 3
-  with_items:
-    - http://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/json-simple/json_simple-1.1.jar
-    - http://www.slf4j.org/dist/slf4j-1.7.7.tar.gz
-    - http://logback.qos.ch/dist/logback-1.1.2.tar.gz
-
-- name: Untar downloaded dependencies
-  command: "{{ item }}"
-  args:
-    chdir: "/data/registry/repositories/ubuntu_16.04_jre8"
-  with_items:
-    - "tar xvf slf4j-1.7.7.tar.gz"
-    - "mv slf4j-1.7.7/slf4j-api-1.7.7.jar ."
-    - "rm -fr slf4j-1.7.7 slf4j-1.7.7.tar.gz"
-    - "tar xvf logback-1.1.2.tar.gz"
-    - "mv logback-1.1.2/logback-core-1.1.2.jar ."
-    - "mv logback-1.1.2/logback-classic-1.1.2.jar ."
-    - "rm -fr logback-1.1.2/ logback-1.1.2.tar.gz"
-
 - include: create_layer.yml dockerfile_prefix={{ base_os_image}}_jre8 layer_suffix=jre8

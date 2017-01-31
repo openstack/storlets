@@ -24,9 +24,8 @@
 #    This path must be mapped by docker run -v option
 # $3 is assumed to be the factory debug level, e.g. DEBUG
 
-if [ $1 = "debug" ]; then
+if [ $1 == "debug" ]; then
     $2
 else
-    #service rsyslog start
-    /usr/local/bin/storlets-daemon-factory $2 $3 $HOSTNAME
+    /usr/local/libexec/storlets/storlets-daemon-factory $2 $3 $HOSTNAME
 fi

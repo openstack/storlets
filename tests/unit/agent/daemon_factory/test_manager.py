@@ -128,18 +128,18 @@ class TestDaemonFactory(unittest.TestCase):
             self.assertEqual(
                 {'CLASSPATH':
                     '/default/classpath:'
-                    '/opt/storlets/logback-classic-1.1.2.jar:'
-                    '/opt/storlets/logback-core-1.1.2.jar:'
-                    '/opt/storlets/slf4j-api-1.7.7.jar:'
-                    '/opt/storlets/json_simple-1.1.jar:'
-                    '/opt/storlets/SBusJavaFacade.jar:'
-                    '/opt/storlets/SCommon.jar:'
-                    '/opt/storlets/SDaemon.jar:'
-                    '/opt/storlets/:'
+                    '/usr/local/lib/storlets/logback-classic-1.1.2.jar:'
+                    '/usr/local/lib/storlets/logback-core-1.1.2.jar:'
+                    '/usr/local/lib/storlets/slf4j-api-1.7.7.jar:'
+                    '/usr/local/lib/storlets/json_simple-1.1.jar:'
+                    '/usr/local/lib/storlets/SBusJavaFacade.jar:'
+                    '/usr/local/lib/storlets/SCommon.jar:'
+                    '/usr/local/lib/storlets/SDaemon.jar:'
+                    '/usr/local/lib/storlets/:'
                     'path/to/storlet/a',
                  'LD_LIBRARY_PATH':
                     '/default/ld/library/path:'
-                    '/opt/storlets/'},
+                    '/usr/local/lib/storlets'},
                 env)
 
     def test_get_python_args(self):
@@ -150,7 +150,8 @@ class TestDaemonFactory(unittest.TestCase):
                 'python', 'path/to/storlet', 'test_storlet.TestStorlet',
                 1, 'path/to/uds', 'DEBUG')
         self.assertEqual(
-            ['/usr/local/bin/storlets-daemon', 'test_storlet.TestStorlet',
+            ['/usr/local/libexec/storlets/storlets-daemon',
+             'test_storlet.TestStorlet',
              'path/to/uds', 'DEBUG', '1', self.container_id],
             pargs)
         self.assertEqual(

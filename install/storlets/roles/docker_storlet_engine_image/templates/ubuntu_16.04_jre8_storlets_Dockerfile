@@ -23,28 +23,10 @@ RUN [ "groupadd", "-g", "{{ swift_group_id }}", "swift" ]
 RUN [ "useradd", "-u" , "{{ swift_user_id }}", "-g", "{{ swift_group_id }}", "swift" ]
 
 # Copy files
-COPY ["logback.xml", "init_container.sh", "/opt/storlets/"]
+COPY ["logback.xml", "/usr/local/lib/storlets/"]
 
-RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
-RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]
-
-# Install c java resources
-COPY ["libsbus.so", "/usr/local/lib/storlets/"]
-
-# Install storlets java resources
-COPY ["SBusJavaFacade.jar", "libjsbus.so", "SDaemon.jar", "SCommon.jar", "/opt/storlets/"]
-
-# Install pip
-COPY ["get-pip.py", "/opt/storlets"]
-RUN ["python",  "/opt/storlets/get-pip.py"]
-ENV PYTHONWARNINGS="ignore:a true SSLContext object"
-
-# Install python codes
-COPY ["storlets", "/opt/storlets/"]
-RUN cd /opt/storlets/ && \
-    pip install -r requirements.txt && \
-    python setup.py install
+RUN ["chmod", "0744", "/usr/local/lib/storlets/logback.xml"]
 
 CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
 
-ENTRYPOINT ["/opt/storlets/init_container.sh"]
+ENTRYPOINT ["/usr/local/libexec/storlets/init_container.sh"]

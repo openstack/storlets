@@ -35,19 +35,25 @@ int main(int argc, char **argv) {
     char command[4096];
     char container_name[256];
     char container_image[256];
-    char mount_dir1[1024];
-    char mount_dir2[1024];
+    char mount_dir1[512];
+    char mount_dir2[512];
+    char mount_dir3[512];
+    char mount_dir4[512];
+    char mount_dir5[512];
 
-    if (argc != 5) {
-        fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2\n",
+    if (argc != 8) {
+        fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2 mount_dir3 mount_dir4\n",
             argv[0]);
         return 1;
     }
 
     snprintf(container_name,(size_t)256,"%s",argv[1]);
     snprintf(container_image,(size_t)256,"%s",argv[2]);
-    snprintf(mount_dir1,(size_t)1024, "%s", argv[3]);
-    snprintf(mount_dir2,(size_t)1024, "%s", argv[4]);
+    snprintf(mount_dir1,(size_t)512, "%s", argv[3]);
+    snprintf(mount_dir2,(size_t)512, "%s", argv[4]);
+    snprintf(mount_dir3,(size_t)512, "%s", argv[5]);
+    snprintf(mount_dir4,(size_t)512, "%s", argv[6]);
+    snprintf(mount_dir5,(size_t)512, "%s", argv[7]);
 
     int ret;
     setresuid(0,0,0);
@@ -59,10 +65,13 @@ int main(int argc, char **argv) {
     ret = system(command);
 
     sprintf(command,
-            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -i -t %s",
+            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -v %s -v %s -v %s -i -t %s",
             container_name,
             mount_dir1,
             mount_dir2,
+            mount_dir3,
+            mount_dir4,
+            mount_dir5,
             container_image);
     ret = system(command);
     if (ret)

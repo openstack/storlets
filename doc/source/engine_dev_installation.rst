@@ -30,7 +30,7 @@ Create a localrc file under the devstack repository root directory:
     RABBIT_PASSWORD=$ADMIN_PASSWORD
     SERVICE_PASSWORD=$ADMIN_PASSWORD
 
-    OS_IDENTITY_API_VERSION=2
+    OS_IDENTITY_API_VERSION=3
     OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
     OS_USERNAME=$ADMIN_USER
     OS_USER_DOMAIN_ID=default
@@ -54,6 +54,7 @@ swift instances that were executed by the
 stack.sh. From the same directory do:
 
 ::
+
     source functions
     source lib/swift
     stop_swift
@@ -73,7 +74,7 @@ defining some environment variables:
 
 ::
 
-    export OS_IDENTITY_API_VERSION=2
+    export OS_IDENTITY_API_VERSION=3
     export OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
     export OS_USERNAME=$ADMIN_USER
     export OS_USER_DOMAIN_ID=default
@@ -159,13 +160,6 @@ Step 2: Create a Docker image with Java
 ::
 
     mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8
-    cd $HOME/docker_repos/ubuntu_14.04_jre8
-    cp $HOME/storlets/src/java/dependencies/logback-classic-1.1.2.jar .
-    cp $HOME/storlets/src/java/dependencies/logback-core-1.1.2.jar .
-    cp $HOME/storlets/src/java/dependencies/slf4j-api-1.7.7.jar .
-    cp $HOME/storlets/src/java/dependencies/json_simple-1.1.jar .
-    cp $HOME/storlets/src/java/dependencies/logback.xml .
-    cd -
 
 Create the file: $HOME/docker_repos/ubuntu_14.04_jre8/Dockerfile
 with the following content:
@@ -185,21 +179,6 @@ with the following content:
     apt-get install openjdk-8-jre -y && \
     apt-get clean
 
-    COPY logback-classic-1.1.2.jar  /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/logback-classic-1.1.2.jar"]
-
-    COPY logback-core-1.1.2.jar /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/logback-core-1.1.2.jar"]
-
-    COPY logback.xml    /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
-
-    COPY slf4j-api-1.7.7.jar    /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/slf4j-api-1.7.7.jar"]
-
-    COPY json_simple-1.1.jar    /opt/storlets/
-    RUN ["chmod", "0744", "/opt/storlets/json_simple-1.1.jar"]
-
 Build the image
 
 ::
@@ -214,17 +193,7 @@ Step 3: Augment the above created image with the storlets stuff
 ::
 
     mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8_storlets
-    cd $HOME/docker_repos/ubuntu_14.04_jre8_storlets
-    cp $HOME/storlets/src/java/SBus/bin/libjsbus.so .
-    cp $HOME/storlets/src/java/SBus/bin/SBusJavaFacade.jar .
-    cp $HOME/storlets/src/java/SDaemon/bin/SDaemon.jar .
-    cp $HOME/storlets/src/java/SCommon/bin/SCommon.jar .
-    cp $HOME/storlets/src/c/sbus/libsbus.so .
-    cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/init_container.sh .
     cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/logback.xml .
-    wget https://bootstrap.pypa.io/get-pip.py
-    cp /tmp/storlets.tar.gz .
-    tar -xvf storlets.tar.gz
     cd -
 
 Create the file: $HOME/docker_repos/ubuntu_14.04_jre8_storlets/Dockerfile
@@ -240,31 +209,13 @@ with the following content:
     RUN [ "useradd", "-u" , "1003", "-g", "1003", "swift" ]
 
     # Copy files
-    COPY ["logback.xml", "init_container.sh", "/opt/storlets/"]
+    COPY ["logback.xml", "init_container.sh", "/usr/local/lib/storlets/"]
 
-    RUN ["chmod", "0744", "/opt/storlets/logback.xml"]
-    RUN ["chmod", "0755", "/opt/storlets/init_container.sh"]
-
-    # Install c java resources
-    COPY ["libsbus.so", "/usr/local/lib/storlets/"]
-
-    # Install storlets java resources
-    COPY ["SBusJavaFacade.jar", "libjsbus.so", "SDaemon.jar", "SCommon.jar", "/opt/storlets/"]
-
-    # Install pip
-    COPY ["get-pip.py", "/opt/storlets"]
-    RUN ["python",  "/opt/storlets/get-pip.py"]
-    ENV PYTHONWARNINGS="ignore:a true SSLContext object"
-
-    # Install python codes
-    COPY ["storlets", "/opt/storlets/"]
-    RUN cd /opt/storlets/ && \
-        pip install -r requirements.txt && \
-        python setup.py install
+    RUN ["chmod", "0744", "/usr/local/lib/storlets/logback.xml"]
 
     CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
 
-    ENTRYPOINT ["/opt/storlets/init_container.sh"]
+    ENTRYPOINT ["/usr/local/libexec/storlets/init_container.sh"]
 
 Build the image
 

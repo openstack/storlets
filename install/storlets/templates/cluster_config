@@ -34,7 +34,6 @@
         "storlets_enabled_attribute_name": "storlet-enabled",
         "docker_registry_random_string": "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ1234",
         "docker_registry_port": "5001",
-        "container_install_dir": "/opt/storlets",
         "storlets_default_project_name": "{{ storlets_default_project_name }}",
         "storlets_default_project_user_name": "{{ storlets_default_project_user_name }}",
         "storlets_default_project_user_password": "{{ storlets_default_project_user_password }}",
