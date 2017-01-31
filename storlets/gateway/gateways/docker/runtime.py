@@ -345,7 +345,7 @@ class RunTimeSandbox(object):
         self.logger.info("Trying to start docker container from default image")
 
         # TODO(eranr): move the default tenant image name to a config var
-        docker_image_name = 'ubuntu_14.04_jre8_storlets'
+        docker_image_name = 'ubuntu_16.04_jre8_storlets'
         self._restart(docker_image_name)
         self.wait()
 
