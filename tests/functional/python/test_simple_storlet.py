@@ -13,8 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+import tempfile
 from swiftclient import client
+from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
+
+from eventlet.green import urllib2
 
 
 class TestSimpleStorlet(StorletPythonFunctionalTest):
@@ -22,9 +27,12 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
         self.storlet_log = 'simple.log'
         self.content = 'abcdefghijklmonp'
         self.additional_headers = {}
-        super(TestSimpleStorlet, self).setUp('simple', 'simple.py',
-                                             'simple.SimpleStorlet',
-                                             'myobjects', 'source.txt')
+        super(TestSimpleStorlet, self).setUp(
+            storlet_dir='simple',
+            storlet_name='simple.py',
+            storlet_main='simple.SimpleStorlet',
+            container='myobjects',
+            storlet_file='source.txt')
 
     def test_get(self):
         resp = dict()
@@ -64,6 +72,82 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
         self.assertEqual(200, resp['status'])
         self.assertEqual('simple', headers['x-object-meta-test'])
         self.assertEqual(self.content, content)
+
+        resp = dict()
+        client.delete_object(
+            self.url, self.token, self.container, objname,
+            response_dict=resp)
+        self.assertEqual(204, resp['status'])
+
+    @attr('slow')
+    def test_put_512MB_file(self):
+        with tempfile.NamedTemporaryFile() as f:
+            with open(f.name, 'w') as wf:
+                for _ in range(128):
+                    wf.write('1' * (4 * 1024 * 1024))
+
+            headers = {'X-Run-Storlet': self.storlet_name}
+            headers.update(self.additional_headers)
+            with open(f.name, 'r') as rf:
+                response = dict()
+                client.put_object(self.url, self.token,
+                                  self.container, f.name, rf,
+                                  512 * 1024 * 1024, None, None,
+                                  "application/octet-stream",
+                                  headers, None, None, None, response)
+
+            status = response.get('status')
+            self.assertEqual(201, status)
+
+    def test_copy_from(self):
+        resp = dict()
+        objname = self.storlet_file + '-copy'
+        req_headers = {'X-Run-Storlet': self.storlet_name,
+                       'X-Copy-From': 'myobjects/%s' % self.storlet_file}
+        client.put_object(
+            self.url, self.token, self.container, objname,
+            self.content, response_dict=resp, headers=req_headers)
+
+        self.assertEqual(201, resp['status'])
+        resp_header = resp['headers']
+        self.assertEqual('myobjects/%s' % self.storlet_file,
+                         resp_header['x-storlet-generated-from'])
+        self.assertEqual(self.acct,
+                         resp_header['x-storlet-generated-from-account'])
+        self.assertIn('x-storlet-generated-from-last-modified', resp_header)
+
+        headers = client.head_object(self.url, self.token,
+                                     'myobjects', objname)
+        self.assertEqual(str(len(self.content)), headers['content-length'])
+
+        resp = dict()
+        client.delete_object(
+            self.url, self.token, self.container, objname,
+            response_dict=resp)
+        self.assertEqual(204, resp['status'])
+
+    def test_copy_dest(self):
+        # No COPY in swiftclient. Using urllib instead...
+        url = os.path.join(self.url, 'myobjects', self.storlet_file)
+        objname = self.storlet_file + '-copy-ex'
+        headers = {'X-Auth-Token': self.token,
+                   'X-Run-Storlet': self.storlet_name,
+                   'Destination': 'myobjects/%s' % objname}
+        headers.update(self.additional_headers)
+        req = urllib2.Request(url, headers=headers)
+        req.get_method = lambda: 'COPY'
+        conn = urllib2.urlopen(req, timeout=10)
+
+        self.assertEqual(201, conn.getcode())
+        self.assertEqual('myobjects/%s' % self.storlet_file,
+                         conn.info()['x-storlet-generated-from'])
+        self.assertEqual(self.acct,
+                         conn.info()['x-storlet-generated-from-account'])
+        self.assertIn('x-storlet-generated-from-last-modified', conn.info())
+
+        headers = client.head_object(self.url, self.token,
+                                     'myobjects', objname)
+        self.assertEqual(str(len(self.content)), headers['content-length'])
 
         resp = dict()
         client.delete_object(
