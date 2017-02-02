@@ -38,13 +38,6 @@ def delete_local_chunks():
         os.remove(oname)
 
 
-def create_container(url, token, name):
-    response = dict()
-    c.put_container(url, token, name, headers=None, response_dict=response)
-    status = response.get('status')
-    assert (status >= 200 or status < 300)
-
-
 class TestSLO(StorletJavaFunctionalTest):
     def setUp(self):
         self.storlet_log = 'identitystorlet-1.0.log'
@@ -55,9 +48,8 @@ class TestSLO(StorletJavaFunctionalTest):
                                    main_class,
                                    'myobjects', '')
 
-        create_container(self.url, self.token, 'container1')
-        create_container(self.url, self.token, 'container2')
-        create_container(self.url, self.token, 'container3')
+        for cont in ('container1', 'container2', 'container3'):
+            self.create_container(cont)
         create_local_chunks()
         self.put_SLO()
         self.get_SLO()
