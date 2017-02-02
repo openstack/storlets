@@ -15,6 +15,7 @@
 
 from swiftclient import client
 from tests.functional.python import StorletPythonFunctionalTest
+import unittest
 
 
 class TestExecDepStorlet(StorletPythonFunctionalTest):
@@ -50,3 +51,7 @@ class TestExecDepStorletOnProxy(TestExecDepStorlet):
     def setUp(self):
         super(TestExecDepStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

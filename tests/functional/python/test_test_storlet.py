@@ -19,6 +19,7 @@ from swiftclient import ClientException
 from nose.plugins.attrib import attr
 from storlets.tools.utils import get_member_auth
 from tests.functional.python import StorletPythonFunctionalTest
+import unittest
 
 
 class myTestThread(threading.Thread):
@@ -159,3 +160,7 @@ class TestTestStorletOnProxy(TestTestStorlet):
     def setUp(self):
         super(TestTestStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

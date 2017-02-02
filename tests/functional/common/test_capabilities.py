@@ -16,6 +16,7 @@ Limitations under the License.
 
 from swiftclient import client as swift_client
 from tests.functional import StorletBaseFunctionalTest
+import unittest
 
 
 class TestCapabilities(StorletBaseFunctionalTest):
@@ -40,3 +41,7 @@ class TestCapabilities(StorletBaseFunctionalTest):
         self.assertEqual(options['storlet_container'], 'storlet')
         self.assertEqual(options['storlet_gateway_class'],
                          'StorletGatewayDocker')
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -12,8 +12,10 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 
 class TestCsvStorlet(StorletJavaFunctionalTest):
@@ -109,3 +111,7 @@ class TestCsvStorletOnProxy(TestCsvStorlet):
     def setUp(self):
         super(TestCsvStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

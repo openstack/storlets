@@ -16,6 +16,7 @@
 
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 
 class TestMetadataStorlet(StorletJavaFunctionalTest):
@@ -74,3 +75,7 @@ class TestMetadataStorletOnProxy(TestMetadataStorlet):
     def setUp(self):
         super(TestMetadataStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -15,9 +15,8 @@
 
 from unittest import TestCase
 from cStringIO import StringIO
-
 from storlet_samples.simple.simple import SimpleStorlet
-
+import unittest
 from tests.unit import FakeLogger
 
 
@@ -81,3 +80,7 @@ class TestSimpleStorlet(TestCase):
         self.assertEqual(input_string, store_out[0].read())
         self.assertTrue(store_in[0].closed)
         self.assertTrue(store_out[0].closed)
+
+
+if __name__ == '__main__':
+    unittest.main()

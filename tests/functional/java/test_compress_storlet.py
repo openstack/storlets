@@ -16,6 +16,7 @@
 
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 
 class TestCompressStorlet(StorletJavaFunctionalTest):
@@ -72,3 +73,7 @@ class TestCompressStorletOnProxy(TestCompressStorlet):
     def setUp(self):
         super(TestCompressStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

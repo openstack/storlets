@@ -175,3 +175,7 @@ class TestStorletRangeInputFile(TestStorletInputFile):
     def _create_file(self):
         return StorletRangeInputFile(self.metadata, self.fd, self.start,
                                      self.end)
+
+
+if __name__ == '__main__':
+    unittest.main()

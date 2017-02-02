@@ -57,3 +57,7 @@ class TestLoader(unittest.TestCase):
         with self.assertRaises(StorletGatewayLoadError):
             load_gateway('storlets.gateway.gateways.stub.'
                          'StorletGatewayAnotherStub')
+
+
+if __name__ == '__main__':
+    unittest.main()

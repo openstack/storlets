@@ -19,6 +19,7 @@ import pexpect
 from tests.functional import StorletBaseFunctionalTest, PATH_TO_STORLETS, \
     CONSOLE_TIMEOUT
 from tests.functional.java import BIN_DIR
+import unittest
 
 
 class TestDeployStorlet(StorletBaseFunctionalTest):
@@ -54,3 +55,7 @@ class TestDeployStorlet(StorletBaseFunctionalTest):
         child.sendline(self.execdep_storlet_dep_file)
         child.sendline('\n')
         child.expect('Storlet deployment complete.*', timeout=self.timeout)
+
+
+if __name__ == '__main__':
+    unittest.main()

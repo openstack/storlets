@@ -12,8 +12,10 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 # Below is the records.txt file we are testing with
 # position line content
@@ -148,3 +150,7 @@ class TestPartitionsIdentityStorletOnProxy(TestPartitionsIdentityStorlet):
     def setUp(self):
         super(TestPartitionsIdentityStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

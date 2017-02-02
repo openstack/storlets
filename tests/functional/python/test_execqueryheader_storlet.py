@@ -17,6 +17,7 @@ import random
 import string
 from swiftclient import client
 from tests.functional.python import StorletPythonFunctionalTest
+import unittest
 
 
 class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
@@ -113,3 +114,7 @@ class TestExecQueryHeaderStorletOnProxy(TestExecQueryHeaderStorlet):
     def setUp(self):
         super(TestExecQueryHeaderStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

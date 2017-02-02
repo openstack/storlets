@@ -18,7 +18,7 @@ import tempfile
 from swiftclient import client
 from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
-
+import unittest
 from eventlet.green import urllib2
 
 
@@ -160,3 +160,7 @@ class TestSimpleStorletOnProxy(TestSimpleStorlet):
     def setUp(self):
         super(TestSimpleStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

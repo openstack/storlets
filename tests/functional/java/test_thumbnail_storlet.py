@@ -14,10 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
-
+import unittest
 from eventlet.green import urllib2
 
 
@@ -121,3 +120,7 @@ class TestThumbnailStorletOnProxy(TestThumbnailStorlet):
     def setUp(self):
         super(TestThumbnailStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

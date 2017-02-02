@@ -19,6 +19,7 @@ import string
 from swiftclient import client
 from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
+import unittest
 
 
 class TestSLO(StorletPythonFunctionalTest):
@@ -122,3 +123,7 @@ class TestSLOOnProxy(TestSLO):
     def setUp(self):
         super(TestSLOOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -21,6 +21,7 @@ import string
 from swiftclient import client as c
 from nose.plugins.attrib import attr
 from tests.functional.java import StorletJavaFunctionalTest
+import unittest
 
 
 def create_local_chunks():
@@ -153,3 +154,7 @@ class TestSloOnProxy(TestSLO):
     def setUp(self):
         super(TestSloOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+if __name__ == '__main__':
+    unittest.main()

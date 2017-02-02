@@ -16,6 +16,7 @@
 import uuid
 from swiftclient import client as swift_client
 from tests.functional import StorletBaseFunctionalTest
+import unittest
 
 
 class TestSetACL(StorletBaseFunctionalTest):
@@ -52,3 +53,7 @@ class TestSetACL(StorletBaseFunctionalTest):
         expected_acl = ('adam,.r:storlets'
                         '.john_mystorlet-1.0.jar')
         self.assertEqual(read_acl, expected_acl)
+
+
+if __name__ == '__main__':
+    unittest.main()

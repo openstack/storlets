@@ -132,3 +132,7 @@ class TestStorletDaemon(unittest.TestCase):
         # TODO(kota_): SBUS_CMD_CANCEL has more tasks to do for cleanup
         # so need more assertions.
         self._test_main_loop_stop(sbus.command.SBUS_CMD_CANCEL)
+
+
+if __name__ == '__main__':
+    unittest.main()
