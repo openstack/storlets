@@ -51,10 +51,8 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                         key + ':' + params[key]
                     count = count + 1
             else:
-                querystring = ''
-                for key in params:
-                    querystring += '%s=%s,' % (key, params[key])
-                querystring = querystring[:-1]
+                querystring = '&'.join(['%s=%s' % (k, v)
+                                       for k, v in params.items()])
         else:
             querystring = None
 
