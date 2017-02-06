@@ -234,7 +234,7 @@ class RunTimeSandbox(object):
         self.sandbox_wait_timeout = \
             int(conf.get('restart_linux_container_timeout', 3))
 
-        self.docker_repo = conf.get('docker_repo', 'localhost:5001')
+        self.docker_repo = conf.get('docker_repo', '')
         self.docker_image_name_prefix = 'tenant'
 
         # TODO(add line in conf)

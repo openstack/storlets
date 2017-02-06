@@ -1,180 +1,122 @@
 #!/bin/bash
-# s2aio controls an all in one installation of swift, keystone and storlets
-# s2aio has 3 sub commands: install, start and stop
-# install would install from scratch an all in one swift with the storlet engine.
-# the installation has two flavors:
-# 1. Jenkins job installation, for running the funciotal tests.
-# 2. Developer instalation.
-# start and stop are currently supported only for the host flavor.
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
+set -e
+
+REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+DEVSTACK_DIR=~/devstack
+SWIFT_IP=127.0.0.1
+KEYSTONE_IP=$SWIFT_IP
+KEYSTONE_PROTOCOL=http
+KEYSTONE_PUBLIC_URL=${KEYSTONE_PROTOCOL}://${KEYSTONE_IP}/identity/v3
+IDENTITY_API_VERSION=3
+
+SWIFT_DATA_DIR=/opt/stack/data/swift
 
 usage() {
-    echo "Usage: s2aio.sh install <flavor> <target>"
+    echo "Usage: s2aio.sh install"
     echo "       s2aio.sh start"
     echo "       s2aio.sh stop"
-    echo "flavor = jenkins | dev"
-    echo "target = host | docker"
     exit 1
+}
+
+_prepare_devstack_env() {
+    # Checkout devstack
+    if [ ! -e $DEVSTACK_DIR ]; then
+        git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+        cp devstack/localrc.sample $DEVSTACK_DIR/localrc
+    fi
+
+    source $DEVSTACK_DIR/functions
+    source $DEVSTACK_DIR/functions-common
+    source $DEVSTACK_DIR/lib/swift
+    source devstack/plugin.sh
 }
 
 start_s2aio() {
     set -e
-    swift-init --run-dir /opt/stack/data/swift/run/ all start
-    sudo mkdir -p /var/run/uwsgi
-    sudo chown ${USER}:`id -g -n ${USER}` /var/run/uwsgi
+    swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all start
     /usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-public.ini &> /dev/null &
     /usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-admin.ini &> /dev/null &
     exit 0
 }
 
-stop_s2aio() {
-    sh -c 'swift-init --run-dir /opt/stack/data/swift/run/ all stop'
+_stop_s2aio() {
+    set +e
+    swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all stop
     sh -c 'ps aux | pgrep uwsgi | xargs kill -9'
+    set -e
+}
+
+stop_s2aio() {
+    _stop_s2aio
     exit 0
 }
 
-install_docker() {
-    sudo apt-get install apt-transport-https aufs-tools linux-image-generic-lts-xenial -y --force-yes
-    sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    sudo sh -c "echo deb https://apt.dockerproject.org/repo ubuntu-xenial main > /etc/apt/sources.list.d/docker.list"
-    sudo apt-get update
-    sudo apt-get install docker-engine -y --force-yes
-    sudo sh -c "echo DOCKER_OPTS=\"--storage-driver=vfs\" >> /etc/default/docker"
-    sudo service docker restart
-}
-
-install_swift_on_container() {
-    # run the swift docker container
-    S2AIO_RUNNING=`sudo docker ps | grep -c s2aio`
-    S2AIO_EXISTS=`sudo docker ps -a | grep -c s2aio`
-    if [ "$S2AIO_RUNNING" == "0" ]; then
-        if [ "$S2AIO_EXISTS" == "1" ]; then
-             sudo docker rm s2aio
-        fi
-        sudo docker run -i -d --privileged=true --name s2aio -t ubuntu:14.04
-    fi
-    export S2AIO_IP=`sudo docker exec s2aio ifconfig | grep "inet addr" | head -1 | awk '{print $2}' | awk -F":" '{print $2}'`
-
-    # Take care of host key verification
-    touch ~/.ssh/known_hosts
-    ssh-keygen -R $S2AIO_IP -f ~/.ssh/known_hosts
-    ssh-keyscan  -H $S2AIO_IP >> ~/.ssh/known_hosts
-    sudo docker exec s2aio sh -c "echo deb http://us.archive.ubuntu.com/ubuntu/ xenial-backports main restricted universe multiverse >> /etc/apt/sources.list"
-    sudo docker exec s2aio apt-get update
-    sudo docker exec s2aio apt-get install software-properties-common -y --force-yes
-    sudo docker exec s2aio apt-add-repository -y ppa:ansible/ansible
-    sudo docker exec s2aio apt-get update
-    sudo docker exec s2aio apt-get install openssh-server git ansible -y --force-yes
-    sudo docker exec s2aio service ssh start
-
-    # Add the key to the user's authorized keys
-    sudo docker exec s2aio mkdir -p /root/.ssh
-    sudo docker exec s2aio bash -c "echo `cat ~/.ssh/id_rsa.pub` > /root/.ssh/authorized_keys"
-    sudo docker exec s2aio useradd stack
-    sudo docker exec s2aio mkdir /home/stack
-    sudo docker exec s2aio bash -c 'grep -q "^#includedir.*/etc/sudoers.d" /etc/sudoers ||\
-                                    echo "#includedir /etc/sudoers.d" >> /etc/sudoers'
-    sudo docker exec s2aio bash -c '( umask 226 && echo "stack ALL=(ALL) NOPASSWD:ALL" >\
-                                      /etc/sudoers.d/50_stack_sh )'
-    sudo docker cp install/swift/install_swift.sh s2aio:/home/stack/install_swift.sh
-    sudo docker cp install/swift/localrc.sample s2aio:/home/stack/localrc.sample
-    sudo docker exec s2aio chown -R stack:stack /home/stack
-    sudo docker exec --user stack s2aio chmod -R 0755 /home/stack
-    sudo docker exec --user stack s2aio /home/stack/install_swift.sh docker $S2AIO_IP
-    sudo docker exec s2aio service rsyslog restart
-}
-
-install_swift_on_host() {
-    export S2AIO_IP='127.0.0.1'
-
-    # Add the key to the user's authorized keys
-    grep -s -F ${USER} ~/.ssh/authorized_keys || cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-
-    # Take care of host key verification for the current user
-    if [ -f ~/.ssh/known_hosts ]; then
-        ssh-keygen -R localhost -f ~/.ssh/known_hosts
-    fi
-    ssh-keyscan -H localhost >> ~/.ssh/known_hosts
-    ssh-keyscan -H 127.0.0.1 >> ~/.ssh/known_hosts
-
-    # Allow Ansible to ssh locally as root without a password
-    sudo mkdir -p /root/.ssh
-    sudo grep -s -F ${USER} /root/.ssh/authorized_keys || sudo sh -c 'cat ~/.ssh/id_rsa.pub >> /root/.ssh/authorized_keys'
-    sudo sh -c 'echo "" >> /etc/ssh/sshd_config'
-    sudo sh -c 'echo "# allow ansible connections from local host" >> /etc/ssh/sshd_config'
-    sudo sh -c 'echo "Match Address 127.0.0.1" >> /etc/ssh/sshd_config'
-    sudo sh -c 'echo "\tPermitRootLogin without-password" >> /etc/ssh/sshd_config'
-    sudo service ssh restart
-
-    # Install Swift
-    cd install/swift
-    ./install_swift.sh host $S2AIO_IP
-    cd -
-}
-
-install_storlets() {
-    install/storlets/prepare_storlets_install.sh "$FLAVOR" "$TARGET"
-
-    # Install Storlets
-    cd install/storlets
-    ./install_storlets.sh
+install_swift_using_devstack() {
+    cd $DEVSTACK_DIR
+    ./stack.sh
+    stop_swift
     cd -
 
-    # TODO: this is for tests. Deal accordingly.
-    cp install/storlets/deploy/cluster_config.json .
-    sudo chown $USER:$USER cluster_config.json
+    # add entry to fstab
+    mount_added=$(grep swift.img /etc/fstab | wc -l)
+    if [ $mount_added -eq 0 ]; then
+        sudo sh -c 'echo "/opt/stack/data/swift/drives/images/swift.img /opt/stack/data/swift/drives/sdb1 xfs loop" >> /etc/fstab'
+    fi
 }
 
 install_s2aio() {
-    # Make sure hostname is resolvable
-    grep -q -F ${HOSTNAME} /etc/hosts || sudo sed -i '1i127.0.0.1\t'"$HOSTNAME"'' /etc/hosts
+    _prepare_devstack_env
 
-    install/install_ansible.sh
-
-    # Allow Ansible to ssh as the current user without a password
-    # While at it, take care of host key verification.
-    # This involves:
-    # 1. Generate an rsa key for the current user if necessary
-    if [ ! -f ~/.ssh/id_rsa.pub ]; then
-        ssh-keygen -q -t rsa -f ~/.ssh/id_rsa -N ""
-    fi
-
-    if [ "$TARGET" == "docker" ]; then
-        install_docker
-        install_swift_on_container
-    else
-        install_swift_on_host
-    fi
-
+    install_swift_using_devstack
     install_storlets
 
-    echo "export OS_IDENTITY_API_VERSION=3" >> ~/.bashrc
-    echo "export OS_USERNAME=tester; export OS_PASSWORD=testing" >> ~/.bashrc
-    echo "export OS_PROJECT_NAME=test; OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
-    echo "export OS_AUTH_URL=http://"$S2AIO_IP":5000/v3" >> ~/.bashrc
+    echo "export OS_IDENTITY_API_VERSION=$KEYSTONE_IDENTITY_API_VERSION" >> ~/.bashrc
+    echo "export OS_USERNAME=$SWIFT_DEFAULT_USER; export OS_PASSWORD=$SWIFT_DEFAULT_USER_PWD" >> ~/.bashrc
+    echo "export OS_PROJECT_NAME=$SWIFT_DEFAULT_PROJECT; export OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
+    echo "export OS_AUTH_URL=$KEYSTONE_PUBLIC_URL" >> ~/.bashrc
 }
 
-set -eu
-if [ "$#" -ne 1 ] && [ "$#" -ne 3 ]; then
-    usage
-fi
+uninstall_swift_using_devstack() {
+    _stop_s2aio
+    cd $DEVSTACK_DIR
+    ./unstack.sh
+    cd -
+
+    echo "Removing swift device mount, creating /etc/fstab.bak"
+    sudo sed -i.bak '/swift.img/d'  /etc/fstab
+}
+
+
+uninstall_s2aio() {
+    _prepare_devstack_env
+
+    echo "Removing all storlets run time data"
+    uninstall_storlets
+
+    echo "Uninstalling Swift"
+    uninstall_swift_using_devstack
+}
 
 COMMAND="$1"
 case $COMMAND in
   "install" )
-    if [ "$#" -ne 3 ]; then
-        usage
-    fi
-    FLAVOR="$2"
-    if [ "$FLAVOR" != "jenkins" ] && [ "$FLAVOR" != "dev" ]; then
-        echo "flavor must be either \"jenkins\" or \"dev\""
-        exit 1
-    fi
-    TARGET="$3"
-    if [ "$TARGET" != "host" ] && [ "$TARGET" != "docker" ]; then
-        echo "target must be either \"host\" or \"docker\""
-        exit 1
-    fi
     install_s2aio
+    ;;
+
+  "uninstall" )
+    uninstall_s2aio
     ;;
 
   "start" )
@@ -188,8 +130,4 @@ case $COMMAND in
     usage
 esac
 
-echo "export OS_IDENTITY_API_VERSION=3" >> ~/.bashrc
-echo "export OS_USERNAME=tester; export OS_PASSWORD=testing" >> ~/.bashrc
-echo "export OS_PROJECT_NAME=test; OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
-echo "export OS_AUTH_URL=http://"$S2AIO_IP"/identity/v3" >> ~/.bashrc
-set +eu
+set +e

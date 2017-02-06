@@ -7,4 +7,4 @@ With that user just do:
     sudo apt-get install python-tox python-nose git
     git clone https://github.com/openstack/storlets.git
     cd storlets
-    ./s2aio.sh install dev host
+    ./s2aio.sh install

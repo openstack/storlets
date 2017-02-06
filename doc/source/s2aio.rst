@@ -1,7 +1,7 @@
 s2aio
 =====
 
-s2aio is a script that installs  Swift (with Keystone) and Storlets all on one.
+s2aio is a script that installs Swift and Storlets all on one.
 The script allows to do the installation either on the host
 where it is invoked or in a Docker container.
 

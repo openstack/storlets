@@ -14,25 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-'''
-*VERY* initial cluster configuration file
-The intention is to have this as the single source
-for all cluster information needs such as:
-- Swift Install
-- Storlets Install
-- Tests
-- Deploy storlets tools
-- etc.
-'''
-import json
+import ConfigParser
 
 
 class ClusterConfig(object):
 
     def __init__(self, config_path):
-        with open(config_path, 'r') as f:
-            conf_string = f.read()
-        self.conf = json.loads(conf_string)
+        config = ConfigParser.ConfigParser()
+        config.read(config_path)
+        options = config.options('general')
+        self.conf = {}
+        for option in options:
+            self.conf[option] = config.get('general', option)
         self._auth_version = '3'
 
     # TODO(eran) get rid of returning raw conf
@@ -41,35 +34,35 @@ class ClusterConfig(object):
 
     @property
     def domain_name(self):
-        return self.conf['all']['keystone_default_domain']
+        return self.conf['keystone_default_domain']
 
     @property
     def auth_uri(self):
-        return self.conf['all']['keystone_public_url']
+        return self.conf['keystone_public_url']
 
     @property
     def project_name(self):
-        return self.conf['all']['storlets_default_project_name']
+        return self.conf['storlets_default_project_name']
 
     @property
     def admin_user(self):
-        return self.conf['all']['storlets_default_project_user_name']
+        return self.conf['storlets_default_project_user_name']
 
     @property
     def admin_password(self):
-        return self.conf['all']['storlets_default_project_user_password']
+        return self.conf['storlets_default_project_user_password']
 
     @property
     def member_user(self):
-        return self.conf['all']['storlets_default_project_member_user']
+        return self.conf['storlets_default_project_member_user']
 
     @property
     def member_password(self):
-        return self.conf['all']['storlets_default_project_member_password']
+        return self.conf['storlets_default_project_member_password']
 
     @property
     def region(self):
-        return self.conf['all'].get('region', '')
+        return self.conf.get('region', '')
 
     # TODO(eranr) move to cluster_config
     @property

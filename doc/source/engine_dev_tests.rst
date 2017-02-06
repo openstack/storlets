@@ -11,36 +11,22 @@ the development environment installation instructions_ or in the getting started
 
 Building
 --------
-The storlets repository consists of code written in Python, Java and C. We have chose ant to serve as a 'make' tool for all of the code.
-The main build task in build.xml is dependent on two other build tasks:
+The storlets repository consists of code written in Python, Java and C.
+The C and Java code reside under the 'src/' directory. The C code is built and
+installed using Makefiles, and the Java code is built and installed using ant
+build.xml files. Refer to the instal_libs.sh script under the repo root directory
+for the exact procedure of building and installing the C and Java code.
 
-#. build_storlets task. This task builds all the sample storlets used in the system tests.
-#. build engine task. This task  builds/packages the following components:
+The python code resides under the storlets directory and is installed using the usual
+setup.py script.
 
-  #. The storlet middleware and the "storlet docker gateway" python code. These are built as two packages in a single 'storlets' egg:
+In addition there are several storlet examples written in both Python and Java under the
+StorletSamples directory. This directory has a build.xml script used to build the samples.
+To build the storlets cd to the StorletSamples/java directory and run:
 
-    * storlet_middleware
-    * storlet_gateway
+::
 
-  #. The SBus code. This is the communication module between the gateway and the Docker container. It has a transport layer written in "C" with
-     'bindings' to both Java and Python.
-  #. The Python written storlet_factory_daemon, which is packaged for installation in a Docker image
-  #. The Java SDaemon code, which is the daemon code that loads the storlets in run time. This code is compiled to a .jar that is later installed
-     in the Docker image.
-  #. The Java SCommon code, which has the storlet interface declaration, as well as the accompanying classes appearing in the interface. This code
-     is compiled to a .jar that is required both in the Docker image as well as for building storlets.
-
-Deploying
----------
-Two additional tasks of interest in our build.xml are the deploy_host_engine and deploy_container_engine.
-These tasks are based on the Ansible installation scripts and do the following:
-
-#. deploy_host_engine would get all the code that is relevant to the host side
-   (python middleware and SBus) and deploy it on the hosts as descrined in the
-   cluster_config.json file
-#. deploy_container_engine, would create an updated image of the tenant defined
-   in the cluster_config.json and distribute it to all nodes as defined in
-   the configuration.
+    ant build
 
 Running the Tests
 -----------------
