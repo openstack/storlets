@@ -1,3 +1,16 @@
+storlets (0.4.0, Openstack Ocata)
+  * Big-Tent changes:
+     - Restructurng the repository to be OpenStack 'compliant'
+     - Port s2aio to devstack for Swift and Keystone
+     - Port installation to Xenial
+     - Move to Keystone V3
+
+  * Initial IPython integration: Deploy a storlet from IPython.
+
+  * Better coverage of python functional tests.
+
+  * Various minor improvements and bug fixes.
+
 storlets (0.3.0, Openstack Newton)
 
   * Python support for writing storlets. This large
