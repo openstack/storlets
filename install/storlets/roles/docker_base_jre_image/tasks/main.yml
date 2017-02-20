@@ -15,4 +15,4 @@
 # limitations under the License.
 
 # Include here task file for various base images, e.g., centosXXX-jre8.yml
-- include: ubuntu_14.04_jre8.yml
+- include: ubuntu_16.04_jre8.yml
