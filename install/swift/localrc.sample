@@ -1,8 +1,6 @@
 ENABLE_HTTPD_MOD_WSGI_SERVICES=False
 KEYSTONE_IP=<set ip!>
 SWIFT_IP=<set ip!>
-SWIFT_BRANCH=stable/ocata
-KEYSTONE_BRANCH=stable/ocata
 ENABLED_SERVICES=key,swift,mysql
 ADMIN_USER=admin
 ADMIN_PASSWORD=admin
