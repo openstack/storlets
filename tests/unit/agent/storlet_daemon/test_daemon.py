@@ -15,13 +15,13 @@
 import unittest
 import eventlet
 import mock
-from storlet_daemon.daemon import (
+from storlets.agent.daemon.manager import (
     Daemon, EXIT_SUCCESS, StorletDaemonException)
-from sbus.datagram import FDMetadata, SBusServiceDatagram
-from sbus.file_description import SBUS_FD_SERVICE_OUT
-import sbus.command
+from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
+from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
+import storlets.sbus.command
 
-from tests.unit.swift import FakeLogger
+from tests.unit import FakeLogger
 
 
 class FakeModule(object):
@@ -110,7 +110,8 @@ class TestStorletDaemon(unittest.TestCase):
         ]
 
         fake_sbus_class = create_fake_sbus_class(scenario)
-        with mock.patch('storlet_daemon.daemon.SBus', fake_sbus_class):
+        with mock.patch(
+                'storlets.agent.daemon.manager.SBus', fake_sbus_class):
             with mock.patch('os.fdopen'):
                 self.pile.spawn(daemon.main_loop)
                 eventlet.sleep()
@@ -124,14 +125,14 @@ class TestStorletDaemon(unittest.TestCase):
     def test_main_loop_successful_stop(self):
         # SBUS_CMD_HALT is for working to stop requested from
         # storlet_middleware
-        self._test_main_loop_stop(sbus.command.SBUS_CMD_HALT)
+        self._test_main_loop_stop(storlets.sbus.command.SBUS_CMD_HALT)
 
     def test_main_loop_canceled_stop(self):
         # SBUS_CMD_CANCEL is for working to stop from sort of daemon
         # management tools
         # TODO(kota_): SBUS_CMD_CANCEL has more tasks to do for cleanup
         # so need more assertions.
-        self._test_main_loop_stop(sbus.command.SBUS_CMD_CANCEL)
+        self._test_main_loop_stop(storlets.sbus.command.SBUS_CMD_CANCEL)
 
 
 if __name__ == '__main__':
