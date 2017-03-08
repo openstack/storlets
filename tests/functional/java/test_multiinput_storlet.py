@@ -26,7 +26,6 @@ class TestMultiInputStorlet(StorletJavaFunctionalTest):
             storlet_dir='MultiInputStorlet',
             storlet_name='multiinputstorlet-1.0.jar',
             storlet_main='org.openstack.storlet.multiinput.MultiInputStorlet',
-            container='myobjects',
             storlet_file=None,
             headers={})
 

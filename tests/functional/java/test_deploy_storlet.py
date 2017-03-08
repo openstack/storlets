@@ -20,12 +20,13 @@ from tests.functional import StorletBaseFunctionalTest, PATH_TO_STORLETS, \
     CONSOLE_TIMEOUT
 from tests.functional.java import BIN_DIR
 import unittest
+from storlets.tools import deploy_storlet
 
 
 class TestDeployStorlet(StorletBaseFunctionalTest):
     def setUp(self):
         super(TestDeployStorlet, self).setUp()
-        self.deploy_storlet_path = '../../storlets/tools/deploy_storlet.py'
+        self.deploy_storlet_path = os.path.abspath(deploy_storlet.__file__)
         self.execdep_storlet_path = os.path.join(PATH_TO_STORLETS,
                                                  'java',
                                                  'ExecDepStorlet',

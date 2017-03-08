@@ -33,7 +33,6 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
         super(TestIdentityStorlet, self).setUp('IdentityStorlet',
                                                'identitystorlet-1.0.jar',
                                                main_class,
-                                               'myobjects',
                                                'source.txt',
                                                ['get42'],
                                                headers)
@@ -59,7 +58,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
         if op == 'GET':
             # Get original object
             original_h, original_c = c.get_object(self.url, self.token,
-                                                  'myobjects',
+                                                  self.container,
                                                   self.storlet_file,
                                                   response_dict=dict())
             # print original_headers
@@ -100,7 +99,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                          "application/octet-stream", headers, None, None,
                          querystring, response)
             resp_headers, saved_c = c.get_object(self.url, self.token,
-                                                 'myobjects',
+                                                 self.container,
                                                  'identity_random_source',
                                                  response_dict=dict())
 
@@ -178,7 +177,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
         headers = {'X-Run-Storlet': self.storlet_name,
                    'X-Storlet-Range': srange}
         junk, content = c.get_object(self.url, self.token,
-                                     'myobjects',
+                                     self.container,
                                      'small',
                                      headers=headers,
                                      response_dict=dict())

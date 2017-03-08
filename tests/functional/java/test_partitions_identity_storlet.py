@@ -61,7 +61,6 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
             'PartitionsIdentityStorlet',
             'partitionsidentitystorlet-1.0.jar',
             main_class,
-            'myobjects',
             'records.txt')
 
     def invoke_storlet(self, start, end, first_partition, max_record_line):

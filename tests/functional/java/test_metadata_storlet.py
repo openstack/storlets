@@ -38,7 +38,6 @@ class TestMetadataStorlet(StorletJavaFunctionalTest):
         super(TestMetadataStorlet, self).setUp('TestMetadataStorlet',
                                                'testmetadatastorlet-1.0.jar',
                                                main_class,
-                                               'myobjects',
                                                'source.txt',
                                                headers=headers)
 
@@ -55,7 +54,7 @@ class TestMetadataStorlet(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         original_headers, original_content = \
             c.get_object(self.url, self.token,
-                         'myobjects', self.storlet_file,
+                         self.container, self.storlet_file,
                          response_dict=dict(), headers=headers)
         self.assertEqual(original_headers['X-Object-Meta-key1'.lower()], '1')
         self.assertEqual(original_headers['X-Object-Meta-key2'.lower()], '2')

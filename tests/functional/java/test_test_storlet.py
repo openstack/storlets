@@ -42,7 +42,6 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         super(TestTestStorlet, self).setUp('TestStorlet',
                                            'test-10.jar',
                                            main_class,
-                                           'myobjects',
                                            '')
 
         self.member_url, self.member_token = get_member_auth(self.conf)
@@ -52,13 +51,6 @@ class TestTestStorlet(StorletJavaFunctionalTest):
                                 self.container,
                                 'test_object',
                                 'some content')
-
-    def tearDown(self):
-        headers = {'X-Container-Read': ''}
-        swift_client.post_container(self.url,
-                                    self.token,
-                                    'myobjects',
-                                    headers)
 
     def invokeTestStorlet(self, op, withlog=False):
         headers = {'X-Run-Storlet': self.storlet_name}
@@ -70,7 +62,7 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         resp_dict = dict()
         try:
             resp_headers, gf = swift_client.get_object(self.url, self.token,
-                                                       'myobjects',
+                                                       self.container,
                                                        'test_object',
                                                        None, None, params,
                                                        resp_dict, headers)
@@ -135,7 +127,7 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         exc_pattern = '^.*403 Forbidden.*$'
         with self.assertRaisesRegexp(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
-                                    'myobjects', 'test_object',
+                                    self.container, 'test_object',
                                     headers=headers)
 
     def test_storlet_acl_get_success(self):
@@ -144,24 +136,24 @@ class TestTestStorlet(StorletJavaFunctionalTest):
         exc_pattern = '^.*403 Forbidden.*$'
         with self.assertRaisesRegexp(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
-                                    'myobjects', 'test_object',
+                                    self.container, 'test_object',
                                     headers=headers)
 
         headers = {'X-Storlet-Container-Read': self.conf.member_user,
                    'X-Storlet-Name': self.storlet_name}
         swift_client.post_container(self.url,
                                     self.token,
-                                    'myobjects',
+                                    self.container,
                                     headers)
         swift_client.head_container(self.url,
                                     self.token,
-                                    'myobjects')
+                                    self.container)
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
         resp_dict = dict()
         swift_client.get_object(self.member_url,
                                 self.member_token,
-                                'myobjects', 'test_object',
+                                self.container, 'test_object',
                                 response_dict=resp_dict,
                                 headers=headers)
         self.assertEqual(resp_dict['status'], 200)

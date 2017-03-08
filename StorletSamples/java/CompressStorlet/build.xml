@@ -24,6 +24,7 @@
                classpath="../../../src/java/SCommon/bin/SCommon.jar"
                includeantruntime="false" />
     </target>
+        <!--TODO: why do we need input.txt from storlets html?-->
         <target name="text">
             <exec dir="bin" executable="wget">
                 <arg line="https://github.com/openstack/storlets -O input.txt" />

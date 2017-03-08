@@ -31,7 +31,6 @@ class TestSLO(StorletPythonFunctionalTest):
             storlet_dir='simple',
             storlet_name='simple.py',
             storlet_main='simple.SimpleStorlet',
-            container='myobjects',
             storlet_file=None,
             headers={})
 
@@ -75,7 +74,7 @@ class TestSLO(StorletPythonFunctionalTest):
 
             headers = response.get('headers')
             segment = dict()
-            segment['path'] = 'myobjects/%s' % oname
+            segment['path'] = '%s/%s' % (self.container, oname)
             segment['size_bytes'] = 1024 * 1024
             segment['etag'] = headers['etag']
             assembly.append(segment)
@@ -111,7 +110,7 @@ class TestSLO(StorletPythonFunctionalTest):
         headers.update(self.additional_headers)
         response = dict()
         headers, body = client.get_object(self.url, self.token,
-                                          'myobjects', 'assembly',
+                                          self.container, 'assembly',
                                           query_string=None,
                                           response_dict=response,
                                           resp_chunk_size=1024 * 1024,

@@ -27,7 +27,6 @@ class TestExecDepStorlet(StorletJavaFunctionalTest):
         super(TestExecDepStorlet, self).setUp('ExecDepStorlet',
                                               'execdepstorlet-1.0.jar',
                                               main_class,
-                                              'myobjects',
                                               'junk.txt',
                                               ['get42'])
 
@@ -36,7 +35,7 @@ class TestExecDepStorlet(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         resp = dict()
         resp_headers, gf = c.get_object(self.url, self.token,
-                                        'myobjects',
+                                        self.container,
                                         self.storlet_file,
                                         response_dict=resp,
                                         headers=headers)

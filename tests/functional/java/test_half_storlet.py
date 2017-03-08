@@ -30,7 +30,6 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
         super(TestHalfIdentityStorlet, self).setUp('HalfStorlet',
                                                    'halfstorlet-1.0.jar',
                                                    main_class,
-                                                   'myobjects',
                                                    'source.txt',
                                                    headers=headers)
 
@@ -52,13 +51,13 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
         if op == 'GET':
             # Get original object
             original_h, original_c = \
-                c.get_object(self.url, self.token, 'myobjects',
+                c.get_object(self.url, self.token, self.container,
                              self.storlet_file,
                              response_dict=dict())
             # print original_headers
             file_length = int(original_h['content-length'])
             processed_h, returned_c = \
-                c.get_object(self.url, self.token, 'myobjects',
+                c.get_object(self.url, self.token, self.container,
                              self.storlet_file,
                              query_string=querystring, response_dict=dict(),
                              headers=req_headers, resp_chunk_size=file_length)
@@ -89,7 +88,7 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
                          "application/octet-stream", headers, None, None,
                          querystring, response)
             resp_headers, saved_content = c.get_object(self.url, self.token,
-                                                       'myobjects',
+                                                       self.container,
                                                        'half_random_source',
                                                        response_dict=dict())
 

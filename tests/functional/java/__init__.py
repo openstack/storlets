@@ -21,7 +21,7 @@ BIN_DIR = 'bin'
 
 class StorletJavaFunctionalTest(StorletFunctionalTest):
     def setUp(self, storlet_dir, storlet_name, storlet_main,
-              container, storlet_file, dep_names=None, headers=None):
+              storlet_file, dep_names=None, headers=None):
         storlet_dir = os.path.join('java', storlet_dir)
         path_to_bundle = os.path.join(PATH_TO_STORLETS, storlet_dir,
                                       BIN_DIR)
@@ -30,7 +30,6 @@ class StorletJavaFunctionalTest(StorletFunctionalTest):
                                                      storlet_dir,
                                                      storlet_name,
                                                      storlet_main,
-                                                     container,
                                                      storlet_file,
                                                      dep_names,
                                                      headers)

@@ -27,7 +27,6 @@ class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
             storlet_dir='exec_query_header',
             storlet_name='exec_query_header.py',
             storlet_main='exec_query_header.ExecQueryHeaderStorlet',
-            container='myobjects',
             storlet_file='source.txt',
             headers={})
 
@@ -51,7 +50,7 @@ class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
         if op == 'GET':
             # Get original object
             original_h, original_c = client.get_object(self.url, self.token,
-                                                       'myobjects',
+                                                       self.container,
                                                        self.storlet_file,
                                                        response_dict=dict())
             file_length = int(original_h['content-length'])
@@ -81,7 +80,7 @@ class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
                               "application/octet-stream", headers, None, None,
                               querystring, response)
             resp_headers, saved_c = client.get_object(self.url, self.token,
-                                                      'myobjects',
+                                                      self.container,
                                                       'random_source',
                                                       response_dict=dict())
 

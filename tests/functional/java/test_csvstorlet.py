@@ -26,7 +26,6 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         super(TestCsvStorlet, self).setUp('CsvStorlet',
                                           'csvstorlet-1.0.jar',
                                           main_class,
-                                          'myobjects',
                                           'meter-1MB.csv')
 
     def invoke_storlet(self, start, end,

@@ -40,7 +40,6 @@ class TestTestStorlet(StorletPythonFunctionalTest):
             storlet_dir='test',
             storlet_name='test.py',
             storlet_main='test.TestStorlet',
-            container='myobjects',
             storlet_file=None,
             headers={})
 
@@ -52,13 +51,6 @@ class TestTestStorlet(StorletPythonFunctionalTest):
                                 'test_object',
                                 'some content')
 
-    def tearDown(self):
-        headers = {'X-Container-Read': ''}
-        swift_client.post_container(self.url,
-                                    self.token,
-                                    'myobjects',
-                                    headers)
-
     def invoke_storlet(self, op, withlog=False):
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
@@ -69,7 +61,7 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         resp_dict = dict()
         try:
             resp_headers, get_text = swift_client.get_object(
-                self.url, self.token, 'myobjects', 'test_object',
+                self.url, self.token, self.container, 'test_object',
                 None, None, params, resp_dict, headers)
             get_response_status = resp_dict.get('status')
 
@@ -124,7 +116,7 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         exc_pattern = '^.*403 Forbidden.*$'
         with self.assertRaisesRegexp(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
-                                    'myobjects', 'test_object',
+                                    self.container, 'test_object',
                                     headers=headers)
 
     def test_storlet_acl_get_success(self):
@@ -133,24 +125,24 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         exc_pattern = '^.*403 Forbidden.*$'
         with self.assertRaisesRegexp(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
-                                    'myobjects', 'test_object',
+                                    self.container, 'test_object',
                                     headers=headers)
 
         headers = {'X-Storlet-Container-Read': self.conf.member_user,
                    'X-Storlet-Name': self.storlet_name}
         swift_client.post_container(self.url,
                                     self.token,
-                                    'myobjects',
+                                    self.container,
                                     headers)
         swift_client.head_container(self.url,
                                     self.token,
-                                    'myobjects')
+                                    self.container)
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
         resp_dict = dict()
         swift_client.get_object(self.member_url,
                                 self.member_token,
-                                'myobjects', 'test_object',
+                                self.container, 'test_object',
                                 response_dict=resp_dict,
                                 headers=headers)
         self.assertEqual(200, resp_dict['status'])

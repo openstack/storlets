@@ -27,7 +27,6 @@ class TestCompressStorlet(StorletJavaFunctionalTest):
         super(TestCompressStorlet, self).setUp('CompressStorlet',
                                                'compressstorlet-1.0.jar',
                                                main_class,
-                                               'myobjects',
                                                'input.txt')
 
     def test_put(self):
@@ -35,9 +34,8 @@ class TestCompressStorlet(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         querystring = "action=compress"
 
-        with open('../../StorletSamples/java/CompressStorlet/bin/input.txt',
-                  'r') as myfile:
-            data = myfile.read()
+        # simply set 1KB string data to compress
+        data = 'A' * 1024
 
         response = dict()
         c.put_object(self.url, self.token, self.container, self.storlet_file,

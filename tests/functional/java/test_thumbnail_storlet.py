@@ -28,7 +28,6 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         super(TestThumbnailStorlet, self).setUp('ThumbnailStorlet',
                                                 'thumbnail-1.0.jar',
                                                 main_class,
-                                                'myobjects',
                                                 'sample.jpg')
 
     def invoke_storlet_on_get(self):
@@ -36,7 +35,7 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         resp = dict()
         resp_headers, gf = c.get_object(self.url, self.token,
-                                        'myobjects',
+                                        self.container,
                                         self.storlet_file,
                                         response_dict=resp,
                                         headers=headers)
@@ -52,7 +51,7 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         source_file = '%s/%s' % (self.path_to_bundle, self.storlet_file)
         with open(source_file, 'r') as f:
             c.put_object(self.url, self.token,
-                         'myobjects', 'gen_thumb_on_put.jpg', f,
+                         self.container, 'gen_thumb_on_put.jpg', f,
                          headers=headers,
                          response_dict=resp)
 
@@ -60,16 +59,17 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         self.assertIn(status, [201, 202])
 
         headers = c.head_object(self.url, self.token,
-                                'myobjects', 'gen_thumb_on_put.jpg')
+                                self.container, 'gen_thumb_on_put.jpg')
         self.assertEqual(headers['content-length'], '49032')
 
     def invoke_storlet_on_copy_from(self):
         headers = {'X-Run-Storlet': self.storlet_name,
-                   'X-Copy-From': 'myobjects/%s' % self.storlet_file}
+                   'X-Copy-From': '%s/%s' %
+                   (self.container, self.storlet_file)}
         headers.update(self.additional_headers)
         resp = dict()
         c.put_object(self.url, self.token,
-                     'myobjects', 'gen_thumb_on_copy.jpg', '',
+                     self.container, 'gen_thumb_on_copy.jpg', '',
                      headers=headers,
                      response_dict=resp)
 
@@ -77,21 +77,22 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         self.assertIn(status, [201, 202])
         rh = resp['headers']
         self.assertEqual(rh['x-storlet-generated-from'],
-                         'myobjects/%s' % self.storlet_file)
+                         '%s/%s' %
+                         (self.container, self.storlet_file))
         self.assertEqual(rh['x-storlet-generated-from-account'],
                          self.acct)
         self.assertIn('x-storlet-generated-from-last-modified', rh)
 
         headers = c.head_object(self.url, self.token,
-                                'myobjects', 'gen_thumb_on_copy.jpg')
+                                self.container, 'gen_thumb_on_copy.jpg')
         self.assertEqual(headers['content-length'], '49032')
 
     def invoke_storlet_on_copy_dest(self):
         # No COPY in swiftclient. Using urllib instead...
-        url = '%s/%s/%s' % (self.url, 'myobjects', self.storlet_file)
+        url = '%s/%s/%s' % (self.url, self.container, self.storlet_file)
         headers = {'X-Auth-Token': self.token,
                    'X-Run-Storlet': self.storlet_name,
-                   'Destination': 'myobjects/gen_thumb_on_copy_.jpg'}
+                   'Destination': '%s/gen_thumb_on_copy_.jpg' % self.container}
         headers.update(self.additional_headers)
         req = urllib2.Request(url, headers=headers)
         req.get_method = lambda: 'COPY'
@@ -100,7 +101,7 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         self.assertIn(status, [201, 202])
 
         headers = c.head_object(self.url, self.token,
-                                'myobjects', 'gen_thumb_on_copy_.jpg')
+                                self.container, 'gen_thumb_on_copy_.jpg')
         self.assertEqual(headers['content-length'], '49032')
 
     def test_get(self):

@@ -31,7 +31,6 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
             storlet_dir='simple',
             storlet_name='simple.py',
             storlet_main='simple.SimpleStorlet',
-            container='myobjects',
             storlet_file='source.txt')
 
     def test_get(self):
@@ -103,21 +102,22 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
         resp = dict()
         objname = self.storlet_file + '-copy'
         req_headers = {'X-Run-Storlet': self.storlet_name,
-                       'X-Copy-From': 'myobjects/%s' % self.storlet_file}
+                       'X-Copy-From': '%s/%s' %
+                       (self.container, self.storlet_file)}
         client.put_object(
             self.url, self.token, self.container, objname,
             self.content, response_dict=resp, headers=req_headers)
 
         self.assertEqual(201, resp['status'])
         resp_header = resp['headers']
-        self.assertEqual('myobjects/%s' % self.storlet_file,
+        self.assertEqual('%s/%s' % (self.container, self.storlet_file),
                          resp_header['x-storlet-generated-from'])
         self.assertEqual(self.acct,
                          resp_header['x-storlet-generated-from-account'])
         self.assertIn('x-storlet-generated-from-last-modified', resp_header)
 
         headers = client.head_object(self.url, self.token,
-                                     'myobjects', objname)
+                                     self.container, objname)
         self.assertEqual(str(len(self.content)), headers['content-length'])
 
         resp = dict()
@@ -128,25 +128,25 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
 
     def test_copy_dest(self):
         # No COPY in swiftclient. Using urllib instead...
-        url = os.path.join(self.url, 'myobjects', self.storlet_file)
+        url = os.path.join(self.url, self.container, self.storlet_file)
         objname = self.storlet_file + '-copy-ex'
         headers = {'X-Auth-Token': self.token,
                    'X-Run-Storlet': self.storlet_name,
-                   'Destination': 'myobjects/%s' % objname}
+                   'Destination': '%s/%s' % (self.container, objname)}
         headers.update(self.additional_headers)
         req = urllib2.Request(url, headers=headers)
         req.get_method = lambda: 'COPY'
         conn = urllib2.urlopen(req, timeout=10)
 
         self.assertEqual(201, conn.getcode())
-        self.assertEqual('myobjects/%s' % self.storlet_file,
+        self.assertEqual('%s/%s' % (self.container, self.storlet_file),
                          conn.info()['x-storlet-generated-from'])
         self.assertEqual(self.acct,
                          conn.info()['x-storlet-generated-from-account'])
         self.assertIn('x-storlet-generated-from-last-modified', conn.info())
 
         headers = client.head_object(self.url, self.token,
-                                     'myobjects', objname)
+                                     self.container, objname)
         self.assertEqual(str(len(self.content)), headers['content-length'])
 
         resp = dict()

@@ -27,7 +27,6 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
             storlet_dir='multi_input',
             storlet_name='multi_input.py',
             storlet_main='multi_input.MultiInputStorlet',
-            container='myobjects',
             storlet_file=None,
             headers={})
 

@@ -26,7 +26,6 @@ class TestExecDepStorlet(StorletPythonFunctionalTest):
             storlet_dir='exec_dep',
             storlet_name='exec_dep.py',
             storlet_main='exec_dep.ExecDepStorlet',
-            container='myobjects',
             storlet_file='source.txt',
             dep_names=['get42.sh'],
             headers={})
@@ -37,7 +36,7 @@ class TestExecDepStorlet(StorletPythonFunctionalTest):
         resp = dict()
         resp_headers, get_text = client.get_object(
             self.url, self.token,
-            'myobjects',
+            self.container,
             self.storlet_file,
             response_dict=resp,
             headers=headers)

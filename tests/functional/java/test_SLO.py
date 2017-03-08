@@ -47,7 +47,7 @@ class TestSLO(StorletJavaFunctionalTest):
         super(TestSLO, self).setUp('IdentityStorlet',
                                    'identitystorlet-1.0.jar',
                                    main_class,
-                                   'myobjects', '')
+                                   '')
 
         for cont in ('container1', 'container2', 'container3'):
             self.create_container(cont)
@@ -57,6 +57,7 @@ class TestSLO(StorletJavaFunctionalTest):
 
     def tearDown(self):
         delete_local_chunks()
+        super(TestSLO, self).tearDown()
 
     def get_SLO(self):
         response = dict()
@@ -97,7 +98,7 @@ class TestSLO(StorletJavaFunctionalTest):
 
             headers = response.get('headers')
             segment = dict()
-            segment['path'] = 'myobjects/%s' % oname
+            segment['path'] = '%s/%s' % (self.container, oname)
             segment['size_bytes'] = 1048576
             segment['etag'] = headers['etag']
             assembly.append(segment)
@@ -142,7 +143,7 @@ class TestSLO(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         response = dict()
         headers, body = c.get_object(self.url, self.token,
-                                     'myobjects', 'assembly',
+                                     self.container, 'assembly',
                                      query_string=None,
                                      response_dict=response,
                                      resp_chunk_size=1048576,
