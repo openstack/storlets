@@ -52,7 +52,7 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
             response_dict=resp, headers=req_headers)
         self.assertEqual(200, resp['status'])
         self.assertEqual('simple', headers['x-object-meta-test'])
-        self.assertEqual(self.content[1:4], content)
+        self.assertEqual(self.content[1:5], content)
 
     def test_put(self):
         objname = self.storlet_file + '-put'

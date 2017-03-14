@@ -176,6 +176,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
         srange = 'bytes=%d-%d' % (start, end)
         headers = {'X-Run-Storlet': self.storlet_name,
                    'X-Storlet-Range': srange}
+        headers.update(self.additional_headers)
         junk, content = c.get_object(self.url, self.token,
                                      self.container,
                                      'small',

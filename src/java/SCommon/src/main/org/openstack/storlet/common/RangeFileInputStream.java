@@ -46,7 +46,7 @@ public class RangeFileInputStream extends FileInputStream {
             super(fd);
             this.start = start;
             this.end = end;
-            this.available = (int)(end - start) + 1;
+            this.available = (int)(end - start);
             super.skip(start);
     }
 
