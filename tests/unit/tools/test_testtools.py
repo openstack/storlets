@@ -37,7 +37,7 @@ class TestTestTools(TestCase):
         fake_storlet_out.write(out_string)
         self.assertEqual(out_string * 2, fake_storlet_out.read())
 
-        self.assertEqual(None, fake_storlet_out._metadata)
+        self.assertIsNone(fake_storlet_out._metadata)
         fake_storlet_out.set_metadata({'test': 'tester'})
         self.assertEqual({'test': 'tester'}, fake_storlet_out._metadata)
 
