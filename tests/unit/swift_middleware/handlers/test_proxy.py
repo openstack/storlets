@@ -313,9 +313,46 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual(len(get_calls), 1)
             self.assertEqual(get_calls[-1][3], '')
             self.assertEqual(get_calls[-1][1], source)
+            self.assertIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
+            # no invocation (at gateway stub) at proxy
+            for debug_line in self.logger.get_log_lines('debug'):
+                self.assertNotIn("Identity invocation is called", debug_line)
+
+    def test_PUT_copy_with_storlets_run_on_proxy(self):
+        source = '/v1/AUTH_a/c/so'
+        target = '/v1/AUTH_a/c/to'
+        copy_from = 'c/so'
+        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('PUT', target, HTTPCreated)
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+
+        with storlet_enabled():
+            headers = {'X-Copy-From': copy_from,
+                       'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Run-On-Proxy': '',
+                       'X-Backend-Storage-Policy-Index': 0}
+            resp = self.get_request_response(target, 'PUT', headers=headers)
+            self.assertEqual('201 Created', resp.status)
+            get_calls = self.base_app.get_calls('GET', source)
+            self.assertEqual(len(get_calls), 1)
+            self.assertEqual(get_calls[-1][3], '')
+            self.assertEqual(get_calls[-1][1], source)
+            self.assertNotIn('X-Run-Storlet', get_calls[-1][2])
+            put_calls = self.base_app.get_calls('PUT', target)
+            self.assertEqual(len(put_calls), 1)
+            self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
+            # no invocation at proxy
+            for debug_line in self.logger.get_log_lines('debug'):
+                if "Identity invocation is called" in debug_line:
+                    break
+            else:
+                self.fail('no invocation message found at proxy')
 
     def test_COPY_verb_without_storlets(self):
         source = '/v1/AUTH_a/c/so'
@@ -346,9 +383,46 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual(len(get_calls), 1)
             self.assertEqual(get_calls[-1][3], '')
             self.assertEqual(get_calls[-1][1], source)
+            self.assertIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
+            # no invocation at proxy
+            for debug_line in self.logger.get_log_lines('debug'):
+                self.assertNotIn("Identity invocation is called", debug_line)
+
+    def test_COPY_verb_with_storlets_run_on_porxy(self):
+        source = '/v1/AUTH_a/c/so'
+        target = '/v1/AUTH_a/c/to'
+        destination = 'c/to'
+        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('PUT', target, HTTPCreated)
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+
+        with storlet_enabled():
+            headers = {'Destination': destination,
+                       'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Run-On-Proxy': '',
+                       'X-Backend-Storage-Policy-Index': 0}
+            resp = self.get_request_response(source, 'COPY', headers=headers)
+            self.assertEqual('201 Created', resp.status)
+            get_calls = self.base_app.get_calls('GET', source)
+            self.assertEqual(len(get_calls), 1)
+            self.assertEqual(get_calls[-1][3], '')
+            self.assertEqual(get_calls[-1][1], source)
+            self.assertNotIn('X-Run-Storlet', get_calls[-1][2])
+            put_calls = self.base_app.get_calls('PUT', target)
+            self.assertEqual(len(put_calls), 1)
+            self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
+            # no invocation at proxy
+            for debug_line in self.logger.get_log_lines('debug'):
+                if "Identity invocation is called" in debug_line:
+                    break
+            else:
+                self.fail('no invocation message found at proxy')
 
     def test_copy_with_unsupported_headers(self):
         target = '/v1/AUTH_a/c/o'

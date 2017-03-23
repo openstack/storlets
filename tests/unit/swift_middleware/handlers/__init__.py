@@ -32,6 +32,7 @@ class BaseTestStorletMiddleware(unittest.TestCase):
     def setUp(self, exec_server='proxy'):
         self.exec_server = exec_server
         self.conf = create_handler_config(exec_server)
+        self.logger = FakeLogger()
         self.base_app = FakeApp()
 
     def tearDown(self):
@@ -39,9 +40,8 @@ class BaseTestStorletMiddleware(unittest.TestCase):
 
     def get_app(self, app, global_conf, **local_conf):
         with mock.patch('storlets.swift_middleware.storlet_handler.'
-                        'get_logger') as \
-            get_fake_logger:
-            get_fake_logger.return_value = FakeLogger()
+                        'get_logger') as get_fake_logger:
+            get_fake_logger.return_value = self.logger
             factory = storlet_handler.filter_factory(global_conf, **local_conf)
             return factory(app)
 

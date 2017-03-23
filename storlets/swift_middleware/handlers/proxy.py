@@ -92,7 +92,7 @@ class StorletProxyHandler(StorletBaseHandler):
     def _parse_vaco(self):
         return self.request.split_path(3, 4, rest_with_last=True)
 
-    def is_proxy_runnable(self, resp):
+    def is_proxy_runnable(self, resp=None):
         """
         Check if the storlet should be executed at proxy server
 
@@ -101,10 +101,14 @@ class StorletProxyHandler(StorletBaseHandler):
         """
         # SLO / proxy only case:
         # storlet to be invoked now at proxy side:
+        slo_resposne = False
+        if resp:
+            slo_resposne = self.is_slo_response(resp)
+
         runnable = any(
             [self.execute_on_proxy,
              self.execute_range_on_proxy,
-             self.is_slo_response(resp)])
+             slo_resposne])
         return runnable
 
     @property
@@ -419,18 +423,27 @@ class StorletProxyHandler(StorletBaseHandler):
                                         src_container, src_obj)
         source_req = self.request.copy_get()
         source_req.headers.pop('X-Backend-Storage-Policy-Index', None)
-        source_req.headers.pop('X-Run-Storlet', None)
         source_req.path_info = source_path
-        source_req.headers['X-Newest'] = 'true'
+        if self.is_proxy_runnable():
+            # if user set 'X-Storlet-Run-On-Proxy' header, skip invoking at
+            # object-srever and is_poxy_runnable will be true below
+            source_req.headers.pop('X-Run-Storlet', None)
 
         src_resp = source_req.get_response(self.app)
-        sreq = self._build_storlet_request(self.request, src_resp.headers,
-                                           src_resp.app_iter)
-        self.gather_extra_sources()
-        sresp = self.gateway.invocation_flow(sreq, self.extra_sources)
 
-        resp = self.handle_put_copy_response(sresp.user_metadata,
-                                             sresp.data_iter)
+        if self.is_proxy_runnable(src_resp):
+            sreq = self._build_storlet_request(self.request, src_resp.headers,
+                                               src_resp.app_iter)
+            self.gather_extra_sources()
+            sresp = self.gateway.invocation_flow(sreq, self.extra_sources)
+            data_iter = sresp.data_iter
+            metadata = sresp.user_metadata
+        else:
+            data_iter = src_resp.app_iter
+            metadata = src_resp.headers
+
+        resp = self.handle_put_copy_response(metadata, data_iter)
+
         acct, path = src_resp.environ['PATH_INFO'].split('/', 3)[2:4]
         resp.headers['X-Storlet-Generated-From-Account'] = quote(acct)
         resp.headers['X-Storlet-Generated-From'] = quote(path)
