@@ -384,6 +384,12 @@ class StorletBaseHandler(object):
         self.request.params.update(parameters)
 
     def _set_metadata_in_headers(self, headers, user_metadata):
+        # _set_metadata_in_headers is for user metadata
+        # set by the storlet invocation. This metadata
+        # should be prefixed by 'X-Object-Meta' before
+        # we return things to Swift.
+        # Do not call this method with metadata headers
+        # coming from swift request or response.
         if user_metadata:
             for key, val in user_metadata.items():
                 headers['X-Object-Meta-%s' % key] = val

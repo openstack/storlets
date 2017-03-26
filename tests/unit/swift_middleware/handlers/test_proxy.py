@@ -298,7 +298,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         source = '/v1/AUTH_a/c/so'
         target = '/v1/AUTH_a/c/to'
         copy_from = 'c/so'
-        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('GET', source, HTTPOk,
+                               headers={'x-object-meta-name': 'name'},
+                               body='source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
         self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
@@ -317,6 +319,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation (at gateway stub) at proxy
             for debug_line in self.logger.get_log_lines('debug'):
@@ -326,7 +329,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         source = '/v1/AUTH_a/c/so'
         target = '/v1/AUTH_a/c/to'
         copy_from = 'c/so'
-        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('GET', source, HTTPOk,
+                               headers={'x-object-meta-name': 'name'},
+                               body='source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
         self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
@@ -346,6 +351,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
             for debug_line in self.logger.get_log_lines('debug'):
@@ -368,7 +374,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         source = '/v1/AUTH_a/c/so'
         target = '/v1/AUTH_a/c/to'
         destination = 'c/to'
-        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('GET', source, HTTPOk,
+                               headers={'x-object-meta-name': 'name'},
+                               body='source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
         self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
@@ -387,6 +395,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
             for debug_line in self.logger.get_log_lines('debug'):
@@ -396,7 +405,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         source = '/v1/AUTH_a/c/so'
         target = '/v1/AUTH_a/c/to'
         destination = 'c/to'
-        self.base_app.register('GET', source, HTTPOk, body='source body')
+        self.base_app.register('GET', source, HTTPOk,
+                               headers={'x-object-meta-name': 'name'},
+                               body='source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
         self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
@@ -416,6 +427,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
             for debug_line in self.logger.get_log_lines('debug'):

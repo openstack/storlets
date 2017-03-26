@@ -45,7 +45,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         self.assertIn(resp['status'], [200, 202])
 
     def invoke_storlet_on_put(self):
-        headers = {'X-Run-Storlet': self.storlet_name}
+        headers = {'X-Run-Storlet': self.storlet_name,
+                   'x-object-meta-name': 'thumbnail'}
         headers.update(self.additional_headers)
         resp = dict()
         source_file = '%s/%s' % (self.path_to_bundle, self.storlet_file)
@@ -61,9 +62,11 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_put.jpg')
         self.assertEqual(headers['content-length'], '49032')
+        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
 
     def invoke_storlet_on_copy_from(self):
         headers = {'X-Run-Storlet': self.storlet_name,
+                   'X-Object-Meta-Name': 'thumbnail',
                    'X-Copy-From': '%s/%s' %
                    (self.container, self.storlet_file)}
         headers.update(self.additional_headers)
@@ -86,12 +89,16 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_copy.jpg')
         self.assertEqual(headers['content-length'], '49032')
+        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
+        self.assertTrue('x-object-meta-x-timestamp' not in headers)
+        self.assertTrue('x-timestamp' in headers)
 
     def invoke_storlet_on_copy_dest(self):
         # No COPY in swiftclient. Using urllib instead...
         url = '%s/%s/%s' % (self.url, self.container, self.storlet_file)
         headers = {'X-Auth-Token': self.token,
                    'X-Run-Storlet': self.storlet_name,
+                   'X-Object-Meta-Name': 'thumbnail',
                    'Destination': '%s/gen_thumb_on_copy_.jpg' % self.container}
         headers.update(self.additional_headers)
         req = urllib2.Request(url, headers=headers)
@@ -103,6 +110,9 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_copy_.jpg')
         self.assertEqual(headers['content-length'], '49032')
+        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
+        self.assertTrue('x-object-meta-x-timestamp' not in headers)
+        self.assertTrue('x-timestamp' in headers)
 
     def test_get(self):
         self.invoke_storlet_on_get()

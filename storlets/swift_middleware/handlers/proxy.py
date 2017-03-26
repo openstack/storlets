@@ -19,7 +19,8 @@ try:
     # since it is introduced to swift.
     from swift.common.middleware.copy import \
         _check_copy_from_header as check_copy_from_header, \
-        _check_destination_header as check_destination_header
+        _check_destination_header as check_destination_header, \
+        _copy_headers as copy_headers
 except ImportError:
     # This is required to keep compatibility with
     # swift < 2.8.0 which does not have COPY middleware.
@@ -394,12 +395,11 @@ class StorletProxyHandler(StorletBaseHandler):
                     'Storlet on copy with %s is not supported' %
                     header)
 
-    def handle_put_copy_response(self, out_md, app_iter):
+    def handle_put_copy_response(self, app_iter):
         self._remove_storlet_headers(self.request.headers)
         if 'CONTENT_LENGTH' in self.request.environ:
             self.request.environ.pop('CONTENT_LENGTH')
         self.request.headers['Transfer-Encoding'] = 'chunked'
-        self._set_metadata_in_headers(self.request.headers, out_md)
 
         self.request.environ['wsgi.input'] = FileLikeIter(app_iter)
         return self.request.get_response(self.app)
@@ -424,25 +424,40 @@ class StorletProxyHandler(StorletBaseHandler):
         source_req = self.request.copy_get()
         source_req.headers.pop('X-Backend-Storage-Policy-Index', None)
         source_req.path_info = source_path
+
+        # In the copy case we can run either in the proxy
+        # or in the object node:
+        # e.g. if the object is SLO or we have extra resources
+        # we run on the proxy. Otherwise, we run on the object
+        # Handling in proxy means that:
+        # 0. Handle in the proxy
+        # 1. The object GET request to the object node
+        #    should be called without 'X-Run-Storlet'
+        # 2. The metadata in the response from the object node
+        #    should not be prefixed with X-Object-Meta
         if self.is_proxy_runnable():
-            # if user set 'X-Storlet-Run-On-Proxy' header, skip invoking at
-            # object-srever and is_poxy_runnable will be true below
             source_req.headers.pop('X-Run-Storlet', None)
 
         src_resp = source_req.get_response(self.app)
+        copy_headers(src_resp.headers, self.request.headers)
 
+        # We check here again, because src_resp may reveal that
+        # the object is an SLO and so even if the above check was
+        # False, we now may need to run on proxy
         if self.is_proxy_runnable(src_resp):
+            # We need to run on proxy.
+            # Do it and fixup the user metadata headers.
             sreq = self._build_storlet_request(self.request, src_resp.headers,
                                                src_resp.app_iter)
             self.gather_extra_sources()
             sresp = self.gateway.invocation_flow(sreq, self.extra_sources)
             data_iter = sresp.data_iter
-            metadata = sresp.user_metadata
+            self._set_metadata_in_headers(self.request.headers,
+                                          sresp.user_metadata)
         else:
             data_iter = src_resp.app_iter
-            metadata = src_resp.headers
 
-        resp = self.handle_put_copy_response(metadata, data_iter)
+        resp = self.handle_put_copy_response(data_iter)
 
         acct, path = src_resp.environ['PATH_INFO'].split('/', 3)[2:4]
         resp.headers['X-Storlet-Generated-From-Account'] = quote(acct)
@@ -478,8 +493,7 @@ class StorletProxyHandler(StorletBaseHandler):
         sresp = self.gateway.invocation_flow(sreq)
         self._set_metadata_in_headers(self.request.headers,
                                       sresp.user_metadata)
-        return self.handle_put_copy_response(sresp.user_metadata,
-                                             sresp.data_iter)
+        return self.handle_put_copy_response(sresp.data_iter)
 
     @public
     def COPY(self):
