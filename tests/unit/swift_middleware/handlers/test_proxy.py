@@ -319,6 +319,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertIn('X-Object-Meta-Name', dict(put_calls[-1][2]))
             self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation (at gateway stub) at proxy
@@ -351,6 +352,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(len(put_calls), 1)
             self.assertEqual(put_calls[-1][3], 'source body')
+            self.assertIn('X-Object-Meta-Name', dict(put_calls[-1][2]))
             self.assertEqual(put_calls[-1][2]['X-Object-Meta-Name'], 'name')
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
