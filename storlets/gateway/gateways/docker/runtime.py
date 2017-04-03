@@ -831,24 +831,8 @@ class StorletInvocationProtocol(object):
 
     @contextmanager
     def _open_writer(self, fd):
-        try:
-            writer = os.fdopen(fd, 'w')
-        except (OSError, TypeError, ValueError):
-            exc_type, exc_value, exc_traceback = sys.exc_info()
-            try:
-                os.close(fd)
-            except Exception:
-                # any error is ok to close this operation because even if it
-                # happens, we cannot do anything.
-                pass
-            six.reraise(exc_type, exc_value, exc_traceback)
-
-        try:
+        with os.fdopen(fd, 'w') as writer:
             yield writer
-        finally:
-            writer.close()
-            # NOTE(takashi): writer.close() also closes fd, so we don't have to
-            #                close fd again.
 
     def _write_input_data(self, fd, data_iter):
         try:
