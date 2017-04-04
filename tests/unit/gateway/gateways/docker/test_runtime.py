@@ -29,7 +29,6 @@ from storlets.gateway.gateways.docker.runtime import RunTimeSandbox, \
     RunTimePaths, StorletInvocationProtocol
 from tests.unit import FakeLogger, with_tempdir
 from tests.unit.gateway.gateways import FakeFileManager
-from exceptions import AssertionError
 
 
 @contextmanager
@@ -455,32 +454,32 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             (None, TypeError), (-1, ValueError), ('blah', TypeError))
 
         for invalid_fd, expected_error in invalid_fds:
-            with mock.patch('os.close') as mock_close:
-                with self.assertRaises(expected_error):
-                    with self.protocol._open_writer(invalid_fd):
-                        pass
-                # writer attempts to close fd via os call
-                self.assertEqual(1, mock_close.call_count)
+            with self.assertRaises(expected_error):
+                with self.protocol._open_writer(invalid_fd):
+                    pass
 
     def _test_writer_with_exception(self, exception_cls):
-        mock_writer = mock.MagicMock()
-        with mock.patch('os.fdopen') as mock_fdopen, \
-                mock.patch('os.close') as mock_close:
-            mock_fdopen.return_value = mock_writer
+        pipes = [os.pipe()]
 
-            def raise_in_the_context():
-                with self.protocol._open_writer(1):
-                    raise exception_cls()
-
+        def raise_in_the_context():
+            with self.protocol._open_writer(pipes[0][1]):
+                raise exception_cls()
+        try:
             # writer context doesn't suppress any exception
             self.assertRaises(exception_cls, raise_in_the_context)
 
-        # sanity
-        self.assertEqual(1, mock_fdopen.call_count)
-        self.assertEqual(0, mock_close.call_count)
+            # since _open_writer closes the write fd, the os.close will fail as
+            # BadFileDescriptor
+            with self.assertRaises(OSError) as os_error:
+                os.close(pipes[0][1])
+            self.assertEqual(os_error.exception.errno, 9)
 
-        # writer was closed
-        self.assertEqual(1, mock_writer.close.call_count)
+        finally:
+            for fd in pipes[0]:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
 
     def test_writer_raise_while_in_writer_context(self):
         # basic storlet timeout
