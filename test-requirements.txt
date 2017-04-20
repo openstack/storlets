@@ -15,7 +15,7 @@ testscenarios>=0.4
 testtools>=0.9.36,!=1.2.0
 python-swiftclient
 python-keystoneclient
-ipython
+ipython<6.0
 
 ansible
 ansible-lint

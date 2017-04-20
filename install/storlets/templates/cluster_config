@@ -12,7 +12,7 @@
         "python_dist_packages_dir": "usr/local/lib/python2.7/dist-packages",
         "storlet_gateway_conf_file": "/etc/swift/storlet_docker_gateway.conf",
         "keystone_endpoint_host": "{{ keystone_endpoint_host }}",
-        "keystone_public_url": "http://{{ keystone_endpoint_host }}:5000/v3",
+        "keystone_public_url": "http://{{ keystone_endpoint_host }}/identity/v3",
         "keystone_admin_password": "{{ keystone_admin_password }}",
         "keystone_admin_user": "{{keystone_admin_user}}",
         "keystone_admin_project": "{{keystone_admin_project}}",
