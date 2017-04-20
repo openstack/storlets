@@ -39,9 +39,9 @@ fi
 
 if [ "$TARGET" == "docker" ]; then
     # install docker
-    sudo apt-get install apt-transport-https aufs-tools=1:3.2+20130722-1.1 linux-image-extra-`uname -r` -y --force-yes
+    sudo apt-get install apt-transport-https aufs-tools linux-image-extra-`uname -r` -y --force-yes
     sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
-    sudo sh -c "echo deb https://apt.dockerproject.org/repo ubuntu-trusty main > /etc/apt/sources.list.d/docker.list"
+    sudo sh -c "echo deb https://apt.dockerproject.org/repo ubuntu-xenial main > /etc/apt/sources.list.d/docker.list"
     sudo apt-get update
     sudo apt-get install docker-engine -y --force-yes
     sudo sh -c "echo DOCKER_OPTS=\"--storage-driver=vfs\" >> /etc/default/docker"
@@ -58,7 +58,7 @@ if [ "$TARGET" == "docker" ]; then
     fi
     export S2AIO_IP=`sudo docker exec s2aio ifconfig | grep "inet addr" | head -1 | awk '{print $2}' | awk -F":" '{print $2}'`
 
-    sudo docker exec s2aio sh -c "echo deb http://us.archive.ubuntu.com/ubuntu/ trusty-backports main restricted universe multiverse >> /etc/apt/sources.list"
+    sudo docker exec s2aio sh -c "echo deb http://us.archive.ubuntu.com/ubuntu/ xenial-backports main restricted universe multiverse >> /etc/apt/sources.list"
     sudo docker exec s2aio apt-get update
     sudo docker exec s2aio apt-get install software-properties-common -y --force-yes
     sudo docker exec s2aio apt-add-repository -y ppa:ansible/ansible
