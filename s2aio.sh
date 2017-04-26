@@ -39,7 +39,7 @@ fi
 
 if [ "$TARGET" == "docker" ]; then
     # install docker
-    sudo apt-get install apt-transport-https aufs-tools linux-image-extra-`uname -r` -y --force-yes
+    sudo apt-get install apt-transport-https aufs-tools linux-image-generic-lts-xenial -y --force-yes
     sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D
     sudo sh -c "echo deb https://apt.dockerproject.org/repo ubuntu-xenial main > /etc/apt/sources.list.d/docker.list"
     sudo apt-get update
@@ -129,5 +129,5 @@ sudo chown $USER:$USER cluster_config.json
 echo "export OS_IDENTITY_API_VERSION=3" >> ~/.bashrc
 echo "export OS_USERNAME=tester; export OS_PASSWORD=testing" >> ~/.bashrc
 echo "export OS_PROJECT_NAME=test; OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
-echo "export OS_AUTH_URL=http://"$S2AIO_IP":5000/v3" >> ~/.bashrc
+echo "export OS_AUTH_URL=http://"$S2AIO_IP"/identity/v3" >> ~/.bashrc
 set +eu

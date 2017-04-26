@@ -53,6 +53,10 @@ stop_swift
 set -u
 cd -
 
+# Make sure all keystone services are up.
+/usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-public.ini &> /dev/null &
+/usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-admin.ini &> /dev/null &
+
 # add tester, testing, test which is admin
 source $DEVSTACK_DIR/localrc
 project_test_created=$(openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | wc -l)
@@ -63,6 +67,11 @@ user_tester_created=$(openstack user list | grep -w $SWIFT_DEFAULT_USER | wc -l)
 if [ $user_tester_created -eq 0 ]; then
     openstack user create --project $SWIFT_DEFAULT_PROJECT --password $SWIFT_DEFAULT_USER_PWD $SWIFT_DEFAULT_USER
     openstack role add --user $SWIFT_DEFAULT_USER --project $SWIFT_DEFAULT_PROJECT admin
+fi
+user_member_created=$(openstack user list | grep -w $SWIFT_MEMBER_USER | wc -l)
+if [ $user_member_created -eq 0 ]; then
+    openstack user create --project $SWIFT_DEFAULT_PROJECT --password $SWIFT_MEMBER_USER_PWD $SWIFT_MEMBER_USER
+    openstack role add --user $SWIFT_MEMBER_USER --project $SWIFT_DEFAULT_PROJECT _member_
 fi
 
 # add entry to fstab

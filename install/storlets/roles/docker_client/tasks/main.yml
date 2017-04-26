@@ -38,7 +38,7 @@
 
 - name: install necessary linux-image-extra
   apt:
-    name: linux-image-extra-{{ uname.stdout_lines[0] }}
+    name: linux-image-generic-lts-xenial
     update-cache: yes
     force: yes
   when: "'0' in linux_image_extra.stdout_lines[0]"

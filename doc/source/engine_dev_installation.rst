@@ -31,7 +31,7 @@ Create a localrc file under the devstack repository root directory:
     SERVICE_PASSWORD=$ADMIN_PASSWORD
 
     OS_IDENTITY_API_VERSION=2
-    OS_AUTH_URL="http://$KEYSTONE_IP:5000/v3"
+    OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
     OS_USERNAME=$ADMIN_USER
     OS_USER_DOMAIN_ID=default
     OS_PASSWORD=$ADMIN_PASSWORD
@@ -74,7 +74,7 @@ defining some environment variables:
 ::
 
     export OS_IDENTITY_API_VERSION=2
-    export OS_AUTH_URL="http://$KEYSTONE_IP:5000/v3"
+    export OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
     export OS_USERNAME=$ADMIN_USER
     export OS_USER_DOMAIN_ID=default
     export OS_PASSWORD=$ADMIN_PASSWORD
@@ -98,7 +98,7 @@ A convenient way to do so is to edit the user's .bashrc adding the lines:
     export OS_USERNAME=tester
     export OS_PASSWORD=testing
     export OS_TENANT_NAME=test
-    export OS_AUTH_URL=http://127.0.0.1:5000/v3
+    export OS_AUTH_URL=http://127.0.0.1/identity/v3
 
 Now do:
 
@@ -280,7 +280,7 @@ First, we get the tenant id. Using the Swift cli and the above create user do:
 
 ::
 
-    swift --os-auth-url http://127.0.0.1:5000/v3 --os-project-name test --os-project-domain-name default --os-username tester --os-password testing stat
+    swift --os-auth-url http://127.0.0.1/identity/v3 --os-project-name test --os-project-domain-name default --os-username tester --os-password testing stat
 
 The response from the above contains the account line, e.g.:
 
@@ -437,7 +437,7 @@ We use the swift cli as follows:
 ::
 
   swift post \
-  --os-auth-url=http://127.0.0.1:5000/v3 \
+  --os-auth-url=http://127.0.0.1/identity/v3 \
   --os-username=tester \
   --os-password=testing \
   --os-project-name=test \
@@ -446,7 +446,7 @@ We use the swift cli as follows:
 
 
   swift post \
-  --os-auth-url=http://127.0.0.1:5000/v3 \
+  --os-auth-url=http://127.0.0.1/identity/v3 \
   --os-username=tester \
   --os-password=testing \
   --os-project-name=test \
@@ -454,7 +454,7 @@ We use the swift cli as follows:
   storlet
 
   swift post \
-  --os-auth-url=http://127.0.0.1:5000/v3 \
+  --os-auth-url=http://127.0.0.1/identity/v3 \
   --os-username=tester \
   --os-password=testing \
   --os-project-name=test \
@@ -462,7 +462,7 @@ We use the swift cli as follows:
   dependency
 
   swift post \
-  --os-auth-url=http://127.0.0.1:5000/v3 \
+  --os-auth-url=http://127.0.0.1/identity/v3 \
   --os-username=tester \
   --os-password=testing \
   --os-project-name=test \
@@ -488,7 +488,7 @@ content.
         "all" : {
             "docker_device": "/home/docker_device",
             "storlet_source_dir": "~/storlets",
-            "keystone_public_url": "http://127.0.0.1:5000/v3",
+            "keystone_public_url": "http://127.0.0.1/identity/v3",
             "swift_endpoint_host": "127.0.0.1",
             "swift_public_url": "http://127.0.0.1:8080/v1",
             "storlets_enabled_attribute_name": "storlet-enabled",

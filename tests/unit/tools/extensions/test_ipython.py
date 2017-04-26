@@ -75,7 +75,7 @@ class BaseTestIpythonExtension(object):
     def _set_auth_environ(self):
         # helper method to set auth information for keystone v3 (default)
         os.environ['OS_AUTH_VERSION'] = '3'
-        os.environ['OS_AUTH_URL'] = 'http://127.0.0.1:5000/v3'
+        os.environ['OS_AUTH_URL'] = 'http://127.0.0.1/identity/v3'
         os.environ['OS_USERNAME'] = 'tester'
         os.environ['OS_PASSWORD'] = 'testing'
         os.environ['OS_USER_DOMAIN_NAME'] = 'default'

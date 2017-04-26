@@ -15,7 +15,7 @@
 
 # TODO(eranr): Change the below to use Ansible os_project_facts
 - name: Get the project id from Keystone
-  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} project list | grep -w {{ project_name }} | awk '{print $2}'
+  shell: openstack --os-auth-url {{ keystone_public_url }} --os-identity-api-version {{ keystone_auth_version }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} project list | grep -w {{ project_name }} | awk '{print $2}'
   register: project_id
 
 - name: Print the project id whose container we are processing

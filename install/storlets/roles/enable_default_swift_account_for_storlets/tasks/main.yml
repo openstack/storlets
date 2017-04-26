@@ -68,12 +68,12 @@
            --write-acl "{{ storlet_management_account }}:{{ storlet_management_admin_username }}"
            docker_images
 
-- name: test if need to create member user
-  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user list --project "{{ storlets_default_project_name }}" | grep "{{ storlets_default_project_member_user }}" | wc -l
-  register: member_user
+#- name: test if need to create member user
+#  shell: openstack --os-auth-url {{ keystone_admin_url }} --os-identity-api-version {{ keystone_auth_version }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user list --project {{ storlets_default_project_name }} | grep {{ storlets_default_project_member_user }} | wc -l
+#  register: member_user
 
-- debug: msg="{{ member_user }}"
+#- debug: msg={{ member_user }}
 
-- name: Create member user
-  shell: openstack --os-auth-url {{ keystone_public_url }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user create --project "{{ storlets_default_project_name }}" --password "{{ storlets_default_project_member_password }}" --enable "{{ storlets_default_project_member_user }}"
-  when: "'0' in member_user.stdout"
+#- name: Create member user
+#  shell: openstack --os-auth-url {{ keystone_admin_url }} --os-identity-api-version {{ keystone_auth_version }} --os-username {{ keystone_admin_user }} --os-password {{ keystone_admin_password }} --os-project-name {{ keystone_admin_project }} --os-default-domain-name {{ keystone_default_domain }} user create --project {{ storlets_default_project_name }} --password {{ storlets_default_project_member_password }} --enable {{ storlets_default_project_member_user }}
+#  when: "'0' in member_user.stdout"
