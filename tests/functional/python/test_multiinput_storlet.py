@@ -98,5 +98,54 @@ class TestMultiInputStorletOnProxy(TestMultiInputStorlet):
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
 
 
+class TestMultiInputMIMEStorlet(StorletPythonFunctionalTest):
+    def setUp(self):
+        self.additional_headers = {}
+        super(TestMultiInputMIMEStorlet, self).setUp(
+            storlet_dir='multi_input',
+            storlet_name='multi_input_mime.py',
+            storlet_main='multi_input_mime.MultiInputMIMEStorlet',
+            storlet_file=None,
+            headers={})
+
+    def test_get_multipart_mime_response(self):
+        obj = 'small'
+        obj2 = 'small2'
+        body = '0123456789abcd'
+        body2 = 'efghijklmnopqr'
+        c.put_object(self.url, self.token,
+                     self.container, obj, body)
+        c.put_object(self.url, self.token,
+                     self.container, obj2, body2)
+
+        headers = {
+            'X-Run-Storlet': self.storlet_name,
+            'X-Storlet-Extra-Resources':
+            os.path.join('/' + self.container, obj2)
+        }
+        headers.update(self.additional_headers)
+
+        resp_headers, resp_content = c.get_object(
+            self.url, self.token, self.container, obj,
+            headers=headers)
+
+        multipart_prefix = 'multipart/mixed; boundary='
+        # N.B. swiftclient makes the header key as lower case
+        self.assertIn('content-type', resp_headers)
+        self.assertIn(
+            multipart_prefix, resp_headers['content-type'])
+        boundary = resp_headers['content-type'][len(multipart_prefix):]
+
+        self.assertEqual(
+            '%s\n--%s\n%s\n--%s--' % (body, boundary, body2, boundary),
+            resp_content)
+
+
+class TestMultiInputMIMEStorletOnProxy(TestMultiInputMIMEStorlet):
+    def setUp(self):
+        super(TestMultiInputMIMEStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
 if __name__ == '__main__':
     unittest.main()
