@@ -53,6 +53,11 @@ Overview and Concepts
    api/overview_api
    ipython_integration
 
+Related Projects
+================
+
+`Crystal <https://github.com/Crystal-SDS>`_ is an SDS framework for OpenStack Swift. Amongst other things, the framework leverages storlets to do seamless pushdown of user defined code from Spark to Swift.
+
 Storlet Engine Developers
 =========================
 .. toctree::
