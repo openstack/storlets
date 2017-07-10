@@ -392,7 +392,15 @@ class StorletBaseHandler(object):
         # coming from swift request or response.
         if user_metadata:
             for key, val in user_metadata.items():
-                headers['X-Object-Meta-%s' % key] = val
+                # TODO(kota_): we may need to discuss what type of special
+                # system metadata can be overwritten in the HTTP header and
+                # should encapsulate in StorletRequest/Response class
+                if key.lower() == 'content-type':
+                    # If and only if it's content-type, storlet app is able
+                    # to overwrite the header due to the application
+                    headers[key] = val
+                else:
+                    headers['X-Object-Meta-%s' % key] = val
 
     def _call_gateway(self, resp):
         """
