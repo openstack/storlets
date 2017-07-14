@@ -12,7 +12,7 @@ Setting up an IPython notebook to work with storlets involves:
     client. The exact variables that need to be set are dependent on the auth middleware
     used and the auth protocol version. For more details please refer to:
    `python-swiftclient docs
-   <http://docs.openstack.org/developer/python-swiftclient/cli.html#authentication>`_.
+   <https://docs.openstack.org/python-swiftclient/latest/cli/index.html#authentication>`_.
 
 #. Load the storlets IPython extension.
 

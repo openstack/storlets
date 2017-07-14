@@ -125,7 +125,7 @@ http://eavesdrop.openstack.org/irclogs/%23openstack-storlets/
 ----------
 Resources:
 ----------
-http://docs.openstack.org/infra/manual/developers.html
-http://docs.openstack.org/developer/swift/first_contribution_swift.html
-http://docs.openstack.org/infra/manual/developers.html#development-workflow
-http://docs.openstack.org/infra/manual/developers.html#development-workflow
+https://docs.openstack.org/infra/manual/developers.html
+https://docs.openstack.org/swift/latest/first_contribution_swift.html
+https://docs.openstack.org/infra/manual/developers.html#development-workflow
+https://docs.openstack.org/infra/manual/developers.html#development-workflow
