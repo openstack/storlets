@@ -57,7 +57,7 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
                                       '4,6', '')
         for line in content.split('\n'):
             if line:
-                self.assertEqual(len(line.split(',')), 2)
+                self.assertEqual(2, len(line.split(',')))
 
     def _test_prune(self):
         content = self.invoke_storlet(120, 1024,
@@ -67,7 +67,7 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         for line in content.split('\n'):
             if line:
                 val = line.split(',')[6]
-                self.assertEqual(val, 'ESP')
+                self.assertEqual('ESP', val)
 
     def _test_prune_filter(self):
         content = self.invoke_storlet(120, 1024,
@@ -77,7 +77,7 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         for line in content.split('\n'):
             if line:
                 val = line.split(',')[1]
-                self.assertEqual(val, 'ESP')
+                self.assertEqual('ESP', val)
 
     def _prune_filter_scan_with_count(self, start, stop,
                                       first, max_len,
@@ -88,7 +88,7 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         count = 0
         for line in content.split('\n'):
             if line:
-                self.assertEqual(line.split(',')[1], 'FRA')
+                self.assertEqual('FRA', line.split(',')[1])
                 count = count + 1
         return count
 
@@ -103,7 +103,7 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         c3 = self._prune_filter_scan_with_count(699058, 1048558,
                                                 'false', max_len,
                                                 '4,6', 'EqualTo(6,FRA)')
-        self.assertEqual(c1 + c2 + c3, 1070)
+        self.assertEqual(1070, c1 + c2 + c3)
 
 
 class TestCsvStorletOnProxy(TestCsvStorlet):

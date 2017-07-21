@@ -75,7 +75,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
 
             if params is not None and params.get('execute', None) is not None:
                 mdv = processed_h['X-Object-Meta-Execution result'.lower()]
-                self.assertEqual(mdv, '42')
+                self.assertEqual('42', mdv)
             if params is not None and params.get('double', None) == 'true':
                 self.assertEqual(original_c, processed_c[:file_length])
                 self.assertEqual(original_c, processed_c[file_length:])
@@ -111,10 +111,10 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
 
             if params is not None and params.get('execute', None) is not None:
                 mdv = resp_headers['X-Object-Meta-Execution result'.lower()]
-                self.assertEqual(mdv, '42')
+                self.assertEqual('42', mdv)
 
-            self.assertEqual(resp_headers['X-Object-Meta-Testkey'.lower()],
-                             random_md)
+            self.assertEqual(random_md,
+                             resp_headers['X-Object-Meta-Testkey'.lower()])
 
     @contextmanager
     def _filecontext(self, path):
@@ -182,7 +182,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                                      'small',
                                      headers=headers,
                                      response_dict=dict())
-        self.assertEqual(content, expected)
+        self.assertEqual(expected, content)
 
     def test_get_ranges(self):
         response = dict()

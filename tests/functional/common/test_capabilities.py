@@ -37,10 +37,10 @@ class TestCapabilities(StorletBaseFunctionalTest):
         self.assertIn('storlet_handler', info)
         options = info['storlet_handler']
         # TODO(eranr): take values from conf
-        self.assertEqual(options['storlet_dependency'], 'dependency')
-        self.assertEqual(options['storlet_container'], 'storlet')
-        self.assertEqual(options['storlet_gateway_class'],
-                         'StorletGatewayDocker')
+        self.assertEqual('dependency', options['storlet_dependency'])
+        self.assertEqual('storlet', options['storlet_container'])
+        self.assertEqual('StorletGatewayDocker',
+                         options['storlet_gateway_class'])
 
 
 if __name__ == '__main__':

@@ -474,7 +474,7 @@ use = egg:swift#catch_errors
         expected_mock_writer_calls = len(extra_sources) + 1
         self.assertEqual(expected_mock_writer_calls,
                          len(called_fd_and_bodies))
-        self.assertEqual(called_fd_and_bodies[0][1], 'body')
+        self.assertEqual('body', called_fd_and_bodies[0][1])
         return called_fd_and_bodies
 
     def test_docker_gateway_communicate(self):
@@ -512,7 +512,7 @@ use = egg:swift#catch_errors
         extra_request = generate_extra_st_request()
         mock_calls = self._test_docker_gateway_communicate(
             extra_sources=[extra_request])
-        self.assertEqual(mock_calls[1][1], 'This is a response body')
+        self.assertEqual('This is a response body', mock_calls[1][1])
 
         # run all existing eventlet threads
         for app_iter in data_sources:

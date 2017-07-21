@@ -116,7 +116,7 @@ class TestRuntimePaths(unittest.TestCase):
                 mock.patch('os.makedirs') as m, \
                 mock.patch('os.chmod') as c:
             self.paths.create_host_pipe_prefix()
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(0, m.call_count)
             cargs, ckwargs = c.call_args
             # Make sure about the target directory
             self.assertEqual(cargs[0], pipedir)
@@ -126,7 +126,7 @@ class TestRuntimePaths(unittest.TestCase):
                 mock.patch('os.makedirs') as m, \
                 mock.patch('os.chmod') as c:
             self.paths.create_host_pipe_prefix(),
-            self.assertEqual(m.call_count, 1)
+            self.assertEqual(1, m.call_count)
             # Make sure about the target directory
             margs, mkwargs = m.call_args
             self.assertEqual(margs[0], pipedir)
@@ -171,7 +171,7 @@ class TestRuntimePaths(unittest.TestCase):
                 self.paths.slog_path(self.storlet_id),
                 os.path.join(self.log_dir, self.scope,
                              self.storlet_id))
-            self.assertEqual(m.call_count, 0)
+            self.assertEqual(0, m.call_count)
 
         with mock.patch('os.path.exists', return_value=False), \
             mock.patch('os.makedirs') as m:
@@ -179,7 +179,7 @@ class TestRuntimePaths(unittest.TestCase):
                 self.paths.slog_path(self.storlet_id),
                 os.path.join(self.log_dir, self.scope,
                              self.storlet_id))
-            self.assertEqual(m.call_count, 1)
+            self.assertEqual(1, m.call_count)
 
     def test_get_host_storlet_cache_dir(self):
         self.assertEqual(
@@ -269,11 +269,11 @@ class TestRunTimeSandbox(unittest.TestCase):
     def test_parse_sandbox_factory_answer(self):
         status, msg = self.sbox._parse_sandbox_factory_answer('True:message')
         self.assertTrue(status)
-        self.assertEqual(msg, 'message')
+        self.assertEqual('message', msg)
 
         status, msg = self.sbox._parse_sandbox_factory_answer('False:message')
         self.assertFalse(status)
-        self.assertEqual(msg, 'message')
+        self.assertEqual('message', msg)
 
         with self.assertRaises(StorletRuntimeException):
             self.sbox._parse_sandbox_factory_answer('Foo')
@@ -285,11 +285,11 @@ class TestRunTimeSandbox(unittest.TestCase):
 
     def test_ping(self):
         with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0):
-            self.assertEqual(self.sbox.ping(), 1)
+            self.assertEqual(1, self.sbox.ping())
             self._check_all_pipese_closed(pipes)
 
         with _mock_os_pipe(['False:ERROR']) as pipes, _mock_sbus(-1):
-            self.assertEqual(self.sbox.ping(), -1)
+            self.assertEqual(-1, self.sbox.ping())
             self._check_all_pipese_closed(pipes)
 
         with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0):
@@ -302,7 +302,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'time.sleep') as _s:
             self.sbox.wait()
-            self.assertEqual(_s.call_count, 0)
+            self.assertEqual(0, _s.call_count)
             self._check_all_pipese_closed(pipes)
 
         with _mock_os_pipe(['False:ERROR', 'True:OK']) as pipes, \
@@ -310,7 +310,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'time.sleep') as _s:
             self.sbox.wait()
-            self.assertEqual(_s.call_count, 1)
+            self.assertEqual(1, _s.call_count)
             self._check_all_pipese_closed(pipes)
 
         with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0), \
@@ -355,11 +355,11 @@ class TestRunTimeSandbox(unittest.TestCase):
         storlet_main = 'org.openstack.storlet.Storlet'
         dependencies = ['dep1', 'dep2']
         self.assertEqual(
-            self.sbox._get_storlet_classpath(storlet_main, storlet_id,
-                                             dependencies),
             '/home/swift/org.openstack.storlet.Storlet/Storlet.jar:'
             '/home/swift/org.openstack.storlet.Storlet/dep1:'
-            '/home/swift/org.openstack.storlet.Storlet/dep2')
+            '/home/swift/org.openstack.storlet.Storlet/dep2',
+            self.sbox._get_storlet_classpath(storlet_main, storlet_id,
+                                             dependencies),)
 
 
 class TestStorletInvocationProtocol(unittest.TestCase):
@@ -472,7 +472,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             # BadFileDescriptor
             with self.assertRaises(OSError) as os_error:
                 os.close(pipes[0][1])
-            self.assertEqual(os_error.exception.errno, 9)
+            self.assertEqual(9, os_error.exception.errno)
 
         finally:
             for fd in pipes[0]:

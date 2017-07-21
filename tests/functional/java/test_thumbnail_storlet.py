@@ -61,8 +61,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
 
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_put.jpg')
-        self.assertEqual(headers['content-length'], '49032')
-        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
+        self.assertEqual('49032', headers['content-length'])
+        self.assertEqual('thumbnail', headers['x-object-meta-name'])
 
     def invoke_storlet_on_copy_from(self):
         headers = {'X-Run-Storlet': self.storlet_name,
@@ -88,8 +88,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
 
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_copy.jpg')
-        self.assertEqual(headers['content-length'], '49032')
-        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
+        self.assertEqual('49032', headers['content-length'])
+        self.assertEqual('thumbnail', headers['x-object-meta-name'])
         self.assertTrue('x-object-meta-x-timestamp' not in headers)
         self.assertTrue('x-timestamp' in headers)
 
@@ -109,8 +109,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
 
         headers = c.head_object(self.url, self.token,
                                 self.container, 'gen_thumb_on_copy_.jpg')
-        self.assertEqual(headers['content-length'], '49032')
-        self.assertEqual(headers['x-object-meta-name'], 'thumbnail')
+        self.assertEqual('49032', headers['content-length'])
+        self.assertEqual('thumbnail', headers['x-object-meta-name'])
         self.assertTrue('x-object-meta-x-timestamp' not in headers)
         self.assertTrue('x-timestamp' in headers)
 

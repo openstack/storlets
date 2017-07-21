@@ -52,7 +52,7 @@ class TestSetACL(StorletBaseFunctionalTest):
         read_acl = headers['x-container-read']
         expected_acl = ('adam,.r:storlets'
                         '.john_mystorlet-1.0.jar')
-        self.assertEqual(read_acl, expected_acl)
+        self.assertEqual(expected_acl, read_acl)
 
 
 if __name__ == '__main__':

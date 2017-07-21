@@ -54,65 +54,65 @@ class TestFileDescriptorIterator(unittest.TestCase):
 
     def test_read_with_timeout(self):
         self.assertEqual(
-            self.iter_like.read_with_timeout(6), b'aaaa\nb')
+            b'aaaa\nb', self.iter_like.read_with_timeout(6))
         self.assertEqual(
-            self.iter_like.read_with_timeout(6), b'bbb\ncc')
+            b'bbb\ncc', self.iter_like.read_with_timeout(6))
         self.assertEqual(
-            self.iter_like.read_with_timeout(6), b'cc\n')
+            b'cc\n', self.iter_like.read_with_timeout(6))
         self.assertEqual(
-            self.iter_like.read_with_timeout(6), b'')
+            b'', self.iter_like.read_with_timeout(6))
 
     def test_next(self):
         with self._mock_select():
-            self.assertEqual(self.iter_like.next(6), b'aaaa\nb')
-            self.assertEqual(self.iter_like.next(6), b'bbb\ncc')
-            self.assertEqual(self.iter_like.next(6), b'cc\n')
+            self.assertEqual(b'aaaa\nb', self.iter_like.next(6))
+            self.assertEqual(b'bbb\ncc', self.iter_like.next(6))
+            self.assertEqual(b'cc\n', self.iter_like.next(6))
             with self.assertRaises(StopIteration):
                 self.iter_like.next(6)
         self._reset_fd()
 
         with self._mock_select():
             # if size > content length
-            self.assertEqual(self.iter_like.next(50),
-                             b'aaaa\nbbbb\ncccc\n')
+            self.assertEqual(b'aaaa\nbbbb\ncccc\n',
+                             self.iter_like.next(50))
             with self.assertRaises(StopIteration):
                 self.iter_like.next(50)
 
     def test_read(self):
         with self._mock_select():
-            self.assertEqual(self.iter_like.read(6), b'aaaa\nb')
-            self.assertEqual(self.iter_like.read(6), b'bbb\ncc')
-            self.assertEqual(self.iter_like.read(6), b'cc\n')
+            self.assertEqual(b'aaaa\nb', self.iter_like.read(6))
+            self.assertEqual(b'bbb\ncc', self.iter_like.read(6))
+            self.assertEqual(b'cc\n', self.iter_like.read(6))
             with self.assertRaises(StopIteration):
                 self.iter_like.next(6)
 
     def test_readline(self):
         with self._mock_select():
             # if size = -1
-            self.assertEqual(self.iter_like.readline(), b'aaaa\n')
+            self.assertEqual(b'aaaa\n', self.iter_like.readline())
 
             # if size < line length
-            self.assertEqual(self.iter_like.readline(2), b'bb')
+            self.assertEqual(b'bb', self.iter_like.readline(2))
 
             # read remaining chars in line
-            self.assertEqual(self.iter_like.readline(), b'bb\n')
+            self.assertEqual(b'bb\n', self.iter_like.readline())
 
             # if size > line length
-            self.assertEqual(self.iter_like.readline(100), b'cccc\n')
+            self.assertEqual(b'cccc\n', self.iter_like.readline(100))
             with self.assertRaises(StopIteration):
                 self.iter_like.readline()
 
     def test_readlines(self):
         with self._mock_select():
             self.assertEqual(
-                self.iter_like.readlines(),
-                [b'aaaa\n', b'bbbb\n', b'cccc\n'])
+                [b'aaaa\n', b'bbbb\n', b'cccc\n'],
+                self.iter_like.readlines())
         self._reset_fd()
 
         with self._mock_select():
             self.assertEqual(
-                self.iter_like.readlines(7),
-                [b'aaaa\n', b'bb'])
+                [b'aaaa\n', b'bb'],
+                self.iter_like.readlines(7))
 
 
 if __name__ == '__main__':

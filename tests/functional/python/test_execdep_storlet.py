@@ -43,7 +43,7 @@ class TestExecDepStorlet(StorletPythonFunctionalTest):
 
         self.assertIn('x-object-meta-depend-ret-code', resp_headers)
         self.assertEqual('42', resp_headers['x-object-meta-depend-ret-code'])
-        self.assertEqual(resp['status'], 200)
+        self.assertEqual(200, resp['status'])
 
 
 class TestExecDepStorletOnProxy(TestExecDepStorlet):

@@ -77,12 +77,12 @@ class TestTestStorlet(StorletJavaFunctionalTest):
                                                            None, None,
                                                            None, None,
                                                            headers)
-                self.assertEqual(resp_headers.get('status'), 200)
+                self.assertEqual(200, resp_headers.get('status'))
                 gf.read()
                 self.assertEqual(resp_headers.get('status') == 200)
 
             if op == 'print':
-                self.assertEqual(get_response_status, 200)
+                self.assertEqual(200, get_response_status)
                 self.assertIn('op', get_text)
                 self.assertIn('print', get_text)
                 self.assertIn('param2', get_text)
@@ -156,7 +156,7 @@ class TestTestStorlet(StorletJavaFunctionalTest):
                                 self.container, 'test_object',
                                 response_dict=resp_dict,
                                 headers=headers)
-        self.assertEqual(resp_dict['status'], 200)
+        self.assertEqual(200, resp_dict['status'])
 
 
 class TestTestStorletOnProxy(TestTestStorlet):

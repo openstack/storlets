@@ -100,21 +100,21 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
 
             if params is not None and params.get('execute', None) is not None:
                 self.assertEqual(
-                    resp_headers['X-Object-Meta-Execution result'.lower()],
-                    '42')
+                    '42',
+                    resp_headers['X-Object-Meta-Execution result'.lower()])
 
-            self.assertEqual(resp_headers['X-Object-Meta-Testkey'.lower()],
-                             random_md)
+            self.assertEqual(random_md,
+                             resp_headers['X-Object-Meta-Testkey'.lower()])
 
     def test_get(self):
         res = self.invoke_storlet('GET')
-        self.assertEqual(res, 'acegikmn')
+        self.assertEqual('acegikmn', res)
 
     def test_get_range(self):
         res = self.invoke_storlet(
             'GET',
             headers={'X-Storlet-Range': 'bytes=5-10'})
-        self.assertEqual(res, 'fhj')
+        self.assertEqual('fhj', res)
 
 
 class TestHalfIdentityStorletOnProxy(TestHalfIdentityStorlet):

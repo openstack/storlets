@@ -200,8 +200,8 @@ class TestStorletBaseHandler(unittest.TestCase):
                 req, mock.MagicMock(), mock.MagicMock(),
                 mock.MagicMock(), mock.MagicMock())
             handler._update_storlet_parameters_from_headers()
-            self.assertEqual(handler.request.params['1'], '2:3:4')
-            self.assertEqual(handler.request.params['A'], 'c')
+            self.assertEqual('2:3:4', handler.request.params['1'])
+            self.assertEqual('c', handler.request.params['A'])
 
 
 if __name__ == '__main__':

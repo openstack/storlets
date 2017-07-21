@@ -56,18 +56,18 @@ class TestMetadataStorlet(StorletJavaFunctionalTest):
             c.get_object(self.url, self.token,
                          self.container, self.storlet_file,
                          response_dict=dict(), headers=headers)
-        self.assertEqual(original_headers['X-Object-Meta-key1'.lower()], '1')
-        self.assertEqual(original_headers['X-Object-Meta-key2'.lower()], '2')
-        self.assertEqual(original_headers['X-Object-Meta-key3'.lower()], '3')
-        self.assertEqual(original_headers['X-Object-Meta-key4'.lower()], '4')
-        self.assertEqual(original_headers['X-Object-Meta-key5'.lower()], '5')
-        self.assertEqual(original_headers['X-Object-Meta-key6'.lower()], '6')
-        self.assertEqual(original_headers['X-Object-Meta-key7'.lower()], '7')
-        self.assertEqual(original_headers['X-Object-Meta-key8'.lower()], '8')
-        self.assertEqual(original_headers['X-Object-Meta-key9'.lower()], '9')
-        self.assertEqual(original_headers['X-Object-Meta-key10'.lower()], '10')
+        self.assertEqual('1', original_headers['X-Object-Meta-key1'.lower()])
+        self.assertEqual('2', original_headers['X-Object-Meta-key2'.lower()])
+        self.assertEqual('3', original_headers['X-Object-Meta-key3'.lower()])
+        self.assertEqual('4', original_headers['X-Object-Meta-key4'.lower()])
+        self.assertEqual('5', original_headers['X-Object-Meta-key5'.lower()])
+        self.assertEqual('6', original_headers['X-Object-Meta-key6'.lower()])
+        self.assertEqual('7', original_headers['X-Object-Meta-key7'.lower()])
+        self.assertEqual('8', original_headers['X-Object-Meta-key8'.lower()])
+        self.assertEqual('9', original_headers['X-Object-Meta-key9'.lower()])
+        self.assertEqual('10', original_headers['X-Object-Meta-key10'.lower()])
         omv = original_headers['X-Object-Meta-override_key'.lower()]
-        self.assertEqual(omv, 'new_value')
+        self.assertEqual('new_value', omv)
 
 
 class TestMetadataStorletOnProxy(TestMetadataStorlet):

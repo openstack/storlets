@@ -82,10 +82,10 @@ class TestLogger(unittest.TestCase):
         self.assertEqual(logging.INFO, logger.level)
         # INFO message is recorded with INFO leg level
         logger.info('test1')
-        self.assertEqual(sio.getvalue(), 'test1\n')
+        self.assertEqual('test1\n', sio.getvalue())
         # DEBUG message is not recorded with INFO leg level
         logger.debug('test2')
-        self.assertEqual(sio.getvalue(), 'test1\n')
+        self.assertEqual('test1\n', sio.getvalue())
 
         # set log level as DEBUG
         logger = start_logger('test', 'DEBUG', 'abcdef')
