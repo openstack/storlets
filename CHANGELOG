@@ -1,3 +1,11 @@
+storlets (0.5.0, Openstack Pike)
+  * Extending IPython intgration
+
+  * Storlet execution on GET with multiple files using a single stream
+    using MULTIPART MIME
+
+  * Additional refactoring and minor fixes
+
 storlets (0.4.0, Openstack Ocata)
   * Big-Tent changes:
      - Restructurng the repository to be OpenStack 'compliant'
