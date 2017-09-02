@@ -67,7 +67,7 @@ To clone the storlets repository use:
   the checkout is done under /root
 
 --------------------------------
-Create the preperation host file
+Create the preparation host file
 --------------------------------
 Create the file '/install/storlets/deploy/prepare_host'
 and make sure that the address appearing there
