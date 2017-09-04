@@ -116,16 +116,16 @@ We need the following for the Java parts
 
 ::
 
-    sudo add-apt-repository -y ppa:openjdk-r/ppa
+    sudo add-apt-repository ppa:openjdk-r/ppa
     sudo apt-get update
-    sudo apt-get install -y openjdk-8-jdk
-    sudo apt-get install -y ant
+    sudo apt-get install openjdk-8-jdk
+    sudo apt-get install ant
 
 We need the following for Docker
 
 ::
 
-    sudo apt-get -y install docker.io
+    sudo apt-get install docker.io
     ln -sf /usr/bin/docker.io /usr/local/bin/docker
     sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
     update-rc.d docker defaults
@@ -178,11 +178,11 @@ with the following content:
     # The following operations shoud be defined in one line
     # to prevent docker images from including apt cache file.
     RUN apt-get update && \
-    apt-get install python -y && \
-    apt-get install software-properties-common -y && \
-    add-apt-repository ppa:openjdk-r/ppa -y && \
+    apt-get install python && \
+    apt-get install software-properties-common && \
+    add-apt-repository ppa:openjdk-r/ppa && \
     apt-get update && \
-    apt-get install openjdk-8-jre -y && \
+    apt-get install openjdk-8-jre && \
     apt-get clean
 
     COPY logback-classic-1.1.2.jar  /opt/storlets/
