@@ -1,8 +1,8 @@
 Installing a Development Environment
 ====================================
-This guide gives a step by step installation instructions that are simpler
-then what the s2aio.sh script does (e.g. it does not involve a docker registry
-installation and configuration).
+This guide gives a step by step installation instructions that are equivalent
+to what s2aio.sh does. The intention is to make the reader more familiar with
+what is involved in installing Storlets on top of Swift
 
 The below steps must be executed using a passwordless sudoer user.
 
@@ -20,13 +20,10 @@ Create a localrc file under the devstack repository root directory:
 ::
 
     ENABLE_HTTPD_MOD_WSGI_SERVICES=False
-    KEYSTONE_IP=127.0.0.1
-    SWIFT_IP=127.0.0.1
     ENABLED_SERVICES=key,swift,mysql
-    ADMIN_USER=admin
-    ADMIN_PASSWORD=$ADMIN_USER
-    ADMIN_PROJECT=ADMIN_USER
-    DATABASE_PASSWORD=admin
+    HOST_IP=127.0.0.1
+    ADMIN_PASSWORD=admin
+    MYSQL_PASSWORD=$ADMIN_PASSWORD
     RABBIT_PASSWORD=$ADMIN_PASSWORD
     SERVICE_PASSWORD=$ADMIN_PASSWORD
 
@@ -40,18 +37,21 @@ Create a localrc file under the devstack repository root directory:
     OS_REGION_NAME=RegionOne
 
     SERVICE_HOST=$SWIFT_IP
-    SWIFT_SERVICE_PROTOCOL=http
-    SWIFT_DEFAULT_BIND_PORT=8080
-    SWIFT_SERVICE_LOCAL_HOST=$SERVICE_HOST
-    SWIFT_SERVICE_LISTEN_ADDRESS=$SERVICE_HOST
-    # Use minimum 2GB for running the storlets tests
+    SWIFT_SERVICE_PROTOCOL=${SWIFT_SERVICE_PROTOCOL:-http}
+    SWIFT_DEFAULT_BIND_PORT=${SWIFT_DEFAULT_BIND_PORT:-8080}
+    # service local host is used for ring building
+    SWIFT_SERVICE_LOCAL_HOST=$HOST_IP
+    # service listen address for prox
+    SWIFT_SERVICE_LISTEN_ADDRESS=$HOST_IP
     SWIFT_LOOPBACK_DISK_SIZE=20G
+    SWIFT_MAX_FILE_SIZE=5368709122
     SWIFT_HASH=1234567890
+    IDENTITY_API_VERSION=3
 
 Run the stack.sh script.
 Before proceeding, we need to stop the
 swift instances that were executed by the
-stack.sh. From the same directory do:
+stack.sh script. From the same directory do:
 
 ::
 
@@ -83,13 +83,15 @@ defining some environment variables:
     export OS_PROJECT_DOMAIN_ID=default
     export OS_REGION_NAME=RegionOne
 
-We now create the project and user:
+We now create the project and users with Keystone.
 
 ::
 
     openstack project create test
     openstack user create --project test --password testing tester
     openstack role add --user tester --project test admin
+    openstack user create --project test --password member tester_member
+    openstack role add --user tester --project test _member_
 
 We now test that the setup by having the user 'tester' to stat the account 'test'. We use the Swift client cli.
 A convenient way to do so is to edit the user's .bashrc adding the lines:
@@ -141,7 +143,6 @@ Get and install the storlets code
     cd storlets
     sudo ./install_libs.sh
     sudo python setup.py install
-    tar czf /tmp/storlets.tar.gz .
     cd -
 
 .. note:: You don't need sudo for 'python setup.py install' when installing the storlets package into your python virtualenv.
@@ -153,20 +154,20 @@ Step 1: Create a working space for building the docker images, e.g.
 ::
 
     mkdir -p $HOME/docker_repos
-    sudo docker pull ubuntu:14_04
+    sudo docker pull ubuntu:16_04
 
 Step 2: Create a Docker image with Java
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8
+    mkdir -p $HOME/docker_repos/ubuntu_16.04_jre8
 
-Create the file: $HOME/docker_repos/ubuntu_14.04_jre8/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_16.04_jre8/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu:14.04
+    FROM ubuntu:16.04
     MAINTAINER root
 
     # The following operations shoud be defined in one line
@@ -183,8 +184,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_14.04_jre8
-    sudo docker build -q -t ubuntu_14.04_jre8 .
+    cd $HOME/docker_repos/ubuntu_16.04_jre8
+    sudo docker build -q -t ubuntu_16.04_jre8 .
     cd -
 
 
@@ -192,16 +193,16 @@ Step 3: Augment the above created image with the storlets stuff
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_14.04_jre8_storlets
+    mkdir -p $HOME/docker_repos/ubuntu_16.04_jre8_storlets
     cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/logback.xml .
     cd -
 
-Create the file: $HOME/docker_repos/ubuntu_14.04_jre8_storlets/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_16.04_jre8_storlets/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_14.04_jre8
+    FROM ubuntu_16.04_jre8
 
     MAINTAINER root
 
@@ -221,8 +222,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_14.04_jre8_storlets
-    sudo docker build -q -t ubuntu_14.04_jre8_storlets .
+    cd $HOME/docker_repos/ubuntu_16.04_jre8_storlets
+    sudo docker build -q -t ubuntu_16.04_jre8_storlets .
     cd -
 
 Step 4: Create a tenant specific image. The engine looks for images
@@ -241,22 +242,20 @@ The response from the above contains the account line, e.g.:
 
 The account id is the number following the 'AUTH\_' prefix.
 
-Next create the file $HOME/docker_repos/ubuntu_14.04_jre8_storlets_<account id>/Dockerfile
+Next create the file $HOME/docker_repos/ubuntu_16.04_jre8_storlets_<account id>/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_14.04_jre8_storlets
-
+    FROM ubuntu_16.04_jre8_storlets
     MAINTAINER root
 
-    RUN apt-get install vim
 
 Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_14.04_jre8_storlets_<account id>
+    cd $HOME/docker_repos/ubuntu_16.04_jre8_storlets_<account id>
     sudo docker build -q -t <account id> .
     cd -
 
@@ -402,6 +401,7 @@ We use the swift cli as follows:
   --os-password=testing \
   --os-project-name=test \
   --os-project-domain-name default \
+  --read-acl test:tester_member \
   storlet
 
   swift post \
@@ -410,6 +410,7 @@ We use the swift cli as follows:
   --os-password=testing \
   --os-project-name=test \
   --os-project-domain-name default \
+  --read-acl test:tester_member \
   dependency
 
   swift post \
@@ -430,26 +431,20 @@ The functional tests are designed to run over a clustered installation
 (that is not an all in one install). Hence, running the tests require
 a cluster connfiguration file.
 
-Step 1: Create the file $HOME/storlets/cluster_config.json with the below
+Step 1: Create the file $HOME/storlets/test.conf with the below
 content.
 
 ::
 
-    {
-        "all" : {
-            "docker_device": "/home/docker_device",
-            "storlet_source_dir": "~/storlets",
-            "keystone_public_url": "http://127.0.0.1/identity/v3",
-            "swift_endpoint_host": "127.0.0.1",
-            "swift_public_url": "http://127.0.0.1:8080/v1",
-            "storlets_enabled_attribute_name": "storlet-enabled",
-            "storlets_default_project_name": "test",
-            "storlets_default_project_user_name": "tester",
-            "storlets_default_project_user_password": "testing",
-            "storlets_default_project_member_user": "tester_member",
-            "storlets_default_project_member_password": "member",
-        }
-    }
+    [general]
+    region = RegionOne
+    storlets_default_project_member_password = member
+    storlets_default_project_member_user = tester_member
+    storlets_default_project_user_password = testing
+    storlets_default_project_user_name = tester
+    storlets_default_project_name = test
+    keystone_public_url = http://127.0.0.1/identity/v3
+    keystone_default_domain = default
 
 Step 2: Run the functional tests
 

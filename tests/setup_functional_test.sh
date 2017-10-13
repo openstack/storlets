@@ -1,2 +1,2 @@
 #!/bin/bash
-./s2aio.sh install jenkins host
+./s2aio.sh install

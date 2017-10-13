@@ -34,8 +34,6 @@
             dest="dependencies/slf4j-api-1.7.7.jar"
             verbose="true"
             usetimestamp="true"/>
-        <copy file="../../install/storlets/roles/docker_storlet_engine_image/files/logback.xml"
-            tofile="dependencies/logback.xml"/>
     </target>
     <!-- Install build Dependencies-->
     <target name="install_dependencies" depends="dependencies">

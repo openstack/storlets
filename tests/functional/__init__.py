@@ -23,7 +23,7 @@ from storlets.tools.utils import deploy_storlet, get_admin_auth, put_local_file
 import os
 
 CONFIG_DIR = os.environ.get('CLUSTER_CONF_DIR', os.getcwd())
-CONFIG_FILE = os.path.join(CONFIG_DIR, 'cluster_config.json')
+CONFIG_FILE = os.path.join(CONFIG_DIR, 'test.conf')
 PATH_TO_STORLETS = os.environ.get(
     'STORLET_SAMPLE_PATH',
     # assuming, current working dir is at top of storlet repo

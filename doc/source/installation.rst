@@ -87,7 +87,7 @@ storlets with EC and encryption. Valid values are true / false
   # Keystone access information
   keystone_endpoint_host: 127.0.0.1
   keystone_admin_url: http://{{ keystone_endpoint_host }}:35357/v3
-  keystone_public_url: http://{{ keystone_endpoint_host }}:5000/v3
+  keystone_public_url: http://{{ keystone_endpoint_host }}/identity/v3
   keystone_admin_token: ADMIN
   keystone_admin_password: passw0rd
 

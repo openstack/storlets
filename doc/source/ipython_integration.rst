@@ -23,7 +23,7 @@ default storlets development environment installation (`s2aio <http://storlets.r
 
     import os
     os.environ['OS_AUTH_VERSION'] = '3'
-    os.environ['OS_AUTH_URL'] = 'http://127.0.0.1:5000/v3'
+    os.environ['OS_AUTH_URL'] = 'http://127.0.0.1/v3'
     os.environ['OS_USERNAME'] = 'tester'
     os.environ['OS_PASSWORD'] = 'testing'
     os.environ['OS_USER_DOMAIN_NAME'] = 'default'

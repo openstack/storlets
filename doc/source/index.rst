@@ -75,19 +75,6 @@ Storlets Developers
    writing_and_deploying_java_storlets
    writing_and_deploying_python_storlets
 
-Storlets Deployers
-==================
-.. toctree::
-   :maxdepth: 1
-
-   deployer_installation
-   deployer_guide
-
-
-Storlets Management
-===================
-Coming Soon!
-
 Indices and tables
 ==================
 
