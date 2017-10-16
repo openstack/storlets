@@ -1,3 +1,10 @@
+storlets (0.6.0)
+  * Moving installation code to be as devstack plugin
+    - This work also moves several non-python storlets code out from the
+      docker image. Those code will be included in storlets package.
+
+  * Minor improvements and bug fixes
+
 storlets (0.5.0, Openstack Pike)
   * Extending IPython intgration
 
