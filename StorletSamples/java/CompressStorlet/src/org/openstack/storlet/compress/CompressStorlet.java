@@ -54,7 +54,7 @@ public class CompressStorlet implements IStorlet {
         /*
          * Get optional action flag
          */
-                String action_str = parameters.get("action");
+        String action_str = parameters.get("action");
         if (action_str != null && action_str.equals("uncompress"))
         {
             action = UNCOMPRESS;
@@ -89,5 +89,5 @@ public class CompressStorlet implements IStorlet {
             }
         }
         log.emitLog("CompressStorlet Invocation done");
-        }
+    }
 }
