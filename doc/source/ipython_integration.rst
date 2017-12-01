@@ -73,7 +73,7 @@ Executing the cell will deploy the storlet into Swift.
               if not buf:
                   break
               content += buf
-          self.logger.debug('Recieved %d bytes' % len(content))
+          self.logger.debug('Received %d bytes' % len(content))
           self.logger.debug('Writing back %d bytes' % len(content))
           out_files[0].write(content)
           self.logger.debug('Complete')

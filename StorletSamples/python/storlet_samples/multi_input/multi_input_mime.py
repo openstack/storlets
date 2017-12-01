@@ -44,7 +44,7 @@ class MultiInputMIMEStorlet(object):
                 buf = input_file.read(16)
                 if not buf:
                     break
-                self.logger.debug('Recieved %d bytes' % len(buf))
+                self.logger.debug('Received %d bytes' % len(buf))
                 out_files[0].write(buf)
             input_file.close()
             if in_files:

@@ -248,7 +248,7 @@ class RunTimeSandbox(object):
 
     def _parse_sandbox_factory_answer(self, str_answer):
         """
-        Parse answer string recieved from container side
+        Parse answer string received from container side
 
         :param str_answer: answer string
         :returns: (status, message)

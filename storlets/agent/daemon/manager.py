@@ -271,7 +271,7 @@ class Daemon(object):
 
     def get_handler(self, command):
         """
-        Decide handler function correspoiding to the recieved command
+        Decide handler function correspoiding to the received command
 
         :param command: command
         :returns: handler function
