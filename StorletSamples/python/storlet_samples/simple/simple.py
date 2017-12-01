@@ -36,7 +36,7 @@ class SimpleStorlet(object):
             buf = in_files[0].read(16)
             if not buf:
                 break
-            self.logger.debug('Recieved %d bytes' % len(buf))
+            self.logger.debug('Received %d bytes' % len(buf))
             self.logger.debug('Writing back %d bytes' % len(buf))
             out_files[0].write(buf)
         self.logger.debug('Complete')

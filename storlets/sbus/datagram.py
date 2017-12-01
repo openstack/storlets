@@ -236,7 +236,7 @@ class SBusExecuteDatagram(SBusDatagram):
 
 def build_datagram_from_raw_message(fds, str_md, str_cmd_params):
     """
-    Build SBusDatagram from raw message recieved over sbus
+    Build SBusDatagram from raw message received over sbus
 
     :param fds: A list of file descriptors (integer) to pass with
                 the command
