@@ -30,7 +30,7 @@ The storlet engine is tightly coupled with accounts in Swift in the following ma
    container can be invoked on any data object in that account, given that the invoking user
    has read permissions to the "storlet" container.
 #. Each account has a separate Docker image (and container) where storlets are being executed.
-   All the storlets being executed on data objects belonging to some account, will be executed
+   All the storlets being executed on data objects belonging to same account, will be executed
    in the same Docker container. This facilitates having different images for different Swift
    accounts. The Docker image name must be the account id to which it belongs.
 
