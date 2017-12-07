@@ -1,0 +1,15 @@
+- project:
+    name: openstack/storlets
+    check:
+      jobs:
+        - storlets-functional
+    gate:
+      jobs:
+        - storlets-functional
+
+- job:
+    name: storlets-functional
+    parent: legacy-base
+    run: playbooks/legacy/storlets-functional/run.yaml
+    post-run: playbooks/legacy/storlets-functional/post.yaml
+    timeout: 1800
