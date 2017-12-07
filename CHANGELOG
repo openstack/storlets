@@ -1,3 +1,8 @@
+storlets (0.7.0)
+  * Migrate legacy gate job from OpenStack project config
+
+  * Minor bug fixes
+
 storlets (0.6.0)
   * Moving installation code to be as devstack plugin
     - This work also moves several non-python storlets code out from the
