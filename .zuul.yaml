@@ -9,7 +9,6 @@
 
 - job:
     name: storlets-functional
-    parent: legacy-base
-    run: playbooks/legacy/storlets-functional/run.yaml
-    post-run: playbooks/legacy/storlets-functional/post.yaml
-    timeout: 1800
+    pre-run: playbooks/storlets-functional/pre.yaml
+    run: playbooks/storlets-functional/run.yaml
+    timeout: 2400

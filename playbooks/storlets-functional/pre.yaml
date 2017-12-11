@@ -1,0 +1,9 @@
+- hosts: all
+  tasks:
+    - shell:
+        cmd: |
+          set -e
+          set -x
+          tests/setup_functional_test.sh
+        executable: /bin/bash
+        chdir: 'src/{{ zuul.project.canonical_name }}'
