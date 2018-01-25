@@ -1,5 +1,4 @@
 - project:
-    name: openstack/storlets
     check:
       jobs:
         - storlets-functional
