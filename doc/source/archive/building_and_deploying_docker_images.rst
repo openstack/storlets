@@ -22,7 +22,7 @@ Below are the steps of this flow:
 
 #. A prerequisite for the account manager to deploy a Docker image to Swift is having an
    account that is enabled for Storlets. This is an operation that is done by the Swift Storlet
-   manager and is explained in <https://github.com/openstack/storlets/blob/master/doc/source/storlets_management.rst>.
+   manager and is explained in <https://github.com/openstack/storlets/blob/master/doc/source/archive/storlets_management.rst>.
 #. Once the account is enabled for Storlets, a container named docker_images is
    created, with access to both the account manager as well as the storlet manager.
    That container will include a basic Docker image consisting of some Storlet
@@ -31,7 +31,7 @@ Below are the steps of this flow:
    the installed software stack, and upload it back to the docker_images container.
 #. Once uploaded, the account manager must notify the Swift Storlet engine manager
    of the update. The storlets manager would take care of testing and deploying
-   it to all Swift nodes. Again, <https://github.com/openstack/storlets/blob/master/doc/source/storlets_management.rst>
+   it to all Swift nodes. Again, <https://github.com/openstack/storlets/blob/master/doc/source/archive/storlets_management.rst>
    describes the provided tool the Storlet manager can use for the actual deployment.
 
 The sections below describe in detail the steps taken by the account manager.
