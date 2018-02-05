@@ -5,7 +5,7 @@ Introduction
 The Storlet manager operations currently include:
 
 #. Creating a Storlet enabled tenant.
-#. Deploying an image that was created by the tenant admin as described in <https://github.com/openstack/storlets/blob/master/doc/source/building_and_deploying_docker_images.rst>
+#. Deploying an image that was created by the tenant admin as described in <https://github.com/openstack/storlets/blob/master/doc/source/archive/building_and_deploying_docker_images.rst>
 
 The scripts providing these operations are located under /opt/ibm in the storlet management machine.
 
@@ -29,7 +29,7 @@ The script takes 3 parameters:
 #. The password for the account manager
 
 Note that the script is aware of the Keysone admin credentials as they
-were provided to the initial installation script as described in <https://github.com/openstack/storlets/blob/master/doc/source/storlets_installation_guide.rst>
+were provided to the initial installation script as described in <https://github.com/openstack/storlets/blob/master/doc/source/installation.rst>
 
 Below is a sample invocation:
 
@@ -93,7 +93,7 @@ Below is a sample invocation:
 
 Deploying a Tenant Image
 ========================
-Recall that in the Docker image build (described in <https://github.com/openstack/storlets/blob/master/doc/source/building_and_deploying_docker_images.rst>) the image was given a name
+Recall that in the Docker image build (described in <https://github.com/openstack/storlets/blob/master/doc/source/archive/building_and_deploying_docker_images.rst>) the image was given a name
 (specified after -t in the docker build command) and was uploaded as a .tar file to the tenant's docker_images Swift container.
 When deploying an image, the Storlet's admin needs to provide the tenant name, the .tar object name and the image name.
 
