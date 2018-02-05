@@ -1,3 +1,6 @@
+storlets (1.0.0, OpenStack Queens)
+  * Minor bug fixes and rework on the zuul config
+
 storlets (0.7.0)
   * Migrate legacy gate job from OpenStack project config
 
