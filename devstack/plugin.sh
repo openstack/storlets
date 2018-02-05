@@ -125,6 +125,10 @@ configure_swift_and_keystone_for_storlets() {
     fi
     member_user_tester_created=$(openstack user list | grep -w $SWIFT_MEMBER_USER | wc -l)
     if [ $member_user_tester_created -eq 0 ]; then
+        role_member_created=$(openstack role list | grep -w _member_ | wc -l)
+        if [ $role_member_created -eq 0 ]; then
+            openstack role create _member_
+        fi
         openstack user create --project $SWIFT_DEFAULT_PROJECT --password $SWIFT_MEMBER_USER_PWD $SWIFT_MEMBER_USER
         openstack role add --user $SWIFT_MEMBER_USER --project $SWIFT_DEFAULT_PROJECT _member_
     fi
