@@ -28,7 +28,7 @@ The script takes 3 parameters:
 #. The user name for the account manager
 #. The password for the account manager
 
-Note that the script is aware of the Keysone admin credentials as they
+Note that the script is aware of the Keystone admin credentials as they
 were provided to the initial installation script as described in <https://github.com/openstack/storlets/blob/master/doc/source/installation.rst>
 
 Below is a sample invocation:
