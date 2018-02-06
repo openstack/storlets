@@ -153,7 +153,7 @@ To invoke a storlet on a range of an object use the 'X-Storlet-Range' header. Fo
 
         'X-Storlet-Range': 'bytes=1-6'
 
-'X-Storlet-Range' can take any value that Swift can take for the HTTP 'Range' header as described in <http://developer.openstack.org/api-ref-objectstorage-v1.html>.
+'X-Storlet-Range' can take any value that Swift can take for the HTTP 'Range' header as described in <https://developer.openstack.org/api-ref/object-store/index.html>.
 Specifying HTTP 'Range' header together with 'X-Run-Storlet' is not allowed, and results in '400 Bad Request'
 
 Invoke a storlet upon object upload

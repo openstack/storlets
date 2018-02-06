@@ -93,7 +93,7 @@ In the below we show:
 Tuning the Docker Image
 -----------------------
 To tune the Docker image, Docker must be used. To install please refer to
-http://docs.docker.com/installation/
+https://docs.docker.com/install/
 
 The below steps illustrate the tuning process:
 
@@ -119,7 +119,7 @@ The below steps illustrate the tuning process:
       within the container. Please leave it as is.
    #. The below example shows ffmpeg installation. For more options and
        information on Dockerfiles, please refer to:
-       http://docs.docker.com/reference/builder/
+       https://docs.docker.com/engine/reference/builder/
    #. One MUST refrain from using the Dockerfile ENTRYPOINT and CMD. Using those
       will cause the image from being unusable by the Storlet engine.
 
