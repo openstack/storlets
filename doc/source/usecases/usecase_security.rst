@@ -16,7 +16,7 @@ once that information is obscured. Some examples are:
 #. 3D designs can be made available to manufacturers after a slicing lossy transformation.
 
 Storlets can mask out the sensitive information without the data ever leaving the storage system.
-A PoC if the concept was done in the context of the ForgetIT EU reasearch project, and can be viewed
+A PoC if the concept was done in the context of the ForgetIT EU research project, and can be viewed
 in [1]_
 
 .. [1] https://www.youtube.com/watch?v=3rXeNbps8wo&t=105

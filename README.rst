@@ -88,7 +88,7 @@ Code Organization
 For Storlets Developers
 -----------------------
 
-Currently, storlets can be developped in Java only.
+Currently, storlets can be developed in Java only.
 To get started, follow:
 `"S2AIO - Swift Storlets All In One" <http://storlets.readthedocs.io/en/latest/getting_started.html>`__.
 

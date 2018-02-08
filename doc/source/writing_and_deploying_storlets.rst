@@ -34,7 +34,7 @@ and StorletSamples/python directories. These storlets are used by the engine's
 functional tests.
 
 The next two sections describe storlet writing and deploying guidelines that are
-indpendent of the language used.
+independent of the language used.
 
 Storlet Writing Guidelines
 ==========================
