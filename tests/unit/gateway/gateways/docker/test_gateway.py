@@ -438,7 +438,7 @@ use = egg:swift#catch_errors
         # prepare nested mock patch
         # SBus -> mock SBus.send() for container communication
         # os.read -> mock reading the file descriptor from container
-        # select.slect -> mock fd communication wich can be readable
+        # select.slect -> mock fd communication which can be readable
         @mock.patch('storlets.gateway.gateways.docker.runtime.SBus', MockSBus)
         @mock.patch('storlets.gateway.gateways.docker.runtime.os.read',
                     mock_read)

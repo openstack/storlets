@@ -717,7 +717,7 @@ class StorletInvocationProtocol(object):
             rc = SBus.send(self.storlet_pipe_path, dtg)
             if (rc < 0):
                 raise StorletRuntimeException('Failed to cancel task')
-            # TODO(takashi): Check the reponse here
+            # TODO(takashi): Check the response here
             os.read(read_fd, 10)
 
     def _invoke(self):
