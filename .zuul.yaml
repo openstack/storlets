@@ -10,4 +10,5 @@
     name: storlets-functional
     pre-run: playbooks/storlets-functional/pre.yaml
     run: playbooks/storlets-functional/run.yaml
+    post-run: playbooks/storlets-functional/post.yaml
     timeout: 2400
