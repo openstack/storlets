@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import argparse
 import errno
 import os
 import pwd
@@ -234,34 +235,25 @@ class StorletDaemon(SBusServer):
         self._wait_all_child_processes()
 
 
-def usage():
-    """
-    Print the expected command line arguments.
-    """
-    print("storlets-daemon <storlet_name> <sbus_path> <log_level> "
-          "<pool_size> <cotnainer id>")
-
-
-def main(argv):
+def main():
     """
     The entry point of daemon_factory process
-
-    :param argv: parameters given from command line
     """
-    if (len(argv) != 5):
-        usage()
-        return EXIT_FAILURE
-
-    storlet_name = argv[0]
-    sbus_path = argv[1]
-    log_level = argv[2]
-    pool_size = argv[3]
-    container_id = argv[4]
+    parser = argparse.ArgumentParser(
+        description='Daemon process to execute storlet applications')
+    parser.add_argument('storlet_name', help='storlet name')
+    parser.add_argument('sbus_path', help='the path to unix domain socket')
+    parser.add_argument('log_level', help='log level')
+    parser.add_argument('pool_size', type=int,
+                        help='the maximun thread numbers used swapns for '
+                             'one storlet application')
+    parser.add_argument('container_id', help='container id')
+    opts = parser.parse_args()
 
     # Initialize logger
-    logger = get_logger("storlets-daemon", log_level, container_id)
+    logger = get_logger("storlets-daemon", opts.log_level, opts.container_id)
     logger.debug("Storlet Daemon started")
-    SBus.start_logger("DEBUG", container_id=container_id)
+    SBus.start_logger("DEBUG", container_id=opts.container_id)
 
     # Impersonate the swift user
     pw = pwd.getpwnam('swift')
@@ -270,9 +262,10 @@ def main(argv):
 
     # create an instance of storlet daemon
     try:
-        daemon = StorletDaemon(storlet_name, sbus_path, logger, pool_size)
-    except Exception as e:
-        logger.error(e.message)
+        daemon = StorletDaemon(opts.storlet_name, opts.sbus_path,
+                               logger, opts.pool_size)
+    except Exception as err:
+        logger.error(err.message)
         return EXIT_FAILURE
 
     # Start the main loop

@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import argparse
 import errno
 import os
 import pwd
@@ -23,8 +24,8 @@ from storlets.sbus import SBus
 from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
 from storlets.sbus.command import SBUS_CMD_HALT, SBUS_CMD_PING
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
-from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
-    CommandSuccess, CommandFailure, SBusServer
+from storlets.agent.common.server import command_handler, CommandSuccess, \
+    CommandFailure, SBusServer
 from storlets.agent.common.utils import get_logger
 
 
@@ -502,31 +503,21 @@ class StorletDaemonFactory(SBusServer):
         pass
 
 
-def usage():
-    """
-    Print the expected command line arguments.
-    """
-    print("storlets-daemon-factory <path> <log level> <container_id>")
-
-
-def main(argv):
+def main():
     """
     The entry point of daemon_factory process
-
-    :param argv: parameters given from command line
     """
-    if (len(argv) != 3):
-        usage()
-        return EXIT_FAILURE
-
-    sbus_path = argv[0]
-    log_level = argv[1]
-    container_id = argv[2]
+    parser = argparse.ArgumentParser(
+        description='Factory process to manage storlet daemons')
+    parser.add_argument('sbus_path', help='the path to unix domain socket')
+    parser.add_argument('log_level', help='log level')
+    parser.add_argument('container_id', help='container id')
+    opts = parser.parse_args()
 
     # Initialize logger
-    logger = get_logger("daemon-factory", log_level, container_id)
+    logger = get_logger("daemon-factory", opts.log_level, opts.container_id)
     logger.debug("Daemon factory started")
-    SBus.start_logger("DEBUG", container_id=container_id)
+    SBus.start_logger("DEBUG", container_id=opts.container_id)
 
     # Impersonate the swift user
     pw = pwd.getpwnam('swift')
@@ -534,7 +525,7 @@ def main(argv):
     os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
     # create an instance of daemon_factory
-    factory = StorletDaemonFactory(sbus_path, logger, container_id)
+    factory = StorletDaemonFactory(opts.sbus_path, logger, opts.container_id)
 
     # Start the main loop
     return factory.main_loop()
