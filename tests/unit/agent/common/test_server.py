@@ -12,7 +12,6 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import eventlet
 import mock
 import unittest
 
@@ -25,9 +24,6 @@ from tests.unit import FakeLogger
 
 
 class TestCommandResponse(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_init(self):
         resp = CommandResponse(True, 'ok')
         self.assertTrue(resp.status)
@@ -45,9 +41,6 @@ class TestCommandResponse(unittest.TestCase):
 
 
 class TestCommandSuccess(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_init(self):
         resp = CommandSuccess('ok')
         self.assertTrue(resp.status)
@@ -56,9 +49,6 @@ class TestCommandSuccess(unittest.TestCase):
 
 
 class TestCommandFailure(unittest.TestCase):
-    def setUp(self):
-        pass
-
     def test_init(self):
         resp = CommandFailure('error')
         self.assertFalse(resp.status)
@@ -67,7 +57,6 @@ class TestCommandFailure(unittest.TestCase):
 
 
 class TestCommandHandler(unittest.TestCase):
-
     def test_command_handler(self):
 
         @command_handler
@@ -79,7 +68,6 @@ class TestCommandHandler(unittest.TestCase):
 
 
 class TestSBusServer(unittest.TestCase):
-
     def setUp(self):
         self.logger = FakeLogger()
         self.sbus_path = 'path/to/pipe'
@@ -156,7 +144,6 @@ class TestSBusServerMain(unittest.TestCase):
 
     def setUp(self):
         self.logger = FakeLogger()
-        self.pile = eventlet.greenpool.GreenPile(1)
         self.sbus_path = 'fake_path'
         self.server = self._get_test_server()
 
@@ -173,9 +160,7 @@ class TestSBusServerMain(unittest.TestCase):
         fake_sbus_class = create_fake_sbus_class(scenario)
         with mock.patch('storlets.agent.common.server.SBus', fake_sbus_class):
             with mock.patch('os.fdopen'):
-                self.pile.spawn(self.server.main_loop)
-                eventlet.sleep()
-                ret = [ret for ret in self.pile][0]
+                ret = self.server.main_loop()
 
         self.assertEqual(EXIT_SUCCESS, ret)
         # sanity for no error and no warning
