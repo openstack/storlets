@@ -314,7 +314,7 @@ class RunTimeSandbox(object):
         Restarts the scope's sandbox using the specified docker image
 
         :param docker_image_name: name of the docker image to start
-        :returns: retruned value of restart_docker_container
+        :returns: returned value of restart_docker_container
         """
         if self.docker_repo:
             docker_image_name = '%s/%s' % (self.docker_repo,
