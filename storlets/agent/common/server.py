@@ -87,7 +87,7 @@ class SBusServer(object):
             handler = getattr(self, func_name)
             getattr(handler, 'is_command_handler')
         except AttributeError:
-            raise ValueError('Command %s is not allowd for this server' %
+            raise ValueError('Command %s is not allowed for this server' %
                              command)
         return handler
 
