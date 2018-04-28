@@ -68,7 +68,7 @@ Finally, add the swift devices to fstab:
 Configure a user and project in Keystone
 ----------------------------------------
 
-We use the opnstack cli to configure a user and project
+We use the openstack cli to configure a user and project
 used by the storlets functional tests. We start by
 defining some environment variables:
 
