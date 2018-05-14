@@ -1,10 +1,9 @@
 ---
-issues:
+upgrade:
   - |
     Moving storlets installation code to be as devstack plugin and also moves
     several non-python storlets code out from the docker image.
 
-  - Migrate zuul job into Stolets repo.
-
 fixes:
+  - Migrate zuul job into Stolets repo.
   - Various other minor bug fixes.
