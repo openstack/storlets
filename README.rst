@@ -25,8 +25,8 @@ Docs
 The storlerts documentation is auto-generated after every commit and available
 online at http://storlets.readthedocs.io/en/latest/
 
-Getting Started
----------------
+Getting Started for Users
+-------------------------
 
 The fastest way to get started is
 `"S2AIO - Swift Storlets All In One" <http://storlets.readthedocs.io/en/latest/getting_started.html>`__.
