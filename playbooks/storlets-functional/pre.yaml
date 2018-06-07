@@ -4,6 +4,6 @@
         cmd: |
           set -e
           set -x
-          tests/setup_functional_test.sh
+          ./s2aio.sh install
         executable: /bin/bash
         chdir: 'src/{{ zuul.project.canonical_name }}'
