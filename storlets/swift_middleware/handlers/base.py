@@ -416,7 +416,7 @@ class StorletBaseHandler(object):
         Apply storlet on response
 
         :param resp: swob.Response instance
-        :return: processed reponse
+        :return: processed response
         """
         sresp = self._call_gateway(resp)
 
