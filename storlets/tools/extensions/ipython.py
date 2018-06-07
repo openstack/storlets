@@ -260,7 +260,7 @@ class StorletMagics(Magics):
         '-o', type=unicode_type,
         help=('A name of an output variable to hold the invocation result '
               'The output variable is a dictionary with the fields: '
-              'status, headers, content_iter holding the reponse status, '
+              'status, headers, content_iter holding the response status, '
               'headers, and body iterator accordingly')
     )
     @line_magic
@@ -326,7 +326,7 @@ class StorletMagics(Magics):
         '-o', type=unicode_type,
         help=('A name of an output variable to hold the invocation result '
               'The output variable is a dictionary with the fields: '
-              'status, headers, holding the reponse status and '
+              'status, headers, holding the response status and '
               'headers accordingly')
     )
     @line_magic
@@ -397,7 +397,7 @@ class StorletMagics(Magics):
         '-o', type=unicode_type,
         help=('A name of an output variable to hold the invocation result '
               'The output variable is a dictionary with the fields: '
-              'status, headers, holding the reponse status and '
+              'status, headers, holding the response status and '
               'headers accordingly')
     )
     @line_magic

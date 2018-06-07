@@ -540,7 +540,7 @@ class StorletProxyHandler(StorletBaseHandler):
                                   agent=self.agent)
         sub_resp = sub_req.get_response(self.app)
         if sub_resp.status_int != 204:
-            self.logger.info("Failed to retreive container metadata")
+            self.logger.info("Failed to retrieve container metadata")
             return HTTPUnauthorized(('Unauthorized to get or modify '
                                      'the container ACL'))
 

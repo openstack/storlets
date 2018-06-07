@@ -53,7 +53,7 @@ CommandFailure = partial(CommandResponse, False)
 
 def command_handler(func):
     """
-    Decorator for handler methods called accoring to given sbus command
+    Decorator for handler methods called according to given sbus command
     """
     func.is_command_handler = True
     return func

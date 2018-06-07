@@ -179,7 +179,7 @@ class TestStorletDockerGateway(unittest.TestCase):
         self.obj = 'object'
         self.sobj = 'storlet-1.0.jar'
 
-        # TODO(kota_): shoudl be 'storlet-internal-client.conf' actually
+        # TODO(kota_): should be 'storlet-internal-client.conf' actually
         ic_conf_path = os.path.join(self.tempdir,
                                     'storlet-proxy-server.conf')
         with open(ic_conf_path, 'w') as f:
