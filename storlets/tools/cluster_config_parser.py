@@ -14,13 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import ConfigParser
+from six.moves import configparser
 
 
 class ClusterConfig(object):
 
     def __init__(self, config_path):
-        config = ConfigParser.ConfigParser()
+        config = configparser.ConfigParser()
         config.read(config_path)
         options = config.options('general')
         self.conf = {}

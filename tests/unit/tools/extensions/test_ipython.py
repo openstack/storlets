@@ -14,12 +14,16 @@
 # limitations under the License.
 
 from IPython.core.error import UsageError
-from cStringIO import StringIO
+from six.moves import StringIO
 from storlets.tools.extensions.ipython import StorletMagics
 import unittest
 import mock
 import os
 import itertools
+
+import six
+if six.PY3:
+    from io import FileIO as file
 
 
 class FakeConnection(object):
@@ -127,7 +131,7 @@ class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
             self._call_storletapp(line, cell)
         self.assertEqual(
             '--with-invoke option requires --input to run the app',
-            cm.exception.message)
+            cm.exception.args[0])
 
     def test_storlet_magics_invalid_input_fail(self):
         invalid_input_patterns = (
@@ -143,7 +147,7 @@ class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
             self.assertEqual(
                 'swift object path must have the format: '
                 '"path:/<container>/<object>"',
-                cm.exception.message)
+                cm.exception.args[0])
 
     def test_storlet_magics_stdout(self):
         line = 'test.TestStorlet --with-invoke --input path:/foo/bar' \
@@ -185,7 +189,7 @@ class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
                 self.assertEqual(
                     "You need to set OS_AUTH_URL, OS_USERNAME, OS_PASSWORD "
                     "and OS_PROJECT_NAME for Swift authentication",
-                    e.exception.message)
+                    e.exception.args[0])
 
     def test_storlet_auth_v2_not_supported(self):
         line = 'test.TestStorlet'
@@ -195,7 +199,7 @@ class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
             self._call_storletapp(line, cell)
         self.assertEqual(
             'keystone v2 is not supported',
-            e.exception.message)
+            e.exception.args[0])
 
     def test_storlet_auth_v1_no_enough_auth_info(self):
         # NOTE: Now, storlets should work on keystone v3 so that this test
@@ -233,7 +237,7 @@ class TestStorletMagicStorletApp(BaseTestIpythonExtension, unittest.TestCase):
                 self.assertEqual(
                     "You need to set ST_AUTH, ST_USER, ST_KEY "
                     "for Swift authentication",
-                    e.exception.message)
+                    e.exception.args[0])
 
 
 class TestStorletMagicGet(BaseTestIpythonExtension, unittest.TestCase):
@@ -284,7 +288,7 @@ class TestStorletMagicGet(BaseTestIpythonExtension, unittest.TestCase):
         for scenario in scenarios:
             with self.assertRaises(UsageError) as e:
                 self._call_get(scenario['line'])
-            self.assertEqual(scenario['msg'], e.exception.message)
+            self.assertEqual(scenario['msg'], e.exception.args[0])
 
     def _test_get(self, line, outvar_name):
         self._call_get(line)
@@ -380,7 +384,7 @@ class TestStorletMagicCopy(BaseTestIpythonExtension, unittest.TestCase):
         for scenario in scenarios:
             with self.assertRaises(UsageError) as e:
                 self._call_copy(scenario['line'])
-            self.assertEqual(scenario['msg'], e.exception.message)
+            self.assertEqual(scenario['msg'], e.exception.args[0])
 
     def _test_copy(self, line, outvar_name):
         self._call_copy(line)
@@ -459,7 +463,7 @@ class TestStorletMagicPut(BaseTestIpythonExtension, unittest.TestCase):
         for scenario in scenarios:
             with self.assertRaises(UsageError) as e:
                 self._call_put(scenario['line'])
-            self.assertEqual(scenario['msg'], e.exception.message)
+            self.assertEqual(scenario['msg'], e.exception.args[0])
 
     def _test_put(self, line, outvar_name):
         open_name = '%s.open' % 'storlets.tools.extensions.ipython'

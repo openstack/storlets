@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from cStringIO import StringIO
+from six.moves import StringIO
 
 
 class FakeStorletFile(object):
