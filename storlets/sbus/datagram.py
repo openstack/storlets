@@ -114,7 +114,7 @@ class SBusDatagram(object):
         :returns: a list of file descriptors
         """
         ret = []
-        for i in xrange(len(self.metadata)):
+        for i in range(len(self.metadata)):
             if self.metadata[i]['storlets']['type'] == fdtype:
                 ret.append(self.fds[i])
         return ret

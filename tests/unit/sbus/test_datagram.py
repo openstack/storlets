@@ -60,7 +60,7 @@ class TestSBusDatagram(unittest.TestCase):
             SBusDatagram('', [], [])
         self.assertEqual(
             'SBusDatagram class should not be initialized as bare',
-            err.exception.message)
+            err.exception.args[0])
 
     def test_invalid_child_class_definition(self):
         # no definition for _requried_fd_types
@@ -71,7 +71,7 @@ class TestSBusDatagram(unittest.TestCase):
             InvalidSBusDatagram('', [], [])
         self.assertEqual(
             'SBusDatagram class should define _required_fd_types',
-            err.exception.message)
+            err.exception.args[0])
 
 
 class SBusDatagramTestMixin(object):
@@ -118,7 +118,7 @@ class SBusDatagramTestMixin(object):
         for invalid_type in invalid_types:
             with self.assertRaises(ValueError) as cm:
                 self.dtg._check_required_fd_types(invalid_type)
-            self.assertTrue(cm.exception.message.startswith(
+            self.assertTrue(cm.exception.args[0].startswith(
                 'Fd type mismatch given_fd_types'))
 
     def test_check_fd_nums(self):
@@ -208,11 +208,11 @@ class TestSBusExecuteDatagram(SBusDatagramTestMixin, unittest.TestCase):
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT]
-        fds = [i + 1 for i in xrange(len(types))]
+        fds = [i + 1 for i in range(len(types))]
         metadata = [FDMetadata(types[i],
                     {'key%d' % i: 'value%d' % i},
                     {'skey%d' % i: 'svalue%d' % i}).to_dict()
-                    for i in xrange(len(types))]
+                    for i in range(len(types))]
         dtg = self._test_class(
             self.command, fds, metadata, self.params, self.task_id)
         self.assertEqual(dtg.fds, fds)
@@ -241,7 +241,7 @@ class TestSBusExecuteDatagram(SBusDatagramTestMixin, unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             self.dtg._check_required_fd_types(types)
         self.assertTrue(
-            cm.exception.message.startswith('Fd type mismatch given_fd_types'))
+            cm.exception.args[0].startswith('Fd type mismatch given_fd_types'))
 
 
 class TestBuildDatagramFromRawMessage(unittest.TestCase):
@@ -277,11 +277,11 @@ class TestBuildDatagramFromRawMessage(unittest.TestCase):
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT,
                  sbus_fd.SBUS_FD_INPUT_OBJECT]
-        fds = [i + 1 for i in xrange(len(types))]
+        fds = [i + 1 for i in range(len(types))]
         metadata = [FDMetadata(types[i],
                     {'key%d' % i: 'value%d' % i},
                     {'skey%d' % i: 'svalue%d' % i}).to_dict()
-                    for i in xrange(len(types))]
+                    for i in range(len(types))]
         params = {'param1': 'paramvalue1'}
         task_id = 'id'
         cmd_params = {'command': command, 'params': params, 'task_id': task_id}
