@@ -53,4 +53,4 @@ class TestTestTools(TestCase):
             fake_storlet_out.set_metadata({})
         self.assertEqual(
             "Sending metadata twice is not allowed",
-            cm.exception.message)
+            cm.exception.args[0])
