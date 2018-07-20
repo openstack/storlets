@@ -46,7 +46,7 @@ tests/functional/.ipynb_checkpoints/
 .coverage
 .tox
 nosetests.xml
-.testrepository
+.stestr/
 .venv
 
 # Translations
