@@ -19,6 +19,7 @@ import pwd
 import sys
 import uuid
 import signal
+import importlib
 from storlets.sbus import SBus
 from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
     CommandSuccess, CommandFailure, SBusServer
@@ -53,7 +54,7 @@ class StorletDaemon(SBusServer):
             raise ValueError("Invalid storlet name %s" % storlet_name)
 
         try:
-            module = __import__(module_name, fromlist=[cls_name])
+            module = importlib.import_module(module_name)
             self.storlet_cls = getattr(module, cls_name)
         except (ImportError, AttributeError):
             raise StorletDaemonLoadError(

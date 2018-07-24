@@ -18,7 +18,7 @@ import json
 
 
 class StorletFile(object):
-    mode = 'r'
+    mode = 'rb'
 
     def __init__(self, obj_fd):
         self.obj_fd = obj_fd

@@ -336,7 +336,7 @@ class StorletDaemonFactory(SBusServer):
         :raises SDaemonError: when failed to kill one of the storlet daemons
         """
         failed = []
-        for storlet_name in self.storlet_name_to_pid.keys():
+        for storlet_name in list(self.storlet_name_to_pid):
             try:
                 self.process_kill(storlet_name)
             except SDaemonError:
@@ -362,7 +362,7 @@ class StorletDaemonFactory(SBusServer):
         """
         terminated = []
         failed = []
-        for storlet_name in self.storlet_name_to_pid.keys():
+        for storlet_name in list(self.storlet_name_to_pid):
             try:
                 self.shutdown_process(storlet_name)
                 terminated.append(storlet_name)
@@ -447,7 +447,7 @@ class StorletDaemonFactory(SBusServer):
         except SDaemonError as err:
             self.logger.exception('Failed to start the sdaemon for {0}'
                                   .format(storlet_name))
-            return CommandFailure(err.message)
+            return CommandFailure(err.args[0])
 
     @command_handler
     def stop_daemon(self, dtg):
@@ -461,7 +461,7 @@ class StorletDaemonFactory(SBusServer):
         except SDaemonError as err:
             self.logger.exception('Failed to kill the storlet daemon %s' %
                                   storlet_name)
-            return CommandFailure(err.message)
+            return CommandFailure(err.args[0])
 
     @command_handler
     def daemon_status(self, dtg):
@@ -478,7 +478,7 @@ class StorletDaemonFactory(SBusServer):
         except SDaemonError as err:
             self.logger.exception('Failed to get status of the storlet '
                                   'daemon %s' % storlet_name)
-            return CommandFailure(err.message)
+            return CommandFailure(err.args[0])
 
     @command_handler
     def stop_daemons(self, dtg):
@@ -487,7 +487,7 @@ class StorletDaemonFactory(SBusServer):
             return CommandSuccess('OK', False)
         except SDaemonError as err:
             self.logger.exception('Failed to stop some storlet daemons')
-            return CommandFailure(err.message, False)
+            return CommandFailure(err.args[0], False)
 
     @command_handler
     def halt(self, dtg):
@@ -497,7 +497,7 @@ class StorletDaemonFactory(SBusServer):
             return CommandSuccess(msg, False)
         except SDaemonError as err:
             self.logger.exception('Failed to halt some storlet daemons')
-            return CommandFailure(err.message, False)
+            return CommandFailure(err.args[0], False)
 
     def _terminate(self):
         pass

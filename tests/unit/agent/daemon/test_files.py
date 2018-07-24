@@ -117,44 +117,44 @@ class TestStorletOutputFile(TestStorletFile):
 class TestStorletInputFile(TestStorletFile):
 
     def setUp(self, content=None):
-        self.content = content or 'abcd\nefg\nhi\nj'
+        self.content = content or b'abcd\nefg\nhi\nj'
         self.metadata = {'key1': 'value1'}
         super(TestStorletInputFile, self).setUp()
 
     def _prepare_file(self):
-        with open(self.fname, 'w') as f:
+        with open(self.fname, 'wb') as f:
             f.write(self.content)
 
     def _create_file(self):
         return StorletInputFile(self.metadata, self.fd)
 
     def test_read(self):
-        self.assertEqual('abcd\nefg\nhi\nj', self.sfile.read())
+        self.assertEqual(b'abcd\nefg\nhi\nj', self.sfile.read())
 
     def test_read_size(self):
-        expects = ['abc', 'd\ne', 'fg\n', 'hi\n', 'j', '']
+        expects = [b'abc', b'd\ne', b'fg\n', b'hi\n', b'j', b'']
         for expect in expects:
             self.assertEqual(expect, self.sfile.read(3))
 
     def test_readline(self):
-        expects = ['abcd\n', 'efg\n', 'hi\n', 'j', '']
+        expects = [b'abcd\n', b'efg\n', b'hi\n', b'j', b'']
         for expect in expects:
             self.assertEqual(expect, self.sfile.readline())
 
     def test_readline_size(self):
-        expects = ['abc', 'd\n', 'efg', '\n', 'hi\n', 'j', '']
+        expects = [b'abc', b'd\n', b'efg', b'\n', b'hi\n', b'j', b'']
         for expect in expects:
             self.assertEqual(expect, self.sfile.readline(3))
 
     def test_readlines(self):
-        self.assertEqual(['abcd\n', 'efg\n', 'hi\n', 'j'],
+        self.assertEqual([b'abcd\n', b'efg\n', b'hi\n', b'j'],
                          self.sfile.readlines())
 
     def test_iter(self):
-        buf = ''
+        buf = b''
         for rbuf in self.sfile:
             buf += rbuf
-        self.assertEqual('abcd\nefg\nhi\nj', buf)
+        self.assertEqual(b'abcd\nefg\nhi\nj', buf)
 
     def test_get_metadata(self):
         self.assertEqual(self.metadata, self.sfile.get_metadata())
@@ -167,7 +167,7 @@ class TestStorletInputFile(TestStorletFile):
 class TestStorletRangeInputFile(TestStorletInputFile):
 
     def setUp(self):
-        content = '012\n345\nabcd\nefg\nhi\nj67\n8'
+        content = b'012\n345\nabcd\nefg\nhi\nj67\n8'
         self.start = 8
         self.end = 21
         super(TestStorletRangeInputFile, self).setUp(content)

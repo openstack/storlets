@@ -41,19 +41,19 @@ class TestStorletDaemon(unittest.TestCase):
         with self.assertRaises(ValueError) as cm:
             StorletDaemon(module_name, 'fake_path', self.logger, 16)
         self.assertEqual('Invalid storlet name %s' % module_name,
-                         cm.exception.message)
+                         cm.exception.args[0])
 
     def test_module_not_found(self):
         with self.assertRaises(StorletDaemonLoadError) as cm:
             StorletDaemon('nomodule.Nothing', 'fake_path', self.logger, 16)
         self.assertEqual('Failed to load storlet nomodule.Nothing',
-                         cm.exception.message)
+                         cm.exception.args[0])
 
 
 class TestStorletDaemonMain(test_server.TestSBusServerMain):
 
     def _get_test_server(self):
-        with mock.patch('__builtin__.__import__') as fake_import:
+        with mock.patch('importlib.import_module') as fake_import:
             fake_import.return_value = FakeModule()
             server = StorletDaemon(
                 'fakeModule.FakeClass', self.sbus_path, self.logger, 16)
