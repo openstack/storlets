@@ -95,7 +95,7 @@ class StorletObjectHandler(StorletBaseHandler):
         # The HTTP Range header is not allowed
         if self.is_range_request and not self.is_storlet_range_request:
             raise HTTPRequestedRangeNotSatisfiable(
-                'Storlet execution with range header is not supported',
+                b'Storlet execution with range header is not supported',
                 request=self.request)
 
         orig_resp = self.request.get_response(self.app)

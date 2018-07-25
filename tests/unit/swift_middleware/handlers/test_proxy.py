@@ -53,16 +53,19 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.fail('Application loading got an error')
 
     def get_request_response(self, target, method, headers=None, body=None):
+        # Ensure the body is byte format on py3, this is needed until
+        # swift's Request supports byte format body when body is None in args
+        body = body or b''
         req = Request.blank(target, environ={'REQUEST_METHOD': method},
                             headers=headers, body=body)
         return self.get_response(req)
 
     def test_GET_without_storlets(self):
         def basic_get(path):
-            self.base_app.register('GET', path, HTTPOk, body='FAKE APP')
+            self.base_app.register('GET', path, HTTPOk, body=b'FAKE APP')
             resp = self.get_request_response(path, 'GET')
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
             self.base_app.reset_all()
 
         for target in ('AUTH_a', 'AUTH_a/c', 'AUTH_a/c/o'):
@@ -72,17 +75,17 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
     def test_GET_with_storlets(self):
         # TODO(takashi): decide request path based on config value
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('GET', target, HTTPOk, body='FAKE RESULT')
+        self.base_app.register('GET', target, HTTPOk, body=b'FAKE RESULT')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
         self.base_app.register('GET', storlet, HTTPOk, headers={},
-                               body='jar binary')
+                               body=b'jar binary')
 
         acc_info = {'meta': {'storlet-enabled': 'true'}}
         with fake_acc_info(acc_info):
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE RESULT', resp.body)
+            self.assertEqual(b'FAKE RESULT', resp.body)
             calls = self.base_app.get_calls()
 
             # Make sure now we sent two requests to swift
@@ -112,7 +115,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         target = '/v1/AUTH_a/c/o'
         self.base_app.register('GET', target, HTTPNotFound)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
@@ -133,9 +136,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
 
     def test_GET_with_storlets_and_storlet_range(self):
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body=b'FAKE APP')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             req_range = 'bytes=1-6'
@@ -144,7 +147,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
                        'X-Storlet-Range': req_range}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('AKE AP', resp.body)
+            self.assertEqual(b'AKE AP', resp.body)
 
             self.assertNotIn('Content-Range', resp.headers)
             self.assertEqual('bytes 1-6/8',
@@ -158,9 +161,9 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         # Create a single range request that needs to be
         # processed by the object handler
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body=b'FAKE APP')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             req_range = 'bytes=1-6'
@@ -170,22 +173,22 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             # We assert that nothing actually happens
             # by the proxy handler
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
 
     def test_GET_with_storlets_and_extra_resourece(self):
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('GET', target, HTTPOk, body='FAKE APP')
+        self.base_app.register('GET', target, HTTPOk, body=b'FAKE APP')
         extra_target = '/v1/AUTH_a/c2/o2'
-        self.base_app.register('GET', extra_target, HTTPOk, body='Whooa')
+        self.base_app.register('GET', extra_target, HTTPOk, body=b'Whooa')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
                        'X-Storlet-Extra-Resources': '/c2/o2'}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
 
             # GET target called
             self.assertTrue(any(self.base_app.get_calls('GET', target)))
@@ -196,23 +199,23 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         target = '/v1/AUTH_a/c/slo_manifest'
         self.base_app.register('GET', target, HTTPOk,
                                headers={'x-static-large-object': 'True'},
-                               body='FAKE APP')
+                               body=b'FAKE APP')
         resp = self.get_request_response(target, 'GET')
-        self.assertEqual('FAKE APP', resp.body)
+        self.assertEqual(b'FAKE APP', resp.body)
 
     def test_GET_slo_with_storlets(self):
         target = '/v1/AUTH_a/c/slo_manifest'
         self.base_app.register('GET', target, HTTPOk,
                                headers={'x-static-large-object': 'True'},
-                               body='FAKE APP')
+                               body=b'FAKE APP')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
 
             calls = self.base_app.get_calls()
             self.assertEqual(2, len(calls))
@@ -220,12 +223,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
     def test_GET_with_storlets_no_object(self):
         target = '/v1/AUTH_a/c/'
         self.base_app.register('GET', target, HTTPOk,
-                               body='FAKE APP')
+                               body=b'FAKE APP')
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
             resp = self.get_request_response(target, 'GET', headers=headers)
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
 
             # Make sure now we sent one request to swift
             # that is, storlets path was not executed
@@ -246,14 +249,14 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
 
     def test_PUT_with_storlets(self):
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('PUT', target, HTTPCreated)
+        self.base_app.register('PUT', target, HTTPCreated, body=b'')
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
             resp = self.get_request_response(target, 'PUT', headers=headers,
-                                             body='FAKE APP')
+                                             body=b'FAKE APP')
             self.assertEqual('201 Created', resp.status)
 
             calls = self.base_app.get_calls()
@@ -267,7 +270,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             # The last one is PUT request about processed object
             self.assertEqual('PUT', calls[-1][0])
             self.assertEqual(target, calls[-1][1])
-            self.assertEqual('FAKE APP', calls[-1][3])
+            self.assertEqual(b'FAKE APP', calls[-1][3])
 
     def test_PUT_with_storlets_no_object(self):
         target = '/v1/AUTH_a/c/'
@@ -275,7 +278,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         with storlet_enabled():
             headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
             resp = self.get_request_response(target, 'PUT', headers=headers,
-                                             body='FAKE APP')
+                                             body=b'FAKE APP')
             self.assertEqual('201 Created', resp.status)
 
             calls = self.base_app.get_calls()
@@ -300,10 +303,10 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         copy_from = 'c/so'
         self.base_app.register('GET', source, HTTPOk,
                                headers={'x-object-meta-name': 'name'},
-                               body='source body')
+                               body=b'source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Copy-From': copy_from,
@@ -313,12 +316,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('201 Created', resp.status)
             get_calls = self.base_app.get_calls('GET', source)
             self.assertEqual(1, len(get_calls))
-            self.assertEqual('', get_calls[-1][3])
+            self.assertEqual(b'', get_calls[-1][3])
             self.assertEqual(source, get_calls[-1][1])
             self.assertIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(1, len(put_calls))
-            self.assertEqual('source body', put_calls[-1][3])
+            self.assertEqual(b'source body', put_calls[-1][3])
             self.assertIn('X-Object-Meta-Name', dict(put_calls[-1][2]))
             self.assertEqual('name', put_calls[-1][2]['X-Object-Meta-Name'])
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
@@ -332,10 +335,10 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         copy_from = 'c/so'
         self.base_app.register('GET', source, HTTPOk,
                                headers={'x-object-meta-name': 'name'},
-                               body='source body')
+                               body=b'source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'X-Copy-From': copy_from,
@@ -346,12 +349,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('201 Created', resp.status)
             get_calls = self.base_app.get_calls('GET', source)
             self.assertEqual(1, len(get_calls))
-            self.assertEqual('', get_calls[-1][3])
+            self.assertEqual(b'', get_calls[-1][3])
             self.assertEqual(source, get_calls[-1][1])
             self.assertNotIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(1, len(put_calls))
-            self.assertEqual('source body', put_calls[-1][3])
+            self.assertEqual(b'source body', put_calls[-1][3])
             self.assertIn('X-Object-Meta-Name', dict(put_calls[-1][2]))
             self.assertEqual('name', put_calls[-1][2]['X-Object-Meta-Name'])
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
@@ -378,10 +381,10 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         destination = 'c/to'
         self.base_app.register('GET', source, HTTPOk,
                                headers={'x-object-meta-name': 'name'},
-                               body='source body')
+                               body=b'source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'Destination': destination,
@@ -391,12 +394,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('201 Created', resp.status)
             get_calls = self.base_app.get_calls('GET', source)
             self.assertEqual(1, len(get_calls))
-            self.assertEqual('', get_calls[-1][3])
+            self.assertEqual(b'', get_calls[-1][3])
             self.assertEqual(source, get_calls[-1][1])
             self.assertIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(1, len(put_calls))
-            self.assertEqual('source body', put_calls[-1][3])
+            self.assertEqual(b'source body', put_calls[-1][3])
             self.assertEqual('name', put_calls[-1][2]['X-Object-Meta-Name'])
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
@@ -409,10 +412,10 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         destination = 'c/to'
         self.base_app.register('GET', source, HTTPOk,
                                headers={'x-object-meta-name': 'name'},
-                               body='source body')
+                               body=b'source body')
         self.base_app.register('PUT', target, HTTPCreated)
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         with storlet_enabled():
             headers = {'Destination': destination,
@@ -423,12 +426,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('201 Created', resp.status)
             get_calls = self.base_app.get_calls('GET', source)
             self.assertEqual(1, len(get_calls))
-            self.assertEqual('', get_calls[-1][3])
+            self.assertEqual(b'', get_calls[-1][3])
             self.assertEqual(source, get_calls[-1][1])
             self.assertNotIn('X-Run-Storlet', get_calls[-1][2])
             put_calls = self.base_app.get_calls('PUT', target)
             self.assertEqual(1, len(put_calls))
-            self.assertEqual('source body', put_calls[-1][3])
+            self.assertEqual(b'source body', put_calls[-1][3])
             self.assertEqual('name', put_calls[-1][2]['X-Object-Meta-Name'])
             self.assertNotIn('X-Run-Storlet', put_calls[-1][2])
             # no invocation at proxy
@@ -441,7 +444,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
     def test_copy_with_unsupported_headers(self):
         target = '/v1/AUTH_a/c/o'
         storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
-        self.base_app.register('GET', storlet, HTTPOk, body='jar binary')
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
 
         def copy_400(method, copy_header):
             base_headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
@@ -523,12 +526,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
                     'X-Object-Meta-Storlet-Main':
                         'org.openstack.storlet.Storlet'}
         self.base_app.register('GET', target, HTTPOk, headers=sheaders,
-                               body='jar binary')
+                               body=b'jar binary')
 
         with storlet_enabled():
             resp = self.get_request_response(target, 'GET')
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('jar binary', resp.body)
+            self.assertEqual(b'jar binary', resp.body)
             for key in sheaders:
                 self.assertEqual(sheaders[key], resp.headers.get(key))
 
@@ -557,12 +560,12 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         sheaders = {'X-Object-Meta-Storlet-Dependency-Version': '1',
                     'X-Object-Meta-Storlet-Dependency-Permissions': '0755'}
         self.base_app.register('GET', target, HTTPOk, headers=sheaders,
-                               body='FAKE APP')
+                               body=b'FAKE APP')
 
         with storlet_enabled():
             resp = self.get_request_response(target, 'GET')
             self.assertEqual('200 OK', resp.status)
-            self.assertEqual('FAKE APP', resp.body)
+            self.assertEqual(b'FAKE APP', resp.body)
             for key in sheaders:
                 self.assertEqual(sheaders[key], resp.headers.get(key))
 
@@ -579,7 +582,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
         headers = {'X-Storlet-Container-Read': 'aa',
                    'X-Storlet-Name': 'bb'}
         target = '/v1/AUTH_a/c/o'
-        self.base_app.register('POST', target, HTTPNoContent, body='')
+        self.base_app.register('POST', target, HTTPNoContent, body=b'')
         with storlet_enabled():
             resp = self.get_request_response(target, 'POST', headers=headers)
             self.assertEqual('204 No Content', resp.status)
@@ -591,9 +594,8 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
                 resp = self.get_request_response(target, 'POST',
                                                  headers=headers)
                 self.assertEqual('400 Bad Request', resp.status)
-                self.assertEqual(('storlet ACL update cannot be'
-                                  ' a storlet container'),
-                                 resp.body)
+                msg = b'storlet ACL update cannot be a storlet container'
+                self.assertEqual(msg, resp.body)
 
         # Test wrong headers content
         hlist = [{'X-Storlet-Container-Read': ''},
@@ -606,7 +608,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
                 resp = self.get_request_response(target, 'POST',
                                                  headers=headers)
                 self.assertEqual('400 Bad Request', resp.status)
-                self.assertTrue('missing a mandatory header' in resp.body)
+                self.assertIn(b'missing a mandatory header', resp.body)
 
         # Test wrong ACL content
         hlist = [{'X-Storlet-Container-Read': 'a,b',
@@ -619,7 +621,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
                 resp = self.get_request_response(target, 'POST',
                                                  headers=headers)
                 self.assertEqual('400 Bad Request', resp.status)
-                self.assertTrue('mulformed storlet or user name' in resp.body)
+                self.assertIn(b'mulformed storlet or user name', resp.body)
 
     def test_POST_storlet_acl(self):
         target = '/v1/AUTH_a/c'

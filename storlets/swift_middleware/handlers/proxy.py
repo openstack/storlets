@@ -67,7 +67,7 @@ class StorletProxyHandler(StorletBaseHandler):
         if not config_true_value(storlets_enabled):
             msg = 'Account disabled for storlets'
             self.logger.debug(msg)
-            raise HTTPBadRequest(msg, request=self.request)
+            raise HTTPBadRequest(msg.encode('utf8'), request=self.request)
 
         if self.is_storlet_acl_update:
             self.acl_string = self._validate_acl_update(self.request)
@@ -88,7 +88,7 @@ class StorletProxyHandler(StorletBaseHandler):
         if request.referer and REFERER_PREFIX in request.referer:
             msg = 'Referrer containing %s is not allowed' % REFERER_PREFIX
             self.logger.debug(msg)
-            raise HTTPForbidden(msg, request=self.request)
+            raise HTTPForbidden(msg.encode('utf8'), request=self.request)
 
     def _parse_vaco(self):
         return self.request.split_path(3, 4, rest_with_last=True)
@@ -164,7 +164,7 @@ class StorletProxyHandler(StorletBaseHandler):
                     params, self.obj)
         except ValueError as e:
             self.logger.exception('Bad parameter')
-            raise HTTPBadRequest(e.message)
+            raise HTTPBadRequest(e.args[0].encode('utf8'))
 
     def _build_acl_string(self, user, storlet):
         acl_string = '%s.%s_%s' % (REFERER_PREFIX, user, storlet)
@@ -181,14 +181,14 @@ class StorletProxyHandler(StorletBaseHandler):
         """
         # Make sure we are not meddling with the storlet containers
         if self.container in self.storlet_containers:
-            msg = 'storlet ACL update cannot be a storlet container'
+            msg = b'storlet ACL update cannot be a storlet container'
             raise HTTPBadRequest(msg)
 
         # Make sure the expected headers are supplied
         user_name = req.headers.get("X-Storlet-Container-Read", None)
         storlet_name = req.headers.get("X-Storlet-Name", None)
         if not user_name or not storlet_name:
-            msg = 'storlet ACL update request is missing a mandatory header'
+            msg = b'storlet ACL update request is missing a mandatory header'
             raise HTTPBadRequest(msg)
 
         # Make sure the resulting acl is valid
@@ -198,13 +198,13 @@ class StorletProxyHandler(StorletBaseHandler):
         except ValueError as e:
             msg = ('storlet ACL update request has invalid values %s'
                    % e.message)
-            raise HTTPBadRequest(msg)
+            raise HTTPBadRequest(msg.encode('utf8'))
 
         # Make sure the resulting acl permits a single entity
         if ',' in acl_string:
-            msg = ('storlet ACL update request has '
-                   'mulformed storlet or user name')
-            raise HTTPBadRequest(msg)
+            msg = 'storlet ACL update request has ' \
+                'mulformed storlet or user name'
+            raise HTTPBadRequest(msg.encode('utf8'))
 
         # The request is valid. Keep the ACL string
         return acl_string
@@ -222,12 +222,12 @@ class StorletProxyHandler(StorletBaseHandler):
         self.logger.debug('Verify access to %s' % spath)
 
         new_env = dict(self.request.environ)
-        if 'HTTP_TRANSFER_ENCODING' in new_env.keys():
+        if 'HTTP_TRANSFER_ENCODING' in new_env:
             del new_env['HTTP_TRANSFER_ENCODING']
 
         for key in CONDITIONAL_KEYS:
             env_key = 'HTTP_' + key
-            if env_key in new_env.keys():
+            if env_key in new_env:
                 del new_env[env_key]
 
         auth_token = self.request.headers.get('X-Auth-Token')
@@ -238,10 +238,11 @@ class StorletProxyHandler(StorletBaseHandler):
 
         resp = storlet_req.get_response(self.app)
         if not resp.is_success:
-            raise HTTPUnauthorized('Failed to verify access to the storlet. '
-                                   'Either the storlet does not exist or '
-                                   'you are not authorized to run the '
-                                   'storlet.',
+            msg = 'Failed to verify access to the storlet. ' \
+                  'Either the storlet does not exist or ' \
+                  'you are not authorized to run the ' \
+                  'storlet.'
+            raise HTTPUnauthorized(msg.encode('utf8'),
                                    request=self.request)
 
         params = self._parse_storlet_params(resp.headers)
@@ -313,8 +314,9 @@ class StorletProxyHandler(StorletBaseHandler):
         GET handler on Proxy
         """
         if self.is_range_request:
-            raise HTTPBadRequest('Storlet execution with range header is not'
-                                 ' supported', request=self.request)
+            msg = 'Storlet execution with range header is not supported'
+            raise HTTPBadRequest(msg.encode('utf8'),
+                                 request=self.request)
 
         params = self.verify_access_to_storlet()
         self.augment_storlet_request(params)
@@ -341,7 +343,7 @@ class StorletProxyHandler(StorletBaseHandler):
                 # The requester is not even an authenticated user.
                 self.logger.info(('Storlet run request by an'
                                   ' authenticated user'))
-                raise HTTPUnauthorized('User is not authorized')
+                raise HTTPUnauthorized(b'User is not authorized')
 
             user_name = self.request.environ['HTTP_X_USER_NAME']
             storlet_name = self.request.headers['X-Run-Storlet']
@@ -394,9 +396,8 @@ class StorletProxyHandler(StorletBaseHandler):
 
         for header in unsupported_headers:
             if header in self.request.headers:
-                raise HTTPBadRequest(
-                    'Storlet on copy with %s is not supported' %
-                    header)
+                msg = 'Storlet on copy with %s is not supported' % header
+                raise HTTPBadRequest(msg.encode('utf8'))
 
     def handle_put_copy_response(self, app_iter):
         self._remove_storlet_headers(self.request.headers)
@@ -408,7 +409,7 @@ class StorletProxyHandler(StorletBaseHandler):
         return self.request.get_response(self.app)
 
     def _remove_storlet_headers(self, headers):
-        for key in headers.keys():
+        for key in list(headers):
             if (key.startswith('X-Storlet-') or
                     key.startswith('X-Object-Meta-Storlet') or
                     key == 'X-Run-Storlet'):
@@ -489,7 +490,7 @@ class StorletProxyHandler(StorletBaseHandler):
 
         # TODO(takashi): chunk size should be configurable
         reader = self.request.environ['wsgi.input'].read
-        body_iter = iter(lambda: reader(65536), '')
+        body_iter = iter(lambda: reader(65536), b'')
         sreq = self._build_storlet_request(
             self.request, self.request.headers, body_iter)
 
