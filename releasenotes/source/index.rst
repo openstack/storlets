@@ -6,3 +6,5 @@
    :maxdepth: 1
 
    current
+
+   queens
