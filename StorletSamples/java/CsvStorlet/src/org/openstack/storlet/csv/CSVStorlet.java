@@ -52,7 +52,7 @@ public class CSVStorlet implements IStorlet, PushdownStorletConstants, SparkInde
      * Current version of the storlet supports either a single And clause or a single Or clause or a simple clause
      * Where an "And" or "Or" clause is build out of 2 simple clauses
      *
-     * In order to have good performance we hard coded the "And" and "Or" clauses thru the ands and Ors and ands/ors Part0/1 4 strings
+     * In order to have good performance we hard coded the "And" and "Or" clauses through the ands and Ors and ands/ors Part0/1 4 strings
      */
     private ClauseIf theClause;
 
