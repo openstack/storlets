@@ -103,7 +103,7 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
         # end=83,85,...,94 gets us deeper into the same line,
         # output should be the same:
         # lines 1-5, plus line 6 as the extra line
-        for i in xrange(12):
+        for i in range(12):
             content = self.invoke_storlet(12, i + 83, 'true', max_record_line)
             self.assertEqual(content, records_txt[12:95] + '\n')
         # Now that we move one extra character we get a different answer
@@ -118,18 +118,18 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
         content = self.invoke_storlet(82, 185, 'false', max_record_line)
         self.assertEqual(content, records_txt[96:203] + '\n')
         # starting from 83 up to 95 should give the exact result
-        for i in xrange(12):
+        for i in range(12):
             content = self.invoke_storlet(i + 83, 185, 'false',
                                           max_record_line)
             self.assertEqual(content, records_txt[96:203] + '\n')
         # ending at any point up to 202 should give the exact result
-        for i in xrange(16):
+        for i in range(16):
             content = self.invoke_storlet(82, 186 + i, 'false',
                                           max_record_line)
             self.assertEqual(content, records_txt[96:203] + '\n')
         # now for the combinations of the two:
-        for i in xrange(12):
-            for j in xrange(16):
+        for i in range(12):
+            for j in range(16):
                 content = self.invoke_storlet(83 + i, 186 + j, 'false',
                                               max_record_line)
                 self.assertEqual(content, records_txt[96:203] + '\n')
@@ -138,7 +138,7 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
         self._test_second_range(80)
 
     def test_first_range(self):
-        for max_record_line in xrange(5):
+        for max_record_line in range(5):
             # The maximium line length in this section is 14
             # includuing the new line. and so any max length >=14
             # should be good.

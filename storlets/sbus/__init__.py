@@ -101,7 +101,7 @@ class SBus(object):
         # Aggregate file descriptors
         n_files = pn_files.value
         h_files = []
-        for i in xrange(n_files):
+        for i in range(n_files):
             h_files.append(ph_files[i])
 
         # Extract Python strings
@@ -142,7 +142,7 @@ class SBus(object):
             file_fds = datagram.fds
             h_files = (c_int * n_fds)()
 
-            for i in xrange(n_fds):
+            for i in range(n_fds):
                 h_files[i] = file_fds[i]
 
         # Invoke C function

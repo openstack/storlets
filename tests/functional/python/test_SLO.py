@@ -41,7 +41,7 @@ class TestSLO(StorletPythonFunctionalTest):
         self.get_SLO()
 
     def create_local_chunks(self):
-        for i in xrange(9):
+        for i in range(9):
             self.chunks.append(
                 ''.join([random.choice(string.ascii_uppercase + string.digits)
                          for _ in range(1024 * 1024)]))
@@ -60,7 +60,7 @@ class TestSLO(StorletPythonFunctionalTest):
 
     def put_SLO(self):
         assembly = []
-        for i in xrange(9):
+        for i in range(9):
             oname = 'slo_chunk_%d' % i
             content_length = None
             response = dict()
@@ -94,7 +94,7 @@ class TestSLO(StorletPythonFunctionalTest):
     def compare_slo_to_chunks(self, body):
         for (i, chunk) in enumerate(body):
             if chunk:
-                if i in xrange(9):
+                if i in range(9):
                     self.assertEqual(chunk, self.chunks[i])
                 else:
                     aux_content = ''
