@@ -16,6 +16,7 @@
 
 import os
 import shutil
+import six
 
 from storlets.gateway.common.stob import StorletRequest
 from storlets.gateway.gateways.base import StorletGatewayBase
@@ -287,7 +288,10 @@ class StorletGatewayDocker(StorletGatewayBase):
             # only, and not for dependencies.
             # This will change when we will head dependencies as well
             fstat = os.stat(cache_target_path)
-            storlet_or_size = long(sreq.options['storlet_content_length'])
+            if six.PY2:
+                storlet_or_size = long(sreq.options['storlet_content_length'])
+            else:
+                storlet_or_size = int(sreq.options['storlet_content_length'])
             storlet_or_time = float(sreq.options['storlet_x_timestamp'])
             b_storlet_size_changed = fstat.st_size != storlet_or_size
             b_storlet_file_updated = float(fstat.st_mtime) < storlet_or_time
