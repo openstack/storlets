@@ -89,7 +89,7 @@ Next switch to the branch you are trying to rebase and run:
 * ``git rebase master``
 
 This will attempt to rebase by merging automatically but it may run into conflicts that you will need to manually resolve.
-Such files will be listed and you will need to edit them.  If you git diff the file it will resemble:
+Such files will be listed and you will need to edit them. If you git diff the file it will resemble:
 
 ::
 

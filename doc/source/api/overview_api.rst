@@ -64,10 +64,10 @@ For Java written storlets
 
 ::
 
-    'X-Object-Meta-Storlet-Language' :   'Java'
-    'X-Object-Meta-Storlet-Interface-Version' :   '1.0'
+    'X-Object-Meta-Storlet-Language': 'Java'
+    'X-Object-Meta-Storlet-Interface-Version': '1.0'
     'X-Object-Meta-Storlet-Dependency': dependencies
-    'X-Object-Meta-Storlet-Object-Metadata' : 'no'
+    'X-Object-Meta-Storlet-Object-Metadata': 'no'
     'X-Object-Meta-Storlet-Main': {main_class_name}
     'X-Auth-Token': {authorization_token}
 
@@ -75,10 +75,10 @@ For Python written storlets
 
 ::
 
-    'X-Object-Meta-Storlet-Language' :   'Python'
-    'X-Object-Meta-Storlet-Interface-Version' :   '1.0'
+    'X-Object-Meta-Storlet-Language': 'Python'
+    'X-Object-Meta-Storlet-Interface-Version': '1.0'
     'X-Object-Meta-Storlet-Dependency': dependencies
-    'X-Object-Meta-Storlet-Object-Metadata' : 'no'
+    'X-Object-Meta-Storlet-Object-Metadata': 'no'
     'X-Object-Meta-Storlet-Main': {module_name.class_name}
     'X-Auth-Token': {authorization_token}
 
