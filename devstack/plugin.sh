@@ -163,6 +163,14 @@ _install_docker() {
     sudo rm install_docker.sh
 
     sudo killall docker || true
+
+    # systemd env doesn't require /etc/default/docker options
+    if [[ ! -e /etc/default/docker ]]; then
+        sudo touch /etc/default/docker
+        sudo ls /lib/systemd/system
+        sudo sed -i '0,/[service]/a EnvironmentFile=-/etc/default/docker' /lib/systemd/system/docker.service
+        sudo cat /lib/systemd/system/docker.service
+    fi
     sudo cat /etc/default/docker
     sudo sed -r 's#^.*DOCKER_OPTS=.*$#DOCKER_OPTS="--debug -g /home/docker_device/docker --storage-opt dm.override_udev_sync_check=true"#' /etc/default/docker
 
