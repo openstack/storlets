@@ -148,7 +148,7 @@ The below steps illustrate the tuning process:
 .. code-block:: bash
 
     root@lnx-ccs8:/home/eranr/dockerfile_example# docker build -t service_tenant_image .
-    Sending build context to Docker daemon  2.56 kB
+    Sending build context to Docker daemon 2.56 kB
     Sending build context to Docker daemon
     Step 0 : FROM 127.0.0.1:5001/ubuntu_14.04_jre8_storlets
     ---> f6929e6abc60
