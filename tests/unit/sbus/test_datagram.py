@@ -63,7 +63,7 @@ class TestSBusDatagram(unittest.TestCase):
             err.exception.args[0])
 
     def test_invalid_child_class_definition(self):
-        # no definition for _requried_fd_types
+        # no definition for _required_fd_types
         class InvalidSBusDatagram(SBusDatagram):
             pass
 
