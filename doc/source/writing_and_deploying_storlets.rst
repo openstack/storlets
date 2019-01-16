@@ -98,7 +98,7 @@ storlet. If this happens, just re-send the request again.
 We support two types of dependencies:
 
 #. External libraries or modules that
-   are native to the storlet langauge
+   are native to the storlet language
 
 #. Executables dependency that the storlet code
    can execute.
