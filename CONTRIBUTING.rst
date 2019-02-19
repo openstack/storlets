@@ -104,7 +104,7 @@ To complete the rebase after manually merging the file(s) issue:
 
 * ``git rebase --continue``
 
-After rebasing in any manner you may need to re-install storlets by going through the anisble script and building the various files.
+After rebasing in any manner you may need to re-install storlets by going through the ansible script and building the various files.
 If using TOX, you may need to re-create the TOX environment using the 'tox -r ...' command.
 
 ----------------
