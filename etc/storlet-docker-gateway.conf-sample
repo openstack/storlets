@@ -6,5 +6,5 @@ script_dir = /home/docker_device/scripts
 storlets_dir = /home/docker_device/storlets/scopes
 pipes_dir = /home/docker_device/pipes/scopes
 docker_repo = localhost:5001
-restart_linux_container_timeout = 3
+restart_linux_container_timeout = 10
 storlet_timeout = 40

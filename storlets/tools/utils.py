@@ -39,7 +39,7 @@ def put_local_file(url, token, container, local_dir, local_file, headers=None):
 
 
 def put_storlet_object(url, token, storlet, dependencies, storlet_main_class,
-                       language='Java'):
+                       language='Java', version=None):
     """
     Put storlet file to swift
 
@@ -49,6 +49,7 @@ def put_storlet_object(url, token, storlet, dependencies, storlet_main_class,
     :param dependencies: a list of dependency files
     :param storlet_main_class: name of the storlet main class
     :param language: storlet language. default value is Java
+    :param version: storlet language version. defaulte is 2.7 for python
     """
     headers = {'X-Object-Meta-Storlet-Language': language,
                'X-Object-Meta-Storlet-Interface-Version': '1.0',
@@ -56,6 +57,9 @@ def put_storlet_object(url, token, storlet, dependencies, storlet_main_class,
                'X-Object-Meta-Storlet-Main': storlet_main_class}
     if dependencies:
         headers['X-Object-Meta-Storlet-Dependency'] = dependencies
+    if version and language.lower() == 'python':
+        headers['X-Object-Meta-Storlet-Language-Version'] = version
+
     put_local_file(url, token, 'storlet', os.path.dirname(storlet),
                    os.path.basename(storlet), headers)
 
@@ -76,7 +80,7 @@ def put_storlet_executable_dependencies(url, token, deps):
 
 
 def deploy_storlet(url, token, storlet, storlet_main_class, dependencies,
-                   language='Java'):
+                   language='Java', version=None):
     """
     Deploy storlet file and required dependencies as swift objects
 
@@ -85,12 +89,13 @@ def deploy_storlet(url, token, storlet, storlet_main_class, dependencies,
     :param storlet: storlet file to be registerd
     :param dependencies: a list of dependency files to be registered
     :param language: storlet language. default value is Java
+    :param version: storlet language version. defaulte is 2.7 for python
     """
     # No need to create containers every time
     # put_storlet_containers(url, token)
     put_storlet_object(url, token, storlet,
                        ','.join(os.path.basename(x) for x in dependencies),
-                       storlet_main_class, language)
+                       storlet_main_class, language, version)
 
     put_storlet_executable_dependencies(url, token, dependencies)
 

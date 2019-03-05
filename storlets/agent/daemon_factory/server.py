@@ -26,7 +26,7 @@ from storlets.sbus.command import SBUS_CMD_HALT, SBUS_CMD_PING
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
 from storlets.agent.common.server import command_handler, CommandSuccess, \
     CommandFailure, SBusServer
-from storlets.agent.common.utils import get_logger
+from storlets.agent.common.utils import get_logger, DEFAULT_PY2, DEFAULT_PY3
 
 
 class SDaemonError(Exception):
@@ -100,10 +100,17 @@ class StorletDaemonFactory(SBusServer):
         return pargs, env
 
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
-                        pool_size, uds_path, log_level):
+                        pool_size, uds_path, log_level, language_version):
+        language_version = language_version or 2
+        if int(float(language_version)) == 3:
+            language_version = DEFAULT_PY3
+        else:
+            language_version = DEFAULT_PY2
+
+        python_interpreter = '/usr/bin/python%s' % language_version
         str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'
-        pargs = [str_daemon_main_file, storlet_name, uds_path, log_level,
-                 str(pool_size), self.container_id]
+        pargs = [python_interpreter, str_daemon_main_file, storlet_name,
+                 uds_path, log_level, str(pool_size), self.container_id]
 
         python_path = os.path.join('/home/swift/', storlet_name)
         if os.environ.get('PYTHONPATH'):
@@ -199,7 +206,8 @@ class StorletDaemonFactory(SBusServer):
             os.close(write_fd)
 
     def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
-                             pool_size, uds_path, log_level):
+                             pool_size, uds_path, log_level,
+                             language_version=None):
         """
         Start storlet daemon process
 
@@ -211,6 +219,8 @@ class StorletDaemonFactory(SBusServer):
                           pool provides
         :param uds_path: Path to pipe daemon is going to listen to
         :param log_level: Logger verbosity level
+        :param language_version: daemon language version (e.g. py2, py3)
+            only python lang supports this option
 
         :returns: True if it starts a new subprocess
                   False if there already exists a running process
@@ -222,7 +232,7 @@ class StorletDaemonFactory(SBusServer):
         elif daemon_language.lower() == 'python':
             pargs, env = self.get_python_args(
                 daemon_language, storlet_path, storlet_name,
-                pool_size, uds_path, log_level)
+                pool_size, uds_path, log_level, language_version)
         else:
             raise SDaemonError(
                 'Got unsupported daemon language: %s' % daemon_language)
@@ -439,7 +449,8 @@ class StorletDaemonFactory(SBusServer):
             if self.process_start_daemon(
                     params['daemon_language'], params['storlet_path'],
                     storlet_name, params['pool_size'],
-                    params['uds_path'], params['log_level']):
+                    params['uds_path'], params['log_level'],
+                    language_version=params.get("language_version")):
                 msg = 'OK'
             else:
                 msg = '{0} is already running'.format(storlet_name)

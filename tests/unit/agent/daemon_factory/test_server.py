@@ -20,6 +20,7 @@ import unittest
 from storlets.sbus import command as sbus_cmd
 from storlets.agent.daemon_factory.server import SDaemonError, \
     StorletDaemonFactory
+from storlets.agent.common.utils import DEFAULT_PY2, DEFAULT_PY3
 
 from tests.unit import FakeLogger
 from tests.unit.agent.common import test_server
@@ -74,14 +75,21 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 env)
 
     def test_get_python_args(self):
+        self._test_get_python_args(DEFAULT_PY2, DEFAULT_PY2)
+        self._test_get_python_args(2, DEFAULT_PY2)
+        self._test_get_python_args(DEFAULT_PY3, DEFAULT_PY3)
+        self._test_get_python_args(3, DEFAULT_PY3)
+
+    def _test_get_python_args(self, version, expected):
         dummy_env = {'PYTHONPATH': '/default/pythonpath'}
         with mock.patch('storlets.agent.daemon_factory.server.os.environ',
                         dummy_env):
             pargs, env = self.dfactory.get_python_args(
                 'python', 'path/to/storlet', 'test_storlet.TestStorlet',
-                1, 'path/to/uds', 'DEBUG')
+                1, 'path/to/uds', 'DEBUG', version)
         self.assertEqual(
-            ['/usr/local/libexec/storlets/storlets-daemon',
+            ['/usr/bin/python%s' % expected,
+             '/usr/local/libexec/storlets/storlets-daemon',
              'test_storlet.TestStorlet',
              'path/to/uds', 'DEBUG', '1', self.container_id],
             pargs)

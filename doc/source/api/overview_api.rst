@@ -54,7 +54,8 @@ Either "Python" or "Java" is available for the value.
 The X-Object-Meta-Storlet-Interface-Version header should be provided and set to the value '1.0'.
 Although not currently used, the X-Object-Meta-Storlet-Object-Metadata header must be provided and set to 'no'.
 See the Storlets Developer's manual for details of the signature of the invoke method.
-The content-type of the request should be set to 'application/octet-stream'.
+The content-type of the request should be set to 'application/octet-stream'. Only in Python, you may
+set 'X-Object-Meta-Storlet-Language-Version' to choose your python interpreter version.
 
 ::
 
@@ -76,6 +77,7 @@ For Python written storlets
 ::
 
     'X-Object-Meta-Storlet-Language': 'Python'
+    'X-Object-Meta-Storlet-Language-Version': '2.7'
     'X-Object-Meta-Storlet-Interface-Version': '1.0'
     'X-Object-Meta-Storlet-Dependency': dependencies
     'X-Object-Meta-Storlet-Object-Metadata': 'no'
