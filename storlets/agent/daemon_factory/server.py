@@ -100,14 +100,15 @@ class StorletDaemonFactory(SBusServer):
         return pargs, env
 
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
-                        pool_size, uds_path, log_level, language_version):
-        language_version = language_version or 2
-        if int(float(language_version)) == 3:
-            language_version = DEFAULT_PY3
+                        pool_size, uds_path, log_level,
+                        daemon_language_version):
+        daemon_language_version = daemon_language_version or 2
+        if int(float(daemon_language_version)) == 3:
+            daemon_language_version = DEFAULT_PY3
         else:
-            language_version = DEFAULT_PY2
+            daemon_language_version = DEFAULT_PY2
 
-        python_interpreter = '/usr/bin/python%s' % language_version
+        python_interpreter = '/usr/bin/python%s' % daemon_language_version
         str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'
         pargs = [python_interpreter, str_daemon_main_file, storlet_name,
                  uds_path, log_level, str(pool_size), self.container_id]
@@ -207,7 +208,7 @@ class StorletDaemonFactory(SBusServer):
 
     def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
                              pool_size, uds_path, log_level,
-                             language_version=None):
+                             daemon_language_version=None):
         """
         Start storlet daemon process
 
@@ -219,7 +220,7 @@ class StorletDaemonFactory(SBusServer):
                           pool provides
         :param uds_path: Path to pipe daemon is going to listen to
         :param log_level: Logger verbosity level
-        :param language_version: daemon language version (e.g. py2, py3)
+        :param daemon_language_version: daemon language version (e.g. py2, py3)
             only python lang supports this option
 
         :returns: True if it starts a new subprocess
@@ -232,7 +233,7 @@ class StorletDaemonFactory(SBusServer):
         elif daemon_language.lower() == 'python':
             pargs, env = self.get_python_args(
                 daemon_language, storlet_path, storlet_name,
-                pool_size, uds_path, log_level, language_version)
+                pool_size, uds_path, log_level, daemon_language_version)
         else:
             raise SDaemonError(
                 'Got unsupported daemon language: %s' % daemon_language)
@@ -450,7 +451,8 @@ class StorletDaemonFactory(SBusServer):
                     params['daemon_language'], params['storlet_path'],
                     storlet_name, params['pool_size'],
                     params['uds_path'], params['log_level'],
-                    language_version=params.get("language_version")):
+                    daemon_language_version=params.get(
+                        'daemon_language_version')):
                 msg = 'OK'
             else:
                 msg = '{0} is already running'.format(storlet_name)

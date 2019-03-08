@@ -370,7 +370,8 @@ class RunTimeSandbox(object):
         self._restart(docker_image_name)
         self.wait()
 
-    def start_storlet_daemon(self, spath, storlet_id, language):
+    def start_storlet_daemon(
+            self, spath, storlet_id, language, language_version=None):
         """
         Start SDaemon process in the scope's sandbox
 
@@ -381,6 +382,9 @@ class RunTimeSandbox(object):
                 'uds_path': self.paths.sbox_storlet_pipe(storlet_id),
                 'log_level': self.storlet_daemon_debug_level,
                 'pool_size': self.storlet_daemon_thread_pool_size}
+
+        if language_version:
+            prms.update({'daemon_language_version': language_version})
 
         with _open_pipe() as (read_fd, write_fd):
             dtg = SBusServiceDatagram(
@@ -511,9 +515,9 @@ class RunTimeSandbox(object):
             classpath = self._get_storlet_classpath(
                 sreq.storlet_main, sreq.storlet_id, sreq.dependencies)
 
-            daemon_status = \
-                self.start_storlet_daemon(classpath, sreq.storlet_main,
-                                          sreq.storlet_language)
+            daemon_status = self.start_storlet_daemon(
+                classpath, sreq.storlet_main, sreq.storlet_language,
+                sreq.options.get("storlet_language_version"))
 
             if daemon_status != 1:
                 self.logger.error('Daemon start Failed, returned code is %d' %
