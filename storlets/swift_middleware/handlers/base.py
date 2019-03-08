@@ -15,11 +15,13 @@
 
 from six.moves.urllib.parse import unquote
 from swift.common.internal_client import InternalClient
-from swift.common.swob import HTTPBadRequest, Response, Range
+from swift.common.swob import HTTPBadRequest, Response, Range, \
+    HTTPServiceUnavailable
 from swift.common.utils import config_true_value
 
 from storlets.gateway.common.exceptions import FileManagementError
 from storlets.gateway.common.file_manager import FileManager
+from storlets.gateway.common.exceptions import StorletRuntimeException
 
 
 class NotStorletRequest(Exception):
@@ -418,27 +420,32 @@ class StorletBaseHandler(object):
         :param resp: swob.Response instance
         :return: processed response
         """
-        sresp = self._call_gateway(resp)
+        try:
+            sresp = self._call_gateway(resp)
 
-        new_headers = resp.headers.copy()
+            new_headers = resp.headers.copy()
 
-        if 'Content-Length' in new_headers:
-            new_headers.pop('Content-Length')
-        if 'Transfer-Encoding' in new_headers:
-            new_headers.pop('Transfer-Encoding')
+            if 'Content-Length' in new_headers:
+                new_headers.pop('Content-Length')
+            if 'Transfer-Encoding' in new_headers:
+                new_headers.pop('Transfer-Encoding')
 
-        # Range response(206) should be replaced by 200
-        # If the range is being processed on the object node
-        # then we will get 200 as the response will not have a
-        # range iter.
-        if 'Content-Range' in resp.headers:
-            new_headers['Storlet-Input-Range'] = resp.headers['Content-Range']
-            new_headers.pop('Content-Range')
+            # Range response(206) should be replaced by 200
+            # If the range is being processed on the object node
+            # then we will get 200 as the response will not have a
+            # range iter.
+            if 'Content-Range' in resp.headers:
+                new_headers['Storlet-Input-Range'] = \
+                    resp.headers['Content-Range']
+                new_headers.pop('Content-Range')
 
-        self._set_metadata_in_headers(new_headers, sresp.user_metadata)
+            self._set_metadata_in_headers(new_headers, sresp.user_metadata)
+            response = Response(headers=new_headers, app_iter=sresp.data_iter,
+                                reuqest=self.request)
+        except StorletRuntimeException:
+            response = HTTPServiceUnavailable()
 
-        return Response(headers=new_headers, app_iter=sresp.data_iter,
-                        reuqest=self.request)
+        return response
 
     def _get_user_metadata(self, headers):
         metadata = {}

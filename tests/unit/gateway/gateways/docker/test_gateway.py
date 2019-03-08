@@ -276,11 +276,23 @@ use = egg:swift#catch_errors
         # correct name and headers w/ dependency
         obj = 'storlet.py'
         params = {'Language': 'python',
+                  'Language-Version': '2.7',
                   'Interface-Version': '1.0',
                   'Dependency': 'dep_file',
                   'Object-Metadata': 'no',
                   'Main': 'storlet.Storlet'}
         StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # wrong version
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Language-Version': '1.7',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet.Storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
 
         # wrong name
         obj = 'storlet.pyfoo'

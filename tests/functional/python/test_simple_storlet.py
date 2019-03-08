@@ -20,10 +20,11 @@ from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
 from eventlet.green import urllib2
+from storlets.agent.common.utils import DEFAULT_PY3
 
 
 class TestSimpleStorlet(StorletPythonFunctionalTest):
-    def setUp(self):
+    def setUp(self, version=None):
         self.storlet_log = 'simple.log'
         self.content = 'abcdefghijklmonp'
         self.additional_headers = {}
@@ -31,7 +32,8 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
             storlet_dir='simple',
             storlet_name='simple.py',
             storlet_main='simple.SimpleStorlet',
-            storlet_file='source.txt')
+            storlet_file='source.txt',
+            version=version)
 
     def test_get(self):
         resp = dict()
@@ -160,6 +162,11 @@ class TestSimpleStorletOnProxy(TestSimpleStorlet):
     def setUp(self):
         super(TestSimpleStorletOnProxy, self).setUp()
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
+
+
+class TestSimpleStorletRunPy3(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletRunPy3, self).setUp(version=DEFAULT_PY3)
 
 
 if __name__ == '__main__':

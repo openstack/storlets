@@ -19,7 +19,7 @@ from tests.functional import StorletFunctionalTest, PATH_TO_STORLETS
 
 class StorletPythonFunctionalTest(StorletFunctionalTest):
     def setUp(self, storlet_dir, storlet_name, storlet_main,
-              storlet_file, dep_names=None, headers=None):
+              storlet_file, dep_names=None, headers=None, version=None):
         storlet_dir = os.path.join('python', 'storlet_samples', storlet_dir)
         path_to_bundle = os.path.join(PATH_TO_STORLETS, storlet_dir)
         super(StorletPythonFunctionalTest, self).setUp('Python',
@@ -29,4 +29,5 @@ class StorletPythonFunctionalTest(StorletFunctionalTest):
                                                        storlet_main,
                                                        storlet_file,
                                                        dep_names,
-                                                       headers)
+                                                       headers,
+                                                       version)

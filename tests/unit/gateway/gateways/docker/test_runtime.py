@@ -367,13 +367,13 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         self.pipe_path = tempfile.mktemp()
         self.log_file = tempfile.mktemp()
         self.logger = FakeLogger()
-        storlet_id = 'Storlet-1.0.jar'
-        options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java',
-                   'file_manager': FakeFileManager('storlet', 'dep')}
+        self.storlet_id = 'Storlet-1.0.jar'
+        self.options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                        'storlet_dependency': 'dep1,dep2',
+                        'storlet_language': 'java',
+                        'file_manager': FakeFileManager('storlet', 'dep')}
         storlet_request = DockerStorletRequest(
-            storlet_id, {}, {}, iter(StringIO()), options=options)
+            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         self.protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
 
@@ -422,20 +422,15 @@ class TestStorletInvocationProtocol(unittest.TestCase):
 
     def test_invocation_protocol_remote_fds(self):
         # In default, we have 5 fds in remote_fds
-        storlet_id = 'Storlet-1.0.jar'
-        options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java',
-                   'file_manager': FakeFileManager('storlet', 'dep')}
         storlet_request = DockerStorletRequest(
-            storlet_id, {}, {}, iter(StringIO()), options=options)
+            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
         self.assertEqual(5, len(protocol.remote_fds))
 
         # extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
-            storlet_id, {}, {}, iter(StringIO()), options=options)
+            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request])
@@ -443,7 +438,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
 
         # 2 more extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
-            storlet_id, {}, {}, iter(StringIO()), options=options)
+            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request] * 3)
@@ -488,6 +483,23 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         self._test_writer_with_exception(IOError)
         # else
         self._test_writer_with_exception(Exception)
+
+
+class TestStorletInvocationProtocolPython(TestStorletInvocationProtocol):
+    def setUp(self):
+        self.pipe_path = tempfile.mktemp()
+        self.log_file = tempfile.mktemp()
+        self.logger = FakeLogger()
+        self.storlet_id = 'Storlet-1.0.py'
+        self.options = {'storlet_main': 'storlet.Storlet',
+                        'storlet_dependency': 'dep1,dep2',
+                        'storlet_language': 'python',
+                        'language_version': '2.7',
+                        'file_manager': FakeFileManager('storlet', 'dep')}
+        storlet_request = DockerStorletRequest(
+            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+        self.protocol = StorletInvocationProtocol(
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger)
 
 
 if __name__ == '__main__':

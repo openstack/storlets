@@ -76,7 +76,7 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
     def setUp(self, language, path_to_bundle,
               storlet_dir,
               storlet_name, storlet_main, storlet_file,
-              dep_names, headers):
+              dep_names, headers, version=None):
         super(StorletFunctionalTest, self).setUp()
         self.storlet_dir = storlet_dir
         self.storlet_name = storlet_name
@@ -95,7 +95,7 @@ class StorletFunctionalTest(StorletBaseFunctionalTest):
 
         deploy_storlet(self.url, self.token,
                        storlet, self.storlet_main,
-                       self.deps, language)
+                       self.deps, language, version)
 
         self.create_container(self.container)
         if self.storlet_file:

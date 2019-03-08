@@ -232,7 +232,7 @@ class RunTimeSandbox(object):
 
         self.sandbox_ping_interval = 0.5
         self.sandbox_wait_timeout = \
-            int(conf.get('restart_linux_container_timeout', 3))
+            int(conf.get('restart_linux_container_timeout', 10))
 
         self.docker_repo = conf.get('docker_repo', '')
         self.docker_image_name_prefix = 'tenant'

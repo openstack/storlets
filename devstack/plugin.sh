@@ -200,6 +200,8 @@ prepare_storlets_install() {
     sudo apt-get install -y ant
     sudo apt-get install -y python
     sudo apt-get install -y python-setuptools
+    sudo apt-get install -y python3.5
+    sudo apt-get install -y python3-setuptools
 }
 
 _generate_jre_dockerfile() {
@@ -209,6 +211,7 @@ MAINTAINER root
 
 RUN apt-get update && \
     apt-get install python -y && \
+    apt-get install python3.5 -y && \
     apt-get install git -y && \
     apt-get update && \
     apt-get install openjdk-8-jre-headless -y && \
@@ -288,6 +291,8 @@ install_storlets_code() {
     sudo ./install_libs.sh
     sudo pip install -r requirements.txt
     sudo python setup.py install
+    sudo pip3 install -r requirements.txt
+    sudo python3 setup.py install
     sudo chown -R ${STORLETS_SWIFT_RUNTIME_USER} storlets.egg-info*
 
     sudo mkdir -p $STORLETS_DOCKER_DEVICE/scripts
