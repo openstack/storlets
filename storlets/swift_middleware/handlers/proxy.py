@@ -272,7 +272,7 @@ class StorletProxyHandler(StorletBaseHandler):
         Add to request the storlet parameters to be used in case the request
         is forwarded to the data node (GET case)
 
-        :param params: paramegers to be augmented to request
+        :param params: parameters to be augmented to request
         """
         for key, val in params.items():
             self.request.headers['X-Storlet-' + key] = val
