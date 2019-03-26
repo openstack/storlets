@@ -1,0 +1,20 @@
+---
+features:
+  - |
+    Storlets now experimentally supports Python3 environment for user-code
+    execution. With this stuff, Storlets supports the new API
+    `X-Object-Meta-Storlet-Language-Version` that can be set by user with
+    a value like `3.5`.
+issues:
+  - |
+    The new Python3 execution has several restriction with minor versions
+    so it should be improved in the next release cycle.
+upgrade:
+  - |
+    To enable the new Python3 environment for Storlets users, administrator
+    must re-create the execution container image to include the py3 runtime
+    inside the container. This upgrade can work without downtime,
+    what administrators should do to upgrade is to push the image to their
+    own container registry.
+fixes:
+  - Other various minor bug fixes.
