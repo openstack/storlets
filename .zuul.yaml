@@ -8,7 +8,10 @@
       - release-notes-jobs-python3
     check:
       jobs:
-        - storlets-functional
+        - storlets-functional:
+            irrelevant-files:
+              - ^(api-ref|doc|releasenotes)/.*$
+              - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
     gate:
       jobs:
         - storlets-functional
