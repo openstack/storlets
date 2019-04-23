@@ -45,7 +45,7 @@ Initial gerrit setup:
 This section covers one time steps required for setting up gerrit
 
 Install gerrit (this varies depending on the OS but for example 'apt-get install git-review').
-Setup the SSH keys through gerrit (i.e. https://review.openstack.org/#/settings/ssh-keys) you need to upload your public key from the system you plan to use for changes.
+Setup the SSH keys through gerrit (i.e. https://review.opendev.org/#/settings/ssh-keys) you need to upload your public key from the system you plan to use for changes.
 
 * ``git review -s``
 
