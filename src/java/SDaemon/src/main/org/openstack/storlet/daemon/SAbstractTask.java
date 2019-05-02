@@ -21,7 +21,7 @@ import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
  * SAbstractTask
- * 
+ *
  * A common parent object for different Tasks created by STaskFactory
  * */
 public class SAbstractTask {

@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
  * SHaltTask
- * 
+ *
  * Instantiate AbstractTask class. The primary usage intent is to stop
  * a relevant working thread.
  * */
@@ -48,6 +48,7 @@ public class SHaltTask extends SAbstractTask {
         boolean bStatus = true;
         try {
             this.sOut_.write((new String("True: OK")).getBytes());
+            this.sOut_.close();
         } catch (IOException e) {
             e.printStackTrace();
             bStatus = false;
