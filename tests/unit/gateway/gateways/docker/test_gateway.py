@@ -40,47 +40,94 @@ class MockInternalClient(object):
 class TestDockerStorletRequest(unittest.TestCase):
 
     def test_init(self):
+        # Java
         storlet_id = 'Storlet-1.0.jar'
         params = {'Param1': 'Value1', 'Param2': 'Value2'}
         metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+
+        # with dependencies
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
-
         self.assertEqual(metadata, dsreq.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
         self.assertEqual('java', dsreq.storlet_language)
+        self.assertIsNone(dsreq.storlet_language_version)
 
+        # without dependencies
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
-
         self.assertEqual(metadata, dsreq.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual([], dsreq.dependencies)
         self.assertEqual('java', dsreq.storlet_language)
+        self.assertIsNone(dsreq.storlet_language_version)
 
+        # storlet_language is not given
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2'}
-        with self.assertRaises(ValueError):
-            DockerStorletRequest(storlet_id, params, metadata,
-                                 iter(StringIO()), options=options)
-
-        options = {'storlet_dependency': 'dep1,dep2',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         with self.assertRaises(ValueError):
             DockerStorletRequest(storlet_id, params, metadata,
                                  iter(StringIO()), options=options)
+
+        # storlet_main is not given
+        options = {'storlet_language': 'java',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+        with self.assertRaises(ValueError):
+            DockerStorletRequest(storlet_id, params, metadata,
+                                 iter(StringIO()), options=options)
+
+        # file_manager is not given
+        options = {'storlet_main': 'org.openstack.storlet.Storlet',
+                   'storlet_language': 'java'}
+        with self.assertRaises(ValueError):
+            DockerStorletRequest(storlet_id, params, metadata,
+                                 iter(StringIO()), options=options)
+
+        # Python
+        storlet_id = 'storlet.py'
+        params = {'Param1': 'Value1', 'Param2': 'Value2'}
+        metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+
+        # without language version
+        options = {'storlet_main': 'storlet.Storlet',
+                   'storlet_language': 'python',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     iter(StringIO()), options=options)
+        self.assertEqual(metadata, dsreq.user_metadata)
+        self.assertEqual(params, dsreq.params)
+        self.assertEqual('storlet.py', dsreq.storlet_id)
+        self.assertEqual('storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual([], dsreq.dependencies)
+        self.assertEqual('python', dsreq.storlet_language)
+        self.assertIsNone(dsreq.storlet_language_version)
+
+        # with language version
+        options = {'storlet_main': 'storlet.Storlet',
+                   'storlet_language': 'python',
+                   'storlet_language_version': '2.7',
+                   'file_manager': FakeFileManager('storlet', 'dep')}
+        dsreq = DockerStorletRequest(storlet_id, params, metadata,
+                                     iter(StringIO()), options=options)
+        self.assertEqual(metadata, dsreq.user_metadata)
+        self.assertEqual(params, dsreq.params)
+        self.assertEqual('storlet.py', dsreq.storlet_id)
+        self.assertEqual('storlet.Storlet', dsreq.storlet_main)
+        self.assertEqual([], dsreq.dependencies)
+        self.assertEqual('python', dsreq.storlet_language)
+        self.assertEqual('2.7', dsreq.storlet_language_version)
 
     def test_init_with_range(self):
         storlet_id = 'Storlet-1.0.jar'
@@ -99,6 +146,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
         self.assertEqual('java', dsreq.storlet_language)
+        self.assertIsNone(dsreq.storlet_language_version)
         self.assertEqual(1, dsreq.start)
         self.assertEqual(6, dsreq.end)
 
@@ -115,6 +163,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
         self.assertEqual(['dep1', 'dep2'], dsreq.dependencies)
         self.assertEqual('java', dsreq.storlet_language)
+        self.assertIsNone(dsreq.storlet_language_version)
         self.assertEqual(0, dsreq.start)
         self.assertEqual(0, dsreq.end)
 

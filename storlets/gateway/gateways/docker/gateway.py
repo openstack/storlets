@@ -72,6 +72,8 @@ class DockerStorletRequest(StorletRequest):
 
         self.storlet_main = self.options['storlet_main']
         self.storlet_language = self.options['storlet_language']
+        self.storlet_language_version = \
+            self.options.get('storlet_language_version')
 
         if self.options.get('storlet_dependency'):
             self.dependencies = [

@@ -517,7 +517,7 @@ class RunTimeSandbox(object):
 
             daemon_status = self.start_storlet_daemon(
                 classpath, sreq.storlet_main, sreq.storlet_language,
-                sreq.options.get("storlet_language_version"))
+                sreq.storlet_language_version)
 
             if daemon_status != 1:
                 self.logger.error('Daemon start Failed, returned code is %d' %
