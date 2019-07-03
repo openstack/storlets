@@ -346,7 +346,7 @@ with the following content:
 
     [DEFAULT]
     storlet_logcontainer = storletlog
-    lxc_root = /home/docker_device/scopes
+    host_root = /home/docker_device
     cache_dir = /home/docker_device/cache/scopes
     log_dir = /home/docker_device/logs/scopes
     script_dir = /home/docker_device/scripts
