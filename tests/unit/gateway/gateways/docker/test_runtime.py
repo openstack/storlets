@@ -323,29 +323,83 @@ class TestRunTimeSandbox(unittest.TestCase):
         # TODO(takashi): should test timeout case
 
     def test_restart(self):
+
+        class FakeProc(object):
+            def __init__(self, stdout, stderr, code):
+                self.stdout = stdout
+                self.stderr = stderr
+                self.returncode = code
+
+            def communicate(self):
+                return (self.stdout, self.stderr)
+
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'RunTimePaths.create_host_pipe_prefix'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.call'):
+                       'subprocess.Popen') as popen:
             _wait = self.sbox.wait
 
             def dummy_wait_success(*args, **kwargs):
                 return 1
 
             self.sbox.wait = dummy_wait_success
+
+            # Test that popen is called successfully
+            popen.return_value = FakeProc('Try to restart\nOK', '', 0)
             self.sbox.restart()
+            self.assertEqual(1, popen.call_count)
             self.sbox.wait = _wait
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'RunTimePaths.create_host_pipe_prefix'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.call'):
+                       'subprocess.Popen') as popen:
+            _wait = self.sbox.wait
+
+            def dummy_wait_success(*args, **kwargs):
+                return 1
+
+            self.sbox.wait = dummy_wait_success
+
+            # Test double failure to restart the container
+            # for both the tenant image and generic image
+            popen.return_value = FakeProc('Try to restart', 'Some error', 1)
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox.restart()
+            self.assertEqual(2, popen.call_count)
+            self.sbox.wait = _wait
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'RunTimePaths.create_host_pipe_prefix'), \
+            mock.patch('storlets.gateway.gateways.docker.runtime.'
+                       'subprocess.Popen') as popen:
+            _wait = self.sbox.wait
+
+            def dummy_wait_success(*args, **kwargs):
+                return 1
+
+            self.sbox.wait = dummy_wait_success
+
+            # Test failure to restart the container for the tenant image
+            # success for the generic image
+            popen.side_effect = [FakeProc('Try to restart', 'Some error', 1),
+                                 FakeProc('Try to restart\nOK', '', 0)]
+            self.sbox.restart()
+            self.assertEqual(2, popen.call_count)
+            self.sbox.wait = _wait
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'RunTimePaths.create_host_pipe_prefix'), \
+            mock.patch('storlets.gateway.gateways.docker.runtime.'
+                       'subprocess.Popen') as popen:
             _wait = self.sbox.wait
 
             def dummy_wait_failure(*args, **kwargs):
-                raise StorletRuntimeException()
+                raise StorletTimeout()
 
             self.sbox.wait = dummy_wait_failure
+
+            popen.return_value = FakeProc('OK', '', 0)
             with self.assertRaises(StorletRuntimeException):
                 self.sbox.restart()
             self.sbox.wait = _wait
