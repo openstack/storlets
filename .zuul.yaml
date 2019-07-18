@@ -11,13 +11,26 @@
             irrelevant-files:
               - ^(api-ref|doc|releasenotes)/.*$
               - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
+        - storlets-functional-py3:
+            irrelevant-files:
+              - ^(api-ref|doc|releasenotes)/.*$
+              - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
     gate:
       jobs:
         - storlets-functional
+        - storlets-functional-py3
 
 - job:
     name: storlets-functional
     pre-run: playbooks/storlets-functional/pre.yaml
     run: playbooks/storlets-functional/run.yaml
+    post-run: playbooks/storlets-functional/post.yaml
+    timeout: 2400
+
+- job:
+    name: storlets-functional-py3
+    voting: false
+    pre-run: playbooks/storlets-functional/pre-py3.yaml
+    run: playbooks/storlets-functional/run-py3.yaml
     post-run: playbooks/storlets-functional/post.yaml
     timeout: 2400
