@@ -30,15 +30,27 @@ class TestCommandResponse(unittest.TestCase):
         self.assertTrue(resp.status)
         self.assertEqual('ok', resp.message)
         self.assertTrue(resp.iterable)
+        self.assertIsNone(resp.task_id)
 
         resp = CommandResponse(False, 'error', False)
         self.assertFalse(resp.status)
         self.assertEqual('error', resp.message)
         self.assertFalse(resp.iterable)
+        self.assertIsNone(resp.task_id)
+
+        resp = CommandResponse(True, 'ok', task_id='foo')
+        self.assertTrue(resp.status)
+        self.assertEqual('ok', resp.message)
+        self.assertTrue(resp.iterable)
+        self.assertEqual('foo', resp.task_id)
 
     def test_report_message(self):
         resp = CommandResponse(True, 'msg', True)
         self.assertEqual({'status': True, 'message': 'msg'},
+                         json.loads(resp.report_message))
+
+        resp = CommandResponse(True, 'msg', True, 'foo')
+        self.assertEqual({'status': True, 'message': 'msg', 'task_id': 'foo'},
                          json.loads(resp.report_message))
 
 

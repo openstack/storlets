@@ -46,7 +46,7 @@ public class SPingTask extends SAbstractTask {
      * */
     @Override
     public boolean exec() {
-        return respond(this.sOut_, true, new String("OK"));
+        return respond(this.sOut_, true, new String("OK"), null);
     }
 }
 /* ============================== END OF FILE =============================== */

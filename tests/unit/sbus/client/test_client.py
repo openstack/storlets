@@ -81,16 +81,26 @@ class TestSBusClient(unittest.TestCase):
         resp = self.client._parse_response(raw_resp)
         self.assertTrue(resp.status)
         self.assertEqual('OK', resp.message)
+        self.assertIsNone(resp.task_id)
+
+        raw_resp = json.dumps({'status': True, 'message': 'OK',
+                               'task_id': 'SOMEID'})
+        resp = self.client._parse_response(raw_resp)
+        self.assertTrue(resp.status)
+        self.assertEqual('OK', resp.message)
+        self.assertEqual('SOMEID', resp.task_id)
 
         raw_resp = json.dumps({'status': False, 'message': 'ERROR'})
         resp = self.client._parse_response(raw_resp)
         self.assertFalse(resp.status)
         self.assertEqual('ERROR', resp.message)
+        self.assertIsNone(resp.task_id)
 
         raw_resp = json.dumps({'status': True, 'message': 'Sample:Message'})
         resp = self.client._parse_response(raw_resp)
         self.assertTrue(resp.status)
         self.assertEqual('Sample:Message', resp.message)
+        self.assertIsNone(resp.task_id)
 
         with self.assertRaises(SBusClientMalformedResponse):
             self.client._parse_response('Foo')

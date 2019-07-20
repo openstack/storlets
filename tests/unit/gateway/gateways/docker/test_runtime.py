@@ -35,14 +35,6 @@ from tests.unit.gateway.gateways import FakeFileManager
 
 
 @contextmanager
-def _mock_sbus(send_status=0):
-    with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                    'SBus.send') as fake_send:
-        fake_send.return_value = send_status
-        yield
-
-
-@contextmanager
 def _mock_os_pipe(bufs):
     class FakeFd(object):
         def __init__(self, rbuf=''):
@@ -418,13 +410,39 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             except OSError:
                 pass
 
-    def test_invocation_protocol(self):
-        # os.pipe will be called 4 times
-        pipe_called = 4
+    def test_send_execute_command(self):
+        with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
+                        'execute') as execute:
+            execute.return_value = SBusResponse(True, 'OK', 'someid')
+            self.protocol._send_execute_command()
+            self.assertEqual('someid', self.protocol.task_id)
 
-        with _mock_sbus(0), _mock_os_pipe([''] * pipe_called) as pipes:
-            with mock.patch.object(
-                    self.protocol, '_wait_for_read_with_timeout'):
+        with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
+                        'execute') as execute:
+            execute.return_value = SBusResponse(True, 'OK')
+            with self.assertRaises(StorletRuntimeException):
+                self.protocol._send_execute_command()
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
+                        'execute') as execute:
+            execute.return_value = SBusResponse(False, 'NG', 'someid')
+            with self.assertRaises(StorletRuntimeException):
+                self.protocol._send_execute_command()
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
+                        'execute') as execute:
+            execute.side_effect = SBusClientIOError()
+            with self.assertRaises(StorletRuntimeException):
+                self.protocol._send_execute_command()
+
+    def test_invocation_protocol(self):
+        # os.pipe will be called 3 times
+        pipe_called = 3
+
+        with _mock_os_pipe([''] * pipe_called) as pipes:
+            with mock.patch.object(self.protocol,
+                                   '_wait_for_read_with_timeout'), \
+                    mock.patch.object(self.protocol, '_send_execute_command'):
                 self.protocol._invoke()
 
             self.assertEqual(pipe_called, len(pipes))
@@ -441,11 +459,6 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             self.assertFalse(data_read_fd.closed)
             self.assertTrue(data_write_fd.closed)
 
-            # both execution str fds are closed
-            execution_read_fd, execution_write_fd = next(pipes)
-            self.assertTrue(execution_read_fd.closed)
-            self.assertTrue(execution_write_fd.closed)
-
             # metadata write fd is closed, metadata read fd is still open.
             metadata_read_fd, metadata_write_fd = next(pipes)
             self.assertFalse(metadata_read_fd.closed)
@@ -455,12 +468,12 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             self.assertRaises(StopIteration, next, pipes)
 
     def test_invocation_protocol_remote_fds(self):
-        # In default, we have 5 fds in remote_fds
+        # In default, we have 4 fds in remote_fds
         storlet_request = DockerStorletRequest(
             self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
-        self.assertEqual(5, len(protocol.remote_fds))
+        self.assertEqual(4, len(protocol.remote_fds))
 
         # extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
@@ -468,7 +481,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request])
-        self.assertEqual(6, len(protocol.remote_fds))
+        self.assertEqual(5, len(protocol.remote_fds))
 
         # 2 more extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
@@ -476,7 +489,7 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request] * 3)
-        self.assertEqual(8, len(protocol.remote_fds))
+        self.assertEqual(7, len(protocol.remote_fds))
 
     def test_open_writer_with_invalid_fd(self):
         invalid_fds = (

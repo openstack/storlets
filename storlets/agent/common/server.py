@@ -28,13 +28,14 @@ class CommandResponse(Exception):
     The result of command execution
     """
 
-    def __init__(self, status, message, iterable=True):
+    def __init__(self, status, message, iterable=True, task_id=None):
         """
         Constract CommandResponse instance
 
         :param status: task status
         :param message: message to be returned and logged
         :param iterable: wheter we can keep SDaemon process running
+        :param task_id: ID assigned to the requested task
         """
         self.status = status
         self.message = message
@@ -43,9 +44,14 @@ class CommandResponse(Exception):
         #                exit or not as a result of processing the command
         self.iterable = iterable
 
+        self.task_id = task_id
+
     @property
     def report_message(self):
-        return json.dumps({'status': self.status, 'message': self.message})
+        rsp = {'status': self.status, 'message': self.message}
+        if self.task_id:
+            rsp['task_id'] = self.task_id
+        return json.dumps(rsp)
 
 
 CommandSuccess = partial(CommandResponse, True)
@@ -119,16 +125,9 @@ class SBusServer(object):
         self.logger.info('Command:%s Response:%s' %
                          (command, resp.report_message))
 
-        try:
-            outfd = dtg.service_out_fd
-            with os.fdopen(outfd, 'wb') as outfile:
-                self._respond(outfile, resp)
-        except AttributeError:
-            # TODO(takashi): Currently we return response via service out fd
-            #                only for service commands, but to be more
-            #                consistent, we should do the same for execute
-            #                command
-            pass
+        outfd = dtg.service_out_fd
+        with os.fdopen(outfd, 'wb') as outfile:
+            self._respond(outfile, resp)
 
         return resp.iterable
 

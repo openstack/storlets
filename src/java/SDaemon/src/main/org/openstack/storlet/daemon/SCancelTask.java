@@ -63,7 +63,7 @@ public class SCancelTask extends SAbstractTask {
             respMessage = new String("Task id " + this.taskId_
                 + "is not found");
         }
-        return respond(this.sOut_, respStatus, respMessage);
+        return respond(this.sOut_, respStatus, respMessage, null);
     }
 }
 /* ============================== END OF FILE =============================== */

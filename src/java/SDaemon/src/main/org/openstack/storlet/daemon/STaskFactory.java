@@ -86,14 +86,14 @@ public class STaskFactory {
         int nFiles = dtg.getNFiles();
         HashMap<String, HashMap<String, String>>[] FilesMD = dtg.getFilesMetadata();
         this.logger_.trace("StorletTask: Got " + nFiles + " fds");
-        OutputStream taskIdOut = null;
+        OutputStream sOut = null;
         for (int i = 0; i < nFiles; ++i) {
             HashMap<String, String> storletsMetadata = FilesMD[i].get("storlets");
             HashMap<String, String> storageMetadata = FilesMD[i].get("storage");
             FileDescriptor fd = dtg.getFiles()[i];
             String strFDtype = storletsMetadata.get("type");
-            if (strFDtype.equals("SBUS_FD_OUTPUT_TASK_ID")) {
-                taskIdOut = new FileOutputStream(fd);
+            if (strFDtype.equals("SBUS_FD_SERVICE_OUT")) {
+                sOut = new FileOutputStream(fd);
             } else if (strFDtype.equals("SBUS_FD_INPUT_OBJECT")) {
                 this.logger_.trace("createStorletTask: fd " + i
                         + " is of type SBUS_FD_INPUT_OBJECT");
@@ -147,7 +147,7 @@ public class STaskFactory {
                 this.logger_.error("createStorletTask: fd " + i
                         + " is of unknown type " + strFDtype);
         }
-        return new SExecutionTask(storlet_, inStreams, outStreams, taskIdOut,
+        return new SExecutionTask(storlet_, sOut, inStreams, outStreams,
                 dtg.getExecParams(), storletLogger, logger_, sExecManager);
     }
 
