@@ -106,19 +106,20 @@ class TestRuntimePaths(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_host_pipe_prefix(self):
+    def test_host_pipe_dir(self):
         self.assertEqual(
-            self.paths.host_pipe_prefix(),
-            os.path.join(self.pipes_dir, self.scope))
+            os.path.join(self.pipes_dir, self.scope),
+            self.paths.host_pipe_dir)
 
-    def test_create_host_pipe_prefix(self):
-        pipedir = self.paths.host_pipe_prefix()
+    def test_create_host_pipe_dir(self):
+        pipedir = self.paths.host_pipe_dir
 
         # When the directory exists
         with mock.patch('os.path.exists', return_value=True), \
                 mock.patch('os.makedirs') as m, \
                 mock.patch('os.chmod') as c:
-            self.paths.create_host_pipe_prefix()
+            self.assertEqual(os.path.join(self.pipes_dir, self.scope),
+                             self.paths.create_host_pipe_dir())
             self.assertEqual(0, m.call_count)
             cargs, ckwargs = c.call_args
             # Make sure about the target directory
@@ -128,7 +129,8 @@ class TestRuntimePaths(unittest.TestCase):
         with mock.patch('os.path.exists', return_value=False), \
                 mock.patch('os.makedirs') as m, \
                 mock.patch('os.chmod') as c:
-            self.paths.create_host_pipe_prefix(),
+            self.assertEqual(os.path.join(self.pipes_dir, self.scope),
+                             self.paths.create_host_pipe_dir())
             self.assertEqual(1, m.call_count)
             # Make sure about the target directory
             margs, mkwargs = m.call_args
@@ -138,61 +140,49 @@ class TestRuntimePaths(unittest.TestCase):
 
     def test_host_factory_pipe(self):
         self.assertEqual(
-            self.paths.host_factory_pipe(),
+            self.paths.host_factory_pipe,
             os.path.join(self.pipes_dir, self.scope, 'factory_pipe'))
 
-    def test_host_storlet_pipe(self):
+    def test_get_host_storlet_pipe(self):
         self.assertEqual(
-            self.paths.host_storlet_pipe(self.storlet_id),
-            os.path.join(self.pipes_dir, self.scope, self.storlet_id))
+            os.path.join(self.pipes_dir, self.scope, self.storlet_id),
+            self.paths.get_host_storlet_pipe(self.storlet_id))
 
-    def test_sbox_storlet_pipe(self):
+    def test_get_sbox_storlet_pipe(self):
         self.assertEqual(
-            self.paths.sbox_storlet_pipe(self.storlet_id),
-            os.path.join('/mnt/channels', self.storlet_id))
+            os.path.join('/mnt/channels', self.storlet_id),
+            self.paths.get_sbox_storlet_pipe(self.storlet_id))
 
-    def test_sbox_storlet_exec(self):
+    def test_get_sbox_storlet_dir(self):
         self.assertEqual(
-            self.paths.sbox_storlet_exec(self.storlet_id),
-            os.path.join('/home/swift', self.storlet_id))
+            os.path.join('/home/swift', self.storlet_id),
+            self.paths.get_sbox_storlet_dir(self.storlet_id))
 
-    def test_host_storlet_prefix(self):
+    def test_host_storlet_base_dir(self):
         self.assertEqual(
-            self.paths.host_storlet_prefix(),
+            self.paths.host_storlet_base_dir,
             os.path.join(self.storlets_dir, self.scope))
 
-    def test_host_storlet(self):
+    def test_get_host_storlet_dir(self):
         self.assertEqual(
-            self.paths.host_storlet(self.storlet_id),
-            os.path.join(self.storlets_dir, self.scope,
-                         self.storlet_id))
+            os.path.join(self.storlets_dir, self.scope, self.storlet_id),
+            self.paths.get_host_storlet_dir(self.storlet_id))
 
-    def test_slog_path(self):
-        with mock.patch('os.path.exists', return_value=True), \
-            mock.patch('os.makedirs') as m:
-            self.assertEqual(
-                self.paths.slog_path(self.storlet_id),
-                os.path.join(self.log_dir, self.scope,
-                             self.storlet_id))
-            self.assertEqual(0, m.call_count)
-
-        with mock.patch('os.path.exists', return_value=False), \
-            mock.patch('os.makedirs') as m:
-            self.assertEqual(
-                self.paths.slog_path(self.storlet_id),
-                os.path.join(self.log_dir, self.scope,
-                             self.storlet_id))
-            self.assertEqual(1, m.call_count)
-
-    def test_get_host_storlet_cache_dir(self):
+    def test_get_host_slog_path(self):
         self.assertEqual(
-            self.paths.get_host_storlet_cache_dir(),
-            os.path.join(self.cache_dir, self.scope, 'storlet'))
+            os.path.join(self.log_dir, self.scope, self.storlet_id,
+                         'storlet_invoke.log'),
+            self.paths.get_host_slog_path(self.storlet_id))
 
-    def test_get_host_dependency_cache_dir(self):
+    def test_host_storlet_cache_dir(self):
         self.assertEqual(
-            self.paths.get_host_dependency_cache_dir(),
-            os.path.join(self.cache_dir, self.scope, 'dependency'))
+            os.path.join(self.cache_dir, self.scope, 'storlet'),
+            self.paths.host_storlet_cache_dir)
+
+    def test_host_dependency_cache_dir(self):
+        self.assertEqual(
+            os.path.join(self.cache_dir, self.scope, 'dependency'),
+            self.paths.host_dependency_cache_dir)
 
     def test_runtime_paths_default(self):
         # CHECK: docs  says we need 4 dirs for communicate
@@ -215,36 +205,36 @@ class TestRuntimePaths(unittest.TestCase):
 
         # For pipe
         self.assertEqual('/home/docker_device/pipes/scopes/account',
-                         runtime_paths.host_pipe_prefix())
+                         runtime_paths.host_pipe_dir)
 
         # 1. host_factory_pipe_path <pipes_dir>/<scope>/factory_pipe
         self.assertEqual(
             '/home/docker_device/pipes/scopes/account/factory_pipe',
-            runtime_paths.host_factory_pipe())
+            runtime_paths.host_factory_pipe)
         # 2. host_storlet_pipe_path <pipes_dir>/<scope>/<storlet_id>
         self.assertEqual(
             '/home/docker_device/pipes/scopes/account/Storlet-1.0.jar',
-            runtime_paths.host_storlet_pipe(storlet_id))
+            runtime_paths.get_host_storlet_pipe(storlet_id))
         # 3. Yes, right now, we don't have the path for #3 in Python
         # 4. sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>
         self.assertEqual('/mnt/channels/Storlet-1.0.jar',
-                         runtime_paths.sbox_storlet_pipe(storlet_id))
+                         runtime_paths.get_sbox_storlet_pipe(storlet_id))
 
         # This looks like for jar load?
         self.assertEqual('/home/docker_device/storlets/scopes/account',
-                         runtime_paths.host_storlet_prefix())
+                         runtime_paths.host_storlet_base_dir)
         self.assertEqual(
             '/home/docker_device/storlets/scopes/account/Storlet-1.0.jar',
-            runtime_paths.host_storlet(storlet_id))
+            runtime_paths.get_host_storlet_dir(storlet_id))
         # And this one is a mount poit in sand box?
         self.assertEqual('/home/swift/Storlet-1.0.jar',
-                         runtime_paths.sbox_storlet_exec(storlet_id))
+                         runtime_paths.get_sbox_storlet_dir(storlet_id))
 
     @with_tempdir
-    def test_create_host_pipe_prefix_with_real_dir(self, temp_dir):
+    def test_create_host_pipe_dir_with_real_dir(self, temp_dir):
         runtime_paths = RunTimePaths('account', {'host_root': temp_dir})
-        runtime_paths.create_host_pipe_prefix()
-        path = runtime_paths.host_pipe_prefix()
+        runtime_paths.create_host_pipe_dir()
+        path = runtime_paths.host_pipe_dir
         self.assertTrue(os.path.exists(path))
         self.assertTrue(os.path.isdir(path))
         permission = oct(os.stat(path)[ST_MODE])[-3:]
@@ -324,7 +314,7 @@ class TestRunTimeSandbox(unittest.TestCase):
                 return (self.stdout, self.stderr)
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_prefix'), \
+                        'RunTimePaths.create_host_pipe_dir'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'subprocess.Popen') as popen:
             _wait = self.sbox.wait
@@ -341,7 +331,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             self.sbox.wait = _wait
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_prefix'), \
+                        'RunTimePaths.create_host_pipe_dir'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'subprocess.Popen') as popen:
             _wait = self.sbox.wait
@@ -360,7 +350,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             self.sbox.wait = _wait
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_prefix'), \
+                        'RunTimePaths.create_host_pipe_dir'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'subprocess.Popen') as popen:
             _wait = self.sbox.wait
@@ -379,7 +369,7 @@ class TestRunTimeSandbox(unittest.TestCase):
             self.sbox.wait = _wait
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_prefix'), \
+                        'RunTimePaths.create_host_pipe_dir'), \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
                        'subprocess.Popen') as popen:
             _wait = self.sbox.wait

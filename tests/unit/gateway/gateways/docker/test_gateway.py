@@ -507,8 +507,7 @@ use = egg:swift#catch_errors
                     mock_close)
         @mock.patch('storlets.gateway.gateways.docker.runtime.select.select',
                     lambda r, w, x, timeout=None: (r, w, x))
-        @mock.patch('storlets.gateway.common.stob.os.read',
-                    mock_read)
+        @mock.patch('storlets.gateway.common.stob.os.read', mock_read)
         @mock.patch(invocation_protocol, mock_writer)
         def test_invocation_flow(client):
             client.ping.return_value = SBusResponse(True, 'OK')

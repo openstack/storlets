@@ -212,8 +212,9 @@ class StorletGatewayDocker(StorletGatewayBase):
         run_time_sbox.activate_storlet_daemon(sreq, docker_updated)
         self._add_system_params(sreq)
 
-        slog_path = self.paths.slog_path(sreq.storlet_main)
-        storlet_pipe_path = self.paths.host_storlet_pipe(sreq.storlet_main)
+        slog_path = self.paths.get_host_slog_path(sreq.storlet_main)
+        storlet_pipe_path = \
+            self.paths.get_host_storlet_pipe(sreq.storlet_main)
 
         sprotocol = StorletInvocationProtocol(sreq,
                                               storlet_pipe_path,
@@ -238,7 +239,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :params params: Request parameters
         """
         sreq.params['storlet_execution_path'] = self. \
-            paths.sbox_storlet_exec(sreq.storlet_main)
+            paths.get_sbox_storlet_dir(sreq.storlet_main)
 
     def _upload_storlet_logs(self, slog_path, sreq):
         """
@@ -273,10 +274,10 @@ class StorletGatewayDocker(StorletGatewayBase):
         # Determine the cache we are to work with
         # e.g. dependency or storlet
         if is_storlet:
-            cache_dir = self.paths.get_host_storlet_cache_dir()
+            cache_dir = self.paths.host_storlet_cache_dir
             get_func = sreq.file_manager.get_storlet
         else:
-            cache_dir = self.paths.get_host_dependency_cache_dir()
+            cache_dir = self.paths.host_dependency_cache_dir
             get_func = sreq.file_manager.get_dependency
 
         if not os.path.exists(cache_dir):
@@ -330,7 +331,8 @@ class StorletGatewayDocker(StorletGatewayBase):
         # 1. The Docker container does not hold a copy of the object
         # 2. The Docker container holds an older version of the object
         update_docker = False
-        docker_storlet_path = self.paths.host_storlet(sreq.storlet_main)
+        docker_storlet_path = \
+            self.paths.get_host_storlet_dir(sreq.storlet_main)
         docker_target_path = os.path.join(docker_storlet_path, obj_name)
 
         if not os.path.exists(docker_storlet_path):
@@ -367,7 +369,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :returns: True if the Docker container was updated
         """
         # where at the host side, reside the storlet containers
-        storlet_path = self.paths.host_storlet_prefix()
+        storlet_path = self.paths.host_storlet_base_dir
         if not os.path.exists(storlet_path):
             os.makedirs(storlet_path, 0o755)
 

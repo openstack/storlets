@@ -16,46 +16,47 @@
 
 import os
 from contextlib import contextmanager
-
-NOTOPEN = 0
-OPEN = 1
-CLOSED = 2
+from storlets.gateway.common.exceptions import StorletLoggerError
 
 
 class StorletLogger(object):
-    def __init__(self, path, name):
-        self.full_path = os.path.join(path, '%s.log' % name)
-        self._status = NOTOPEN
+    def __init__(self, path):
+        self.log_path = path
+        self._file = None
 
     def open(self):
-        if self._status == OPEN:
-            raise Exception('StorletLogger has been open')
+        if self._file is not None:
+            raise StorletLoggerError('StorletLogger is already open')
+
         try:
-            self._file = open(self.full_path, 'a')
+            log_dir_path = os.path.dirname(self.log_path)
+            if not os.path.exists(log_dir_path):
+                os.makedirs(log_dir_path)
+
+            self._file = open(self.log_path, 'a')
         except Exception:
             raise
-        else:
-            self._status = OPEN
 
     def getfd(self):
-        if self._status != OPEN:
+        if self._file is None:
             # TODO(kota_): Is it safe to return None?
             return None
         return self._file.fileno()
 
     def getsize(self):
-        statinfo = os.stat(self.full_path)
+        statinfo = os.stat(self.log_path)
         return statinfo.st_size
 
     def close(self):
-        if self._status != OPEN:
-            raise Exception('StorletLogger is not open')
+        if self._file is None:
+            raise StorletLoggerError('StorletLogger is not open')
+
         try:
             self._file.close()
         except Exception:
             raise
         else:
-            self._status = CLOSED
+            self._file = None
 
     @contextmanager
     def activate(self):
