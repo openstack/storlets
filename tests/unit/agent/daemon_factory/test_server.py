@@ -57,22 +57,27 @@ class TestStorletDaemonFactory(unittest.TestCase):
                  'Storlet-1.0.jar', 'path/to/uds/a', 'DEBUG', '1',
                  self.container_id],
                 pargs)
+
+            self.assertIn('CLASSPATH', env)
             self.assertEqual(
-                {'CLASSPATH':
-                    '/default/classpath:'
-                    '/usr/local/lib/storlets/logback-classic-1.1.2.jar:'
-                    '/usr/local/lib/storlets/logback-core-1.1.2.jar:'
-                    '/usr/local/lib/storlets/slf4j-api-1.7.7.jar:'
-                    '/usr/local/lib/storlets/json_simple-1.1.jar:'
-                    '/usr/local/lib/storlets/SBusJavaFacade.jar:'
-                    '/usr/local/lib/storlets/SCommon.jar:'
-                    '/usr/local/lib/storlets/SDaemon.jar:'
-                    '/usr/local/lib/storlets/:'
-                    'path/to/storlet/a',
-                 'LD_LIBRARY_PATH':
-                    '/default/ld/library/path:'
-                    '/usr/local/lib/storlets'},
-                env)
+                ['/default/classpath',
+                 '/usr/local/lib/storlets/java/logback-classic-1.1.2.jar',
+                 '/usr/local/lib/storlets/java/logback-core-1.1.2.jar',
+                 '/usr/local/lib/storlets/java/slf4j-api-1.7.7.jar',
+                 '/usr/local/lib/storlets/java/json_simple-1.1.jar',
+                 '/usr/local/lib/storlets/java/SBusJavaFacade.jar',
+                 '/usr/local/lib/storlets/java/SCommon.jar',
+                 '/usr/local/lib/storlets/java/SDaemon.jar',
+                 '/usr/local/lib/storlets/java/',
+                 'path/to/storlet/a'],
+                env['CLASSPATH'].split(':'))
+
+            self.assertIn('LD_LIBRARY_PATH', env)
+            self.assertEqual(
+                ['/default/ld/library/path',
+                 '/usr/local/lib/storlets',
+                 '/usr/local/lib/storlets/java'],
+                env['LD_LIBRARY_PATH'].split(':'))
 
     def test_get_python_args(self):
         self._test_get_python_args(DEFAULT_PY2, DEFAULT_PY2)

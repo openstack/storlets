@@ -4,6 +4,7 @@
 #
 # NOTE: The libraries are currently installed under /usr/lib/storlets
 #       so you may need root privilege to execute this script
+set -x
 
 # build scripts
 cd scripts
