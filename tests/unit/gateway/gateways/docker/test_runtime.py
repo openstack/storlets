@@ -330,7 +330,6 @@ class TestRunTimeSandbox(unittest.TestCase):
             self.sbox._restart('storlet_image')
             self.assertEqual(1, mock_containers.get.call_count)
             self.assertEqual(1, mock_container.stop.call_count)
-            self.assertEqual(1, mock_container.remove.call_count)
             self.assertEqual(1, mock_containers.run.call_count)
 
         # get failed
@@ -367,28 +366,6 @@ class TestRunTimeSandbox(unittest.TestCase):
                 self.sbox._restart('storlet_image')
             self.assertEqual(1, mock_containers.get.call_count)
             self.assertEqual(1, mock_container.stop.call_count)
-            self.assertEqual(0, mock_container.remove.call_count)
-            self.assertEqual(0, mock_containers.run.call_count)
-
-        # remove failed
-        with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'docker.from_env') as docker_from_env:
-            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
-            mock_containers = mock.MagicMock(
-                spec_set=docker.models.containers.ContainerCollection)
-            mock_client.containers = mock_containers
-            mock_container = \
-                mock.MagicMock(spec_set=docker.models.containers.Container)
-            mock_containers.get.return_value = mock_container
-            mock_container.remove.side_effect = \
-                docker.errors.APIError('api error')
-            docker_from_env.return_value = mock_client
-
-            with self.assertRaises(StorletRuntimeException):
-                self.sbox._restart('storlet_image')
-            self.assertEqual(1, mock_containers.get.call_count)
-            self.assertEqual(1, mock_container.stop.call_count)
-            self.assertEqual(1, mock_container.remove.call_count)
             self.assertEqual(0, mock_containers.run.call_count)
 
         # run failed
@@ -409,7 +386,6 @@ class TestRunTimeSandbox(unittest.TestCase):
                 self.sbox._restart('storlet_image')
             self.assertEqual(1, mock_containers.get.call_count)
             self.assertEqual(1, mock_container.stop.call_count)
-            self.assertEqual(1, mock_container.remove.call_count)
             self.assertEqual(1, mock_containers.run.call_count)
 
     def test_restart(self):

@@ -162,9 +162,10 @@ Java_org_openstack_storlet_sbus_SBusJNI_createSBus(     JNIEnv* env,
 JNIEXPORT jint JNICALL
 Java_org_openstack_storlet_sbus_SBusJNI_listenSBus(     JNIEnv* env,
                                                         jobject obj,
-                                                        jint    jnBus )
+                                                        jint    jnBus,
+                                                        jfloat  jfTimeout )
 {
-    return sbus_listen( jnBus );
+    return sbus_listen( jnBus , jfTimeout );
 }
 
 /*----------------------------------------------------------------------------

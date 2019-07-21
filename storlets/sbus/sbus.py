@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ctypes import c_char_p, c_int, CDLL, POINTER
+from ctypes import c_char_p, c_int, c_float, CDLL, POINTER
 from storlets.sbus.datagram import build_datagram_from_raw_message
 
 
@@ -33,7 +33,7 @@ class SBus(object):
         self.sbus_back_.sbus_create.restype = c_int
 
         # listen to SBus
-        self.sbus_back_.sbus_listen.argtypes = [c_int]
+        self.sbus_back_.sbus_listen.argtypes = [c_int, c_float]
         self.sbus_back_.sbus_listen.restype = c_int
 
         # send message
@@ -74,8 +74,8 @@ class SBus(object):
     def create(self, sbus_name):
         return self.sbus_back_.sbus_create(sbus_name.encode("utf-8"))
 
-    def listen(self, sbus_handler):
-        return self.sbus_back_.sbus_listen(sbus_handler)
+    def listen(self, sbus_handler, timeout=0.0):
+        return self.sbus_back_.sbus_listen(sbus_handler, timeout)
 
     def receive(self, sbus_handler):
         ph_files = POINTER(c_int)()

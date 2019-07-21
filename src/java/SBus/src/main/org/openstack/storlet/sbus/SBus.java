@@ -53,8 +53,8 @@ public class SBus {
      * 
      * Listen to the SBus. Suspend the executing thread
      * */
-    public void listen() throws IOException {
-        SBusBack_.listenSBus(hServerSideSBus_);
+    public void listen(final float fTimeout) throws IOException {
+        SBusBack_.listenSBus(hServerSideSBus_, fTimeout);
     }
 
     /*------------------------------------------------------------------------

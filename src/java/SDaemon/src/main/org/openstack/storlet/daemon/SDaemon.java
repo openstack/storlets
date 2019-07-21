@@ -43,6 +43,7 @@ public class SDaemon {
     private static STaskFactory storletTaskFactory_;
     private static String strStorletName_;
     private static SExecutionManager sExecManager_;
+    private static float fDefaultListenTimeout_ = 300.0F;
 
     private static boolean initLog(final String strClassName,
             final String strLogLevel) {
@@ -148,7 +149,7 @@ public class SDaemon {
             // Wait for incoming commands
             try {
                 logger_.trace(strStorletName_ + ": listening on SBus");
-                sbus_.listen();
+                sbus_.listen(fDefaultListenTimeout_);
                 logger_.trace(strStorletName_ + ": SBus listen() returned");
             } catch (IOException e) {
                 logger_.error(strStorletName_ + ": Failed to listen on SBus");

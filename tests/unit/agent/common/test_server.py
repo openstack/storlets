@@ -136,7 +136,7 @@ def create_fake_sbus_class(scenario):
                     "for SBus but %d is expected" % (command, ret_val[0]))
             return ret_val[1]
 
-        def listen(self, fd):
+        def listen(self, fd, timeout=0):
             return self._get_fake_response('listen', fd)
 
         def command(self):
@@ -179,6 +179,24 @@ class TestSBusServerMain(unittest.TestCase):
         # sanity for no error and no warning
         self.assertEqual([], self.logger.get_log_lines('error'))
         self.assertEqual([], self.logger.get_log_lines('warn'))
+
+    def _test_main_loop_timeout(self):
+        scenario = [
+            ('create', 1),
+            ('listen', 0),
+            ('listen', 0),
+            ('listen', 0),
+            ('listen', 0)
+        ]
+
+        self.server.listen_timeout = self.server.loop_timeout * 4
+
+        fake_sbus_class = create_fake_sbus_class(scenario)
+        with mock.patch('storlets.agent.common.server.SBus', fake_sbus_class):
+            with mock.patch('os.fdopen'):
+                ret = self.server.main_loop()
+
+        self.assertEqual(EXIT_SUCCESS, ret)
 
 
 if __name__ == '__main__':

@@ -34,7 +34,7 @@ public class SBusJNI {
 
     public native int createSBus(final String strBusName);
 
-    public native int listenSBus(int nBus);
+    public native int listenSBus(int nBus, float fTimeout);
 
     public native int sendRawMessage(final String strBusName,
             final SBusRawMessage Msg);

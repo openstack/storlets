@@ -87,10 +87,13 @@ public class SBusBackend {
      * Wait and listen to the bus.
      * The executing thread is suspended until some data arrives.
      * */
-    public boolean listenSBus(final SBusHandler hSBus) throws IOException {
-        int nStatus = SBusJNIObj_.listenSBus(hSBus.getFD());
+    public boolean listenSBus(final SBusHandler hSBus, final float fTimeout)
+            throws IOException {
+        int nStatus = SBusJNIObj_.listenSBus(hSBus.getFD(), fTimeout);
         if (0 > nStatus)
             throw new IOException("Unable to listen to SBus");
+        else if (nStatus == 0)
+            throw new IOException("Timed out while listening to SBus");
         return true;
     }
 

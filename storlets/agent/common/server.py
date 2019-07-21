@@ -22,6 +22,9 @@ import storlets.sbus.command as sbus_cmd
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 
+LOOP_TIMEOUT = 0.5
+LISTEN_TIMEOUT = 300
+
 
 class CommandResponse(Exception):
     """
@@ -77,6 +80,8 @@ class SBusServer(object):
     def __init__(self, sbus_path, logger):
         self.sbus_path = sbus_path
         self.logger = logger
+        self.listen_timeout = LISTEN_TIMEOUT
+        self.loop_timeout = LOOP_TIMEOUT
 
     def get_handler(self, command):
         """
@@ -168,20 +173,35 @@ class SBusServer(object):
             self.logger.error("Failed to create SBus. exiting.")
             return EXIT_FAILURE
 
+        loop_cnt = 0
+        status = EXIT_SUCCESS
+
         while True:
-            rc = sbus.listen(fd)
+            rc = sbus.listen(fd, self.loop_timeout)
+
             if rc < 0:
                 self.logger.error("Failed to wait on SBus. exiting.")
-                return EXIT_FAILURE
+                status = EXIT_FAILURE
+                break
+            elif rc == 0:
+                loop_cnt += 1
+                if loop_cnt * self.loop_timeout >= self.listen_timeout:
+                    self.logger.debug("Timed out while listening. exiting.")
+                    break
+                continue
+
+            loop_cnt = 0
 
             dtg = sbus.receive(fd)
             if dtg is None:
                 self.logger.error("Failed to receive message. exiting")
-                return EXIT_FAILURE
+                status = EXIT_FAILURE
+                break
 
             if not self.dispatch_command(dtg):
                 break
 
         self.logger.debug('Leaving main loop')
         self._terminate()
-        return EXIT_SUCCESS
+
+        return status

@@ -35,9 +35,9 @@ extern int sbus_create( const char* str_sbus_path );
 /*----------------------------------------------------------------------------
  * sbus_listen
  * Suspend the
- * returns -1 on error, 0 on success
+ * returns -1 on error, 0 on timeout, 1 on success
  */
-extern int sbus_listen( int n_sbus_handle );
+extern int sbus_listen( int n_sbus_handle , float f_timeout);
 
 /*----------------------------------------------------------------------------
  * sbus_recv_msg

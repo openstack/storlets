@@ -642,6 +642,9 @@ class TestSBusServerMain(test_server.TestSBusServerMain):
         # storlet_middleware
         self._test_main_loop_stop(sbus_cmd.SBUS_CMD_HALT)
 
+    def test_main_loop_timeout(self):
+        self._test_main_loop_timeout()
+
 
 if __name__ == '__main__':
     unittest.main()

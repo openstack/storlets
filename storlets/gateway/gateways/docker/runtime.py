@@ -318,12 +318,12 @@ class RunTimeSandbox(object):
                 pass
             else:
                 scontainer.stop(timeout=1)
-                scontainer.remove()
 
             # Start the new one
             client.containers.run(
                 docker_image_name, detach=True, name=docker_container_name,
-                network_disabled=True, mounts=mounts, user='swift')
+                network_disabled=True, mounts=mounts, user='swift',
+                auto_remove=True)
         except docker.errors.ImageNotFound:
             msg = "Image %s is not found" % docker_image_name
             raise StorletRuntimeException(msg)

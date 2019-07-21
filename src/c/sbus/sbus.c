@@ -155,23 +155,36 @@ int sbus_create( const char* str_sbus_path )
     return ( 0 <= n_status ? n_sbus_handle : n_status );
 }
 
-int sbus_listen( int n_sbus_handle )
+int sbus_listen( int n_sbus_handle, float f_timeout )
 {
     fd_set fdset;
 
     FD_ZERO( &fdset );
     FD_SET( n_sbus_handle, &fdset );
 
+    struct timeval  tv;
+    struct timeval* tvp;
+    if ( f_timeout > 0.0 )
+    {
+        tv.tv_sec = (long) f_timeout;
+        tv.tv_usec = (long) ((f_timeout - (long) f_timeout) * 1000 * 1000);
+        tvp = &tv;
+    }
+    else
+    {
+        tvp = NULL;
+    }
+
     int n_status = select( n_sbus_handle+1,
                            &fdset,
                            (fd_set *)0,
                            (fd_set *)0,
-                           (struct timeval*) 0);
-    if( 0 > n_status )
-        syslog( LOG_ERR,
-                "sbus_listen: Select returned unexpectedly. %s",
-                strerror(errno));
-    else
+                           (struct timeval*) tvp);
+    if ( n_status == 0 )
+    {
+        syslog( LOG_DEBUG, "sbus_listen: Timed out" );
+    }
+    else if ( n_status == 1 )
     {
         if( !FD_ISSET( n_sbus_handle, &fdset ) )
         {
@@ -179,13 +192,20 @@ int sbus_listen( int n_sbus_handle )
             syslog( LOG_ERR,
                     "sbus_listen: Select returned on a different fs. %s",
                     strerror(errno) );
-                    n_status = 1;
+            n_status = -1;
         }
         else
-            n_status = 0;
+        {
+            syslog( LOG_DEBUG,
+                    "sbus_listen: SBus listened successfully" );
+        }
     }
-    syslog( LOG_DEBUG,
-            "sbus_listen: SBus listened successfully" );
+    else
+    {
+        syslog( LOG_ERR,
+                "sbus_listen: Select returned unexpectedly. %s",
+                strerror(errno));
+    }
 
     return n_status;
 }

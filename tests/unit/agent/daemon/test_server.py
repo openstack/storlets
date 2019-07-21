@@ -71,6 +71,9 @@ class TestStorletDaemonMain(test_server.TestSBusServerMain):
         # so need more assertions.
         self._test_main_loop_stop(sbus_cmd.SBUS_CMD_CANCEL)
 
+    def test_main_loop_timeout(self):
+        self._test_main_loop_timeout()
+
 
 if __name__ == '__main__':
     unittest.main()
