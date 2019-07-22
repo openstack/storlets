@@ -8,6 +8,7 @@
         - python3-venv
         - python3-nose
         - python3-pip
+      become: yes
 
     - shell:
         cmd: |
