@@ -1,0 +1,19 @@
+---
+- hosts: all
+  tasks:
+    - name: Copy logs from worker nodes to executor node
+      synchronize:
+        # TODO: make it sort of tox_envdir
+        src: '{{ zuul.project.src_dir }}/.tox/func-py3/logs'
+        dest: '{{ zuul.executor.log_root }}'
+        mode: pull
+        copy_links: true
+        verify_host: true
+
+    - name: Copy conf files from worker nodes to executor node
+      synchronize:
+        src: '/etc/swift'
+        dest: '{{ zuul.executor.log_root }}'
+        mode: pull
+        copy_links: true
+        verify_host: true
