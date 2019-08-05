@@ -22,7 +22,7 @@ import org.openstack.storlet.common.*;
 
 /*----------------------------------------------------------------------------
  * SDescriptorTask
- * 
+ *
  * */
 public class SDescriptorTask extends SAbstractTask {
     private ObjectRequestsTable requestsTable_ = null;

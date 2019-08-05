@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
  * SCancelTask
- * 
+ *
  * Instantiate AbstractTask class. SCancelTask objects contain the task-id,
  * which could later be used to cancel a running storlet (for instance, if
  * a timeout is encountered)
@@ -57,6 +57,7 @@ public class SCancelTask extends SAbstractTask {
         boolean bStatus = true;
         try {
             this.sOut_.write((new String("True: OK")).getBytes());
+            this.sOut_.close();
         } catch (IOException e) {
             e.printStackTrace();
             bStatus = false;

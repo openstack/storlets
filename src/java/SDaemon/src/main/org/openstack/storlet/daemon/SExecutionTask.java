@@ -30,7 +30,7 @@ import java.util.concurrent.Future;
 
 /*----------------------------------------------------------------------------
  * SExecutionTask
- * 
+ *
  * Thread pool worker. Wraps File I/O streams for the further
  * utilization by storlet
  * */

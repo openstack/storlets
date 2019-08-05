@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
  * SPingTask
- * 
+ *
  * Instantiate AbstractTask class. The primary usage intent is to response
  * that this Storlet Daemon is running
  * */
@@ -41,13 +41,14 @@ public class SPingTask extends SAbstractTask {
 
     /*------------------------------------------------------------------------
      * run
-     * 
+     *
      * The actual response on "ping" command.
      * */
     public boolean run() {
         boolean bStatus = true;
         try {
             this.sOut_.write((new String("True: OK")).getBytes());
+            this.sOut_.close();
         } catch (IOException e) {
             e.printStackTrace();
             bStatus = false;
