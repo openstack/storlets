@@ -515,7 +515,10 @@ class StorletDaemonFactory(SBusServer):
             return CommandFailure(err.args[0], False)
 
     def _terminate(self):
-        pass
+        self.shutdown_all_processes()
+
+    def _force_terminate(self):
+        self.process_kill_all()
 
 
 def main():

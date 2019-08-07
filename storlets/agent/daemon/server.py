@@ -221,7 +221,7 @@ class StorletDaemon(SBusServer):
 
         pid = self.task_id_to_pid.get(task_id)
         try:
-            os.kill(pid, signal.SIGTERM)
+            os.kill(pid, signal.SIGKILL)
             self._remove_pid(pid)
             return CommandSuccess('Cancelled task %s' % task_id, False)
         except OSError:
@@ -235,6 +235,9 @@ class StorletDaemon(SBusServer):
 
     def _terminate(self):
         self._wait_all_child_processes()
+
+    def _force_terminate(self):
+        os.killpg(0, signal.SIGKILL)
 
 
 def main():

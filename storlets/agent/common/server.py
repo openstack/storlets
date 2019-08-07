@@ -15,6 +15,7 @@
 from functools import partial
 import json
 import os
+import signal
 
 from storlets.sbus import SBus
 import storlets.sbus.command as sbus_cmd
@@ -80,6 +81,7 @@ class SBusServer(object):
     def __init__(self, sbus_path, logger):
         self.sbus_path = sbus_path
         self.logger = logger
+        self.running = True
         self.listen_timeout = LISTEN_TIMEOUT
         self.loop_timeout = LOOP_TIMEOUT
 
@@ -160,6 +162,23 @@ class SBusServer(object):
     def _terminate(self):
         raise NotImplementedError()
 
+    def _force_terminate(self):
+        raise NotImplementedError()
+
+    def _graceful_shutdown(self, *args):
+        self.logger.info("received SIGHUP. Shutting down gracefully")
+        self.running = False
+
+    def _force_shutdown(self, *args):
+        self.logger.info("received SIGTERM. Shutting down now")
+        try:
+            self._force_terminate()
+        except Exception:
+            self.logger.exception(
+                "Failed to force_terminate. The process stops anyway")
+        finally:
+            os._exit(1)
+
     def main_loop(self):
         """
         Main loop to run storlet application
@@ -173,10 +192,13 @@ class SBusServer(object):
             self.logger.error("Failed to create SBus. exiting.")
             return EXIT_FAILURE
 
+        signal.signal(signal.SIGHUP, self._graceful_shutdown)
+        signal.signal(signal.SIGTERM, self._force_shutdown)
+
         loop_cnt = 0
         status = EXIT_SUCCESS
 
-        while True:
+        while self.running:
             rc = sbus.listen(fd, self.loop_timeout)
 
             if rc < 0:
@@ -190,6 +212,7 @@ class SBusServer(object):
                     break
                 continue
 
+            # Reset loop_cnt here as a request comes via sbus
             loop_cnt = 0
 
             dtg = sbus.receive(fd)
