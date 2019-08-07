@@ -40,11 +40,12 @@ public class SPingTask extends SAbstractTask {
     }
 
     /*------------------------------------------------------------------------
-     * run
+     * exec
      *
      * The actual response on "ping" command.
      * */
-    public boolean run() {
+    @Override
+    public boolean exec() {
         return respond(this.sOut_, true, new String("OK"));
     }
 }

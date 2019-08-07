@@ -41,13 +41,15 @@ public class SDescriptorTask extends SAbstractTask {
     }
 
     /*------------------------------------------------------------------------
-     * run
+     * exec
      * */
-    public void run() {
-        logger.trace("StorletDescriptorTask: " + "run going to extract key "
+    @Override
+    public boolean exec() {
+        boolean bStatus = true;
+        logger.trace("StorletDescriptorTask: " + "exec going to extract key "
                 + strKey_);
         ObjectRequestEntry entry = requestsTable_.Get(strKey_);
-        logger.trace("StorletDescriptorTask: " + "run got entry "
+        logger.trace("StorletDescriptorTask: " + "exec got entry "
                 + entry.toString());
         try {
             logger.trace("StorletDescriptorTask: "
@@ -57,7 +59,9 @@ public class SDescriptorTask extends SAbstractTask {
                     + "run obj stream is in the table ");
         } catch (InterruptedException e) {
             logger.error("InterruptedException while putting obj stream");
+            bStatus = false;
         }
+        return bStatus;
     }
 }
 /* ============================== END OF FILE =============================== */

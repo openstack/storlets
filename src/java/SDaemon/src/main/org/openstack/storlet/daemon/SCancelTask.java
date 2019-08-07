@@ -20,6 +20,7 @@ package org.openstack.storlet.daemon;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import org.openstack.storlet.daemon.SExecutionManager;
 import org.slf4j.Logger;
 
 /*----------------------------------------------------------------------------
@@ -32,29 +33,37 @@ import org.slf4j.Logger;
 public class SCancelTask extends SAbstractTask {
     private OutputStream sOut_ = null;
     private String taskId_ = null;
+    private SExecutionManager sExecManager_ = null;
 
     /*------------------------------------------------------------------------
      * CTOR
      * */
-    public SCancelTask(OutputStream sOut, Logger logger, String taskId) {
+    public SCancelTask(OutputStream sOut, Logger logger,
+                       SExecutionManager sExecManager, String taskId) {
         super(logger);
         this.sOut_ = sOut;
+        this.sExecManager_ = sExecManager;
         this.taskId_ = taskId;
     }
 
-    public String getTaskId() {
-        return taskId_;
-    }
-
-    public OutputStream getSOut() {
-        return sOut_;
-    }
-
     /*------------------------------------------------------------------------
-     * run
+     * exec
      * */
-    public boolean run() {
-        return respond(this.sOut_, true, new String("OK"));
+    @Override
+    public boolean exec() {
+        boolean respStatus;
+        String respMessage;
+
+        boolean result = this.sExecManager_.cancelTask(this.taskId_);
+        if (result) {
+            respStatus = true;
+            respMessage = new String("OK");
+        } else {
+            respStatus = false;
+            respMessage = new String("Task id " + this.taskId_
+                + "is not found");
+        }
+        return respond(this.sOut_, respStatus, respMessage);
     }
 }
 /* ============================== END OF FILE =============================== */

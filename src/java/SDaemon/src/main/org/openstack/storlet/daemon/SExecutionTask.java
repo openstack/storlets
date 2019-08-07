@@ -20,13 +20,12 @@ package org.openstack.storlet.daemon;
 import org.slf4j.Logger;
 
 import org.openstack.storlet.common.*;
+import org.openstack.storlet.daemon.SExecutionManager;
 
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import java.util.concurrent.Future;
 
 /*----------------------------------------------------------------------------
  * SExecutionTask
@@ -42,13 +41,14 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
     private HashMap<String, String> executionParams_ = null;
     private OutputStream taskIdOut_ = null;
     private String taskId_ = null;
-    private HashMap<String, Future> taskIdToTask_ = null;
+    private SExecutionManager sExecManager_ = null;
 
     public SExecutionTask(IStorlet storlet,
             ArrayList<StorletInputStream> instreams,
             ArrayList<StorletOutputStream> outstreams, OutputStream taskIdOut,
             HashMap<String, String> executionParams,
-            StorletLogger storletLogger, Logger logger) {
+            StorletLogger storletLogger, Logger logger,
+            SExecutionManager sExecManager) {
         super(logger);
         this.storlet_ = storlet;
         this.inStreams_ = instreams;
@@ -56,67 +56,73 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
         this.executionParams_ = executionParams;
         this.storletLogger_ = storletLogger;
         this.taskIdOut_ = taskIdOut;
-
+        this.sExecManager_ = sExecManager;
     }
 
     public ArrayList<StorletInputStream> getInStreams() {
-        return inStreams_;
+        return this.inStreams_;
     }
 
     public ArrayList<StorletOutputStream> getOutStreams() {
-        return outStreams_;
+        return this.outStreams_;
     }
 
     public HashMap<String, String> getExecutionParams() {
-        return executionParams_;
-    }
-
-    public OutputStream getTaskIdOut() {
-        return taskIdOut_;
-    }
-
-    public void setTaskId(String taskId) {
-        taskId_ = taskId;
-    }
-
-    public void setTaskIdToTask(HashMap<String, Future> taskIdToTask) {
-        taskIdToTask_ = taskIdToTask;
+        return this.executionParams_;
     }
 
     private void closeStorletInputStreams(){
-        for(StorletInputStream stream : inStreams_){
+        for(StorletInputStream stream : this.inStreams_){
             stream.close();
         }
     }
 
     private void closeStorletOutputStreams(){
-        for(StorletOutputStream stream: outStreams_){
+        for(StorletOutputStream stream: this.outStreams_){
             stream.close();
         }
     }
 
     private void closeStorletStreams(){
-        closeStorletInputStreams();
-        closeStorletOutputStreams();
+        this.closeStorletInputStreams();
+        this.closeStorletOutputStreams();
+    }
+
+    @Override
+    public boolean exec() {
+        boolean bStatus = true;
+        this.taskId_ = this.sExecManager_.submitTask((SExecutionTask) this);
+
+        try {
+            this.taskIdOut_.write(this.taskId_.getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+            bStatus = false;
+        } finally {
+            try{
+                this.taskIdOut_.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return bStatus;
     }
 
     @Override
     public void run() {
         try {
-            storletLogger_.emitLog("About to invoke storlet");
-            storlet_.invoke(inStreams_, outStreams_, executionParams_,
+            this.storletLogger_.emitLog("About to invoke storlet");
+            this.storlet_.invoke(inStreams_, outStreams_, executionParams_,
                     storletLogger_);
-            storletLogger_.emitLog("Storlet invocation done");
-            synchronized (taskIdToTask_) {
-                taskIdToTask_.remove(taskId_);
-            }
+            this.storletLogger_.emitLog("Storlet invocation done");
+            this.sExecManager_.cleanupTask(this.taskId_);
         } catch (StorletException e) {
-            storletLogger_.emitLog(e.getMessage());
+            this.storletLogger_.emitLog(e.getMessage());
         } finally {
-            storletLogger_.close();
+            this.storletLogger_.close();
 
             // We make sure all streams are closed
-            closeStorletStreams();
+            this.closeStorletStreams();
         }
     }
 }

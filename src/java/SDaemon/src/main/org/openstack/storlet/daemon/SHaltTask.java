@@ -40,12 +40,14 @@ public class SHaltTask extends SAbstractTask {
     }
 
     /*------------------------------------------------------------------------
-     * run
+     * exec
      *
-     * The actual response on "ping" command.
+     * The actual response on "halt" command.
      * */
-    public boolean run() {
-        return respond(this.sOut_, true, new String("OK"));
+    @Override
+    public boolean exec() {
+        respond(this.sOut_, true, new String("OK"));
+        return false;
     }
 }
 /* ============================== END OF FILE =============================== */

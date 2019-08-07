@@ -28,7 +28,7 @@ import org.slf4j.Logger;
  *
  * A common parent object for different Tasks created by STaskFactory
  * */
-public class SAbstractTask {
+public abstract class SAbstractTask {
 
     protected Logger logger;
 
@@ -52,4 +52,5 @@ public class SAbstractTask {
         return bStatus;
     }
 
+    public abstract boolean exec();
 }

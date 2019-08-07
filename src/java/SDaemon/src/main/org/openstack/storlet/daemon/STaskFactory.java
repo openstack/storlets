@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 
 import org.openstack.storlet.common.*;
 import org.openstack.storlet.daemon.SExecutionTask;
+import org.openstack.storlet.daemon.SExecutionManager;
 import org.openstack.storlet.sbus.ServerSBusInDatagram;
 
 /*----------------------------------------------------------------------------
@@ -47,7 +48,8 @@ public class STaskFactory {
         this.requestsTable_ = new ObjectRequestsTable();
     }
 
-    public SAbstractTask createStorletTask(ServerSBusInDatagram dtg)
+    public SAbstractTask createStorletTask(
+        ServerSBusInDatagram dtg, SExecutionManager sExecManager)
             throws StorletException {
         SAbstractTask ResObj = null;
         String command = dtg.getCommand();
@@ -59,18 +61,19 @@ public class STaskFactory {
         } else if (command.equals("SBUS_CMD_EXECUTE")) {
             this.logger_.trace("createStorletTask: "
                     + "received EXECUTE command");
-            ResObj = createExecutionTask(dtg);
+            ResObj = createExecutionTask(dtg, sExecManager);
         } else if (command.equals("SBUS_CMD_DESCRIPTOR")) {
             this.logger_.trace("createStorletTask: "
                     + "received Descriptor command");
             ResObj = createDescriptorTask(dtg);
         } else if (command.equals("SBUS_CMD_PING")) {
-            this.logger_.trace("createStorletTask: " + "received Ping command");
+            this.logger_.trace("createStorletTask: "
+                    + "received Ping command");
             ResObj = createPingTask(dtg);
         } else if (command.equals("SBUS_CMD_CANCEL")) {
             this.logger_.trace("createStorletTask: "
                     + "received Cancel command");
-            ResObj = createCancelTask(dtg);
+            ResObj = createCancelTask(dtg, sExecManager);
         } else {
             this.logger_.error("createStorletTask: " + command
                     + " is not supported");
@@ -78,7 +81,8 @@ public class STaskFactory {
         return ResObj;
     }
 
-    private SExecutionTask createExecutionTask(ServerSBusInDatagram dtg)
+    private SExecutionTask createExecutionTask(
+            ServerSBusInDatagram dtg, SExecutionManager sExecManager)
             throws StorletException {
         ArrayList<StorletInputStream> inStreams = new ArrayList<StorletInputStream>();
         ArrayList<StorletOutputStream> outStreams = new ArrayList<StorletOutputStream>();
@@ -148,7 +152,7 @@ public class STaskFactory {
                         + " is of unknown type " + strFDtype);
         }
         return new SExecutionTask(storlet_, inStreams, outStreams, taskIdOut,
-                dtg.getExecParams(), storletLogger, logger_);
+                dtg.getExecParams(), storletLogger, logger_, sExecManager);
     }
 
     private SDescriptorTask createDescriptorTask(ServerSBusInDatagram dtg) {
@@ -202,7 +206,8 @@ public class STaskFactory {
         return ResObj;
     }
 
-    private SCancelTask createCancelTask(ServerSBusInDatagram dtg) {
+    private SCancelTask createCancelTask(
+            ServerSBusInDatagram dtg, SExecutionManager sExecManager) {
         SCancelTask ResObj = null;
         String taskId = dtg.getTaskId();
         boolean bStatus = true;
@@ -233,7 +238,7 @@ public class STaskFactory {
             // parse descriptor stuff
             this.logger_.trace("createCancelTask: "
                     + "Returning StorletCancelTask");
-            ResObj = new SCancelTask(sOut, logger_, taskId);
+            ResObj = new SCancelTask(sOut, logger_, sExecManager, taskId);
         }
         return ResObj;
     }
