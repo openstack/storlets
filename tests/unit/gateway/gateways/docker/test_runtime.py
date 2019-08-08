@@ -22,6 +22,9 @@ from contextlib import contextmanager
 from six import StringIO
 from stat import ST_MODE
 
+from storlets.sbus.client import SBusResponse
+from storlets.sbus.client.exceptions import SBusClientIOError, \
+    SBusClientMalformedResponse, SBusClientSendError
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlets.gateway.gateways.docker.gateway import DockerStorletRequest
@@ -263,62 +266,49 @@ class TestRunTimeSandbox(unittest.TestCase):
         self.scope = '0123456789abc'
         self.sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
 
-    def tearDown(self):
-        pass
-
-    def test_parse_sandbox_factory_answer(self):
-        status, msg = self.sbox._parse_sandbox_factory_answer('True:message')
-        self.assertTrue(status)
-        self.assertEqual('message', msg)
-
-        status, msg = self.sbox._parse_sandbox_factory_answer('False:message')
-        self.assertFalse(status)
-        self.assertEqual('message', msg)
-
-        with self.assertRaises(StorletRuntimeException):
-            self.sbox._parse_sandbox_factory_answer('Foo')
-
-    def _check_all_pipese_closed(self, pipes):
-        for _pipe in pipes:
-            self.assertTrue(_pipe[0].closed)
-            self.assertTrue(_pipe[1].closed)
-
     def test_ping(self):
-        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0):
-            self.assertEqual(1, self.sbox.ping())
-            self._check_all_pipese_closed(pipes)
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping:
+            ping.return_value = SBusResponse(True, 'OK')
+            self.assertEqual(self.sbox.ping(), 1)
 
-        with _mock_os_pipe(['False:ERROR']) as pipes, _mock_sbus(-1):
-            self.assertEqual(-1, self.sbox.ping())
-            self._check_all_pipese_closed(pipes)
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping:
+            ping.return_value = SBusResponse(False, 'Error')
+            self.assertEqual(self.sbox.ping(), 0)
 
-        with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0):
-            with self.assertRaises(StorletRuntimeException):
-                self.sbox.ping()
-            self._check_all_pipese_closed(pipes)
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping:
+            ping.side_effect = SBusClientSendError()
+            self.assertEqual(self.sbox.ping(), -1)
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping:
+            ping.side_effect = SBusClientMalformedResponse()
+            self.assertEqual(self.sbox.ping(), -1)
+
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping:
+            ping.side_effect = SBusClientIOError()
+            self.assertEqual(self.sbox.ping(), -1)
 
     def test_wait(self):
-        with _mock_os_pipe(['True:OK']) as pipes, _mock_sbus(0), \
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping, \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'time.sleep') as _s:
+                       'time.sleep') as sleep:
+            ping.return_value = SBusResponse(True, 'OK')
             self.sbox.wait()
-            self.assertEqual(0, _s.call_count)
-            self._check_all_pipese_closed(pipes)
+            self.assertEqual(sleep.call_count, 0)
 
-        with _mock_os_pipe(['False:ERROR', 'True:OK']) as pipes, \
-            _mock_sbus(0), \
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'SBusClient.ping') as ping, \
             mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'time.sleep') as _s:
+                       'time.sleep') as sleep:
+            ping.side_effect = [SBusResponse(False, 'Error'),
+                                SBusResponse(True, 'OK')]
             self.sbox.wait()
-            self.assertEqual(1, _s.call_count)
-            self._check_all_pipese_closed(pipes)
-
-        with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0), \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'time.sleep') as _s:
-            with self.assertRaises(StorletRuntimeException):
-                self.sbox.wait()
-            self._check_all_pipese_closed(pipes)
+            self.assertEqual(sleep.call_count, 1)
 
         # TODO(takashi): should test timeout case
 

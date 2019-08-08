@@ -27,10 +27,11 @@ import json
 from contextlib import contextmanager
 
 from storlets.sbus import SBus
-from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram, \
-    SBusExecuteDatagram
+from storlets.sbus.command import SBUS_CMD_EXECUTE
+from storlets.sbus.datagram import FDMetadata, SBusExecuteDatagram
 from storlets.sbus import file_description as sbus_fd
-from storlets.sbus import command as sbus_cmd
+from storlets.sbus.client import SBusClient
+from storlets.sbus.client.exceptions import SBusClientException
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlets.gateway.common.logger import StorletLogger
@@ -246,21 +247,6 @@ class RunTimeSandbox(object):
         # TODO(change logger's route if possible)
         self.logger = logger
 
-    def _parse_sandbox_factory_answer(self, str_answer):
-        """
-        Parse answer string received from container side
-
-        :param str_answer: answer string
-        :returns: (status, message)
-        """
-        two_tokens = str_answer.split(':', 1)
-        if len(two_tokens) != 2:
-            self.logger.error('Got wrong format about answer over sbus: %s' %
-                              str_answer)
-            raise StorletRuntimeException('Got wrong answer')
-        status = (two_tokens[0] == 'True')
-        return status, two_tokens[1]
-
     def ping(self):
         """
         Ping to daemon factory process inside container
@@ -270,23 +256,17 @@ class RunTimeSandbox(object):
                   -1 when it fails to send command to the process
         """
         pipe_path = self.paths.host_factory_pipe()
-
-        with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusServiceDatagram(
-                sbus_cmd.SBUS_CMD_PING,
-                [write_fd],
-                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()])
-            rc = SBus.send(pipe_path, dtg)
-            if (rc < 0):
-                return -1
-
-            reply = os.read(read_fd, 10)
-
-        res, error_txt = self._parse_sandbox_factory_answer(reply)
-        if res is True:
-            return 1
-        self.logger.error('Failed to ping to daemon factory: %s' % error_txt)
-        return 0
+        client = SBusClient(pipe_path)
+        try:
+            resp = client.ping()
+            if resp.status:
+                return 1
+            else:
+                self.logger.error('Failed to ping to daemon factory: %s' %
+                                  resp.message)
+                return 0
+        except SBusClientException:
+            return -1
 
     def wait(self):
         """
@@ -386,89 +366,59 @@ class RunTimeSandbox(object):
             self, spath, storlet_id, language, language_version=None):
         """
         Start SDaemon process in the scope's sandbox
-
         """
-        prms = {'daemon_language': language.lower(),
-                'storlet_path': spath,
-                'storlet_name': storlet_id,
-                'uds_path': self.paths.sbox_storlet_pipe(storlet_id),
-                'log_level': self.storlet_daemon_debug_level,
-                'pool_size': self.storlet_daemon_thread_pool_size}
+        pipe_path = self.paths.host_factory_pipe()
+        client = SBusClient(pipe_path)
+        try:
+            resp = client.start_daemon(
+                language.lower(), spath, storlet_id,
+                self.paths.sbox_storlet_pipe(storlet_id),
+                self.storlet_daemon_debug_level,
+                self.storlet_daemon_thread_pool_size,
+                language_version)
 
-        if language_version:
-            prms.update({'daemon_language_version': language_version})
-
-        with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusServiceDatagram(
-                sbus_cmd.SBUS_CMD_START_DAEMON,
-                [write_fd],
-                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
-                prms)
-
-            pipe_path = self.paths.host_factory_pipe()
-            rc = SBus.send(pipe_path, dtg)
-            # TODO(takashi): Why we should rond rc into -1?
-            if (rc < 0):
-                return -1
-
-            reply = os.read(read_fd, 10)
-
-        res, error_txt = self._parse_sandbox_factory_answer(reply)
-        if res is True:
-            return 1
-        self.logger.error('Failed to start storlet daemon: %s' % error_txt)
-        return 0
+            if resp.status:
+                return 1
+            else:
+                self.logger.error('Failed to start storlet daemon: %s' %
+                                  resp.message)
+                return 0
+        except SBusClientException:
+            return -1
 
     def stop_storlet_daemon(self, storlet_id):
         """
         Stop SDaemon process in the scope's sandbox
         """
-        with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusServiceDatagram(
-                sbus_cmd.SBUS_CMD_STOP_DAEMON,
-                [write_fd],
-                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
-                {'storlet_name': storlet_id})
-            pipe_path = self.paths.host_factory_pipe()
-            rc = SBus.send(pipe_path, dtg)
-            if (rc < 0):
-                self.logger.info("Failed to send status command to %s %s" %
-                                 (self.scope, storlet_id))
-                return -1
-
-            reply = os.read(read_fd, 10)
-
-        res, error_txt = self._parse_sandbox_factory_answer(reply)
-        if res is True:
-            return 1
-        self.logger.error('Failed to stop storlet daemon: %s' % error_txt)
-        return 0
+        pipe_path = self.paths.host_factory_pipe()
+        client = SBusClient(pipe_path)
+        try:
+            resp = client.stop_daemon(storlet_id)
+            if resp.status:
+                return 1
+            else:
+                self.logger.error('Failed to stop storlet daemon: %s' %
+                                  resp.message)
+                return 0
+        except SBusClientException:
+            return -1
 
     def get_storlet_daemon_status(self, storlet_id):
         """
         Get the status of SDaemon process in the scope's sandbox
         """
-        with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusServiceDatagram(
-                sbus_cmd.SBUS_CMD_DAEMON_STATUS,
-                [write_fd],
-                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
-                {'storlet_name': storlet_id})
-            pipe_path = self.paths.host_factory_pipe()
-            rc = SBus.send(pipe_path, dtg)
-            if (rc < 0):
-                self.logger.info("Failed to send status command to %s %s" %
-                                 (self.scope, storlet_id))
-                return -1
-
-            reply = os.read(read_fd, 10)
-
-        res, error_txt = self._parse_sandbox_factory_answer(reply)
-        if res is True:
-            return 1
-        self.logger.error('Failed to get status about storlet daemon: %s' %
-                          error_txt)
-        return 0
+        pipe_path = self.paths.host_factory_pipe()
+        client = SBusClient(pipe_path)
+        try:
+            resp = client.daemon_status(storlet_id)
+            if resp.status:
+                return 1
+            else:
+                self.logger.error('Failed to get status about storlet '
+                                  'daemon: %s' % resp.message)
+                return 0
+        except SBusClientException:
+            return -1
 
     def _get_storlet_classpath(self, storlet_main, storlet_id, dependencies):
         """
@@ -715,18 +665,13 @@ class StorletInvocationProtocol(object):
         """
         Cancel on-going storlet execution
         """
-        with _open_pipe() as (read_fd, write_fd):
-            dtg = SBusServiceDatagram(
-                sbus_cmd.SBUS_CMD_CANCEL,
-                [write_fd],
-                [FDMetadata(sbus_fd.SBUS_FD_SERVICE_OUT).to_dict()],
-                None,
-                self.task_id)
-            rc = SBus.send(self.storlet_pipe_path, dtg)
-            if (rc < 0):
+        client = SBusClient(self.storlet_pipe_path)
+        try:
+            resp = client.cancel(self.task_id)
+            if not resp.status:
                 raise StorletRuntimeException('Failed to cancel task')
-            # TODO(takashi): Check the response here
-            os.read(read_fd, 10)
+        except SBusClientException:
+            raise StorletRuntimeException('Failed to cancel task')
 
     def _invoke(self):
         """
@@ -746,7 +691,7 @@ class StorletInvocationProtocol(object):
         execution
         """
         dtg = SBusExecuteDatagram(
-            sbus_cmd.SBUS_CMD_EXECUTE,
+            SBUS_CMD_EXECUTE,
             self.remote_fds,
             self.remote_fds_metadata,
             self.srequest.params)

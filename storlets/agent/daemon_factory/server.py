@@ -21,9 +21,9 @@ import subprocess
 import time
 
 from storlets.sbus import SBus
-from storlets.sbus.datagram import FDMetadata, SBusServiceDatagram
-from storlets.sbus.command import SBUS_CMD_HALT, SBUS_CMD_PING
-from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
+from storlets.sbus.client import SBusClient
+from storlets.sbus.client.exceptions import SBusClientException, \
+    SBusClientSendError
 from storlets.agent.common.server import command_handler, CommandSuccess, \
     CommandFailure, SBusServer
 from storlets.agent.common.utils import get_logger, DEFAULT_PY2, DEFAULT_PY3
@@ -187,24 +187,19 @@ class StorletDaemonFactory(SBusServer):
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send PING command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
-        read_fd, write_fd = os.pipe()
-        try:
-            dtg = SBusServiceDatagram(
-                SBUS_CMD_PING,
-                [write_fd],
-                [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()])
-            for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
-                ret = SBus.send(storlet_pipe_name, dtg)
-                if ret >= 0:
-                    resp = os.read(read_fd, 128)
-                    if resp.startswith('True'):
-                        return True
-                    time.sleep(1)
-            else:
-                return False
-        finally:
-            os.close(read_fd)
-            os.close(write_fd)
+        client = SBusClient(storlet_pipe_name)
+        for i in range(self.NUM_OF_TRIES_PINGING_STARTING_DAEMON):
+            try:
+                resp = client.ping()
+                if resp.status:
+                    return True
+            except SBusClientSendError:
+                pass
+            except SBusClientException:
+                self.logger.exception('Failed to send sbus command')
+                break
+            time.sleep(1)
+        return False
 
     def process_start_daemon(self, daemon_language, storlet_path, storlet_name,
                              pool_size, uds_path, log_level,
@@ -412,25 +407,20 @@ class StorletDaemonFactory(SBusServer):
         self.logger.debug('Send HALT command to {0} via {1}'.
                           format(storlet_name, storlet_pipe_name))
 
-        read_fd, write_fd = os.pipe()
+        client = SBusClient(storlet_pipe_name)
         try:
-            dtg = SBusServiceDatagram(
-                SBUS_CMD_HALT,
-                [write_fd],
-                [FDMetadata(SBUS_FD_SERVICE_OUT).to_dict()])
-            rc = SBus.send(storlet_pipe_name, dtg)
-            os.close(write_fd)
-            if rc < 0:
+            resp = client.halt()
+            if not resp.status:
+                self.logger.error('Failed to send sbus command: %s' %
+                                  resp.message)
                 raise SDaemonError(
-                    'Failed to send halt command to the storlet daemon {0}'
-                    .format(storlet_name))
-            resp = os.read(read_fd, 128)
-            if not resp.startswith('True'):
-                raise SDaemonError(
-                    'Failed to send halt command to the storlet daemon {0}'
-                    .format(storlet_name))
-        finally:
-            os.close(read_fd)
+                    'Failed to send halt to {0}'.format(storlet_name))
+
+        except SBusClientException:
+            self.logger.exception('Failed to send sbus command')
+            raise SDaemonError(
+                'Failed to send halt command to the storlet daemon {0}'
+                .format(storlet_name))
 
         try:
             os.waitpid(dmn_pid, 0)

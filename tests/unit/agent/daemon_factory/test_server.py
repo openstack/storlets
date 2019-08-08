@@ -12,12 +12,15 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+from contextlib import contextmanager
 import errno
 import mock
 import unittest
 
 from storlets.sbus import command as sbus_cmd
+from storlets.sbus.client import SBusResponse
+from storlets.sbus.client.exceptions import SBusClientSendError
+
 from storlets.agent.daemon_factory.server import SDaemonError, \
     StorletDaemonFactory
 from storlets.agent.common.utils import DEFAULT_PY2, DEFAULT_PY3
@@ -35,7 +38,12 @@ class TestStorletDaemonFactory(unittest.TestCase):
     base_path = 'storlets.agent.daemon_factory.server'
     kill_path = base_path + '.os.kill'
     waitpid_path = base_path + '.os.waitpid'
-    sbus_path = base_path + '.SBus'
+
+    @contextmanager
+    def _mock_sbus_client(self, method):
+        sbusclient_path = self.base_path + '.SBusClient'
+        with mock.patch('.'.join([sbusclient_path, method])) as _method:
+            yield _method
 
     def setUp(self):
         self.logger = FakeLogger()
@@ -110,13 +118,11 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.waitpid_path) as waitpid, \
-                mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read:
+                self._mock_sbus_client('ping') as ping:
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            ping.return_value = SBusResponse(True, 'OK')
             self.dfactory.spawn_subprocess(
                 ['arg0', 'argv1', 'argv2'],
                 {'envk0': 'envv0'}, 'storleta')
@@ -127,13 +133,11 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.waitpid_path) as waitpid, \
-                mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read:
+                self._mock_sbus_client('ping') as ping:
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
-            send.return_value = 0
-            read.return_value = 'False: NG'
+            ping.return_value = SBusResponse(False, 'NG')
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
@@ -165,40 +169,32 @@ class TestStorletDaemonFactory(unittest.TestCase):
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a'}
 
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.time.sleep'), \
-                mock.patch(self.base_path + '.os.read') as read:
-            send.side_effect = [-1, 0]
-            read.return_value = 'True: OK'
+        with self._mock_sbus_client('ping') as ping, \
+                mock.patch(self.base_path + '.time.sleep'):
+            ping.return_value = SBusResponse(True, 'OK')
             self.assertTrue(
                 self.dfactory.wait_for_daemon_to_initialize('storleta'))
-            self.assertEqual(2, send.call_count)
-            self.assertEqual(1, read.call_count)
+            self.assertEqual(1, ping.call_count)
 
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.time.sleep'), \
-                mock.patch(self.base_path + '.os.read') as read:
-            send.return_value = 0
-            read.return_value = 'False: NG'
+        with self._mock_sbus_client('ping') as ping, \
+                mock.patch(self.base_path + '.time.sleep'):
+            ping.return_value = SBusResponse(False, 'NG')
             self.assertFalse(
                 self.dfactory.wait_for_daemon_to_initialize('storleta'))
             self.assertEqual(
                 self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
-                send.call_count)
-            self.assertEqual(
-                self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
-                read.call_count)
+                ping.call_count)
 
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
+        with self._mock_sbus_client('ping') as ping, \
                 mock.patch(self.base_path + '.time.sleep'):
-            send.return_value = -1
+            ping.side_effect = SBusClientSendError()
             self.assertFalse(
                 self.dfactory.wait_for_daemon_to_initialize('storleta'))
             self.assertEqual(
                 self.dfactory.NUM_OF_TRIES_PINGING_STARTING_DAEMON,
-                send.call_count)
+                ping.call_count)
 
     def test_process_start_daemon(self):
         # Not running
@@ -213,13 +209,11 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.waitpid_path) as waitpid, \
-                mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read:
+                self._mock_sbus_client('ping') as ping:
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            ping.return_value = SBusResponse(True, 'OK')
             self.assertTrue(self.dfactory.process_start_daemon(
                 'java', 'path/to/storlet/a', 'storleta', 1, 'path/to/uds/a',
                 'TRACE'))
@@ -404,11 +398,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path):
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            halt.return_value = SBusResponse(True, 'OK')
             terminated = self.dfactory.shutdown_all_processes()
             self.assertEqual(2, len(terminated))
             self.assertIn('storleta', terminated)
@@ -421,17 +413,15 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'patha', 'storletb': 'pathb'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path) as waitpid:
-            send.return_value = -1
-            read.return_value = 'True: OK'
+            halt.side_effect = SBusClientSendError()
             exc_pattern = '^Failed to shutdown some storlet daemons: .*'
             with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
                 self.dfactory.shutdown_all_processes()
             self.assertIn('storleta', str(e.exception))
             self.assertIn('storletb', str(e.exception))
-            self.assertEqual(2, send.call_count)
+            self.assertEqual(2, halt.call_count)
             self.assertEqual(0, waitpid.call_count)
             self.assertEqual({'storleta': 1000, 'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
@@ -441,16 +431,14 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'patha', 'storletb': 'pathb'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path) as waitpid:
-            send.return_value = -1
-            read.return_value = 'True: OK'
+            halt.side_effect = SBusClientSendError()
             exc_pattern = ('^Failed to send halt command to the storlet '
                            'daemon storlet[a-b]$')
             with self.assertRaisesRegexp(SDaemonError, exc_pattern):
                 self.dfactory.shutdown_all_processes(False)
-            self.assertEqual(1, send.call_count)
+            self.assertEqual(1, halt.call_count)
             self.assertEqual(0, waitpid.call_count)
             self.assertEqual({'storleta': 1000, 'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
@@ -461,11 +449,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path):
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            halt.return_value = SBusResponse(True, 'OK')
             self.dfactory.shutdown_process('storleta')
             self.assertEqual({'storletb': 1001},
                              self.dfactory.storlet_name_to_pid)
@@ -475,11 +461,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path) as waitpid:
-            send.return_value = -1
-            read.return_value = 'True: OK'
+            halt.side_effect = SBusClientSendError()
             with self.assertRaises(SDaemonError):
                 self.dfactory.shutdown_process('storleta')
             self.assertEqual(0, waitpid.call_count)
@@ -491,11 +475,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path) as waitpid:
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            halt.return_value = SBusResponse(True, 'OK')
             waitpid.side_effect = OSError()
             with self.assertRaises(SDaemonError):
                 self.dfactory.shutdown_process('storleta')
@@ -529,13 +511,13 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.base_path + '.subprocess.Popen') as popen, \
                 mock.patch(self.base_path + '.time.sleep'), \
                 mock.patch(self.waitpid_path) as waitpid, \
-                mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read:
+                self._mock_sbus_client('ping') as ping, \
+                self._mock_sbus_client('start_daemon') as start_daemon:
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
             waitpid.return_value = 0, 0
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            ping.return_value = SBusResponse(True, 'OK')
+            start_daemon.return_value = SBusResponse(True, 'OK')
             ret = self.dfactory.start_daemon(DummyDatagram(prms))
             self.assertTrue(ret.status)
             self.assertEqual('OK', ret.message)
@@ -621,11 +603,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
             {'storleta': 1000, 'storletb': 1001}
         self.dfactory.storlet_name_to_pipe_name = \
             {'storleta': 'path/to/uds/a', 'storletb': 'path/to/uds/b'}
-        with mock.patch(self.sbus_path + '.send') as send, \
-                mock.patch(self.base_path + '.os.read') as read, \
+        with self._mock_sbus_client('halt') as halt, \
                 mock.patch(self.waitpid_path):
-            send.return_value = 0
-            read.return_value = 'True: OK'
+            halt.return_value = SBusResponse(True, 'OK')
             resp = self.dfactory.halt(DummyDatagram())
             self.assertTrue(resp.status)
             self.assertIn('storleta: terminated', resp.message)
