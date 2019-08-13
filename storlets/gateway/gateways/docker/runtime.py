@@ -247,6 +247,9 @@ class RunTimeSandbox(object):
         # TODO(change logger's route if possible)
         self.logger = logger
 
+        self.default_docker_image_name = \
+            conf.get('default_docker_image_name', 'ubuntu_18.04_jre8_storlets')
+
     def ping(self):
         """
         Ping to daemon factory process inside container
@@ -354,12 +357,9 @@ class RunTimeSandbox(object):
             self.logger.exception("Failed to start docker container from "
                                   "tenant image %s" % docker_image_name)
 
-            # TODO(eranr): move the default tenant image name to a config var
-            docker_image_name = 'ubuntu_16.04_jre8_storlets'
-
             self.logger.info("Trying to start docker container from default "
-                             "image: %s" % docker_image_name)
-            self._restart(docker_image_name)
+                             "image: %s" % self.default_docker_image_name)
+            self._restart(self.default_docker_image_name)
             self.wait()
 
     def start_storlet_daemon(
