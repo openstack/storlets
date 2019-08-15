@@ -62,10 +62,6 @@ public class STaskFactory {
             this.logger_.trace("createStorletTask: "
                     + "received EXECUTE command");
             ResObj = createExecutionTask(dtg, sExecManager);
-        } else if (command.equals("SBUS_CMD_DESCRIPTOR")) {
-            this.logger_.trace("createStorletTask: "
-                    + "received Descriptor command");
-            ResObj = createDescriptorTask(dtg);
         } else if (command.equals("SBUS_CMD_PING")) {
             this.logger_.trace("createStorletTask: "
                     + "received Ping command");
@@ -153,57 +149,6 @@ public class STaskFactory {
         }
         return new SExecutionTask(storlet_, inStreams, outStreams, taskIdOut,
                 dtg.getExecParams(), storletLogger, logger_, sExecManager);
-    }
-
-    private SDescriptorTask createDescriptorTask(ServerSBusInDatagram dtg) {
-        SDescriptorTask ResObj = null;
-        String strKey = "";
-        boolean bStatus = true;
-
-        if (2 != dtg.getNFiles()) {
-            this.logger_.error("createDescriptorTask: "
-                    + "Wrong fd count for descriptor command. "
-                    + "Expected 2, got " + dtg.getNFiles());
-            bStatus = false;
-        }
-        this.logger_.trace("createDescriptorTask: #FDs is good");
-
-        if (bStatus) {
-            strKey = dtg.getExecParams().get("key");
-            if (null == strKey) {
-                this.logger_.error("createDescriptorTask: "
-                        + "No key in params");
-                bStatus = false;
-            }
-            this.logger_.trace("createDescriptorTask: key is good");
-        }
-
-        if (bStatus) {
-            // type is a metadata field used internally, and it should not
-            // make it further to the Storlet invocation
-            String strFDType = dtg.getFilesMetadata()[0].get("storlets").get("type");
-            if (!strFDType.equals("SBUS_FD_OUTPUT_OBJECT")) {
-                this.logger_.error("createDescriptorTask: "
-                        + "Wrong fd type for descriptor command. "
-                        + "Expected SBUS_FD_OUTPUT_OBJECT " + " got "
-                        + strFDType);
-                bStatus = false;
-            }
-            this.logger_.trace("createStorletTask: "
-                    + "fd metadata is good. Creating object stream");
-        }
-
-        if (bStatus) {
-            StorletObjectOutputStream objStream = new StorletObjectOutputStream(
-                    dtg.getFiles()[0], dtg.getFilesMetadata()[0].get("storage"),
-                    dtg.getFiles()[1]);
-            // parse descriptor stuff
-            this.logger_.trace("createStorletTask: "
-                    + "Returning StorletDescriptorTask");
-            ResObj = new SDescriptorTask(objStream, strKey, requestsTable_,
-                    logger_);
-        }
-        return ResObj;
     }
 
     private SCancelTask createCancelTask(
