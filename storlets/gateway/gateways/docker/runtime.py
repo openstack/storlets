@@ -43,19 +43,6 @@ MAX_METADATA_SIZE = 4096
 eventlet.monkey_patch()
 
 
-@contextmanager
-def _open_pipe():
-    """
-    Context manager for os.pipe
-    """
-    read_fd, write_fd = os.pipe()
-    try:
-        yield (read_fd, write_fd)
-    finally:
-        os.close(read_fd)
-        os.close(write_fd)
-
-
 """---------------------------------------------------------------------------
 Sandbox API
 """
