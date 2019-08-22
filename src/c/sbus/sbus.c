@@ -20,6 +20,7 @@
 
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <syslog.h>
 #include <stdlib.h>
 #include <sys/un.h>
