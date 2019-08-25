@@ -262,7 +262,7 @@ Create the run time directory
 
 ::
 
-    export STORLETS_HOME=/home/docker_device
+    export STORLETS_HOME=/var/lib/storlets
     sudo mkdir -p $STORLETS_HOME
     sudo chmod 777 $STORLETS_HOME
 
@@ -328,12 +328,12 @@ with the following content:
 
     [DEFAULT]
     storlet_logcontainer = storletlog
-    host_root = /home/docker_device
-    cache_dir = /home/docker_device/cache/scopes
-    log_dir = /home/docker_device/logs/scopes
-    script_dir = /home/docker_device/scripts
-    storlets_dir = /home/docker_device/storlets/scopes
-    pipes_dir = /home/docker_device/pipes/scopes
+    host_root = /var/lib/storlets
+    cache_dir = /var/lib/storlets/cache/scopes
+    log_dir = /var/lib/storlets/logs/scopes
+    script_dir = /var/lib/storlets/scripts
+    storlets_dir = /var/lib/storlets/storlets/scopes
+    pipes_dir = /var/lib/storlets/pipes/scopes
     storlet_timeout = 40
     docker_repo =
     restart_linux_container_timeout = 3

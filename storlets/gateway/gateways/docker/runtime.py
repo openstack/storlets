@@ -115,7 +115,7 @@ class RunTimePaths(object):
         self.sandbox_pipe_dir = '/mnt/channels'
 
         self.sandbox_storlet_base_dir = '/home/swift'
-        self.host_root_dir = conf.get('host_root', '/home/docker_device')
+        self.host_root_dir = conf.get('host_root', '/var/lib/storlets')
         self.host_pipe_root_dir = \
             conf.get('pipes_dir',
                      os.path.join(self.host_root_dir, 'pipes', 'scopes'))

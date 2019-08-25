@@ -75,7 +75,7 @@ storlets with EC and encryption. Valid values are true / false
 ::
 
   # A cross nodes directory for Storlets internal usage. Must exist with the same name in all proxy and storage nodes.
-  docker_device: /home/docker_device
+  docker_device: /var/lib/storlets
 
   # A pointer to this repo
   storlet_source_dir: <need to point to the repo root>

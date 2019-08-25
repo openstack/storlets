@@ -88,7 +88,7 @@ class TestRuntimePaths(unittest.TestCase):
 
     def _initialize(self):
         # TODO(takashi): take these values from config file
-        base_dir = '/home/docker_device'
+        base_dir = '/var/lib/storlets'
         self.script_dir = os.path.join(base_dir, 'scripts')
         self.pipes_dir = os.path.join(base_dir, 'pipes', 'scopes')
         self.storlets_dir = os.path.join(base_dir, 'storlets', 'scopes')
@@ -200,16 +200,16 @@ class TestRuntimePaths(unittest.TestCase):
         storlet_id = 'Storlet-1.0.jar'
 
         # For pipe
-        self.assertEqual('/home/docker_device/pipes/scopes/account',
+        self.assertEqual('/var/lib/storlets/pipes/scopes/account',
                          runtime_paths.host_pipe_dir)
 
         # 1. host_factory_pipe_path <pipes_dir>/<scope>/factory_pipe
         self.assertEqual(
-            '/home/docker_device/pipes/scopes/account/factory_pipe',
+            '/var/lib/storlets/pipes/scopes/account/factory_pipe',
             runtime_paths.host_factory_pipe)
         # 2. host_storlet_pipe_path <pipes_dir>/<scope>/<storlet_id>
         self.assertEqual(
-            '/home/docker_device/pipes/scopes/account/Storlet-1.0.jar',
+            '/var/lib/storlets/pipes/scopes/account/Storlet-1.0.jar',
             runtime_paths.get_host_storlet_pipe(storlet_id))
         # 3. Yes, right now, we don't have the path for #3 in Python
         # 4. sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>
@@ -217,10 +217,10 @@ class TestRuntimePaths(unittest.TestCase):
                          runtime_paths.get_sbox_storlet_pipe(storlet_id))
 
         # This looks like for jar load?
-        self.assertEqual('/home/docker_device/storlets/scopes/account',
+        self.assertEqual('/var/lib/storlets/storlets/scopes/account',
                          runtime_paths.host_storlet_base_dir)
         self.assertEqual(
-            '/home/docker_device/storlets/scopes/account/Storlet-1.0.jar',
+            '/var/lib/storlets/storlets/scopes/account/Storlet-1.0.jar',
             runtime_paths.get_host_storlet_dir(storlet_id))
         # And this one is a mount poit in sand box?
         self.assertEqual('/home/swift/Storlet-1.0.jar',
