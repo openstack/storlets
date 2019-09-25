@@ -14,8 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.openstack.storlet.daemon;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
 
 import org.slf4j.Logger;
 
@@ -30,6 +34,22 @@ public class SAbstractTask {
 
     public SAbstractTask(Logger logger) {
         this.logger = logger;
+    }
+
+    protected boolean respond(OutputStream ostream, boolean status, String message) {
+        JSONObject obj = new JSONObject();
+        obj.put("status", status);
+        obj.put("message", message);
+        boolean bStatus = true;
+        try {
+            ostream.write(obj.toJSONString().getBytes());
+            ostream.flush();
+            ostream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            bStatus = false;
+        }
+        return bStatus;
     }
 
 }

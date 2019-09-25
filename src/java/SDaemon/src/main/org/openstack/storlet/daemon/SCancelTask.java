@@ -54,15 +54,7 @@ public class SCancelTask extends SAbstractTask {
      * run
      * */
     public boolean run() {
-        boolean bStatus = true;
-        try {
-            this.sOut_.write((new String("True: OK")).getBytes());
-            this.sOut_.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            bStatus = false;
-        }
-        return bStatus;
+        return respond(this.sOut_, true, new String("OK"));
     }
 }
 /* ============================== END OF FILE =============================== */
