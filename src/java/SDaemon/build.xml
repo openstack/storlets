@@ -16,7 +16,7 @@
 
 <project>
     <property name="jarname" value="SDaemon.jar"/>
-    <property name="libdir" value="/usr/local/lib/storlets"/>
+    <property name="libdir" value="/usr/local/lib/storlets/java"/>
 
     <target name="clean">
         <delete dir="bin" />

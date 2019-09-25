@@ -69,7 +69,8 @@ class StorletDaemonFactory(SBusServer):
         :returns: (A list of the JVM arguments, A list of environ parameters)
         """
 
-        str_prfx = "/usr/local/lib/storlets"
+        lib_dir = "/usr/local/lib/storlets"
+        java_lib_dir = os.path.join(lib_dir, "java")
 
         jar_deps = ['logback-classic-1.1.2.jar',
                     'logback-core-1.1.2.jar',
@@ -79,9 +80,9 @@ class StorletDaemonFactory(SBusServer):
                     'SCommon.jar',
                     'SDaemon.jar',
                     '']
-        jar_deps = [os.path.join(str_prfx, x) for x in jar_deps]
-        str_dmn_clspth = ':'.join(jar_deps) + ':' + storlet_path
-        str_library_path = str_prfx
+        jar_deps = [os.path.join(java_lib_dir, x) for x in jar_deps]
+        str_dmn_clspth = ':'.join(jar_deps + [storlet_path])
+        str_library_path = ':'.join([lib_dir, java_lib_dir])
 
         str_daemon_main_class = "org.openstack.storlet.daemon.SDaemon"
 

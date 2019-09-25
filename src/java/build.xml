@@ -37,7 +37,7 @@
     </target>
     <!-- Install build Dependencies-->
     <target name="install_dependencies" depends="dependencies">
-        <copy todir="/usr/local/lib/storlets">
+        <copy todir="/usr/local/lib/storlets/java">
             <fileset dir="dependencies" />
         </copy>
     </target>
