@@ -112,27 +112,26 @@ class RunTimePaths(object):
         :param conf: gateway conf
         """
         self.scope = scope
-        self.factory_pipe_suffix = 'factory_pipe'
-        self.sandbox_pipe_prefix = '/mnt/channels'
-        self.storlet_pipe_suffix = '_storlet_pipe'
+        self.factory_pipe_name = 'factory_pipe'
+        self.sandbox_pipe_dir = '/mnt/channels'
 
-        self.sandbox_storlet_dir_prefix = '/home/swift'
-        self.host_root = conf.get('host_root', '/home/docker_device')
-        self.host_pipe_root = \
+        self.sandbox_storlet_base_dir = '/home/swift'
+        self.host_root_dir = conf.get('host_root', '/home/docker_device')
+        self.host_pipe_root_dir = \
             conf.get('pipes_dir',
-                     os.path.join(self.host_root, 'pipes', 'scopes'))
-        self.host_storlet_root = \
+                     os.path.join(self.host_root_dir, 'pipes', 'scopes'))
+        self.host_storlet_root_dir = \
             conf.get('storlets_dir',
-                     os.path.join(self.host_root, 'storlets', 'scopes'))
-        self.host_log_path_root = \
+                     os.path.join(self.host_root_dir, 'storlets', 'scopes'))
+        self.host_log_root_dir = \
             conf.get('log_dir',
-                     os.path.join(self.host_root, 'logs', 'scopes'))
-        self.host_cache_root = \
+                     os.path.join(self.host_root_dir, 'logs', 'scopes'))
+        self.host_cache_root_dir = \
             conf.get('cache_dir',
-                     os.path.join(self.host_root, 'cache', 'scopes'))
+                     os.path.join(self.host_root_dir, 'cache', 'scopes'))
         self.host_restart_script_dir = \
             conf.get('script_dir',
-                     os.path.join(self.host_root, 'scripts'))
+                     os.path.join(self.host_root_dir, 'scripts'))
 
         self.host_storlet_python_lib_dir = ('/usr/local/lib/python2.7/'
                                             'dist-packages/storlets')
@@ -143,48 +142,50 @@ class RunTimePaths(object):
         self.host_storlet_native_bin_dir = '/usr/local/libexec/storlets'
         self.sandbox_storlet_native_bin_dir = '/usr/local/libexec/storlets'
 
-    def host_pipe_prefix(self):
-        return os.path.join(self.host_pipe_root, self.scope)
+    @property
+    def host_pipe_dir(self):
+        return os.path.join(self.host_pipe_root_dir, self.scope)
 
-    def create_host_pipe_prefix(self):
-        path = self.host_pipe_prefix()
+    def create_host_pipe_dir(self):
+        path = self.host_pipe_dir
         if not os.path.exists(path):
             os.makedirs(path)
         # 0777 should be 0700 when we get user namespaces in Docker
         os.chmod(path, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+        return path
 
+    @property
     def host_factory_pipe(self):
-        return os.path.join(self.host_pipe_prefix(),
-                            self.factory_pipe_suffix)
+        return os.path.join(self.host_pipe_dir, self.factory_pipe_name)
 
-    def host_storlet_pipe(self, storlet_id):
-        return os.path.join(self.host_pipe_prefix(),
-                            storlet_id)
+    def get_host_storlet_pipe(self, storlet_id):
+        return os.path.join(self.host_pipe_dir, storlet_id)
 
-    def sbox_storlet_pipe(self, storlet_id):
-        return os.path.join(self.sandbox_pipe_prefix,
-                            storlet_id)
+    def get_sbox_storlet_pipe(self, storlet_id):
+        return os.path.join(self.sandbox_pipe_dir, storlet_id)
 
-    def sbox_storlet_exec(self, storlet_id):
-        return os.path.join(self.sandbox_storlet_dir_prefix, storlet_id)
+    def get_sbox_storlet_dir(self, storlet_id):
+        return os.path.join(self.sandbox_storlet_base_dir, storlet_id)
 
-    def host_storlet_prefix(self):
-        return os.path.join(self.host_storlet_root, self.scope)
+    @property
+    def host_storlet_base_dir(self):
+        return os.path.join(self.host_storlet_root_dir, self.scope)
 
-    def host_storlet(self, storlet_id):
-        return os.path.join(self.host_storlet_prefix(), storlet_id)
+    def get_host_storlet_dir(self, storlet_id):
+        return os.path.join(self.host_storlet_base_dir, storlet_id)
 
-    def slog_path(self, storlet_id):
-        log_dir = os.path.join(self.host_log_path_root, self.scope, storlet_id)
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        return log_dir
+    def get_host_slog_path(self, storlet_id):
+        return os.path.join(
+            self.host_log_root_dir, self.scope, storlet_id,
+            'storlet_invoke.log')
 
-    def get_host_storlet_cache_dir(self):
-        return os.path.join(self.host_cache_root, self.scope, 'storlet')
+    @property
+    def host_storlet_cache_dir(self):
+        return os.path.join(self.host_cache_root_dir, self.scope, 'storlet')
 
-    def get_host_dependency_cache_dir(self):
-        return os.path.join(self.host_cache_root, self.scope, 'dependency')
+    @property
+    def host_dependency_cache_dir(self):
+        return os.path.join(self.host_cache_root_dir, self.scope, 'dependency')
 
 """---------------------------------------------------------------------------
 Docker Stateful Container API
@@ -245,7 +246,7 @@ class RunTimeSandbox(object):
                    0 when the daemon factory is not responsive
                   -1 when it fails to send command to the process
         """
-        pipe_path = self.paths.host_factory_pipe()
+        pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.ping()
@@ -293,10 +294,10 @@ class RunTimeSandbox(object):
         docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
                                            self.scope)
 
-        pipe_mount = '%s:%s' % (self.paths.host_pipe_prefix(),
-                                self.paths.sandbox_pipe_prefix)
-        storlet_mount = '%s:%s:ro' % (self.paths.host_storlet_prefix(),
-                                      self.paths.sandbox_storlet_dir_prefix)
+        pipe_mount = '%s:%s' % (self.paths.host_pipe_dir,
+                                self.paths.sandbox_pipe_dir)
+        storlet_mount = '%s:%s:ro' % (self.paths.host_storlet_base_dir,
+                                      self.paths.sandbox_storlet_base_dir)
         storlet_python_lib_mount = '%s:%s:ro' % (
             self.paths.host_storlet_python_lib_dir,
             self.paths.sandbox_storlet_python_lib_dir)
@@ -330,7 +331,7 @@ class RunTimeSandbox(object):
         Restarts the scope's sandbox
 
         """
-        self.paths.create_host_pipe_prefix()
+        self.paths.create_host_pipe_dir()
 
         docker_image_name = self.scope
         try:
@@ -354,12 +355,12 @@ class RunTimeSandbox(object):
         """
         Start SDaemon process in the scope's sandbox
         """
-        pipe_path = self.paths.host_factory_pipe()
+        pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.start_daemon(
                 language.lower(), spath, storlet_id,
-                self.paths.sbox_storlet_pipe(storlet_id),
+                self.paths.get_sbox_storlet_pipe(storlet_id),
                 self.storlet_daemon_debug_level,
                 self.storlet_daemon_thread_pool_size,
                 language_version)
@@ -377,7 +378,7 @@ class RunTimeSandbox(object):
         """
         Stop SDaemon process in the scope's sandbox
         """
-        pipe_path = self.paths.host_factory_pipe()
+        pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.stop_daemon(storlet_id)
@@ -394,7 +395,7 @@ class RunTimeSandbox(object):
         """
         Get the status of SDaemon process in the scope's sandbox
         """
-        pipe_path = self.paths.host_factory_pipe()
+        pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.daemon_status(storlet_id)
@@ -416,12 +417,11 @@ class RunTimeSandbox(object):
         :param dependencies: A list of dependency file
         :returns: classpath string
         """
-        class_path = os.path.join(self.paths.sbox_storlet_exec(storlet_main),
-                                  storlet_id)
+        class_path = os.path.join(
+            self.paths.get_sbox_storlet_dir(storlet_main), storlet_id)
 
         dep_path_list = \
-            [os.path.join(self.paths.sbox_storlet_exec(storlet_main),
-                          dep)
+            [os.path.join(self.paths.get_sbox_storlet_dir(storlet_main), dep)
              for dep in dependencies]
 
         return class_path + ':' + ':'.join(dep_path_list)
@@ -496,9 +496,7 @@ class StorletInvocationProtocol(object):
                  timeout, logger, extra_sources=None):
         self.srequest = srequest
         self.storlet_pipe_path = storlet_pipe_path
-        self.storlet_logger_path = storlet_logger_path
-        self.storlet_logger = StorletLogger(self.storlet_logger_path,
-                                            'storlet_invoke')
+        self.storlet_logger = StorletLogger(storlet_logger_path)
         self.logger = logger
         self.timeout = timeout
 
@@ -524,9 +522,6 @@ class StorletInvocationProtocol(object):
                 {'read_fd': None, 'write_fd': None,
                  'user_metadata': source.user_metadata,
                  'data_iter': source.data_iter})
-
-        if not os.path.exists(storlet_logger_path):
-            os.makedirs(storlet_logger_path)
 
     @property
     def input_data_read_fd(self):
