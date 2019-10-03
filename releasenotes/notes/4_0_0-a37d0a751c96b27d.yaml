@@ -1,0 +1,23 @@
+---
+prelude: >
+    In this release, storlets project include various cleanup of the internal
+    protocol, in particular from short text to the json style and the syntax.
+    Those changes may affect to upgrade path on running environment. Please
+    see upgrade section in this release note.
+
+issues:
+  - |
+    Python3 works are going forward but not yet completed so we should finish
+    out it by the end of years. At least, py3-functional should pass on the
+    gate.
+
+upgrade:
+  - |
+    As you can see in prelude, storlets has been changing the internal protocol
+    so you may get trouble if you would try to upgrade running cluster without
+    downtime. For safety, you should stop the swift/storlets process in a node
+    while upgrading. The upgrade should include re-compile of storlets java
+    modules.
+
+fixes:
+  - Other various minor bug fixes.
