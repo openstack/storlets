@@ -65,6 +65,8 @@ class FileDescriptorIterator(object):
             self.buf = b''
         return data
 
+    __next__ = next
+
     def _close_check(self):
         if self.closed:
             raise ValueError('I/O operation on closed file')

@@ -19,7 +19,6 @@ from shutil import rmtree
 from tempfile import mkdtemp
 import eventlet
 import json
-import six
 from six import StringIO
 
 import mock
@@ -208,10 +207,6 @@ class TestDockerStorletRequest(unittest.TestCase):
 class TestStorletDockerGateway(unittest.TestCase):
 
     def setUp(self):
-        if six.PY3:
-            self.skipTest(
-                "swift.common.internal_client.InternalClient for testing"
-                "doesn't suppoert py3 yet")
         # TODO(takashi): take these values from config file
         self.tempdir = mkdtemp()
         self.sconf = {
@@ -479,7 +474,8 @@ use = egg:swift#catch_errors
                 value = next(value_generator)
             except StopIteration:
                 raise Exception('called more then expected')
-            return value
+            # NOTE(takashi): Make sure that we return bytes in PY3
+            return value.encode('utf-8')
 
         def mock_close(fd):
             pass
@@ -516,7 +512,7 @@ use = egg:swift#catch_errors
             sresp = self.gateway.invocation_flow(st_req, extra_sources)
             eventlet.sleep(0.1)
             file_like = FileLikeIter(sresp.data_iter)
-            self.assertEqual('something', file_like.read())
+            self.assertEqual(b'something', file_like.read())
 
         # I hate the decorator to return an instance but to track current
         # implementation, we have to make a mock class for this. Need to fix.
