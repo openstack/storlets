@@ -157,8 +157,8 @@ class StorletDaemon(SBusServer):
             self._wait_child_process()
 
         self.logger.debug('Returning task_id: %s ' % task_id)
-        with os.fdopen(task_id_out_fd, 'w') as outfile:
-            outfile.write(task_id)
+        with os.fdopen(task_id_out_fd, 'wb') as outfile:
+            outfile.write(task_id.encode("utf-8"))
 
         storlet_md = dtg.object_in_storlet_metadata
         params = dtg.params

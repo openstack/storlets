@@ -121,7 +121,7 @@ class SBusServer(object):
 
         try:
             outfd = dtg.service_out_fd
-            with os.fdopen(outfd, 'w') as outfile:
+            with os.fdopen(outfd, 'wb') as outfile:
                 self._respond(outfile, resp)
         except AttributeError:
             # TODO(takashi): Currently we return response via service out fd

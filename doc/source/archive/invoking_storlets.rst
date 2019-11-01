@@ -138,8 +138,8 @@ the code below shows the invocation. Some notes:
             querystring = 'execute=true'
         else:
             querystring = None
-    
-        fileobj = open(file_name_to_upload,'r')
+
+        fileobj = open(file_name_to_upload,'rb')
         random_md = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(32))
         headers = {'X-Run-Storlet': 'identitystorlet-1.0.jar', 'X-Object-Meta-Testkey' : random_md}
         c.put_object(url,

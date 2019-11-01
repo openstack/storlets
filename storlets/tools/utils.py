@@ -29,7 +29,7 @@ def put_local_file(url, token, container, local_dir, local_file, headers=None):
     :param headers: headers parameters to be included in request headers
     """
     resp = dict()
-    with open(os.path.join(local_dir, local_file), 'r') as f:
+    with open(os.path.join(local_dir, local_file), 'rb') as f:
         client.put_object(url, token, container, local_file, f,
                           headers=headers,
                           content_type="application/octet-stream",

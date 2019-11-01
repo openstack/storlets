@@ -774,7 +774,7 @@ class StorletInvocationProtocol(object):
 
     @contextmanager
     def _open_writer(self, fd):
-        with os.fdopen(fd, 'w') as writer:
+        with os.fdopen(fd, 'wb') as writer:
             yield writer
 
     def _write_input_data(self, fd, data_iter):

@@ -39,7 +39,7 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
                                         self.storlet_file,
                                         response_dict=resp,
                                         headers=headers)
-        with open('/tmp/sample.jpg', 'w') as f:
+        with open('/tmp/sample.jpg', 'wb') as f:
             f.write(gf)
 
         self.assertIn(resp['status'], [200, 202])
@@ -50,7 +50,7 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
         headers.update(self.additional_headers)
         resp = dict()
         source_file = '%s/%s' % (self.path_to_bundle, self.storlet_file)
-        with open(source_file, 'r') as f:
+        with open(source_file, 'rb') as f:
             c.put_object(self.url, self.token,
                          self.container, 'gen_thumb_on_put.jpg', f,
                          headers=headers,

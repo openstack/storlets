@@ -128,15 +128,15 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
     def test_put_1GB_file(self):
         gf_file_path = '/tmp/1GB_file'
         with self._filecontext(gf_file_path):
-            GBFile = open('/tmp/1GB_file', 'w')
+            GBFile = open('/tmp/1GB_file', 'wb')
             for _ in range(128):
                 uploaded_content = ''.join('1' for _ in range(8 * 1024 * 1024))
-                GBFile.write(uploaded_content)
+                GBFile.write(uploaded_content.encode("utf-8"))
             GBFile.close()
 
             headers = {'X-Run-Storlet': self.storlet_name}
             headers.update(self.additional_headers)
-            GBFile = open('/tmp/1GB_file', 'r')
+            GBFile = open('/tmp/1GB_file', 'rb')
             response = dict()
             c.put_object(self.url, self.token,
                          self.container, '1GBFile', GBFile,

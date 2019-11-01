@@ -432,7 +432,7 @@ class StorletMagics(Magics):
         # invoke storlet app on copy
         conn = get_swift_connection()
         response_dict = dict()
-        with open(args.input, 'r') as content:
+        with open(args.input, 'rb') as content:
             conn.put_object(
                 dst_container, dst_obj,
                 content,

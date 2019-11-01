@@ -19,7 +19,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 import eventlet
 import json
-from six import StringIO
+from six import BytesIO, StringIO
 
 import mock
 import unittest
@@ -231,8 +231,8 @@ class TestStorletDockerGateway(unittest.TestCase):
         # TODO(kota_): should be 'storlet-internal-client.conf' actually
         ic_conf_path = os.path.join(self.tempdir,
                                     'storlet-proxy-server.conf')
-        with open(ic_conf_path, 'w') as f:
-            f.write("""
+        with open(ic_conf_path, 'wb') as f:
+            f.write(b"""
 [DEFAULT]
 [pipeline:main]
 pipeline = catch_errors proxy-logging cache proxy-server
@@ -519,10 +519,10 @@ use = egg:swift#catch_errors
 
         class MockFileManager(object):
             def get_storlet(self, req):
-                return StringIO('mock'), None
+                return BytesIO(b'mock'), None
 
             def get_dependency(self, req):
-                return StringIO('mock'), None
+                return BytesIO(b'mock'), None
 
         st_req.file_manager = MockFileManager()
 

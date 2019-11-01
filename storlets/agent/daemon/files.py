@@ -81,12 +81,12 @@ class StorletFile(object):
 
 
 class StorletOutputFile(StorletFile):
-    mode = 'w'
+    mode = 'wb'
 
     def __init__(self, md_fd, obj_fd):
         super(StorletOutputFile, self).__init__(obj_fd)
         self._metadata = None
-        self.md_file = os.fdopen(md_fd, 'w')
+        self.md_file = os.fdopen(md_fd, 'wb')
 
     def get_metadata(self):
         if self._metadata is None:
@@ -96,7 +96,7 @@ class StorletOutputFile(StorletFile):
     def set_metadata(self, md):
         if self.md_file.closed:
             raise IOError('Sending metadata twice is not allowed')
-        self.md_file.write(json.dumps(md))
+        self.md_file.write(json.dumps(md).encode('utf-8'))
         self._metadata = md
         self.md_file.close()
 
@@ -201,7 +201,7 @@ class StorletLogger(object):
     def __init__(self, storlet_name, fd):
         self.fd = fd
         self.storlet_name = storlet_name
-        self.log_file = os.fdopen(self.fd, 'w')
+        self.log_file = os.fdopen(self.fd, 'wb')
 
     @property
     def closed(self):

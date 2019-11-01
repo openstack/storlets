@@ -232,7 +232,7 @@ in the deployment using Swift client section above.
                   'X-Object-Meta-Storlet-Dependency': dependencies,
                   'X-Object-Meta-Storlet-Object-Metadata':'no',
                   'X-Object-Meta-Storlet-Main': main_class_name}
-      f = open('%s/%s' % (local_path_to_storlet, storlet_name), 'r')
+      f = open('%s/%s' % (local_path_to_storlet, storlet_name), 'rb')
       content_length = None
       response = dict()
       client.put_object(url, token, 'storlet', storlet_name, f,
@@ -248,7 +248,7 @@ in the deployment using Swift client section above.
       metadata = {'X-Object-Meta-Storlet-Dependency-Version': '1'}
       # for an executable dependency
       # metadata['X-Object-Meta-Storlet-Dependency-Permissions'] = '0755'
-      f = open('%s/%s'% (local_path_to_dependency, dependency_name), 'r')
+      f = open('%s/%s'% (local_path_to_dependency, dependency_name), 'rb')
       content_length = None
       response = dict()
       client.put_object(url, token, 'dependency', dependency_name, f,

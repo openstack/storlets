@@ -249,7 +249,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :params sreq: DockerStorletRequest instance
         """
         if sreq.generate_log:
-            with open(slog_path, 'r') as logfile:
+            with open(slog_path, 'rb') as logfile:
                 storlet_name = sreq.storlet_id.split('-')[0]
                 log_obj_name = '%s.log' % storlet_name
                 sreq.file_manager.put_log(log_obj_name, logfile)
@@ -315,7 +315,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             data_iter, perm = get_func(obj_name)
 
             # TODO(takashi): Do not directly write to target path
-            with open(cache_target_path, 'w') as fn:
+            with open(cache_target_path, 'wb') as fn:
                 for data in data_iter:
                     fn.write(data)
 

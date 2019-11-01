@@ -98,20 +98,20 @@ class TestStorletOutputFile(TestStorletFile):
     def test_write(self):
         with self.sfile as sfile:
             sfile.set_metadata({})
-            sfile.write('testing')
+            sfile.write(b'testing')
             sfile.flush()
 
-        with open(self.fname, 'r') as f:
-            self.assertEqual('testing', f.read())
+        with open(self.fname, 'rb') as f:
+            self.assertEqual(b'testing', f.read())
 
     def test_writelines(self):
         with self.sfile as sfile:
             sfile.set_metadata({})
-            sfile.writelines(['tes', 'ti', 'ng'])
+            sfile.writelines([b'tes', b'ti', b'ng'])
             sfile.flush()
 
-        with open(self.fname, 'r') as f:
-            self.assertEqual('testing', f.read())
+        with open(self.fname, 'rb') as f:
+            self.assertEqual(b'testing', f.read())
 
 
 class TestStorletInputFile(TestStorletFile):

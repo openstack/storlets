@@ -138,7 +138,7 @@ class StorletDaemonFactory(SBusServer):
         # TODO(takashi): We had better use contextmanager
         # TODO(takashi): Where is this closed?
         try:
-            dn = open(os.devnull, 'w')
+            dn = open(os.devnull, 'wb')
             daemon_p = subprocess.Popen(
                 pargs, stdout=dn, stderr=subprocess.PIPE,
                 close_fds=True, shell=False, env=env)

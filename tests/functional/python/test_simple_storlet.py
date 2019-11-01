@@ -83,13 +83,13 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
     @attr('slow')
     def test_put_512MB_file(self):
         with tempfile.NamedTemporaryFile() as f:
-            with open(f.name, 'w') as wf:
+            with open(f.name, 'wb') as wf:
                 for _ in range(128):
-                    wf.write('1' * (4 * 1024 * 1024))
+                    wf.write(b'1' * (4 * 1024 * 1024))
 
             headers = {'X-Run-Storlet': self.storlet_name}
             headers.update(self.additional_headers)
-            with open(f.name, 'r') as rf:
+            with open(f.name, 'rb') as rf:
                 response = dict()
                 client.put_object(self.url, self.token,
                                   self.container, f.name, rf,

@@ -60,6 +60,10 @@ class DeployTestMixin(object):
         except pexpect.EOF as err:
             self.fail(
                 'Expected message "%s" not found: %s' % (message, err))
+        except AssertionError:
+            # drain all error message lines for debug
+            print(child.read())
+            raise
 
         # Make sure the existence in the swift inside
         # for storlet app

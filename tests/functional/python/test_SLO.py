@@ -97,10 +97,10 @@ class TestSLO(StorletPythonFunctionalTest):
                 if i in range(9):
                     self.assertEqual(chunk, self.chunks[i])
                 else:
-                    aux_content = ''
+                    aux_content = b''
                     for j in range(1, 4):
                         oname = 'aux_file%d' % j
-                        with open(oname, 'r') as f:
+                        with open(oname, 'rb') as f:
                             aux_content += f.read()
                     self.asertEqual(chunk, aux_content)
 

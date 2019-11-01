@@ -27,9 +27,11 @@ import unittest
 def create_local_chunks():
     for i in range(1, 10):
         oname = '/tmp/slo_chunk_%d' % i
-        f = open(oname, 'w')
-        f.write(''.join(random.choice(string.ascii_uppercase + string.digits)
-                for _ in range(1048576)))
+        f = open(oname, 'wb')
+        f.write(b''.join(
+            random.choice(
+                string.ascii_uppercase + string.digits).encode("utf-8")
+            for _ in range(1048576)))
         f.close()
 
 
@@ -70,7 +72,7 @@ class TestSLO(StorletJavaFunctionalTest):
         i = 1
         for chunk in body:
             oname = '/tmp/slo_chunk_%d' % i
-            f = open(oname, 'r')
+            f = open(oname, 'rb')
             file_content = f.read()
             # print '%s    %s' % (chunk[:10], file_content[:10])
             # print '%d    %d' % (len(chunk), len(file_content))
@@ -83,7 +85,7 @@ class TestSLO(StorletJavaFunctionalTest):
         assembly = []
         for i in range(1, 10):
             oname = '/tmp/slo_chunk_%d' % i
-            f = open(oname, 'r')
+            f = open(oname, 'rb')
             content_length = None
             response = dict()
             c.put_object(self.url, self.token,
@@ -121,7 +123,7 @@ class TestSLO(StorletJavaFunctionalTest):
             if chunk:
                 if i < 10:
                     oname = '/tmp/slo_chunk_%d' % i
-                    f = open(oname, 'r')
+                    f = open(oname, 'rb')
                     file_content = f.read()
                     # print '%s    %s' % (chunk[:10], file_content[:10])
                     # print '%d    %d' % (len(chunk), len(file_content))
@@ -132,7 +134,7 @@ class TestSLO(StorletJavaFunctionalTest):
                     aux_content = ''
                     for j in range(1, 4):
                         oname = '/tmp/aux_file%d' % j
-                        f = open(oname, 'r')
+                        f = open(oname, 'rb')
                         aux_content += f.read()
                         f.close()
                     self.ssertEqual(chunk, aux_content)
