@@ -17,7 +17,7 @@
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
-from eventlet.green import urllib2
+from six.moves.urllib.request import Request, urlopen
 
 
 class TestThumbnailStorlet(StorletJavaFunctionalTest):
@@ -101,9 +101,9 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
                    'X-Object-Meta-Name': 'thumbnail',
                    'Destination': '%s/gen_thumb_on_copy_.jpg' % self.container}
         headers.update(self.additional_headers)
-        req = urllib2.Request(url, headers=headers)
+        req = Request(url, headers=headers)
         req.get_method = lambda: 'COPY'
-        conn = urllib2.urlopen(req, timeout=10)
+        conn = urlopen(req, timeout=10)
         status = conn.getcode()
         self.assertIn(status, [201, 202])
 

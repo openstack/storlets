@@ -19,7 +19,7 @@ from swiftclient import client
 from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
-from eventlet.green import urllib2
+from six.moves.urllib.request import Request, urlopen
 from storlets.agent.common.utils import DEFAULT_PY3
 
 
@@ -136,9 +136,9 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
                    'X-Run-Storlet': self.storlet_name,
                    'Destination': '%s/%s' % (self.container, objname)}
         headers.update(self.additional_headers)
-        req = urllib2.Request(url, headers=headers)
+        req = Request(url, headers=headers)
         req.get_method = lambda: 'COPY'
-        conn = urllib2.urlopen(req, timeout=10)
+        conn = urlopen(req, timeout=10)
 
         self.assertEqual(201, conn.getcode())
         self.assertEqual('%s/%s' % (self.container, self.storlet_file),
