@@ -71,7 +71,7 @@ class SBus(object):
         sbus_back_.sbus_stop_logger()
 
     def create(self, sbus_name):
-        return self.sbus_back_.sbus_create(sbus_name)
+        return self.sbus_back_.sbus_create(sbus_name.encode("utf-8"))
 
     def listen(self, sbus_handler):
         return self.sbus_back_.sbus_listen(sbus_handler)
@@ -106,9 +106,15 @@ class SBus(object):
 
         # Extract Python strings
         n_metadata = pn_metadata.value
-        str_metadata = pp_metadata.value
+        # NOTE: because the storlets container may not have
+        # six module inside. Just check the type, not the python
+        # version. Anyway, the value should be bytes but python2
+        # can assume the bytes as str.
+        str_metadata = pp_metadata.value.decode("utf-8") \
+            if not isinstance(pp_metadata.value, str) else pp_metadata.value
         n_params = pn_params.value
-        str_params = pp_params.value
+        str_params = pp_params.value.decode("utf-8") \
+            if not isinstance(pp_params.value, str) else pp_params.value
 
         # Trim the junk out
         if 0 < n_metadata:
@@ -123,7 +129,7 @@ class SBus(object):
     def send(sbus_name, datagram):
         # Serialize the datagram into JSON strings and C integer array
         str_json_params = datagram.serialized_cmd_params
-        p_params = c_char_p(str_json_params)
+        p_params = c_char_p(str_json_params.encode("utf-8"))
         n_params = c_int(len(str_json_params))
 
         n_files = c_int(0)
@@ -133,7 +139,7 @@ class SBus(object):
 
         if datagram.num_fds > 0:
             str_json_metadata = datagram.serialized_metadata
-            p_metadata = c_char_p(str_json_metadata)
+            p_metadata = c_char_p(str_json_metadata.encode("utf-8"))
             n_metadata = c_int(len(str_json_metadata))
 
             n_fds = datagram.num_fds
@@ -147,11 +153,12 @@ class SBus(object):
 
         # Invoke C function
         sbus = SBus()
-        n_status = sbus.sbus_back_.sbus_send_msg(sbus_name,
-                                                 h_files,
-                                                 n_files,
-                                                 p_metadata,
-                                                 n_metadata,
-                                                 p_params,
-                                                 n_params)
+        n_status = sbus.sbus_back_.sbus_send_msg(
+            sbus_name.encode("utf-8"),
+            h_files,
+            n_files,
+            p_metadata,
+            n_metadata,
+            p_params,
+            n_params)
         return n_status
