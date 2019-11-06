@@ -319,8 +319,12 @@ class RunTimeSandbox(object):
         stdout, stderr = proc.communicate()
 
         if stdout:
+            if not isinstance(stdout, str):
+                stdout = stdout.decode("utf-8")
             self.logger.debug('STDOUT: %s' % stdout.replace('\n', '#012'))
         if stderr:
+            if not isinstance(stderr, str):
+                stderr = stderr.decode("utf-8")
             self.logger.error('STDERR: %s' % stderr.replace('\n', '#012'))
 
         if proc.returncode:
