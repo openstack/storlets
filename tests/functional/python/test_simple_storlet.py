@@ -81,11 +81,11 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
         self.assertEqual(204, resp['status'])
 
     @attr('slow')
-    def test_put_512MB_file(self):
+    def test_put_10MB_file(self):
         with tempfile.NamedTemporaryFile() as f:
             with open(f.name, 'wb') as wf:
-                for _ in range(128):
-                    wf.write(b'1' * (4 * 1024 * 1024))
+                for _ in range(10):
+                    wf.write(b'1' * (1 * 1024 * 1024))
 
             headers = {'X-Run-Storlet': self.storlet_name}
             headers.update(self.additional_headers)
@@ -93,7 +93,7 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
                 response = dict()
                 client.put_object(self.url, self.token,
                                   self.container, f.name, rf,
-                                  512 * 1024 * 1024, None, None,
+                                  10 * 1024 * 1024, None, None,
                                   "application/octet-stream",
                                   headers, None, None, None, response)
 

@@ -125,22 +125,22 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
             pass
 
     @attr('slow')
-    def test_put_1GB_file(self):
-        gf_file_path = '/tmp/1GB_file'
+    def test_put_10MB_file(self):
+        gf_file_path = '/tmp/10MB_file'
         with self._filecontext(gf_file_path):
-            GBFile = open('/tmp/1GB_file', 'wb')
-            for _ in range(128):
-                uploaded_content = ''.join('1' for _ in range(8 * 1024 * 1024))
-                GBFile.write(uploaded_content.encode("utf-8"))
-            GBFile.close()
+            TenMBFile = open('/tmp/10MB_file', 'wb')
+            for _ in range(10):
+                uploaded_content = ''.join('1' for _ in range(1 * 1024 * 1024))
+                TenMBFile.write(uploaded_content.encode("utf-8"))
+            TenMBFile.close()
 
             headers = {'X-Run-Storlet': self.storlet_name}
             headers.update(self.additional_headers)
-            GBFile = open('/tmp/1GB_file', 'rb')
+            TenMBFile = open('/tmp/10MB_file', 'rb')
             response = dict()
             c.put_object(self.url, self.token,
-                         self.container, '1GBFile', GBFile,
-                         1024 * 1024 * 1024, None, None,
+                         self.container, '10MBFile', TenMBFile,
+                         10 * 1024 * 1024, None, None,
                          "application/octet-stream",
                          headers, None, None, None, response)
             status = response.get('status')
