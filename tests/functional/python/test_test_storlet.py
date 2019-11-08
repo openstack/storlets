@@ -76,12 +76,12 @@ class TestTestStorlet(StorletPythonFunctionalTest):
                 self.url, self.token, 'storletlog', 'test.log',
                 None, None, None, None, headers)
             self.assertEqual(200, resp_headers.get('status'))
-            self.assertEqual('aaa', get_text.read())
+            self.assertEqual(b'aaa', get_text.read())
 
         if op == 'print':
             self.assertEqual(200, get_response_status)
-            self.assertIn('op     print', get_text)
-            self.assertIn('param2     val2', get_text)
+            self.assertIn(b'op     print', get_text)
+            self.assertIn(b'param2     val2', get_text)
 
     def test_print(self):
         self.invoke_storlet("print", False)

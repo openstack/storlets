@@ -35,10 +35,10 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
         obj2 = 'small2'
         c.put_object(self.url, self.token,
                      self.container, obj,
-                     '0123456789abcd')
+                     b'0123456789abcd')
         c.put_object(self.url, self.token,
                      self.container, obj2,
-                     'efghijklmnopqr')
+                     b'efghijklmnopqr')
 
         headers = {
             'X-Run-Storlet': self.storlet_name,
@@ -50,7 +50,7 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
         resp_headers, resp_content = c.get_object(
             self.url, self.token, self.container, obj,
             headers=headers)
-        self.assertEqual('0123456789abcdefghijklmnopqr',
+        self.assertEqual(b'0123456789abcdefghijklmnopqr',
                          resp_content)
 
     def test_put_x_copy_from_extra_sources(self):
@@ -59,11 +59,11 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
         copied_obj = 'copied'
         c.put_object(self.url, self.token,
                      self.container, obj,
-                     '0123456789abcd',
+                     b'0123456789abcd',
                      headers={'X-Object-Meta-Key1': 'value1'})
         c.put_object(self.url, self.token,
                      self.container, obj2,
-                     'efghijklmnopqr',
+                     b'efghijklmnopqr',
                      headers={'X-Object-Meta-Key2': 'value2'})
 
         headers = {
@@ -75,7 +75,7 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
         }
         headers.update(self.additional_headers)
 
-        expected_string = '0123456789abcdefghijklmnopqr'
+        expected_string = b'0123456789abcdefghijklmnopqr'
         etag = c.put_object(
             self.url, self.token, self.container, copied_obj,
             headers=headers)
@@ -111,8 +111,8 @@ class TestMultiInputMIMEStorlet(StorletPythonFunctionalTest):
     def test_get_multipart_mime_response(self):
         obj = 'small'
         obj2 = 'small2'
-        body = '0123456789abcd'
-        body2 = 'efghijklmnopqr'
+        body = b'0123456789abcd'
+        body2 = b'efghijklmnopqr'
         c.put_object(self.url, self.token,
                      self.container, obj, body)
         c.put_object(self.url, self.token,
@@ -132,12 +132,13 @@ class TestMultiInputMIMEStorlet(StorletPythonFunctionalTest):
         multipart_prefix = 'multipart/mixed; boundary='
         # N.B. swiftclient makes the header key as lower case
         self.assertIn('content-type', resp_headers)
-        self.assertIn(
-            multipart_prefix, resp_headers['content-type'])
+        self.assertEqual(multipart_prefix,
+                         resp_headers['content-type'][:len(multipart_prefix)])
         boundary = resp_headers['content-type'][len(multipart_prefix):]
+        boundary = boundary.encode('ascii')
 
         self.assertEqual(
-            '%s\n--%s\n%s\n--%s--' % (body, boundary, body2, boundary),
+            b'%s\n--%s\n%s\n--%s--' % (body, boundary, body2, boundary),
             resp_content)
 
 

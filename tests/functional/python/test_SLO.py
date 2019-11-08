@@ -44,7 +44,7 @@ class TestSLO(StorletPythonFunctionalTest):
         for i in range(9):
             self.chunks.append(
                 ''.join([random.choice(string.ascii_uppercase + string.digits)
-                         for _ in range(1024 * 1024)]))
+                         for _ in range(1024 * 1024)]).encode('ascii'))
 
     def get_SLO(self):
         response = dict()

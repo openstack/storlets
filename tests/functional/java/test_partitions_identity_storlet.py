@@ -35,7 +35,7 @@ import unittest
 # 186      random text 10000
 # 204      ....
 records_txt = \
-    "header line\n\
+    b"header line\n\
 random text 1\n\
 random text 2\n\
 random text 3\n\
@@ -99,16 +99,16 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
         # lines 1-5, plus line 6 as the extra line
         content = self.invoke_storlet(12, 82, 'true', max_record_line)
         # byte 95 is the newline of line 6
-        self.assertEqual(content, records_txt[12:95] + '\n')
+        self.assertEqual(content, records_txt[12:95] + b'\n')
         # end=83,85,...,94 gets us deeper into the same line,
         # output should be the same:
         # lines 1-5, plus line 6 as the extra line
         for i in range(12):
             content = self.invoke_storlet(12, i + 83, 'true', max_record_line)
-            self.assertEqual(content, records_txt[12:95] + '\n')
+            self.assertEqual(content, records_txt[12:95] + b'\n')
         # Now that we move one extra character we get a different answer
         content = self.invoke_storlet(12, 95, 'true', max_record_line)
-        self.assertNotEqual(content, records_txt[12:95] + '\n')
+        self.assertNotEqual(content, records_txt[12:95] + b'\n')
 
     def _test_second_range(self, max_record_line):
         # According to the file's content start=82 should give us
@@ -116,23 +116,23 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
         # end=185 should give us line 13 as well as an extra line
         # and it should skip line 6 being the first line
         content = self.invoke_storlet(82, 185, 'false', max_record_line)
-        self.assertEqual(content, records_txt[96:203] + '\n')
+        self.assertEqual(content, records_txt[96:203] + b'\n')
         # starting from 83 up to 95 should give the exact result
         for i in range(12):
             content = self.invoke_storlet(i + 83, 185, 'false',
                                           max_record_line)
-            self.assertEqual(content, records_txt[96:203] + '\n')
+            self.assertEqual(content, records_txt[96:203] + b'\n')
         # ending at any point up to 202 should give the exact result
         for i in range(16):
             content = self.invoke_storlet(82, 186 + i, 'false',
                                           max_record_line)
-            self.assertEqual(content, records_txt[96:203] + '\n')
+            self.assertEqual(content, records_txt[96:203] + b'\n')
         # now for the combinations of the two:
         for i in range(12):
             for j in range(16):
                 content = self.invoke_storlet(83 + i, 186 + j, 'false',
                                               max_record_line)
-                self.assertEqual(content, records_txt[96:203] + '\n')
+                self.assertEqual(content, records_txt[96:203] + b'\n')
 
     def test_second_range(self):
         self._test_second_range(80)

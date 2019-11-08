@@ -26,7 +26,7 @@ from storlets.agent.common.utils import DEFAULT_PY3
 class TestSimpleStorlet(StorletPythonFunctionalTest):
     def setUp(self, version=None):
         self.storlet_log = 'simple.log'
-        self.content = 'abcdefghijklmonp'
+        self.content = b'abcdefghijklmonp'
         self.additional_headers = {}
         super(TestSimpleStorlet, self).setUp(
             storlet_dir='simple',

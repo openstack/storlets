@@ -35,7 +35,7 @@ class TestCompressStorlet(StorletJavaFunctionalTest):
         querystring = "action=compress"
 
         # simply set 1KB string data to compress
-        data = 'A' * 1024
+        data = b'A' * 1024
 
         response = dict()
         c.put_object(self.url, self.token, self.container, self.storlet_file,
@@ -59,7 +59,7 @@ class TestCompressStorlet(StorletJavaFunctionalTest):
                          self.storlet_file,
                          query_string=querystring, response_dict=dict(),
                          headers=headers, resp_chunk_size=object_length)
-        processed_content = ''
+        processed_content = b''
         for chunk in returned_content:
             if chunk:
                 processed_content += chunk
