@@ -23,19 +23,3 @@ if [ "$FLAVOR" == "jenkins" ]; then
 else
     nosetests --exe -v -a '!slow' ${@:2}
 fi
-rvalue=$?
-
-cd -
-# dump log into VIRTUAL_ENV_DIR when this func test call via tox
-if [ ! -z "${VIRTUAL_ENV+x}" ]; then
-   log_dir="${VIRTUAL_ENV}/logs"
-   mkdir -p ${log_dir}
-   for log_name in "account-server" "container-server" "object-server" "proxy-server" "ansible" "storlets-daemon" "daemon-factory"; do
-       log_file="${log_dir}/${log_name}.log"
-       echo "grep syslog from /var/log/syslog to ${log_file}"
-       sudo egrep "${log_name}" /var/log/syslog > ${log_file}
-       sudo chown ${USER}.${USER} ${log_file}
-   done
-fi
-
-exit $rvalue

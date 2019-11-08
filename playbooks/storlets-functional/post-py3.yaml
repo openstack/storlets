@@ -1,10 +1,41 @@
 ---
 - hosts: all
   tasks:
+    - name: Create log directory to pull
+      file:
+        path: '{{ zuul.project.src_dir }}/logs'
+        state: directory
+
+    - name: Prepare the logs into user space
+      shell: "egrep {{ item }} /var/log/syslog > {{ zuul.project.src_dir }}/logs/{{ item }}.log"
+      with_items:
+        - "account-server"
+        - "container-server"
+        - "object-server"
+        - "proxy-server"
+        - "ansible"
+        - "storlets-daemon"
+        - "daemon-factory"
+      become: yes
+
+    - name: Change log permisson as readable
+      file:
+        path: "{{ zuul.project.src_dir }}/logs/{{ item }}.log"
+        mode: 0644
+      with_items:
+        - "account-server"
+        - "container-server"
+        - "object-server"
+        - "proxy-server"
+        - "ansible"
+        - "storlets-daemon"
+        - "daemon-factory"
+      become: yes
+
     - name: Copy logs from worker nodes to executor node
       synchronize:
         # TODO: make it sort of tox_envdir
-        src: '{{ zuul.project.src_dir }}/.tox/func-py3/logs'
+        src: '{{ zuul.project.src_dir }}/logs'
         dest: '{{ zuul.executor.log_root }}'
         mode: pull
         copy_links: true
