@@ -9,6 +9,7 @@
         mode: pull
         copy_links: true
         verify_host: true
+      ignore_errors: yes
 
     - name: Copy conf files from worker nodes to executor node
       synchronize:
@@ -17,3 +18,4 @@
         mode: pull
         copy_links: true
         verify_host: true
+      ignore_errors: yes
