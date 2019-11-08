@@ -27,7 +27,7 @@ from storlets.sbus.client import SBusClient
 
 @contextmanager
 def _mock_sbus(send_status=0):
-    with mock.patch('storlets.sbus.client.SBus.send') as fake_send:
+    with mock.patch('storlets.sbus.client.client.SBus.send') as fake_send:
         fake_send.return_value = send_status
         yield
 
@@ -65,9 +65,9 @@ def _mock_os_pipe(bufs):
         except StopIteration:
             raise AssertionError('pipe called more than expected')
 
-    with mock.patch('storlets.sbus.client.os.pipe', mock_os_pipe), \
-            mock.patch('storlets.sbus.client.os.read', fake_os_read), \
-            mock.patch('storlets.sbus.client.os.close', fake_os_close):
+    with mock.patch('storlets.sbus.client.client.os.pipe', mock_os_pipe), \
+            mock.patch('storlets.sbus.client.client.os.read', fake_os_read), \
+            mock.patch('storlets.sbus.client.client.os.close', fake_os_close):
         yield pipes
 
 
