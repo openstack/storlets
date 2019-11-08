@@ -83,6 +83,8 @@ class TestJupyterExcecution(unittest.TestCase):
         return output_text_list
 
     def test_notebook(self):
+        if six.PY3:
+            self.skipTest("notebook incompatible with python3")
         test_path = os.path.abspath(__file__)
         test_dir = os.path.dirname(test_path)
         original_notebook = os.path.join(test_dir, 'test_notebook.ipynb')
