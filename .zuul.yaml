@@ -24,7 +24,7 @@
     pre-run: playbooks/storlets-functional/pre.yaml
     run: playbooks/storlets-functional/run.yaml
     post-run: playbooks/storlets-functional/post.yaml
-    timeout: 3600
+    timeout: 1800
 
 - job:
     name: storlets-functional-py3
@@ -32,4 +32,4 @@
     pre-run: playbooks/storlets-functional/pre-py3.yaml
     run: playbooks/storlets-functional/run-py3.yaml
     post-run: playbooks/storlets-functional/post-py3.yaml
-    timeout: 3600
+    timeout: 1800
