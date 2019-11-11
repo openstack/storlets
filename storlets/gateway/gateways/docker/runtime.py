@@ -657,6 +657,8 @@ class StorletInvocationProtocol(object):
         self._wait_for_read_with_timeout(self.taskid_read_fd)
         # TODO(kota_): need an assertion for task_id format
         self.task_id = os.read(self.taskid_read_fd, 10)
+        if not isinstance(self.task_id, str):
+            self.task_id = self.task_id.decode('utf-8')
         os.close(self.taskid_read_fd)
 
     def _send_execute_command(self):
