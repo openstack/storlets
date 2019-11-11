@@ -112,21 +112,24 @@ class TestSBusClient(unittest.TestCase):
             self.assertTrue(_pipe[1].closed)
 
     def _test_service_request(self, method, *args, **kwargs):
-        raw_resp = json.dumps({'status': True, 'message': 'OK'})
+        raw_resp = json.dumps(
+            {'status': True, 'message': 'OK'}).encode("utf-8")
         with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(0):
             resp = method(*args, **kwargs)
             self.assertTrue(resp.status)
             self.assertEqual('OK', resp.message)
             self._check_all_pipes_closed(pipes)
 
-        raw_resp = json.dumps({'status': False, 'message': 'ERROR'})
+        raw_resp = json.dumps(
+            {'status': False, 'message': 'ERROR'}).encode("utf-8")
         with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(0):
             resp = method(*args, **kwargs)
             self.assertFalse(resp.status)
             self.assertEqual('ERROR', resp.message)
             self._check_all_pipes_closed(pipes)
 
-        raw_resp = json.dumps({'status': True, 'message': 'OK'})
+        raw_resp = json.dumps(
+            {'status': True, 'message': 'OK'}).encode("utf-8")
         with _mock_os_pipe([raw_resp]) as pipes, _mock_sbus(-1):
             with self.assertRaises(SBusClientSendError):
                 method(*args, **kwargs)
@@ -134,7 +137,7 @@ class TestSBusClient(unittest.TestCase):
 
         # TODO(takashi): Add IOError case
 
-        with _mock_os_pipe(['Foo']) as pipes, _mock_sbus(0):
+        with _mock_os_pipe([b'Foo']) as pipes, _mock_sbus(0):
             with self.assertRaises(SBusClientMalformedResponse):
                 method(*args, **kwargs)
             self._check_all_pipes_closed(pipes)

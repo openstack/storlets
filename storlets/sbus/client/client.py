@@ -74,7 +74,7 @@ class SBusClient(object):
                 # in local side before reading response
                 os.close(write_fd)
 
-            reply = ''
+            reply = b''
             while True:
                 try:
                     buf = os.read(read_fd, self.chunk_size)
@@ -86,6 +86,9 @@ class SBusClient(object):
                 reply = reply + buf
         finally:
             os.close(read_fd)
+
+        if not isinstance(reply, str):
+            reply = reply.decode('utf-8')
 
         return self._parse_response(reply)
 
