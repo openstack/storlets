@@ -34,7 +34,7 @@ class DeployTestMixin(object):
         resp_headers = swiftclient.client.head_object(
             url, token, container, expected_file)
         hasher = hashlib.md5()
-        with open(file_path) as f:
+        with open(file_path, 'rb') as f:
             hasher.update(f.read())
         self.assertEqual(resp_headers['etag'], hasher.hexdigest())
 
