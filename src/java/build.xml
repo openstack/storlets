@@ -18,7 +18,7 @@
     <!-- Bring build Dependencies-->
     <target name="dependencies" >
         <mkdir dir="dependencies" />
-        <get src="http://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/json-simple/json_simple-1.1.jar"
+        <get src="http://central.maven.org/maven2/com/googlecode/json-simple/json-simple/1.1/json-simple-1.1.jar"
             dest="dependencies/json_simple-1.1.jar"
             verbose="true"
             usetimestamp="true"/>
