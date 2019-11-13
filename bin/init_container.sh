@@ -25,7 +25,7 @@
 # $3 is assumed to be the factory debug level, e.g. DEBUG
 
 if [ $1 == "debug" ]; then
-    $2
+  $2
 else
-    /usr/local/libexec/storlets/storlets-daemon-factory $2 $3 $HOSTNAME
+  PYTHONPATH='/usr/local/lib/storlets/python' /usr/local/libexec/storlets/storlets-daemon-factory $2 $3 $HOSTNAME
 fi

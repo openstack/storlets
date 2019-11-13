@@ -133,10 +133,6 @@ class RunTimePaths(object):
             conf.get('script_dir',
                      os.path.join(self.host_root_dir, 'scripts'))
 
-        self.host_storlet_python_lib_dir = ('/usr/local/lib/python2.7/'
-                                            'dist-packages/storlets')
-        self.sandbox_storlet_python_lib_dir = ('/usr/local/lib/python2.7/'
-                                               'dist-packages/storlets')
         self.host_storlet_native_lib_dir = '/usr/local/lib/storlets'
         self.sandbox_storlet_native_lib_dir = '/usr/local/lib/storlets'
         self.host_storlet_native_bin_dir = '/usr/local/libexec/storlets'
@@ -298,9 +294,6 @@ class RunTimeSandbox(object):
                                 self.paths.sandbox_pipe_dir)
         storlet_mount = '%s:%s:ro' % (self.paths.host_storlet_base_dir,
                                       self.paths.sandbox_storlet_base_dir)
-        storlet_python_lib_mount = '%s:%s:ro' % (
-            self.paths.host_storlet_python_lib_dir,
-            self.paths.sandbox_storlet_python_lib_dir)
         storlet_native_lib_mount = '%s:%s:ro' % (
             self.paths.host_storlet_native_lib_dir,
             self.paths.sandbox_storlet_native_lib_dir)
@@ -311,8 +304,8 @@ class RunTimeSandbox(object):
         cmd = [os.path.join(self.paths.host_restart_script_dir,
                             'restart_docker_container'),
                docker_container_name, docker_image_name, pipe_mount,
-               storlet_mount, storlet_python_lib_mount,
-               storlet_native_lib_mount, storlet_native_bin_mount]
+               storlet_mount, storlet_native_lib_mount,
+               storlet_native_bin_mount]
 
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
