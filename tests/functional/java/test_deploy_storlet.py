@@ -36,20 +36,20 @@ class TestDeployStorlet(DeployTestMixin, StorletBaseFunctionalTest):
                                                      'get42')
 
         self.scenario = [
-            ('Enter storlet language (java or python): ', EXPECT),
-            ('java', SEND_LINE),
-            ('Enter absolute path to storlet jar file: ', EXPECT),
-            (self.execdep_storlet_file, SEND_LINE),
-            ('Your jar file contains the following classes:', EXPECT),
-            ('\t* org.openstack.storlet.execdep.ExecDepStorlet', EXPECT),
-            ('Please enter fully qualified storlet main class '
-             '(choose from the list above): ', EXPECT),
-            ('org.openstack.storlet.execdep.ExecDepStorlet', SEND_LINE),
-            ('Please enter dependency files '
-             '(leave a blank line when you are done): ', EXPECT),
-            (self.execdep_storlet_dep_file, SEND_LINE),
-            ('', SEND_LINE),  # DO NOT send \n but just empty due to sendline
-            ('Storlet deployment complete', EXPECT),
+            (b'Enter storlet language (java or python): ', EXPECT),
+            (b'java', SEND_LINE),
+            (b'Enter absolute path to storlet jar file: ', EXPECT),
+            (self.execdep_storlet_file.encode('ascii'), SEND_LINE),
+            (b'Your jar file contains the following classes:', EXPECT),
+            (b'\t* org.openstack.storlet.execdep.ExecDepStorlet', EXPECT),
+            (b'Please enter fully qualified storlet main class '
+             b'(choose from the list above): ', EXPECT),
+            (b'org.openstack.storlet.execdep.ExecDepStorlet', SEND_LINE),
+            (b'Please enter dependency files '
+             b'(leave a blank line when you are done): ', EXPECT),
+            (self.execdep_storlet_dep_file.encode('ascii'), SEND_LINE),
+            (b'', SEND_LINE),  # DO NOT send \n but just empty due to sendline
+            (b'Storlet deployment complete', EXPECT),
         ]
 
 

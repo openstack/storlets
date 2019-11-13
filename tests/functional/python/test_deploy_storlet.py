@@ -34,18 +34,18 @@ class TestDeployStorlet(DeployTestMixin, StorletBaseFunctionalTest):
                                                      'get42.sh')
 
         self.scenario = [
-            ('Enter storlet language (java or python): ', EXPECT),
-            ('python', SEND_LINE),
-            ('Enter absolute path to storlet file: ', EXPECT),
-            (self.execdep_storlet_file, SEND_LINE),
-            ('Please enter fully qualified storlet main class '
-             '<filename.ClassName>: ', EXPECT),
-            ('exec_dep.ExecDepStorlet', SEND_LINE),
-            ('Please enter dependency files '
-             '(leave a blank line when you are done): ', EXPECT),
-            (self.execdep_storlet_dep_file, SEND_LINE),
-            ('', SEND_LINE),  # DO NOT send \n but just empty due to sendline
-            ('Storlet deployment complete', EXPECT),
+            (b'Enter storlet language (java or python): ', EXPECT),
+            (b'python', SEND_LINE),
+            (b'Enter absolute path to storlet file: ', EXPECT),
+            (self.execdep_storlet_file.encode('ascii'), SEND_LINE),
+            (b'Please enter fully qualified storlet main class '
+             b'<filename.ClassName>: ', EXPECT),
+            (b'exec_dep.ExecDepStorlet', SEND_LINE),
+            (b'Please enter dependency files '
+             b'(leave a blank line when you are done): ', EXPECT),
+            (self.execdep_storlet_dep_file.encode('ascii'), SEND_LINE),
+            (b'', SEND_LINE),  # DO NOT send \n but just empty due to sendline
+            (b'Storlet deployment complete', EXPECT),
         ]
 
 
