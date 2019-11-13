@@ -61,7 +61,7 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
                              self.storlet_file,
                              query_string=querystring, response_dict=dict(),
                              headers=req_headers, resp_chunk_size=file_length)
-            processed_c = ''
+            processed_c = b''
             for chunk in returned_c:
                 if chunk:
                     processed_c += chunk
@@ -73,8 +73,9 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
         if op == 'PUT':
             # PUT a random file
             response = dict()
-            uploaded_content = ''.join(random.choice(string.ascii_uppercase +
-                                       string.digits) for _ in range(1024))
+            uploaded_content = ''.join(
+                random.choice(string.ascii_uppercase + string.digits)
+                for _ in range(1024)).encode('ascii')
             random_md = ''.join(random.choice(string.ascii_uppercase +
                                 string.digits) for _ in range(32))
             # content_length = 1024
@@ -108,13 +109,13 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
 
     def test_get(self):
         res = self.invoke_storlet('GET')
-        self.assertEqual('acegikmn', res)
+        self.assertEqual(b'acegikmn', res)
 
     def test_get_range(self):
         res = self.invoke_storlet(
             'GET',
             headers={'X-Storlet-Range': 'bytes=5-10'})
-        self.assertEqual('fhj', res)
+        self.assertEqual(b'fhj', res)
 
 
 class TestHalfIdentityStorletOnProxy(TestHalfIdentityStorlet):

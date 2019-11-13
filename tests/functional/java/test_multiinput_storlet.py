@@ -34,10 +34,10 @@ class TestMultiInputStorlet(StorletJavaFunctionalTest):
         obj2 = 'small2'
         c.put_object(self.url, self.token,
                      self.container, obj,
-                     '0123456789abcd')
+                     b'0123456789abcd')
         c.put_object(self.url, self.token,
                      self.container, obj2,
-                     'efghijklmnopqr')
+                     b'efghijklmnopqr')
 
         headers = {
             'X-Run-Storlet': self.storlet_name,
@@ -50,7 +50,7 @@ class TestMultiInputStorlet(StorletJavaFunctionalTest):
         resp_headers, resp_content = c.get_object(
             self.url, self.token, self.container, obj,
             headers=headers)
-        self.assertEqual('0123456789abcdefghijklmnopqr',
+        self.assertEqual(b'0123456789abcdefghijklmnopqr',
                          resp_content)
 
     def test_put_x_copy_from_extra_sources(self):
@@ -59,11 +59,11 @@ class TestMultiInputStorlet(StorletJavaFunctionalTest):
         copied_obj = 'copied'
         c.put_object(self.url, self.token,
                      self.container, obj,
-                     '0123456789abcd',
+                     b'0123456789abcd',
                      headers={'X-Object-Meta-Key1': 'value1'})
         c.put_object(self.url, self.token,
                      self.container, obj2,
-                     'efghijklmnopqr',
+                     b'efghijklmnopqr',
                      headers={'X-Object-Meta-Key2': 'value2'})
 
         headers = {
@@ -75,7 +75,7 @@ class TestMultiInputStorlet(StorletJavaFunctionalTest):
         }
         headers.update(self.additional_headers)
 
-        expected_string = '0123456789abcdefghijklmnopqr'
+        expected_string = b'0123456789abcdefghijklmnopqr'
         etag = c.put_object(
             self.url, self.token, self.container, copied_obj,
             headers=headers)

@@ -59,7 +59,7 @@ class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
                 self.container, self.storlet_file,
                 query_string=querystring, response_dict=dict(),
                 headers=headers, resp_chunk_size=file_length)
-            processed_c = ''
+            processed_c = b''
             for chunk in returned_c:
                 if chunk:
                     processed_c += chunk
@@ -71,8 +71,9 @@ class TestExecQueryHeaderStorlet(StorletPythonFunctionalTest):
         if op == 'PUT':
             # PUT a random file
             response = dict()
-            uploaded_c = ''.join(random.choice(string.ascii_uppercase +
-                                 string.digits) for _ in range(1024))
+            uploaded_c = ''.join(
+                random.choice(string.ascii_uppercase + string.digits)
+                for _ in range(1024)).encode('ascii')
             content_length = None
             client.put_object(self.url, self.token, self.container,
                               'random_source',

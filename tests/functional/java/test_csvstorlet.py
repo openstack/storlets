@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import six
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
@@ -49,6 +50,8 @@ class TestCsvStorlet(StorletJavaFunctionalTest):
         _, content = c.get_object(
             self.url, self.token, self.container, self.storlet_file,
             response_dict=dict(), headers=headers)
+        if not six.PY2:
+            content = content.decode('utf-8')
         return content
 
     def _test_filter(self):
