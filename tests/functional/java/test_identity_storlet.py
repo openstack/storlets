@@ -118,11 +118,13 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
 
     @contextmanager
     def _filecontext(self, path):
-        yield
         try:
-            os.remove(path)
-        except Exception:
-            pass
+            yield
+        finally:
+            try:
+                os.remove(path)
+            except Exception:
+                pass
 
     @attr('slow')
     def test_put_10MB_file(self):
