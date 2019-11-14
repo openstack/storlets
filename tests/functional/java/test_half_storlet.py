@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import random
-import string
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
@@ -69,43 +67,6 @@ class TestHalfIdentityStorlet(StorletJavaFunctionalTest):
             self.assertEqual(original_h['X-Object-Meta-Testkey'.lower()],
                              processed_h['X-Object-Meta-Testkey'.lower()])
             return processed_c
-
-        if op == 'PUT':
-            # PUT a random file
-            response = dict()
-            uploaded_content = ''.join(
-                random.choice(string.ascii_uppercase + string.digits)
-                for _ in range(1024)).encode('ascii')
-            random_md = ''.join(random.choice(string.ascii_uppercase +
-                                string.digits) for _ in range(32))
-            # content_length = 1024
-            content_length = None
-            headers = {'X-Run-Storlet': self.storlet_name,
-                       'X-Object-Meta-Testkey': random_md}
-            headers.update(self.additional_headers)
-            c.put_object(self.url, self.token, self.container,
-                         'half_random_source',
-                         uploaded_content, content_length, None, None,
-                         "application/octet-stream", headers, None, None,
-                         querystring, response)
-            resp_headers, saved_content = c.get_object(self.url, self.token,
-                                                       self.container,
-                                                       'half_random_source',
-                                                       response_dict=dict())
-
-            if params is not None and params.get('double', None) == 'true':
-                self.assertEqual(uploaded_content, saved_content[:1024])
-                self.assertEqual(uploaded_content, saved_content[1024:])
-            else:
-                self.assertEqual(uploaded_content, saved_content)
-
-            if params is not None and params.get('execute', None) is not None:
-                self.assertEqual(
-                    '42',
-                    resp_headers['X-Object-Meta-Execution result'.lower()])
-
-            self.assertEqual(random_md,
-                             resp_headers['X-Object-Meta-Testkey'.lower()])
 
     def test_get(self):
         res = self.invoke_storlet('GET')
