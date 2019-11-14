@@ -16,7 +16,6 @@
 
 import os
 import random
-import six
 import string
 from swiftclient import client as c
 from nose.plugins.attrib import attr
@@ -75,7 +74,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                     processed_c += chunk
 
             if params is not None and params.get('execute', None) is not None:
-                mdv = processed_h['X-Object-Meta-Execution result'.lower()]
+                mdv = processed_h['X-Object-Meta-Execution-Result'.lower()]
                 self.assertEqual('42', mdv)
             if params is not None and params.get('double', None) == 'true':
                 self.assertEqual(original_c, processed_c[:file_length])
@@ -112,7 +111,7 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                 assert(uploaded_c == saved_c)
 
             if params is not None and params.get('execute', None) is not None:
-                mdv = resp_headers['X-Object-Meta-Execution result'.lower()]
+                mdv = resp_headers['X-Object-Meta-Execution-Result'.lower()]
                 self.assertEqual('42', mdv)
 
             self.assertEqual(random_md,
@@ -153,7 +152,6 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
     def test_put(self):
         self.invoke_storlet('PUT')
 
-    @unittest.skipIf(six.PY3, 'execute can hang on py3 for some reason')
     def test_put_execute(self):
         self.invoke_storlet('PUT', {'execute': 'true'})
         self.invoke_storlet('PUT', {'execute': 'true'},
@@ -172,7 +170,6 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
         self.invoke_storlet('GET', {'double': 'true'},
                             header_parameters=True)
 
-    @unittest.skipIf(six.PY3, 'execute can hang on py3 for some reason')
     def test_get_execute(self):
         self.invoke_storlet('GET', {'execute': 'true'})
         self.invoke_storlet('GET', {'execute': 'true'},
