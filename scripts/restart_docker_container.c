@@ -24,11 +24,20 @@
  /*
   * Stop and Run a docker container using:
   * docker stop <container name>
-  * docker run --name <container name> -d -v /dev/log:/dev/log -v <mount dir 1> -v <mount dir 2> -i -t <image> --net='none'
+  * docker run --net=none --name <container name> -d -v /dev/log:/dev/log \
+  *     -v <mount dir 1> -v <mount dir 2> -v <mount dir 3> -v <mount dir 4> \
+  *     <image name>
+  *
   * <container name> - The name of the container to stop / to start
-  * <image name> - the name of the image from which to start the container
-  * <mount dir 1> - The directory where the named pipes are placed. Typically mounted to /mnt/channels in the container
-  * <mount dir 2> - The directory where the storlets are placed. Typically mounted to /home/swift in the container
+  * <image name>     - the name of the image from which to start the container
+  * <mount dir 1>    - The directory where the named pipes are placed.
+  *                    Typically mounted to /mnt/channels in the container
+  * <mount dir 2>    - The directory where the storlets are placed.
+  *                    Typically mounted to /home/swift in the container
+  * <mount dir 3>    - The directory where storlets library are placed.
+  *                    Typically mounted to /usr/local/lib/storlets
+  * <mount dir 4>    - The directory where storlets executables are placed.
+  *                    Typically mounted to /usr/local/libexec/storlets
   */
 
 int main(int argc, char **argv) {
@@ -63,7 +72,7 @@ int main(int argc, char **argv) {
     ret = system(command);
 
     sprintf(command,
-            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -v %s -v %s -i -t %s",
+            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -v %s -v %s %s",
             container_name,
             mount_dir1,
             mount_dir2,
