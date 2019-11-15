@@ -129,7 +129,7 @@ public class IdentityStorlet implements IStorlet {
          * add execution invocation result to out md
          */
         if (bExecute == true) {
-            md.put("Execution result", Integer.toString(nExitCode));
+            md.put("Execution-Result", Integer.toString(nExitCode));
         }
         /*
          * Copy parameters into out md
