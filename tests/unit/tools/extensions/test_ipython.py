@@ -41,7 +41,7 @@ class FakeConnection(object):
         if 'resp_chunk_size' in kwargs:
             resp_body = self._fake_iter
         else:
-            resp_body = ''.join([chunk for chunk in self._fake_iter])
+            resp_body = b''.join([chunk for chunk in self._fake_iter])
 
         return (self._fake_headers, resp_body)
 
@@ -297,7 +297,7 @@ class TestStorletMagicGet(BaseTestIpythonExtension, unittest.TestCase):
         self.assertEqual({}, resp.headers)
         self.assertEqual(200, resp.status)
         self.assertEqual('', ''.join([chunk for chunk in iter(resp)]))
-        self.assertEqual('', resp.content)
+        self.assertEqual(b'', resp.content)
 
     def test_get(self):
         outvar_name = 'a1234'
@@ -393,7 +393,7 @@ class TestStorletMagicCopy(BaseTestIpythonExtension, unittest.TestCase):
         self.assertEqual({}, resp.headers)
         self.assertEqual(200, resp.status)
         # sanity, no body
-        self.assertEqual('', resp.content)
+        self.assertEqual(b'', resp.content)
 
     def test_copy(self):
         outvar_name = 'a1234'
@@ -475,7 +475,7 @@ class TestStorletMagicPut(BaseTestIpythonExtension, unittest.TestCase):
         self.assertEqual({}, resp.headers)
         self.assertEqual(201, resp.status)
         # sanity, no body
-        self.assertEqual('', resp.content)
+        self.assertEqual(b'', resp.content)
 
     def test_put(self):
         outvar_name = 'a1234'
