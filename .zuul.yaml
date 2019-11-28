@@ -28,7 +28,6 @@
 
 - job:
     name: storlets-functional-py3
-    voting: false
     pre-run: playbooks/storlets-functional/pre-py3.yaml
     run: playbooks/storlets-functional/run-py3.yaml
     post-run: playbooks/storlets-functional/post-py3.yaml
