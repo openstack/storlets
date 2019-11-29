@@ -49,7 +49,6 @@ class Response(object):
         self._body_iter = body_iter or iter([])
 
     def __iter__(self):
-        print('hoge')
         return self._body_iter
 
     def iter_content(self):
@@ -58,7 +57,7 @@ class Response(object):
 
     @property
     def content(self):
-        return ''.join([chunk for chunk in self._body_iter])
+        return b''.join([chunk for chunk in self._body_iter])
 
 
 def get_swift_connection():

@@ -66,7 +66,17 @@ class TestJupyterExcecution(unittest.TestCase):
         if 'text' in node:
             for line in node['text'].split('\n'):
                 if line:
-                    texts.append(line.strip())
+                    # NOTE: extract bytes lines appreared in the cell
+                    #  in PY2, it's NOT needed but in PY3 it is required
+                    #  because PY3 explicitly add 'b' prefix to bytes
+                    #  objects
+                    if line.startswith("b\'"):
+                        text = eval(line).decode('ascii')
+                        for inline_text in text.split('\n'):
+                            if inline_text:
+                                texts.append(inline_text.strip())
+                    else:
+                        texts.append(line.strip())
             return texts
 
         return None
@@ -112,8 +122,8 @@ class TestJupyterExcecution(unittest.TestCase):
                     expected_and_got = zip(
                         sorted(expected_line.items()),
                         sorted(got_line.items()))
-                    for (expected_key, expected_value), (got_key, got_value) in \
-                            expected_and_got:
+                    for (expected_key, expected_value), (got_key, got_value) \
+                            in expected_and_got:
                         self.assertEqual(expected_key, got_key)
                         if expected_key in COULD_BE_CHANGED:
                             # TODO(kota_): make more validation for each format
