@@ -39,9 +39,8 @@ int main(int argc, char **argv) {
     char mount_dir2[512];
     char mount_dir3[512];
     char mount_dir4[512];
-    char mount_dir5[512];
 
-    if (argc != 8) {
+    if (argc != 7) {
         fprintf(stderr, "Usage: %s container_name container_image mount_dir1 mount_dir2 mount_dir3 mount_dir4\n",
             argv[0]);
         return 1;
@@ -53,7 +52,6 @@ int main(int argc, char **argv) {
     snprintf(mount_dir2,(size_t)512, "%s", argv[4]);
     snprintf(mount_dir3,(size_t)512, "%s", argv[5]);
     snprintf(mount_dir4,(size_t)512, "%s", argv[6]);
-    snprintf(mount_dir5,(size_t)512, "%s", argv[7]);
 
     int ret;
     setresuid(0, 0, 0);
@@ -65,13 +63,12 @@ int main(int argc, char **argv) {
     ret = system(command);
 
     sprintf(command,
-            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -v %s -v %s -v %s -i -t %s",
+            "/usr/bin/docker run --net=none --name %s -d -v /dev/log:/dev/log -v %s -v %s -v %s -v %s -i -t %s",
             container_name,
             mount_dir1,
             mount_dir2,
             mount_dir3,
             mount_dir4,
-            mount_dir5,
             container_image);
     ret = system(command);
     if(ret){
