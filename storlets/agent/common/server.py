@@ -108,7 +108,7 @@ class SBusServer(object):
             handler = self.get_handler(command)
             resp = handler(dtg)
         except ValueError as err:
-            self.logger.error(err.message)
+            self.logger.exception('Failed to handle request')
             resp = CommandFailure(str(err))
         except CommandResponse as err:
             resp = err
@@ -140,7 +140,7 @@ class SBusServer(object):
         :param resp: CommandResponse instance
         """
         try:
-            outfile.write(resp.report_message)
+            outfile.write(resp.report_message.encode('utf-8'))
         except IOError:
             self.logger.exception('Unable to return response to client')
 

@@ -119,10 +119,7 @@ We need the following for the Java parts
 
 ::
 
-    sudo add-apt-repository ppa:openjdk-r/ppa
-    sudo apt-get update
-    sudo apt-get install openjdk-8-jdk
-    sudo apt-get install ant
+    sudo apt-get install openjdk-11-jdk ant
 
 We need the following for Docker
 
@@ -160,9 +157,9 @@ Step 2: Create a Docker image with Java
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre8
+    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre11
 
-Create the file: $HOME/docker_repos/ubuntu_18.04_jre8/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_18.04_jre11/Dockerfile
 with the following content:
 
 ::
@@ -175,17 +172,15 @@ with the following content:
     RUN apt-get update && \
     apt-get install python && \
     apt-get install software-properties-common && \
-    add-apt-repository ppa:openjdk-r/ppa && \
-    apt-get update && \
-    apt-get install openjdk-8-jre && \
+    apt-get install openjdk-11-jre-headless ant  && \
     apt-get clean
 
 Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre8
-    sudo docker build -q -t ubuntu_18.04_jre8 .
+    cd $HOME/docker_repos/ubuntu_18.04_jre11
+    sudo docker build -q -t ubuntu_18.04_jre11 .
     cd -
 
 
@@ -193,16 +188,16 @@ Step 3: Augment the above created image with the storlets stuff
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre8_storlets
+    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre11_storlets
     cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/logback.xml .
     cd -
 
-Create the file: $HOME/docker_repos/ubuntu_18.04_jre8_storlets/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_18.04_jre11_storlets/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_18.04_jre8
+    FROM ubuntu_18.04_jre11
 
     MAINTAINER root
 
@@ -222,8 +217,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre8_storlets
-    sudo docker build -q -t ubuntu_18.04_jre8_storlets .
+    cd $HOME/docker_repos/ubuntu_18.04_jre11_storlets
+    sudo docker build -q -t ubuntu_18.04_jre11_storlets .
     cd -
 
 Step 4: Create a tenant specific image. The engine looks for images
@@ -242,12 +237,12 @@ The response from the above contains the account line, e.g.:
 
 The account id is the number following the 'AUTH\_' prefix.
 
-Next create the file $HOME/docker_repos/ubuntu_18.04_jre8_storlets_<account id>/Dockerfile
+Next create the file $HOME/docker_repos/ubuntu_18.04_jre11_storlets_<account id>/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_18.04_jre8_storlets
+    FROM ubuntu_18.04_jre11_storlets
     MAINTAINER root
 
 
@@ -255,7 +250,7 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre8_storlets_<account id>
+    cd $HOME/docker_repos/ubuntu_18.04_jre11_storlets_<account id>
     sudo docker build -q -t <account id> .
     cd -
 

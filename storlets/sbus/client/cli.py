@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-from sys import exit
+import sys
 from storlets.sbus.client import SBusClient
 from storlets.sbus.client.exceptions import SBusClientException
 
@@ -21,19 +21,20 @@ EXIT_SUCCESS = 0
 EXIT_ERROR = 1
 
 
-def main(argv):
-    # TODO(takashi): Add more detailed help message
+def main():
+    argv = sys.argv
 
+    # TODO(takashi): Add more detailed help message
     if len(argv) < 3:
         print('sbus <command> <pipe_path>')
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)
 
     command = argv[1]
     pipe_path = argv[2]
 
     if not os.path.exists(pipe_path):
         print('ERROR: Pipe file %s does not exist' % pipe_path)
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)
 
     client = SBusClient(pipe_path)
     try:
@@ -45,19 +46,19 @@ def main(argv):
         resp = handler()
     except (AttributeError, NotImplementedError):
         print('ERROR: Command %s is not supported' % command)
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)
     except SBusClientException as err:
         print('ERROR: Failed to send sbus command %s to %s: %s'
               % (command, pipe_path, err))
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)
     except Exception as err:
         print('ERROR: Unknown error: %s' % err)
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)
 
     print('Response: %s: %s' % (resp.status, resp.message))
     if resp.status:
         print('OK')
-        exit(EXIT_SUCCESS)
+        sys.exit(EXIT_SUCCESS)
     else:
         print('ERROR: Got error response')
-        exit(EXIT_ERROR)
+        sys.exit(EXIT_ERROR)

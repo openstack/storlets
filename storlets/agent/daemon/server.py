@@ -14,12 +14,12 @@
 # limitations under the License.
 import argparse
 import errno
+import importlib
 import os
 import pwd
+import signal
 import sys
 import uuid
-import signal
-import importlib
 from storlets.sbus import SBus
 from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
     CommandSuccess, CommandFailure, SBusServer
@@ -254,20 +254,22 @@ def main():
     # Initialize logger
     logger = get_logger("storlets-daemon", opts.log_level, opts.container_id)
     logger.debug("Storlet Daemon started")
-    SBus.start_logger("DEBUG", container_id=opts.container_id)
 
-    # Impersonate the swift user
-    pw = pwd.getpwnam('swift')
-    os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
-    os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
-
-    # create an instance of storlet daemon
     try:
+        SBus.start_logger("DEBUG", container_id=opts.container_id)
+
+        # Impersonate the swift user
+        pw = pwd.getpwnam('swift')
+        os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
+        os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
+
+        # create an instance of storlet daemon
         daemon = StorletDaemon(opts.storlet_name, opts.sbus_path,
                                logger, opts.pool_size)
-    except Exception as err:
-        logger.error(err.message)
-        return EXIT_FAILURE
 
-    # Start the main loop
-    return daemon.main_loop()
+        # Start the main loop
+        sys.exit(daemon.main_loop())
+
+    except Exception:
+        logger.error('Unhandled exception')
+        sys.exit(EXIT_FAILURE)

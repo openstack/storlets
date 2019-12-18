@@ -114,15 +114,15 @@ public class ServerSBusInDatagram {
         }
 
         String strMD = msg.getMetadata();
-                this.metadata = (HashMap<String, HashMap<String, String>>[])new HashMap[getNFiles()];
+        this.metadata = (HashMap<String, HashMap<String, String>>[])new HashMap[getNFiles()];
         JSONArray jsonarray = (JSONArray)(new JSONParser().parse(strMD));
-        Iterator it = jsonarray.iterator();
+        Iterator<JSONObject> it = jsonarray.iterator();
         int i=0;
         while (it.hasNext()) {
             this.metadata[i] = new HashMap<String, HashMap<String, String>>();
             HashMap<String, String> storletsMetadata = new HashMap<String, String>();
             HashMap<String, String> storageMetadata = new HashMap<String, String>();
-            JSONObject jsonobject = (JSONObject)it.next();
+            JSONObject jsonobject = it.next();
             if (jsonobject.containsKey("storage")) {
                 populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
             }

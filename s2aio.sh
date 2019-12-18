@@ -37,6 +37,7 @@ _prepare_devstack_env() {
         cp devstack/localrc.sample $DEVSTACK_DIR/localrc
     fi
 
+    source $DEVSTACK_DIR/stackrc
     source $DEVSTACK_DIR/functions
     source $DEVSTACK_DIR/functions-common
     source $DEVSTACK_DIR/lib/swift

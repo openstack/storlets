@@ -75,25 +75,25 @@ TMP_REGISTRY_PREFIX=/tmp/registry
 # Functions
 # ---------
 
-_storlets_swift_start() {
+function _storlets_swift_start {
     swift-init --run-dir=${SWIFT_DATA_DIR}/run all start || true
 }
 
-_storlets_swift_stop() {
+function _storlets_swift_stop {
     swift-init --run-dir=${SWIFT_DATA_DIR}/run all stop || true
 }
 
-_storlets_swift_restart() {
+function _storlets_swift_restart {
     swift-init --run-dir=${SWIFT_DATA_DIR}/run all restart || true
 }
 
-_export_os_vars() {
+function _export_os_vars {
     export OS_IDENTITY_API_VERSION=3
     export OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
     export OS_REGION_NAME=RegionOne
 }
 
-_export_keystone_os_vars() {
+function _export_keystone_os_vars {
     _export_os_vars
     export OS_USERNAME=$ADMIN_USER
     export OS_USER_DOMAIN_ID=$STORLETS_DEFAULT_USER_DOMAIN_ID
@@ -102,7 +102,7 @@ _export_keystone_os_vars() {
     export OS_PROJECT_DOMAIN_ID=$STORLETS_DEFAULT_PROJECT_DOMAIN_ID
 }
 
-_export_swift_os_vars() {
+function _export_swift_os_vars {
     _export_os_vars
     export OS_USERNAME=$SWIFT_DEFAULT_USER
     export OS_USER_DOMAIN_ID=$STORLETS_DEFAULT_USER_DOMAIN_ID
@@ -111,7 +111,7 @@ _export_swift_os_vars() {
     export OS_PROJECT_DOMAIN_ID=$STORLETS_DEFAULT_PROJECT_DOMAIN_ID
 }
 
-configure_swift_and_keystone_for_storlets() {
+function configure_swift_and_keystone_for_storlets {
     # Add project and users to Keystone
     _export_keystone_os_vars
     project_test_created=$(openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | wc -l)
@@ -149,7 +149,7 @@ configure_swift_and_keystone_for_storlets() {
     swift post $STORLETS_LOG_CONTAIER_NAME
 }
 
-_install_docker() {
+function _install_docker {
     # TODO: Add other dirstors.
     # This one is geared towards Ubuntu
     # See other projects that install docker
@@ -190,47 +190,50 @@ _install_docker() {
 fi
 }
 
-prepare_storlets_install() {
+function prepare_storlets_install {
     sudo mkdir -p "$STORLETS_DOCKER_DEVICE"/docker
     sudo chmod 777 $STORLETS_DOCKER_DEVICE
     _install_docker
-    sudo add-apt-repository -y ppa:openjdk-r/ppa
-    sudo apt-get update
-    sudo apt-get install -y openjdk-8-jdk-headless
-    sudo apt-get install -y ant
-    sudo apt-get install -y python
-    sudo apt-get install -y python-setuptools
-    sudo apt-get install -y python3.5
-    sudo apt-get install -y python3-setuptools
+
+    if is_ubuntu; then
+      install_package openjdk-11-jdk-headless ant
+    else
+      die $LINENO "Unsupported distro"
+    fi
+
+    if python3_enabled; then
+      install_python3
+    fi
 }
 
-_generate_jre_dockerfile() {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre8/Dockerfile
+function _generate_jre_dockerfile {
+    local PYTHON_PACKAGES='python2.7 python-dev python3.6 python3.6-dev'
+    if python3_enabled; then
+        PYTHON_PACKAGES="python2.7 python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
+    fi
+
+    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre11/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG
 MAINTAINER root
 
 RUN apt-get update && \
-    apt-get install python -y && \
-    apt-get install python3.5 -y && \
-    apt-get install git -y && \
-    apt-get update && \
-    apt-get install openjdk-8-jre-headless -y && \
+    apt-get install ${PYTHON_PACKAGES} openjdk-11-jre-headless -y && \
     apt-get clean
 EOF
 }
 
-create_base_jre_image() {
+function create_base_jre_image {
     echo "Create base jre image"
     docker pull $STORLETS_DOCKER_BASE_IMG
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8
+    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11
     _generate_jre_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre8 .
+    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11
+    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11 .
     cd -
 }
 
-_generate_logback_xml() {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8_storlets/logback.xml
+function _generate_logback_xml {
+    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets/logback.xml
 <configuration>
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/tmp/SDaemon.log</file>
@@ -257,9 +260,9 @@ _generate_logback_xml() {
 EOF
 }
 
-_generate_jre_storlet_dockerfile() {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8_storlets/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre8
+function _generate_jre_storlet_dockerfile {
+    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets/Dockerfile
+FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11
 MAINTAINER root
 RUN [ "groupadd", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
 RUN [ "useradd", "-u" , "$STORLETS_DOCKER_SWIFT_USER_ID", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
@@ -275,25 +278,29 @@ ENTRYPOINT ["/usr/local/libexec/storlets/init_container.sh"]
 EOF
 }
 
-create_storlet_engine_image() {
+function create_storlet_engine_image {
     echo "Create Storlet engine image"
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8_storlets
+    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets
     _generate_logback_xml
     _generate_jre_storlet_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre8_storlets
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre8_storlets .
+    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets
+    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11_storlets .
     cd -
 }
 
-install_storlets_code() {
+function install_storlets_code {
     echo "Installing storlets"
     cd $REPO_DIR
     sudo ./install_libs.sh
-    sudo pip install -r requirements.txt
-    sudo python setup.py install
-    sudo pip3 install -r requirements.txt
-    sudo python3 setup.py install
-    sudo chown -R ${STORLETS_SWIFT_RUNTIME_USER} storlets.egg-info*
+    pip_install .
+
+    # Also install code to library directory so that we can import them
+    # from docker container.
+    sudo mkdir -p -m 755 /usr/local/lib/storlets/python
+    pip_install . -t /usr/local/lib/storlets/python --no-compile
+    for bin_file in storlets-daemon storlets-daemon-factory ; do
+        sudo cp `which ${bin_file}` /usr/local/libexec/storlets/
+    done
 
     sudo mkdir -p $STORLETS_DOCKER_DEVICE/scripts
     sudo chown "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" "$STORLETS_DOCKER_DEVICE"/scripts
@@ -305,7 +312,7 @@ install_storlets_code() {
     cd -
 }
 
-_generate_swift_middleware_conf() {
+function _generate_swift_middleware_conf {
     cat <<EOF > /tmp/swift_middleware_conf
 [proxy-confs]
 proxy_server_conf_file = /etc/swift/proxy-server.conf
@@ -327,7 +334,7 @@ storlet_proxy_execution = $STORLETS_PROXY_EXECUTION_ONLY
 EOF
 }
 
-_generate_storlet-docker-gateway() {
+function _generate_storlet-docker-gateway {
     cat <<EOF > /tmp/storlet-docker-gateway.conf
 [DEFAULT]
 storlet_logcontainer = $STORLETS_LOG_CONTAIER_NAME
@@ -341,14 +348,14 @@ storlet_timeout = $STORLETS_RUNTIME_TIMEOUT
 EOF
 }
 
-_generate_default_tenant_dockerfile() {
+function _generate_default_tenant_dockerfile {
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre8_storlets
+FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11_storlets
 MAINTAINER root
 EOF
 }
 
-create_default_tenant_image() {
+function create_default_tenant_image {
     SWIFT_DEFAULT_PROJECT_ID=`openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | awk '{ print $2 }'`
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
     _generate_default_tenant_dockerfile
@@ -357,7 +364,7 @@ create_default_tenant_image() {
     cd -
 }
 
-create_test_config_file() {
+function create_test_config_file {
     testfile=${REPO_DIR}/test.conf
     iniset ${testfile} general keystone_default_domain $STORLETS_DEFAULT_PROJECT_DOMAIN_ID
     iniset ${testfile} general keystone_public_url $KEYSTONE_PUBLIC_URL
@@ -369,8 +376,7 @@ create_test_config_file() {
     iniset ${testfile} general region
 }
 
-
-install_storlets() {
+function install_storlets {
     echo "Install storlets dependencies"
     prepare_storlets_install
 
@@ -392,7 +398,7 @@ install_storlets() {
     _storlets_swift_restart
 }
 
-uninstall_storlets() {
+function uninstall_storlets {
     sudo service docker stop
     sudo sed -r 's#^.*DOCKER_OPTS=.*$#DOCKER_OPTS="--debug --storage-opt dm.override_udev_sync_check=true"#' /etc/default/docker
 

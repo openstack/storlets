@@ -62,7 +62,8 @@ class SBus(object):
         sbus_back_ = CDLL(SBus.SBUS_SO_NAME)
 
         sbus_back_.sbus_start_logger.argtypes = [c_char_p, c_char_p]
-        sbus_back_.sbus_start_logger(str_log_level, container_id)
+        sbus_back_.sbus_start_logger(str_log_level.encode("utf-8"),
+                                     container_id.encode("utf-8"))
 
     @staticmethod
     def stop_logger():

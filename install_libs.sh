@@ -23,14 +23,5 @@ ant install
 # Install container side scripts
 SRC=bin
 DST=/usr/local/libexec/storlets
-mkdir -p $DST
-chmod 755 $DST
+mkdir -p -m 755 $DST
 cp "$SRC/init_container.sh" $DST
-cp "$SRC/storlets-daemon" $DST
-cp "$SRC/storlets-daemon-factory" $DST
-
-# Install python library to be mouted by containers
-DST=/usr/local/lib/storlets/python
-mkdir -p $DST
-chmod 755 $DST
-pip install . -t $DST --no-compile

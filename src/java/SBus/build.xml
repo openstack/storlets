@@ -28,20 +28,15 @@
             srcdir="src/main"
             destdir="bin"
             classpath="../dependencies/json_simple-1.1.jar"
-            includeantruntime="false"/>
+            includeantruntime="false"
+            nativeheaderdir='.'/>
     </target>
 
-    <target name="h" depends="java">
-        <javah destdir="." force="yes" classpath="bin">
-            <class name="org.openstack.storlet.sbus.SBusJNI" />
-        </javah>
-    </target>
-
-    <target name="so" depends="h">
+    <target name="so" depends="java">
         <exec dir="." executable="gcc">
             <arg line="-shared -o bin/libjsbus.so -fPIC" />
-            <arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/" />
-            <arg line="-I/usr/lib/jvm/java-8-openjdk-amd64/include/linux/" />
+            <arg line="-I/usr/lib/jvm/java-11-openjdk-amd64/include/" />
+            <arg line="-I/usr/lib/jvm/java-11-openjdk-amd64/include/linux/" />
             <arg line="-I../../c/sbus/" />
             <arg line="SBusJNI.c ../../c/sbus/sbus.c" />
         </exec>

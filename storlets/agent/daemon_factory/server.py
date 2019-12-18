@@ -18,14 +18,15 @@ import os
 import pwd
 import signal
 import subprocess
+import sys
 import time
 
 from storlets.sbus import SBus
 from storlets.sbus.client import SBusClient
 from storlets.sbus.client.exceptions import SBusClientException, \
     SBusClientSendError
-from storlets.agent.common.server import command_handler, CommandSuccess, \
-    CommandFailure, SBusServer
+from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
+    CommandSuccess, CommandFailure, SBusServer
 from storlets.agent.common.utils import get_logger, DEFAULT_PY2, DEFAULT_PY3
 
 
@@ -107,6 +108,8 @@ class StorletDaemonFactory(SBusServer):
         if int(float(daemon_language_version)) == 3:
             daemon_language_version = DEFAULT_PY3
         else:
+            # TODO(takashi): Switch default python version to 3 once we drop
+            #                python2 support.
             daemon_language_version = DEFAULT_PY2
 
         python_interpreter = '/usr/bin/python%s' % daemon_language_version
@@ -521,15 +524,22 @@ def main():
     # Initialize logger
     logger = get_logger("daemon-factory", opts.log_level, opts.container_id)
     logger.debug("Daemon factory started")
-    SBus.start_logger("DEBUG", container_id=opts.container_id)
 
-    # Impersonate the swift user
-    pw = pwd.getpwnam('swift')
-    os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
-    os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
+    try:
+        SBus.start_logger("DEBUG", container_id=opts.container_id)
 
-    # create an instance of daemon_factory
-    factory = StorletDaemonFactory(opts.sbus_path, logger, opts.container_id)
+        # Impersonate the swift user
+        pw = pwd.getpwnam('swift')
+        os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
+        os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
 
-    # Start the main loop
-    return factory.main_loop()
+        # create an instance of daemon_factory
+        factory = StorletDaemonFactory(opts.sbus_path, logger,
+                                       opts.container_id)
+
+        # Start the main loop
+        sys.exit(factory.main_loop())
+
+    except Exception:
+        logger.eception('Unhandled exception')
+        sys.exit(EXIT_FAILURE)

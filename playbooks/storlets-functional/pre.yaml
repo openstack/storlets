@@ -8,3 +8,5 @@
           ./s2aio.sh install
         executable: /bin/bash
         chdir: 'src/{{ zuul.project.canonical_name }}'
+      environment:
+        USE_PYTHON3: "False"

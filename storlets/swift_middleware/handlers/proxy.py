@@ -195,9 +195,9 @@ class StorletProxyHandler(StorletBaseHandler):
         acl_string = '.r:%s' % self._build_acl_string(user_name, storlet_name)
         try:
             clean_acl('X-Container-Read', acl_string)
-        except ValueError as e:
+        except ValueError as err:
             msg = ('storlet ACL update request has invalid values %s'
-                   % e.message)
+                   % str(err))
             raise HTTPBadRequest(msg.encode('utf8'))
 
         # Make sure the resulting acl permits a single entity

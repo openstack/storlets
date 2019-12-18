@@ -232,7 +232,8 @@ class RunTimeSandbox(object):
         self.logger = logger
 
         self.default_docker_image_name = \
-            conf.get('default_docker_image_name', 'ubuntu_18.04_jre8_storlets')
+            conf.get('default_docker_image_name',
+                     'ubuntu_18.04_jre11_storlets')
 
     def ping(self):
         """
