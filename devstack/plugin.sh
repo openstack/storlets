@@ -233,7 +233,7 @@ function create_base_jre_image {
 }
 
 function _generate_logback_xml {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets/logback.xml
+    sudo tee /usr/local/lib/storlets/logback.xml <<EOF >/dev/null
 <configuration>
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/tmp/SDaemon.log</file>
@@ -258,6 +258,7 @@ function _generate_logback_xml {
   </root>
 </configuration>
 EOF
+    sudo chmod 0744 /usr/local/lib/storlets/logback.xml
 }
 
 function _generate_jre_storlet_dockerfile {
@@ -266,11 +267,6 @@ FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11
 MAINTAINER root
 RUN [ "groupadd", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
 RUN [ "useradd", "-u" , "$STORLETS_DOCKER_SWIFT_USER_ID", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
-
-# Copy files
-COPY ["logback.xml", "/usr/local/lib/storlets/"]
-
-RUN ["chmod", "0744", "/usr/local/lib/storlets/logback.xml"]
 
 CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
 

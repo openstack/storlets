@@ -189,7 +189,6 @@ Step 3: Augment the above created image with the storlets stuff
 ::
 
     mkdir -p $HOME/docker_repos/ubuntu_18.04_jre11_storlets
-    cp $HOME/storlets/install/storlets/roles/docker_storlet_engine_image/files/logback.xml .
     cd -
 
 Create the file: $HOME/docker_repos/ubuntu_18.04_jre11_storlets/Dockerfile
@@ -203,11 +202,6 @@ with the following content:
 
     RUN [ "groupadd", "-g", "1003", "swift" ]
     RUN [ "useradd", "-u" , "1003", "-g", "1003", "swift" ]
-
-    # Copy files
-    COPY ["logback.xml", "init_container.sh", "/usr/local/lib/storlets/"]
-
-    RUN ["chmod", "0744", "/usr/local/lib/storlets/logback.xml"]
 
     CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
 
