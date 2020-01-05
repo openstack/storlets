@@ -40,7 +40,8 @@ class TestStorlet(object):
 
         if op == 'print':
             for key, value in params.items():
-                out_files[0].write('%s     %s\n' % (key, value))
+                out_files[0].write(
+                    ('%s     %s\n' % (key, value)).encode('utf-8'))
 
         if op == 'hold':
             time.sleep(100000)

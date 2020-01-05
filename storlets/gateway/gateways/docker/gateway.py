@@ -128,12 +128,12 @@ class StorletGatewayDocker(StorletGatewayBase):
             if '-' not in name or '.' not in name:
                 raise ValueError('Storlet name is incorrect')
         elif params['Language'].lower() == 'python':
-            # support both py2 and py3
             try:
-                version = int(float(params.get('Language-Version', 2)))
+                version = int(float(params.get('Language-Version', 3)))
             except ValueError:
                 raise ValueError('Language-Version is invalid')
 
+            # TODO(takashi): Drop Py2 support
             if version not in [2, DEFAULT_PY2, 3, DEFAULT_PY3]:
                 # TODO(kota_): more strict version check should be nice.
                 raise ValueError('Not supported version specified')

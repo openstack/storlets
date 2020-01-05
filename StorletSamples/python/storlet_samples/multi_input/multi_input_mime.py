@@ -49,11 +49,13 @@ class MultiInputMIMEStorlet(object):
             input_file.close()
             if in_files:
                 # in_files still have items
-                out_files[0].write('\n--%s\n' % mime_boundary)
+                out_files[0].write(
+                    ('\n--%s\n' % mime_boundary).encode('utf-8'))
             else:
                 # this is the end of input_files so the boundary should end
                 # the content
-                out_files[0].write('\n--%s--' % mime_boundary)
+                out_files[0].write(
+                    ('\n--%s--' % mime_boundary).encode('utf-8'))
 
         self.logger.debug('Complete')
         out_files[0].close()
