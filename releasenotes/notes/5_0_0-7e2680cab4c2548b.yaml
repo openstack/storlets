@@ -1,0 +1,18 @@
+---
+prelude: >
+    Now Storlets is fully compatible with Python 3.6, while it keeps support
+    for Python 2.7.
+features:
+  - |
+    Operatos can run Storlets engine and Storlets python applications on
+    Python 3 (3.6).
+upgrade:
+  - |
+    Now python storlet applications are executed in Python 3 instead of Python
+    2 by default. To run python storlet applications on Python 2, users should
+    explicitly specify language version by adding
+    ``X-Object-Meta-Storlet-Language-Version`` to application objects.
+deprecation:
+  - |
+    Python 2.7 is still supported in this release, but will be removed in
+    V-release, once Swift drops Python 2.7 support.
