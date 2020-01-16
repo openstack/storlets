@@ -218,7 +218,7 @@ class StorletLogger(object):
 
     def _emit_log(self, level, msg):
         msg = '%s %s: %s' % (self.storlet_name, level, msg)
-        self.log_file.write(msg)
+        self.log_file.write(msg.encode('utf-8'))
 
     def debug(self, msg):
         self._emit_log('DEBUG', msg)
