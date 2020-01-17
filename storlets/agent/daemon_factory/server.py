@@ -104,13 +104,12 @@ class StorletDaemonFactory(SBusServer):
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
                         pool_size, uds_path, log_level,
                         daemon_language_version):
-        daemon_language_version = daemon_language_version or 2
-        if int(float(daemon_language_version)) == 3:
-            daemon_language_version = DEFAULT_PY3
-        else:
-            # TODO(takashi): Switch default python version to 3 once we drop
-            #                python2 support.
+        daemon_language_version = daemon_language_version or 3
+        # TODO(takashi): Drop Py2 support
+        if int(float(daemon_language_version)) == 2:
             daemon_language_version = DEFAULT_PY2
+        else:
+            daemon_language_version = DEFAULT_PY3
 
         python_interpreter = '/usr/bin/python%s' % daemon_language_version
         str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'

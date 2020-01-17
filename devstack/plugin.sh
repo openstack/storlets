@@ -297,7 +297,10 @@ function install_storlets_code {
     # Also install code to library directory so that we can import them
     # from docker container.
     sudo mkdir -p -m 755 /usr/local/lib/storlets/python
-    pip_install . -t /usr/local/lib/storlets/python --no-compile
+
+    # NOTE(takashi): We need --no-deps to avoid enum34 installed in py 2 env,
+    #                which causes failure in py3 execution.
+    pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
     for bin_file in storlets-daemon storlets-daemon-factory ; do
         sudo cp `which ${bin_file}` /usr/local/libexec/storlets/
     done

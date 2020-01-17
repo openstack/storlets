@@ -88,6 +88,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 env['LD_LIBRARY_PATH'].split(':'))
 
     def test_get_python_args(self):
+        self._test_get_python_args(None, DEFAULT_PY3)
         self._test_get_python_args(DEFAULT_PY2, DEFAULT_PY2)
         self._test_get_python_args(2, DEFAULT_PY2)
         self._test_get_python_args(DEFAULT_PY3, DEFAULT_PY3)

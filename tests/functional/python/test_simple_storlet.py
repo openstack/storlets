@@ -20,7 +20,7 @@ from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
 from six.moves.urllib.request import Request, urlopen
-from storlets.agent.common.utils import DEFAULT_PY3
+from storlets.agent.common.utils import DEFAULT_PY2
 
 
 class TestSimpleStorlet(StorletPythonFunctionalTest):
@@ -164,9 +164,9 @@ class TestSimpleStorletOnProxy(TestSimpleStorlet):
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
 
 
-class TestSimpleStorletRunPy3(TestSimpleStorlet):
+class TestSimpleStorletRunPy2(TestSimpleStorlet):
     def setUp(self):
-        super(TestSimpleStorletRunPy3, self).setUp(version=DEFAULT_PY3)
+        super(TestSimpleStorletRunPy2, self).setUp(version=DEFAULT_PY2)
 
 
 if __name__ == '__main__':
