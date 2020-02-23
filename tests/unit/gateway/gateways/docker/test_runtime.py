@@ -42,7 +42,7 @@ from tests.unit.gateway.gateways import FakeFileManager
 def _mock_os_pipe(bufs):
     class FakeFd(object):
         def __init__(self, rbuf=''):
-            self.rbuf = rbuf
+            self.rbuf = rbuf.encode('utf-8')
             self.closed = False
 
         def read(self, size):
@@ -640,7 +640,7 @@ class TestStorletInvocationProtocolPython(TestStorletInvocationProtocol):
         self.options = {'storlet_main': 'storlet.Storlet',
                         'storlet_dependency': 'dep1,dep2',
                         'storlet_language': 'python',
-                        'language_version': '2.7',
+                        'language_version': '3.6',
                         'file_manager': FakeFileManager('storlet', 'dep')}
         storlet_request = DockerStorletRequest(
             self.storlet_id, {}, {}, iter(StringIO()), options=self.options)

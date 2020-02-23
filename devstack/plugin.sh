@@ -181,21 +181,11 @@ function prepare_storlets_install {
       die $LINENO "Unsupported distro"
     fi
 
-    if [ "${USE_PYTHON3}" == "False" ]; then
-      # TODO(takashi): Remove this when we remove py2 support
-      install_package python2.7 python2.7-dev
-    else
-      install_python3
-    fi
-
+    install_python3
 }
 
 function _generate_jre_dockerfile {
-    # TODO(tkajinam): Remove py2 packages when we remove its support
-    local PYTHON_PACKAGES='python2.7 python2.7-dev python3.8 python3.8-dev'
-    if python3_enabled; then
-        PYTHON_PACKAGES="python2.7 python2.7-dev python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
-    fi
+    PYTHON_PACKAGES="python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
 
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG

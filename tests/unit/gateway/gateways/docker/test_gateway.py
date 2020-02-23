@@ -120,7 +120,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         # with language version
         options = {'storlet_main': 'storlet.Storlet',
                    'storlet_language': 'python',
-                   'storlet_language_version': '2.7',
+                   'storlet_language_version': '3.6',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         dsreq = DockerStorletRequest(storlet_id, params, metadata,
                                      iter(StringIO()), options=options)
@@ -130,7 +130,7 @@ class TestDockerStorletRequest(unittest.TestCase):
         self.assertEqual('storlet.Storlet', dsreq.storlet_main)
         self.assertEqual([], dsreq.dependencies)
         self.assertEqual('python', dsreq.storlet_language)
-        self.assertEqual('2.7', dsreq.storlet_language_version)
+        self.assertEqual('3.6', dsreq.storlet_language_version)
 
     def test_init_with_range(self):
         storlet_id = 'Storlet-1.0.jar'
@@ -324,7 +324,7 @@ use = egg:swift#catch_errors
         # correct name and headers w/ dependency
         obj = 'storlet.py'
         params = {'Language': 'python',
-                  'Language-Version': '2.7',
+                  'Language-Version': '3.6',
                   'Interface-Version': '1.0',
                   'Dependency': 'dep_file',
                   'Object-Metadata': 'no',
@@ -335,6 +335,17 @@ use = egg:swift#catch_errors
         obj = 'storlet.py'
         params = {'Language': 'python',
                   'Language-Version': '1.7',
+                  'Interface-Version': '1.0',
+                  'Dependency': 'dep_file',
+                  'Object-Metadata': 'no',
+                  'Main': 'storlet.Storlet'}
+        with self.assertRaises(ValueError):
+            StorletGatewayDocker.validate_storlet_registration(params, obj)
+
+        # py2 is no more supported
+        obj = 'storlet.py'
+        params = {'Language': 'python',
+                  'Language-Version': '2.7',
                   'Interface-Version': '1.0',
                   'Dependency': 'dep_file',
                   'Object-Metadata': 'no',

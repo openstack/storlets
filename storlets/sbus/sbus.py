@@ -107,15 +107,9 @@ class SBus(object):
 
         # Extract Python strings
         n_metadata = pn_metadata.value
-        # NOTE: because the storlets container may not have
-        # six module inside. Just check the type, not the python
-        # version. Anyway, the value should be bytes but python2
-        # can assume the bytes as str.
-        str_metadata = pp_metadata.value.decode("utf-8") \
-            if not isinstance(pp_metadata.value, str) else pp_metadata.value
+        str_metadata = pp_metadata.value.decode("utf-8")
         n_params = pn_params.value
-        str_params = pp_params.value.decode("utf-8") \
-            if not isinstance(pp_params.value, str) else pp_params.value
+        str_params = pp_params.value.decode("utf-8")
 
         # Trim the junk out
         if 0 < n_metadata:

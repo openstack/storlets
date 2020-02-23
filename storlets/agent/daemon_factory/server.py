@@ -26,7 +26,7 @@ from storlets.sbus.client.exceptions import SBusClientException, \
     SBusClientSendError
 from storlets.agent.common.server import command_handler, EXIT_FAILURE, \
     CommandSuccess, CommandFailure, SBusServer
-from storlets.agent.common.utils import get_logger, DEFAULT_PY2, DEFAULT_PY3
+from storlets.agent.common.utils import get_logger, DEFAULT_PY3
 
 
 class SDaemonError(Exception):
@@ -103,12 +103,9 @@ class StorletDaemonFactory(SBusServer):
     def get_python_args(self, daemon_language, storlet_path, storlet_name,
                         pool_size, uds_path, log_level,
                         daemon_language_version):
-        daemon_language_version = daemon_language_version or 3
-        # TODO(takashi): Drop Py2 support
-        if int(float(daemon_language_version)) == 2:
-            daemon_language_version = DEFAULT_PY2
-        else:
-            daemon_language_version = DEFAULT_PY3
+        # TODO(takashi): We currently override all 3.x by DEFAULT_PY3, but
+        #                we might need to support multiple minor versions.
+        daemon_language_version = DEFAULT_PY3
 
         python_interpreter = '/usr/bin/python%s' % daemon_language_version
         str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'

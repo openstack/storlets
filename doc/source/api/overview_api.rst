@@ -77,7 +77,7 @@ For Python written storlets
 ::
 
     'X-Object-Meta-Storlet-Language': 'Python'
-    'X-Object-Meta-Storlet-Language-Version': '2.7'
+    'X-Object-Meta-Storlet-Language-Version': '3.6'
     'X-Object-Meta-Storlet-Interface-Version': '1.0'
     'X-Object-Meta-Storlet-Dependency': dependencies
     'X-Object-Meta-Storlet-Object-Metadata': 'no'

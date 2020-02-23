@@ -17,7 +17,7 @@
 import os
 import shutil
 
-from storlets.agent.common.utils import DEFAULT_PY2, DEFAULT_PY3
+from storlets.agent.common.utils import DEFAULT_PY3
 from storlets.gateway.common.stob import StorletRequest
 from storlets.gateway.gateways.base import StorletGatewayBase
 from storlets.gateway.gateways.docker.runtime import RunTimePaths, \
@@ -133,8 +133,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             except ValueError:
                 raise ValueError('Language-Version is invalid')
 
-            # TODO(takashi): Drop Py2 support
-            if version not in [2, DEFAULT_PY2, 3, DEFAULT_PY3]:
+            if version not in [3, DEFAULT_PY3]:
                 # TODO(kota_): more strict version check should be nice.
                 raise ValueError('Not supported version specified')
 

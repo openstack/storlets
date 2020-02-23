@@ -93,10 +93,7 @@ class SBusClient(object):
         finally:
             os.close(read_fd)
 
-        if not isinstance(reply, str):
-            reply = reply.decode('utf-8')
-
-        return self._parse_response(reply)
+        return self._parse_response(reply.decode('utf-8'))
 
     def execute(self, invocation_params, invocation_fds):
         return self._request(sbus_cmd.SBUS_CMD_EXECUTE,

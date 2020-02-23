@@ -15,8 +15,7 @@
 import logging
 from logging.handlers import SysLogHandler
 
-# TODO(takashi): Make the following parameters configurable
-DEFAULT_PY2 = 2.7
+# TODO(takashi): Make the following parameter configurable
 DEFAULT_PY3 = 3.8
 
 

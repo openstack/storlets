@@ -49,7 +49,7 @@ def put_storlet_object(url, token, storlet, dependencies, storlet_main_class,
     :param dependencies: a list of dependency files
     :param storlet_main_class: name of the storlet main class
     :param language: storlet language. default value is Java
-    :param version: storlet language version. defaulte is 2.7 for python
+    :param version: storlet language version. default is 3.8 for python
     """
     headers = {'X-Object-Meta-Storlet-Language': language,
                'X-Object-Meta-Storlet-Interface-Version': '1.0',
@@ -89,7 +89,7 @@ def deploy_storlet(url, token, storlet, storlet_main_class, dependencies,
     :param storlet: storlet file to be registerd
     :param dependencies: a list of dependency files to be registered
     :param language: storlet language. default value is Java
-    :param version: storlet language version. defaulte is 2.7 for python
+    :param version: storlet language version. default is 3.8 for python
     """
     # No need to create containers every time
     # put_storlet_containers(url, token)

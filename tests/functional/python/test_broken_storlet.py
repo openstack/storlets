@@ -17,7 +17,6 @@ from swiftclient import client
 from swiftclient.exceptions import ClientException
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
-from storlets.agent.common.utils import DEFAULT_PY2
 
 
 class TestBrokenStorlet(StorletPythonFunctionalTest):
@@ -41,11 +40,6 @@ class TestBrokenStorlet(StorletPythonFunctionalTest):
                 response_dict=resp, headers=req_headers)
         e = cm.exception
         self.assertEqual(e.http_status, 503)
-
-
-class TestBrokenStorletRunPy2(TestBrokenStorlet):
-    def setUp(self):
-        super(TestBrokenStorletRunPy2, self).setUp(version=DEFAULT_PY2)
 
 
 if __name__ == '__main__':
