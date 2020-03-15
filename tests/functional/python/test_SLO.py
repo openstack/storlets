@@ -102,7 +102,7 @@ class TestSLO(StorletPythonFunctionalTest):
                         oname = 'aux_file%d' % j
                         with open(oname, 'rb') as f:
                             aux_content += f.read()
-                    self.asertEqual(chunk, aux_content)
+                    self.assertEqual(chunk, aux_content)
 
     @attr('slow')
     def test_get_SLO(self):
