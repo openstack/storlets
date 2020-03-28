@@ -180,8 +180,8 @@ def patch_swift_storlet_proxy_file(conf):
             # client configuration (we encountered this problem in a fuel swift
             # cluster).
             if 'proxy-logging' in line:
-                line = 'pipeline = proxy-logging cache storlet_handler slo ' + \
-                       'proxy-logging proxy-server\n'
+                line = ('pipeline = proxy-logging cache storlet_handler slo '
+                        'proxy-logging proxy-server\n')
             else:
                 line = 'pipeline = cache storlet_handler slo proxy-server\n'
         sys.stdout.write(line)
@@ -244,6 +244,7 @@ def main(argv):
         remove(conf)
     else:
         usage(argv)
+
 
 if __name__ == "__main__":
     main(sys.argv)

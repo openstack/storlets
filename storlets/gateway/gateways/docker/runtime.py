@@ -183,6 +183,7 @@ class RunTimePaths(object):
     def host_dependency_cache_dir(self):
         return os.path.join(self.host_cache_root_dir, self.scope, 'dependency')
 
+
 """---------------------------------------------------------------------------
 Docker Stateful Container API
 The RunTimeSandbox serve as an API between the Docker Gateway and
@@ -464,6 +465,7 @@ class RunTimeSandbox(object):
                 raise StorletRuntimeException('Daemon start failed')
             else:
                 self.logger.debug('Daemon started')
+
 
 """---------------------------------------------------------------------------
 Storlet Daemon API
