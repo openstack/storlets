@@ -294,6 +294,10 @@ function install_storlets_code {
     sudo ./install_libs.sh
     pip_install .
 
+    # install test requirements because we still need some packages in the list
+    # to prepare deployment
+    pip_install -r ./test-requirements.txt
+
     # Also install code to library directory so that we can import them
     # from docker container.
     sudo mkdir -p -m 755 /usr/local/lib/storlets/python
