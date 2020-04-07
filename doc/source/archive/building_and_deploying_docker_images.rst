@@ -1,3 +1,5 @@
+:orphan:
+
 Introduction
 ============
 The Swift account manager can supply a Docker image in which the account's storlets
