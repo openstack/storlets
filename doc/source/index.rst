@@ -52,6 +52,7 @@ Overview and Concepts
    storlet_engine_overview
    api/overview_api
    ipython_integration
+   installation
 
 Related Projects
 ~~~~~~~~~~~~~~~~
@@ -71,6 +72,7 @@ Storlets Developers
 .. toctree::
    :maxdepth: 1
 
+   contributing
    writing_and_deploying_storlets
    writing_and_deploying_java_storlets
    writing_and_deploying_python_storlets

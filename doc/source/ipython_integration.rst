@@ -8,9 +8,9 @@ Set up IPython to work with storlets
 Setting up an IPython notebook to work with storlets involves:
 
 #. Providing the authentication information of a storlet enabled Swift account.
-    This is done by setting environment variables similar to those used by swift
-    client. The exact variables that need to be set are dependent on the auth middleware
-    used and the auth protocol version. For more details please refer to:
+   This is done by setting environment variables similar to those used by swift
+   client. The exact variables that need to be set are dependent on the auth middleware
+   used and the auth protocol version. For more details please refer to:
    `python-swiftclient docs
    <https://docs.openstack.org/python-swiftclient/latest/cli/index.html#authentication>`_.
 
