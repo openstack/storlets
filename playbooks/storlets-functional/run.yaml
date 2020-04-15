@@ -4,3 +4,5 @@
     - tox
   vars:
     - tox_envlist: func
+  environment:
+    USE_PYTHON3: "False"
