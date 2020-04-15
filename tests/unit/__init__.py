@@ -36,13 +36,6 @@ def with_tempdir(f):
     return wrapped
 
 
-class MockSBus(object):
-    @classmethod
-    def send(self, path, datagram):
-        # return success code
-        return 0
-
-
 class FakeLogger(object):
     def __init__(self, *args, **kwargs):
         self._log_lines = defaultdict(list)

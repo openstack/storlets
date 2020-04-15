@@ -22,8 +22,8 @@ import org.slf4j.Logger;
 import org.openstack.storlet.common.*;
 import org.openstack.storlet.daemon.SExecutionManager;
 
-import java.util.HashMap;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.io.IOException;
 import java.io.OutputStream;
 
@@ -36,26 +36,26 @@ import java.io.OutputStream;
 public class SExecutionTask extends SAbstractTask implements Runnable {
     private StorletLogger storletLogger_ = null;
     private IStorlet storlet_ = null;
+    private OutputStream sOut_ = null;
     private ArrayList<StorletInputStream> inStreams_ = null;
     private ArrayList<StorletOutputStream> outStreams_ = null;
     private HashMap<String, String> executionParams_ = null;
-    private OutputStream taskIdOut_ = null;
     private String taskId_ = null;
     private SExecutionManager sExecManager_ = null;
 
-    public SExecutionTask(IStorlet storlet,
+    public SExecutionTask(IStorlet storlet, OutputStream sOut,
             ArrayList<StorletInputStream> instreams,
-            ArrayList<StorletOutputStream> outstreams, OutputStream taskIdOut,
+            ArrayList<StorletOutputStream> outstreams,
             HashMap<String, String> executionParams,
             StorletLogger storletLogger, Logger logger,
             SExecutionManager sExecManager) {
         super(logger);
         this.storlet_ = storlet;
+        this.sOut_ = sOut;
         this.inStreams_ = instreams;
         this.outStreams_ = outstreams;
         this.executionParams_ = executionParams;
         this.storletLogger_ = storletLogger;
-        this.taskIdOut_ = taskIdOut;
         this.sExecManager_ = sExecManager;
     }
 
@@ -92,20 +92,7 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
     public boolean exec() {
         boolean bStatus = true;
         this.taskId_ = this.sExecManager_.submitTask((SExecutionTask) this);
-
-        try {
-            this.taskIdOut_.write(this.taskId_.getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-            bStatus = false;
-        } finally {
-            try{
-                this.taskIdOut_.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        return bStatus;
+        return respond(this.sOut_, true, new String("OK"), this.taskId_);
     }
 
     @Override

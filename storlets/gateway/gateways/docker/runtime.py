@@ -26,12 +26,10 @@ import eventlet
 import json
 from contextlib import contextmanager
 
-from storlets.sbus import SBus
-from storlets.sbus.command import SBUS_CMD_EXECUTE
-from storlets.sbus.datagram import SBusFileDescriptor, SBusExecuteDatagram
-from storlets.sbus import file_description as sbus_fd
 from storlets.sbus.client import SBusClient
 from storlets.sbus.client.exceptions import SBusClientException
+from storlets.sbus.datagram import SBusFileDescriptor
+from storlets.sbus import file_description as sbus_fd
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlets.gateway.common.logger import StorletLogger
@@ -505,8 +503,6 @@ class StorletInvocationProtocol(object):
         self.data_write_fd = None
         self.metadata_read_fd = None
         self.metadata_write_fd = None
-        self.taskid_read_fd = None
-        self.taskid_write_fd = None
         self.task_id = None
         self._input_data_read_fd = None
         self._input_data_write_fd = None
@@ -548,8 +544,6 @@ class StorletInvocationProtocol(object):
                                   self.input_data_read_fd,
                                   storage_metadata=self.srequest.user_metadata,
                                   storlets_metadata=storlets_metadata),
-               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_TASK_ID,
-                                  self.taskid_write_fd),
                SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT,
                                   self.data_write_fd),
                SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
@@ -587,7 +581,6 @@ class StorletInvocationProtocol(object):
         if not self.srequest.has_fd:
             self._input_data_read_fd, self._input_data_write_fd = os.pipe()
         self.data_read_fd, self.data_write_fd = os.pipe()
-        self.taskid_read_fd, self.taskid_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
 
         for source in self.extra_data_sources:
@@ -614,8 +607,7 @@ class StorletInvocationProtocol(object):
         """
         Close all of the container side descriptors
         """
-        fds = [self.data_write_fd, self.metadata_write_fd,
-               self.taskid_write_fd]
+        fds = [self.data_write_fd, self.metadata_write_fd]
         if not self.srequest.has_fd:
             fds.append(self.input_data_read_fd)
         fds.extend([source['read_fd'] for source in self.extra_data_sources])
@@ -626,8 +618,7 @@ class StorletInvocationProtocol(object):
         """
         Close all of the host side descriptors
         """
-        fds = [self.data_read_fd, self.metadata_read_fd,
-               self.taskid_read_fd]
+        fds = [self.data_read_fd, self.metadata_read_fd]
         fds.extend([source['write_fd'] for source in self.extra_data_sources])
         self._safe_close(fds)
 
@@ -650,25 +641,23 @@ class StorletInvocationProtocol(object):
         with self.storlet_logger.activate(),\
                 self._activate_invocation_descriptors():
             self._send_execute_command()
-        self._wait_for_read_with_timeout(self.taskid_read_fd)
-        # TODO(kota_): need an assertion for task_id format
-        self.task_id = os.read(self.taskid_read_fd, 10)
-        if not isinstance(self.task_id, str):
-            self.task_id = self.task_id.decode('utf-8')
-        os.close(self.taskid_read_fd)
 
     def _send_execute_command(self):
         """
         Send execute command to the remote daemon factory to invoke storlet
         execution
         """
-        dtg = SBusExecuteDatagram(
-            SBUS_CMD_EXECUTE,
-            self.remote_fds,
-            self.srequest.params)
-        rc = SBus.send(self.storlet_pipe_path, dtg)
+        client = SBusClient(self.storlet_pipe_path)
+        try:
+            resp = client.execute(self.srequest.params, self.remote_fds)
+            if not resp.status:
+                raise StorletRuntimeException("Failed to send execute command")
 
-        if (rc < 0):
+            if not resp.task_id:
+                raise StorletRuntimeException("Missing task id")
+            else:
+                self.task_id = resp.task_id
+        except SBusClientException:
             raise StorletRuntimeException("Failed to send execute command")
 
     def _wait_for_read_with_timeout(self, fd):

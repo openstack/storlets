@@ -36,10 +36,13 @@ public abstract class SAbstractTask {
         this.logger = logger;
     }
 
-    protected boolean respond(OutputStream ostream, boolean status, String message) {
+    protected boolean respond(OutputStream ostream, boolean status, String message, String taskid) {
         JSONObject obj = new JSONObject();
         obj.put("status", status);
         obj.put("message", message);
+        if ( taskid != null ) {
+            obj.put("task_id", taskid);
+        }
         boolean bStatus = true;
         try {
             ostream.write(obj.toJSONString().getBytes());

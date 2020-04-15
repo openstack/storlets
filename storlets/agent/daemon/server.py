@@ -147,19 +147,38 @@ class StorletDaemon(SBusServer):
         else:
             return StorletInputFile(in_md, in_fd)
 
+    def _safe_close(self, fileno):
+        try:
+            os.close(fileno)
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                raise
+            pass
+
     @command_handler
     def execute(self, dtg):
-        task_id_out_fd = dtg.task_id_out_fd
-
         task_id = str(uuid.uuid4())[:8]
 
         while len(self.task_id_to_pid) >= self.pool_size:
             self._wait_child_process()
 
-        self.logger.debug('Returning task_id: %s ' % task_id)
-        with os.fdopen(task_id_out_fd, 'wb') as outfile:
-            outfile.write(task_id.encode("utf-8"))
+        pid = os.fork()
+        if pid:
+            self.logger.debug('Create a subprocess %d for task %s' %
+                              (pid, task_id))
+            self.task_id_to_pid[task_id] = pid
 
+            for fd in dtg.invocation_fds:
+                # We do not use invocation fds in main process, so close them
+                self._safe_close(fd)
+        else:
+            self._safe_close(dtg.service_out_fd)
+            self._execute(dtg)
+            sys.exit()
+
+        return CommandSuccess('OK', task_id=task_id)
+
+    def _execute(self, dtg):
         storlet_md = dtg.object_in_storlet_metadata
         params = dtg.params
         in_md = dtg.object_in_metadata
@@ -168,50 +187,28 @@ class StorletDaemon(SBusServer):
         out_fds = dtg.object_out_fds
         logger_fd = dtg.logger_out_fd
 
-        pid = os.fork()
-        if pid:
-            self.logger.debug('Create a subprocess %d for task %s' %
-                              (pid, task_id))
-            self.task_id_to_pid[task_id] = pid
+        self.logger.debug('Start storlet invocation')
+        self.logger.debug(
+            'in_fds:%s in_md:%s out_md_fds:%s out_fds:%s logger_fd: %s'
+            % (in_fds, in_md, out_md_fds, out_fds, logger_fd))
 
-            for fd in dtg.fds:
-                # We do not use fds in main process, so close them
-                try:
-                    os.close(fd)
-                except OSError as e:
-                    if e.errno != errno.EBADF:
-                        raise
-                    pass
-        else:
-            try:
-                self.logger.debug('Start storlet invocation')
+        in_files = [self._create_input_file(st_md, md, in_fd)
+                    for st_md, md, in_fd in zip(storlet_md, in_md, in_fds)]
 
-                self.logger.debug('in_fds:%s in_md:%s out_md_fds:%s out_fds:%s'
-                                  ' logger_fd: %s'
-                                  % (in_fds, in_md, out_md_fds, out_fds,
-                                     logger_fd))
+        out_files = [StorletOutputFile(out_md_fd, out_fd)
+                     for out_md_fd, out_fd in zip(out_md_fds, out_fds)]
 
-                in_files = [self._create_input_file(st_md, md, in_fd)
-                            for st_md, md, in_fd
-                            in zip(storlet_md, in_md, in_fds)]
-
-                out_files = [StorletOutputFile(out_md_fd, out_fd)
-                             for out_md_fd, out_fd
-                             in zip(out_md_fds, out_fds)]
-
-                self.logger.debug('Start storlet execution')
-                with StorletLogger(self.storlet_name, logger_fd) as slogger:
-                    handler = self.storlet_cls(slogger)
-                    handler(in_files, out_files, params)
-                self.logger.debug('Completed')
-            except Exception:
-                self.logger.exception('Error in storlet invocation')
-            finally:
-                # Make sure that all fds are closed
-                self._safe_close_files(in_files)
-                self._safe_close_files(out_files)
-                sys.exit()
-        return CommandSuccess('OK')
+        try:
+            self.logger.debug('Start storlet execution')
+            with StorletLogger(self.storlet_name, logger_fd) as slogger:
+                handler = self.storlet_cls(slogger)
+                handler(in_files, out_files, params)
+            self.logger.debug('Completed')
+        except Exception:
+            self.logger.exception('Error in storlet invocation')
+        finally:
+            # Make sure that all fds are closed
+            self._safe_close_files(in_files + out_files)
 
     @command_handler
     def cancel(self, dtg):

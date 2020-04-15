@@ -15,8 +15,8 @@
 import copy
 import json
 
+from storlets.sbus import command as sbus_cmd
 from storlets.sbus import file_description as sbus_fd
-from storlets.sbus.command import SBUS_CMD_EXECUTE
 
 
 class SBusFileDescriptor(object):
@@ -39,11 +39,10 @@ class SBusFileDescriptor(object):
                 'storage': self.storage_metadata}
 
     @classmethod
-    def from_metadata_dict(cls, metadict):
+    def from_fileno_and_metadata_dict(cls, fileno, metadict):
         _metadict = copy.deepcopy(metadict)
         storlets_metadata = _metadict['storlets']
         storage_metadata = _metadict['storage']
-        fileno = _metadict['fileno']
         fdtype = storlets_metadata.pop('type')
         return cls(fdtype, fileno, storlets_metadata, storage_metadata)
 
@@ -55,7 +54,7 @@ class SBusDatagram(object):
 
     # Each child Datagram should define what fd types are expected with
     # list format
-    _required_fd_types = None
+    _required_fdtypes = None
 
     def __init__(self, command, sfds, params=None, task_id=None):
         """
@@ -72,8 +71,8 @@ class SBusDatagram(object):
             raise NotImplementedError(
                 'SBusDatagram class should not be initialized as bare')
         self.command = command
-        fd_types = [sfd.fdtype for sfd in sfds]
-        self._check_required_fd_types(fd_types)
+        fdtypes = [sfd.fdtype for sfd in sfds]
+        self._check_required_fdtypes(fdtypes)
         self.sfds = sfds
         self.params = params
         self.task_id = task_id
@@ -145,17 +144,17 @@ class SBusDatagram(object):
             #                fd validation.
             return ret[0]
 
-    def _check_required_fd_types(self, given_fd_types):
-        if self._required_fd_types is None:
+    def _check_required_fdtypes(self, given_fdtypes):
+        if self._required_fdtypes is None:
             raise NotImplementedError(
-                'SBusDatagram class should define _required_fd_types')
-        # the first len(self._required_fd_types) types should be fit
+                'SBusDatagram class should define _required_fdtypes')
+        # the first len(self._required_fdtypes) types should be fit
         # to the required list
-        if given_fd_types[:len(self._required_fd_types)] != \
-                self._required_fd_types:
-            raise ValueError('Fd type mismatch given_fd_types:%s \
-                             required_fd_types:%s' %
-                             (given_fd_types, self._required_fd_types))
+        if given_fdtypes[:len(self._required_fdtypes)] != \
+                self._required_fdtypes:
+            raise ValueError('Fd type mismatch given_fdtypes:%s \
+                             required_fdtypes:%s' %
+                             (given_fdtypes, self._required_fdtypes))
 
     def __str__(self):
         return 'num_fds=%s, md=%s, cmd_params=%s' % (
@@ -179,7 +178,7 @@ class SBusServiceDatagram(SBusDatagram):
      - SBUS_CMD_PING
      - SBUS_CMD_CANCEL
     """
-    _required_fd_types = [sbus_fd.SBUS_FD_SERVICE_OUT]
+    _required_fdtypes = [sbus_fd.SBUS_FD_SERVICE_OUT]
 
     def __init__(self, command, sfds, params=None, task_id=None):
         super(SBusServiceDatagram, self).__init__(
@@ -191,11 +190,11 @@ class SBusServiceDatagram(SBusDatagram):
 
 
 class SBusExecuteDatagram(SBusDatagram):
-    _required_fd_types = [sbus_fd.SBUS_FD_INPUT_OBJECT,
-                          sbus_fd.SBUS_FD_OUTPUT_TASK_ID,
-                          sbus_fd.SBUS_FD_OUTPUT_OBJECT,
-                          sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
-                          sbus_fd.SBUS_FD_LOGGER]
+    _required_fdtypes = [sbus_fd.SBUS_FD_SERVICE_OUT,
+                         sbus_fd.SBUS_FD_INPUT_OBJECT,
+                         sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                         sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                         sbus_fd.SBUS_FD_LOGGER]
 
     def __init__(self, command, sfds, params=None, task_id=None):
         # TODO(kota_): the args command is not used in ExecuteDatagram
@@ -207,15 +206,23 @@ class SBusExecuteDatagram(SBusDatagram):
         #                this implementation is based on the idea that
         #                we only have extra input sources, which is
         #                added at the end of fd list
-        extra_fd_types = [sfd.fdtype for sfd in
-                          sfds[len(self._required_fd_types):]]
+        extra_fdtypes = [sfd.fdtype for sfd in
+                         sfds[len(self._required_fdtypes):]]
 
-        if [t for t in extra_fd_types if t != sbus_fd.SBUS_FD_INPUT_OBJECT]:
+        if [t for t in extra_fdtypes if t != sbus_fd.SBUS_FD_INPUT_OBJECT]:
             raise ValueError(
                 'Extra data should be SBUS_FD_INPUT_OBJECT')
 
         super(SBusExecuteDatagram, self).__init__(
-            SBUS_CMD_EXECUTE, sfds, params, task_id)
+            sbus_cmd.SBUS_CMD_EXECUTE, sfds, params, task_id)
+
+    @property
+    def invocation_fds(self):
+        return [sfd.fileno for sfd in self.sfds[1:]]
+
+    @property
+    def service_out_fd(self):
+        return self._find_fd(sbus_fd.SBUS_FD_SERVICE_OUT)
 
     @property
     def object_out_fds(self):
@@ -226,16 +233,21 @@ class SBusExecuteDatagram(SBusDatagram):
         return self._find_fds(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA)
 
     @property
-    def task_id_out_fd(self):
-        return self._find_fd(sbus_fd.SBUS_FD_OUTPUT_TASK_ID)
-
-    @property
     def logger_out_fd(self):
         return self._find_fd(sbus_fd.SBUS_FD_LOGGER)
 
     @property
     def object_in_fds(self):
         return self._find_fds(sbus_fd.SBUS_FD_INPUT_OBJECT)
+
+
+def build_datagram(command, sfds, params, task_id):
+    if command == sbus_cmd.SBUS_CMD_EXECUTE:
+        dtg_cls = SBusExecuteDatagram
+    else:
+        dtg_cls = SBusServiceDatagram
+
+    return dtg_cls(command, sfds, params, task_id)
 
 
 def build_datagram_from_raw_message(fds, str_md, str_cmd_params):
@@ -256,11 +268,6 @@ def build_datagram_from_raw_message(fds, str_md, str_cmd_params):
     if len(fds) != len(metadata):
         raise ValueError('Length mismatch fds: %d != md %d' %
                          (len(fds), len(metadata)))
-    sfds = []
-    for fileno, md in zip(fds, metadata):
-        md['fileno'] = fileno
-        sfds.append(SBusFileDescriptor.from_metadata_dict(md))
-
-    if command == SBUS_CMD_EXECUTE:
-        return SBusExecuteDatagram(command, sfds, params, task_id)
-    return SBusServiceDatagram(command, sfds, params, task_id)
+    sfds = [SBusFileDescriptor.from_fileno_and_metadata_dict(fileno, md)
+            for (fileno, md) in zip(fds, metadata)]
+    return build_datagram(command, sfds, params, task_id)

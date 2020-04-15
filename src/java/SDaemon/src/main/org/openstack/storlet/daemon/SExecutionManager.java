@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.io.IOException;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 import org.slf4j.LoggerFactory;
 import ch.qos.logback.classic.Logger;
@@ -71,7 +72,9 @@ public class SExecutionManager {
 
     public String submitTask(final SExecutionTask sTask) {
         Future futureTask = threadPool_.submit(sTask);
-        String taskId = futureTask.toString().split("@")[1];
+
+        UUID uuid = UUID.randomUUID();
+        String taskId = uuid.toString().substring(8);
 
         synchronized (this.taskIdToTask_) {
             this.taskIdToTask_.put(taskId, futureTask);

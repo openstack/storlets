@@ -33,7 +33,6 @@ from tests.unit import FakeLogger
 from tests.unit.gateway.gateways import FakeFileManager
 from storlets.gateway.gateways.docker.gateway import DockerStorletRequest, \
     StorletGatewayDocker
-from tests.unit import MockSBus
 
 
 class MockInternalClient(object):
@@ -461,11 +460,9 @@ use = egg:swift#catch_errors
         # TODO(kota_): need more efficient way for emuration of return value
         # from SDaemon
         value_generator = iter([
-            # Forth is return value for invoking as task_id
-            'This is task id',
-            # Fifth is for getting meta
+            # first, we get metadata json
             json.dumps({'metadata': 'return'}),
-            # At last return body and EOF
+            # then we get object data
             'something', '',
         ])
 
@@ -496,7 +493,6 @@ use = egg:swift#catch_errors
         # os.read -> mock reading the file descriptor from container
         # select.slect -> mock fd communication which can be readable
         @mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient')
-        @mock.patch('storlets.gateway.gateways.docker.runtime.SBus', MockSBus)
         @mock.patch('storlets.gateway.gateways.docker.runtime.os.read',
                     mock_read)
         @mock.patch('storlets.gateway.gateways.docker.runtime.os.close',
@@ -509,6 +505,8 @@ use = egg:swift#catch_errors
             client.ping.return_value = SBusResponse(True, 'OK')
             client.stop_daemon.return_value = SBusResponse(True, 'OK')
             client.start_daemon.return_value = SBusResponse(True, 'OK')
+            client.execute.return_value = SBusResponse(True, 'OK', 'someid')
+
             sresp = self.gateway.invocation_flow(st_req, extra_sources)
             eventlet.sleep(0.1)
             file_like = FileLikeIter(sresp.data_iter)

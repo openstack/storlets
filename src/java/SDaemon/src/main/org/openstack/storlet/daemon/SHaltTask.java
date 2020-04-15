@@ -46,7 +46,7 @@ public class SHaltTask extends SAbstractTask {
      * */
     @Override
     public boolean exec() {
-        respond(this.sOut_, true, new String("OK"));
+        respond(this.sOut_, true, new String("OK"), null);
         return false;
     }
 }
