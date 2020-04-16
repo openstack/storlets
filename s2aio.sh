@@ -34,7 +34,11 @@ _prepare_devstack_env() {
     # Checkout devstack
     if [ ! -e $DEVSTACK_DIR ]; then
         git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
-        cp devstack/localrc.sample $DEVSTACK_DIR/localrc
+        if [ ${USE_PYTHON3} == "False" ]; then
+          cp devstack/localrc.py2.sample $DEVSTACK_DIR/localrc
+        else
+          cp devstack/localrc.sample $DEVSTACK_DIR/localrc
+        fi
     fi
 
     source $DEVSTACK_DIR/stackrc
