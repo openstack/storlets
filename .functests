@@ -16,6 +16,14 @@ shift
 
 ant build_storlets
 
+if [ ${USE_PYTHON3} == "False" ]; then
+    # TODO(takashi): We should use python-swiftclent 3.8.1 to avoid connection
+    #                leak on py2.7(lp#1873435). Remove this once we get a fixed
+    #                version released.
+    pip uninstall python-swiftclient
+    pip install python-swiftclient==3.8.1
+fi
+
 SRC_DIR=$(cd $(dirname $0); pwd)
 cd ${SRC_DIR}/tests/functional
 if [ "$FLAVOR" == "jenkins" ]; then
