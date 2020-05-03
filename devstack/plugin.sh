@@ -316,6 +316,10 @@ function install_storlets_code {
     sudo chmod 04755 "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
     sudo chown root:root "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
 
+    # NOTE(takashi): We should cleanup egg-info directory here, otherwise it
+    #                causes permission denined when installing package by tox.
+    sudo rm -rf storlets.egg-info
+
     cd -
 }
 
