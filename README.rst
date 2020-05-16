@@ -93,7 +93,7 @@ To get started, follow:
 `"S2AIO - Swift Storlets All In One" <https://storlets.readthedocs.io/en/latest/getting_started.html>`__.
 
 The write and deploy a storlet, follow:
-`"Writing and deploying storelts" <https://storlets.readthedocs.io/en/latest/writing_and_deploying_storlets.html>`__.
+`"Writing and deploying storlets" <https://storlets.readthedocs.io/en/latest/writing_and_deploying_storlets.html>`__.
 
 For Deployers
 -------------

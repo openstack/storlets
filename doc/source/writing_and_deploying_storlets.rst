@@ -171,10 +171,10 @@ Here is the Swift client command for uploading the storlet. some notes:
 #. We use the upload option of the swift cli.
 #. The container name is the first parameter for the upload command and is
    'storlet'
-#. The name of the object and the local file to upload is 'identitystorelt-1.0-jar'
+#. The name of the object and the local file to upload is 'identitystorlet-1.0-jar'
    IMPORTANT: when uploading the file from another directory, that parameter would
-   be something of the form 'bin/identitystorelt-1.0-jar' in this case the name
-   of the object appearing in the storlet container would be 'bin/identitystorelt-1.0-jar'
+   be something of the form 'bin/identitystorlet-1.0-jar' in this case the name
+   of the object appearing in the storlet container would be 'bin/identitystorlet-1.0-jar'
    which will not work for the engine.
 #. The metadata that needs to accompany the storlet object is provided as headers.
 
