@@ -25,6 +25,7 @@
     run: playbooks/storlets-functional/run.yaml
     post-run: playbooks/storlets-functional/post.yaml
     timeout: 2400
+    voting: false
 
 - job:
     name: storlets-functional-py3
