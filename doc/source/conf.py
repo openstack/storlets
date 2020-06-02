@@ -39,9 +39,10 @@ master_doc = 'index'
 project = u'storlets'
 copyright = u'2013, OpenStack Foundation'
 # openstackdocstheme options
-repository_name = 'openstack/storlets'
-bug_project = 'storlets'
-bug_tag = ''
+openstackdocs_repo_name = 'openstack/storlets'
+openstackdocs_auto_name = False
+openstackdocs_bug_project = 'storlets'
+openstackdocs_bug_tag = ''
 # If true, '()' will be appended to :func: etc. cross-reference text.
 add_function_parentheses = True
 
@@ -50,7 +51,7 @@ add_function_parentheses = True
 add_module_names = True
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+pygments_style = 'native'
 
 # -- Options for HTML output --------------------------------------------------
 
@@ -61,7 +62,6 @@ html_theme = 'openstackdocs'
 # html_static_path = ['static']
 
 # Must set this variable to include year, month, day, hours, and minutes.
-html_last_updated_fmt = '%Y-%m-%d %H:%M'
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = '%sdoc' % project
