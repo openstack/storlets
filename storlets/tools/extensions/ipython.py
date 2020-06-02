@@ -20,7 +20,6 @@ This extension is desined to use os environment variables to set
 authentication and storage target host. (for now)
 
 """
-from __future__ import print_function
 
 import os
 import string
