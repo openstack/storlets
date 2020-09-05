@@ -134,9 +134,16 @@ class StorletDaemonFactory(SBusServer):
                                     can not check the status of the subprocess
                                     launched
         """
+        if not pargs:
+            raise SDaemonError('Invalid process arguments')
+
+        if not (os.path.exists(pargs[0]) and os.access(pargs[0], os.X_OK)):
+            raise SDaemonError('Requested runtime is unavailable')
+
         str_pargs = ' '.join(pargs)
         self.logger.debug('Starting subprocess: pargs:{0} env:{1}'
                           .format(str_pargs, env))
+
         # TODO(takashi): We had better use contextmanager
         # TODO(takashi): Where is this closed?
         try:
