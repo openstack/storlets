@@ -36,9 +36,6 @@ src/java/SBus/org_openstack_storlet_sbus_SBusJNI.h
 *.jar
 StorletSamples/java/*/bin
 
-# scripts build
-scripts/restart_docker_container
-
 # functional tests
 tests/functional/.ipynb_checkpoints/
 

@@ -17,10 +17,12 @@ import errno
 import os
 import select
 import stat
-import subprocess
 import sys
 import time
 import six
+import docker
+import docker.errors
+from docker.types import Mount as DockerMount
 
 import eventlet
 import json
@@ -290,38 +292,44 @@ class RunTimeSandbox(object):
         docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
                                            self.scope)
 
-        pipe_mount = '%s:%s' % (self.paths.host_pipe_dir,
-                                self.paths.sandbox_pipe_dir)
-        storlet_mount = '%s:%s:ro' % (self.paths.host_storlet_base_dir,
-                                      self.paths.sandbox_storlet_base_dir)
-        storlet_native_lib_mount = '%s:%s:ro' % (
-            self.paths.host_storlet_native_lib_dir,
-            self.paths.sandbox_storlet_native_lib_dir)
-        storlet_native_bin_mount = '%s:%s:ro' % (
-            self.paths.host_storlet_native_bin_dir,
-            self.paths.sandbox_storlet_native_bin_dir)
+        mounts = [
+            DockerMount('/dev/log', '/dev/log', type='bind'),
+            DockerMount(self.paths.sandbox_pipe_dir,
+                        self.paths.host_pipe_dir,
+                        type='bind'),
+            DockerMount(self.paths.sandbox_storlet_base_dir,
+                        self.paths.host_storlet_base_dir,
+                        type='bind'),
+            DockerMount(self.paths.sandbox_storlet_native_lib_dir,
+                        self.paths.host_storlet_native_lib_dir,
+                        type='bind', read_only=True),
+            DockerMount(self.paths.sandbox_storlet_native_bin_dir,
+                        self.paths.host_storlet_native_bin_dir,
+                        type='bind', read_only=True)
+            ]
 
-        cmd = [os.path.join(self.paths.host_restart_script_dir,
-                            'restart_docker_container'),
-               docker_container_name, docker_image_name, pipe_mount,
-               storlet_mount, storlet_native_lib_mount,
-               storlet_native_bin_mount]
+        try:
+            client = docker.from_env()
+            # Stop the existing storlet container
+            try:
+                scontainer = client.containers.get(docker_container_name)
+            except docker.errors.NotFound:
+                # The container is not yet created
+                pass
+            else:
+                scontainer.stop(timeout=1)
+                scontainer.remove()
 
-        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
-        stdout, stderr = proc.communicate()
-
-        if stdout:
-            if not isinstance(stdout, str):
-                stdout = stdout.decode("utf-8")
-            self.logger.debug('STDOUT: %s' % stdout.replace('\n', '#012'))
-        if stderr:
-            if not isinstance(stderr, str):
-                stderr = stderr.decode("utf-8")
-            self.logger.error('STDERR: %s' % stderr.replace('\n', '#012'))
-
-        if proc.returncode:
-            raise StorletRuntimeException('Failed to restart docker container')
+            # Start the new one
+            client.containers.run(
+                docker_image_name, detach=True, name=docker_container_name,
+                network_disabled=True, mounts=mounts)
+        except docker.errors.ImageNotFound:
+            msg = "Image %s is not found" % docker_image_name
+            raise StorletRuntimeException(msg)
+        except docker.errors.APIError:
+            self.logger.exception("Failed to manage docker containers")
+            raise StorletRuntimeException("Docker runtime error")
 
     def restart(self):
         """

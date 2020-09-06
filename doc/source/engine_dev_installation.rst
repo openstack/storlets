@@ -130,6 +130,14 @@ We need the following for Docker
     sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
     update-rc.d docker defaults
 
+Also, add swift user to docker group so that the user can manage docker
+containers without sudo
+
+::
+
+    sudo usermod -aG docker swift
+
+
 Get and install the storlets code
 ---------------------------------
 
@@ -257,18 +265,6 @@ Create the run time directory
     export STORLETS_HOME=/home/docker_device
     sudo mkdir -p $STORLETS_HOME
     sudo chmod 777 $STORLETS_HOME
-
-Create the scripts directory and populate it.
-Note that these scripts are executed by the middleware but
-require root privileges.
-
-::
-
-    mkdir $STORLETS_HOME/scripts
-    cd STORLETS_HOME/scripts
-    cp $HOME/scripts/restart_docker_container .
-    sudo chown root:root restart_docker_container
-    sudo chmod 04755 restart_docker_container
 
 The run time directory will be later populated by the middleware with:
  #. storlets - Docker container mapped directories keeping storlet jars

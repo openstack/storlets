@@ -21,6 +21,10 @@ import errno
 from contextlib import contextmanager
 from six import StringIO
 from stat import ST_MODE
+import docker.client
+import docker.errors
+import docker.models.containers
+
 
 from storlets.sbus.client import SBusResponse
 from storlets.sbus.client.exceptions import SBusClientIOError, \
@@ -244,7 +248,8 @@ class TestRunTimeSandbox(unittest.TestCase):
     def setUp(self):
         self.logger = FakeLogger()
         # TODO(takashi): take these values from config file
-        self.conf = {'docker_repo': 'localhost:5001'}
+        self.conf = {'docker_repo': 'localhost:5001',
+                     'default_docker_image_name': 'defaultimage'}
         self.scope = '0123456789abc'
         self.sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
 
@@ -277,8 +282,8 @@ class TestRunTimeSandbox(unittest.TestCase):
     def test_wait(self):
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping, \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'time.sleep') as sleep:
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'time.sleep') as sleep:
             ping.return_value = SBusResponse(True, 'OK')
             self.sbox.wait()
             self.assertEqual(sleep.call_count, 0)
@@ -294,87 +299,161 @@ class TestRunTimeSandbox(unittest.TestCase):
 
         # TODO(takashi): should test timeout case
 
+    def test__restart(self):
+        # storlet container is not running
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_client.containers = mock_containers
+            mock_containers.get.side_effect = \
+                docker.errors.NotFound('container is not found')
+            docker_from_env.return_value = mock_client
+
+            self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(1, mock_containers.run.call_count)
+
+        # storlet container is running
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_client.containers = mock_containers
+            mock_container = \
+                mock.MagicMock(spec_set=docker.models.containers.Container)
+            mock_containers.get.return_value = mock_container
+            docker_from_env.return_value = mock_client
+
+            self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(1, mock_container.stop.call_count)
+            self.assertEqual(1, mock_container.remove.call_count)
+            self.assertEqual(1, mock_containers.run.call_count)
+
+        # get failed
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_client.containers = mock_containers
+            mock_containers.get.side_effect = \
+                docker.errors.APIError('api error')
+            docker_from_env.return_value = mock_client
+
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(0, mock_containers.run.call_count)
+
+        # stop failed
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_client.containers = mock_containers
+            mock_container = \
+                mock.MagicMock(spec_set=docker.models.containers.Container)
+            mock_containers.get.return_value = mock_container
+            mock_container.stop.side_effect = \
+                docker.errors.APIError('api error')
+            docker_from_env.return_value = mock_client
+
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(1, mock_container.stop.call_count)
+            self.assertEqual(0, mock_container.remove.call_count)
+            self.assertEqual(0, mock_containers.run.call_count)
+
+        # remove failed
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_client.containers = mock_containers
+            mock_container = \
+                mock.MagicMock(spec_set=docker.models.containers.Container)
+            mock_containers.get.return_value = mock_container
+            mock_container.remove.side_effect = \
+                docker.errors.APIError('api error')
+            docker_from_env.return_value = mock_client
+
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(1, mock_container.stop.call_count)
+            self.assertEqual(1, mock_container.remove.call_count)
+            self.assertEqual(0, mock_containers.run.call_count)
+
+        # run failed
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'docker.from_env') as docker_from_env:
+            mock_client = mock.MagicMock(spec_set=docker.client.DockerClient)
+            mock_containers = mock.MagicMock(
+                spec_set=docker.models.containers.ContainerCollection)
+            mock_containers.run.side_effect = \
+                docker.errors.APIError('api error')
+            mock_client.containers = mock_containers
+            mock_container = \
+                mock.MagicMock(spec_set=docker.models.containers.Container)
+            mock_containers.get.return_value = mock_container
+            docker_from_env.return_value = mock_client
+
+            with self.assertRaises(StorletRuntimeException):
+                self.sbox._restart('storlet_image')
+            self.assertEqual(1, mock_containers.get.call_count)
+            self.assertEqual(1, mock_container.stop.call_count)
+            self.assertEqual(1, mock_container.remove.call_count)
+            self.assertEqual(1, mock_containers.run.call_count)
+
     def test_restart(self):
-
-        class FakeProc(object):
-            def __init__(self, stdout, stderr, code):
-                self.stdout = stdout
-                self.stderr = stderr
-                self.returncode = code
-
-            def communicate(self):
-                return (self.stdout, self.stderr)
-
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_dir'), \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.Popen') as popen:
-            _wait = self.sbox.wait
-
-            def dummy_wait_success(*args, **kwargs):
-                return 1
-
-            self.sbox.wait = dummy_wait_success
-
-            # Test that popen is called successfully
-            popen.return_value = FakeProc('Try to restart\nOK', '', 0)
+                        'RunTimePaths.create_host_pipe_dir') as pipe_dir, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox._restart') as _restart, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox.wait') as wait:
             self.sbox.restart()
-            self.assertEqual(1, popen.call_count)
-            self.sbox.wait = _wait
+            self.assertEqual(1, pipe_dir.call_count)
+            self.assertEqual(1, _restart.call_count)
+            self.assertEqual((self.scope,), _restart.call_args.args)
+            self.assertEqual(1, wait.call_count)
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_dir'), \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.Popen') as popen:
-            _wait = self.sbox.wait
+                        'RunTimePaths.create_host_pipe_dir') as pipe_dir, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox._restart') as _restart, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox.wait') as wait:
+            _restart.side_effect = [StorletRuntimeException(), None]
+            self.sbox.restart()
+            self.assertEqual(1, pipe_dir.call_count)
+            self.assertEqual(2, _restart.call_count)
+            self.assertEqual((self.scope,),
+                             _restart.call_args_list[0].args)
+            self.assertEqual(('defaultimage',),
+                             _restart.call_args_list[1].args)
+            self.assertEqual(1, wait.call_count)
 
-            def dummy_wait_success(*args, **kwargs):
-                return 1
-
-            self.sbox.wait = dummy_wait_success
-
-            # Test double failure to restart the container
-            # for both the tenant image and generic image
-            popen.return_value = FakeProc('Try to restart', 'Some error', 1)
+        with mock.patch('storlets.gateway.gateways.docker.runtime.'
+                        'RunTimePaths.create_host_pipe_dir') as pipe_dir, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox._restart') as _restart, \
+                mock.patch('storlets.gateway.gateways.docker.runtime.'
+                           'RunTimeSandbox.wait') as wait:
+            _restart.side_effect = StorletTimeout()
             with self.assertRaises(StorletRuntimeException):
                 self.sbox.restart()
-            self.assertEqual(2, popen.call_count)
-            self.sbox.wait = _wait
-
-        with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_dir'), \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.Popen') as popen:
-            _wait = self.sbox.wait
-
-            def dummy_wait_success(*args, **kwargs):
-                return 1
-
-            self.sbox.wait = dummy_wait_success
-
-            # Test failure to restart the container for the tenant image
-            # success for the generic image
-            popen.side_effect = [FakeProc('Try to restart', 'Some error', 1),
-                                 FakeProc('Try to restart\nOK', '', 0)]
-            self.sbox.restart()
-            self.assertEqual(2, popen.call_count)
-            self.sbox.wait = _wait
-
-        with mock.patch('storlets.gateway.gateways.docker.runtime.'
-                        'RunTimePaths.create_host_pipe_dir'), \
-            mock.patch('storlets.gateway.gateways.docker.runtime.'
-                       'subprocess.Popen') as popen:
-            _wait = self.sbox.wait
-
-            def dummy_wait_failure(*args, **kwargs):
-                raise StorletTimeout()
-
-            self.sbox.wait = dummy_wait_failure
-
-            popen.return_value = FakeProc('OK', '', 0)
-            with self.assertRaises(StorletRuntimeException):
-                self.sbox.restart()
-            self.sbox.wait = _wait
+            self.assertEqual(1, pipe_dir.call_count)
+            self.assertEqual(1, _restart.call_count)
+            self.assertEqual((self.scope,), _restart.call_args.args)
+            self.assertEqual(0, wait.call_count)
 
     def test_get_storlet_classpath(self):
         storlet_id = 'Storlet.jar'

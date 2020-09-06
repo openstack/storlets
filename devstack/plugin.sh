@@ -47,7 +47,6 @@ SWIFT_MEMBER_USER_PWD=member
 # Storlets install tunables
 STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
 STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
-STORLET_MANAGEMENT_USER=${STORLET_MANAGEMENT_USER:-$USER}
 STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/home/docker_device}
 STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:20.04}
 STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_20.04}
@@ -60,7 +59,7 @@ STORLETS_STORLET_CONTAINER_NAME=${STORLETS_STORLET_CONTAINER_NAME:-storlet}
 STORLETS_DEPENDENCY_CONTAINER_NAME=${STORLETS_DEPENDENCY_CONTAINER_NAME:-dependency}
 STORLETS_LOG_CONTAIER_NAME=${STORLETS_LOG_CONTAIER_NAME:-log}
 STORLETS_GATEWAY_MODULE=${STORLETS_GATEWAY_MODULE:-docker}
-STORLETS_GATEWAY_CONF_FILE=${STORLETS_GATEWAY_CONF_FILE:-/etc/swift/storlet_docker_gateway.conf}
+STORLETS_GATEWAY_CONF_FILE=${STORLETS_GATEWAY_CONF_FILE:-${SWIFT_CONF_DIR}/storlet_docker_gateway.conf}
 STORLETS_PROXY_EXECUTION_ONLY=${STORLETS_PROXY_EXECUTION_ONLY:-false}
 STORLETS_SCRIPTS_DIR=${STORLETS_SCRIPTS_DIR:-"$STORLETS_DOCKER_DEVICE"/scripts}
 STORLETS_STORLETS_DIR=${STORLETS_STORLETS_DIR:-"$STORLETS_DOCKER_DEVICE"/storlets/scopes}
@@ -75,18 +74,6 @@ TMP_REGISTRY_PREFIX=/tmp/registry
 
 # Functions
 # ---------
-
-function _storlets_swift_start {
-    swift-init --run-dir=${SWIFT_DATA_DIR}/run all start || true
-}
-
-function _storlets_swift_stop {
-    swift-init --run-dir=${SWIFT_DATA_DIR}/run all stop || true
-}
-
-function _storlets_swift_restart {
-    swift-init --run-dir=${SWIFT_DATA_DIR}/run all restart || true
-}
 
 function _export_os_vars {
     export OS_IDENTITY_API_VERSION=3
@@ -148,7 +135,7 @@ function configure_swift_and_keystone_for_storlets {
     rm /tmp/storlet-docker-gateway.conf
 
     # Create storlet related containers and set ACLs
-    _storlets_swift_start
+    start_swift
     _export_swift_os_vars
     openstack object store account set --property Storlet-Enabled=True
     swift post --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER $STORLETS_STORLET_CONTAINER_NAME
@@ -160,46 +147,32 @@ function _install_docker {
     # TODO: Add other dirstors.
     # This one is geared towards Ubuntu
     # See other projects that install docker
-    DOCKER_UNIX_SOCKET=/var/run/docker.sock
-    DOCKER_SERVICE_TIMEOUT=5
 
-    install_package socat
     wget http://get.docker.com -O install_docker.sh
     sudo chmod 777 install_docker.sh
     sudo bash -x install_docker.sh
     sudo rm install_docker.sh
 
-    sudo killall docker || true
-
-    # systemd env doesn't require /etc/default/docker options
-    if [[ ! -e /etc/default/docker ]]; then
-        sudo touch /etc/default/docker
-        sudo ls /lib/systemd/system
-        sudo sed -i '0,/[service]/a EnvironmentFile=-/etc/default/docker' /lib/systemd/system/docker.service
-        sudo cat /lib/systemd/system/docker.service
+    # Add swift user to docker group so that the user can manage docker
+    # containers without sudo
+    sudo grep -q docker /etc/group
+    if [ $? -ne 0 ]; then
+      sudo groupadd docker
     fi
-    sudo cat /etc/default/docker
-    sudo sed -r 's#^.*DOCKER_OPTS=.*$#DOCKER_OPTS="--debug -g /home/docker_device/docker --storage-opt dm.override_udev_sync_check=true"#' /etc/default/docker
+    add_user_to_group $STORLETS_SWIFT_RUNTIME_USER docker
 
-    # Start the daemon - restart just in case the package ever auto-starts...
+    if [ $STORLETS_SWIFT_RUNTIME_USER == $USER ]; then
+      # NOTE(takashi): We need this workaroud because we can't reload
+      #                user-group relationship in bash scripts
+      DOCKER_UNIX_SOCKET=/var/run/docker.sock
+      sudo chown $USER:$USER $DOCKER_UNIX_SOCKET
+    fi
+
+    # Restart docker daemon
     restart_service docker
-
-    echo "Waiting for docker daemon to start..."
-    DOCKER_GROUP=$(groups | cut -d' ' -f1)
-    CONFIGURE_CMD="while ! /bin/echo -e 'GET /version HTTP/1.0\n\n' | socat - unix-connect:$DOCKER_UNIX_SOCKET 2>/dev/null | grep -q '200 OK'; do
-      # Set the right group on docker unix socket before retrying
-      sudo chgrp $DOCKER_GROUP $DOCKER_UNIX_SOCKET
-      sudo chmod g+rw $DOCKER_UNIX_SOCKET
-      sleep 1
-    done"
-    if ! timeout $DOCKER_SERVICE_TIMEOUT sh -c "$CONFIGURE_CMD"; then
-      die $LINENO "docker did not start"
-fi
 }
 
 function prepare_storlets_install {
-    sudo mkdir -p "$STORLETS_DOCKER_DEVICE"/docker
-    sudo chmod 777 $STORLETS_DOCKER_DEVICE
     _install_docker
 
     if is_ubuntu; then
@@ -236,11 +209,11 @@ EOF
 
 function create_base_jre_image {
     echo "Create base jre image"
-    docker pull $STORLETS_DOCKER_BASE_IMG
+    sudo docker pull $STORLETS_DOCKER_BASE_IMG
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
     _generate_jre_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
+    sudo docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
     cd -
 }
 
@@ -292,7 +265,7 @@ function create_storlet_engine_image {
     _generate_logback_xml
     _generate_jre_storlet_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
+    sudo docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
     cd -
 }
 
@@ -317,12 +290,8 @@ function install_storlets_code {
         sudo cp `which ${bin_file}` /usr/local/libexec/storlets/
     done
 
-    sudo mkdir -p $STORLETS_DOCKER_DEVICE/scripts
-    sudo chown "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" "$STORLETS_DOCKER_DEVICE"/scripts
-    sudo chmod 0755 "$STORLETS_DOCKER_DEVICE"/scripts
-    sudo cp scripts/restart_docker_container "$STORLETS_DOCKER_DEVICE"/scripts/
-    sudo chmod 04755 "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
-    sudo chown root:root "$STORLETS_DOCKER_DEVICE"/scripts/restart_docker_container
+    sudo mkdir -p -m 0755 $STORLETS_DOCKER_DEVICE
+    sudo chown -R "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" $STORLETS_DOCKER_DEVICE
 
     # NOTE(takashi): We should cleanup egg-info directory here, otherwise it
     #                causes permission denined when installing package by tox.
@@ -334,13 +303,11 @@ function install_storlets_code {
 function _generate_swift_middleware_conf {
     cat <<EOF > /tmp/swift_middleware_conf
 [proxy-confs]
-proxy_server_conf_file = /etc/swift/proxy-server.conf
-storlet_proxy_server_conf_file = /etc/swift/storlet-proxy-server.conf
+proxy_server_conf_file = ${SWIFT_CONF_DIR}/proxy-server.conf
+storlet_proxy_server_conf_file = ${SWIFT_CONF_DIR}/storlet-proxy-server.conf
 
 [object-confs]
-object_server_conf_files = /etc/swift/object-server/1.conf
-#object_server_conf_files = /etc/swift/object-server/1.conf, /etc/swift/object-server/2.conf, /etc/swift/object-server/3.conf, /etc/swift/object-server/4.conf
-#object_server_conf_files = /etc/swift/object-server.conf
+object_server_conf_files = ${SWIFT_CONF_DIR}/object-server/1.conf
 
 [common-confs]
 storlet_middleware = $STORLETS_MIDDLEWARE_NAME
@@ -379,7 +346,7 @@ function create_default_tenant_image {
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
     _generate_default_tenant_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
-    docker build -q -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
+    sudo docker build -q -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
     cd -
 }
 
@@ -414,12 +381,12 @@ function install_storlets {
     create_test_config_file
 
     echo "restart swift"
-    _storlets_swift_restart
+    stop_swift
+    start_swift
 }
 
 function uninstall_storlets {
     sudo service docker stop
-    sudo sed -r 's#^.*DOCKER_OPTS=.*$#DOCKER_OPTS="--debug --storage-opt dm.override_udev_sync_check=true"#' /etc/default/docker
 
     echo "Cleaning all storlets runtime stuff..."
     sudo rm -fr ${STORLETS_DOCKER_DEVICE}

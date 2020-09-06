@@ -6,12 +6,6 @@
 #       so you may need root privilege to execute this script
 set -x
 
-# build scripts
-cd scripts
-# TODO(takashi): also install them
-make
-cd -
-
 # install c library
 cd src/c/sbus
 make && make install

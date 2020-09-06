@@ -103,7 +103,6 @@ function uninstall_swift_using_devstack {
     sudo sed -i.bak '/swift.img/d'  /etc/fstab
 }
 
-
 function uninstall_s2aio {
     _prepare_devstack_env
 
@@ -131,6 +130,7 @@ case $COMMAND in
   "stop" )
     stop_s2aio
     ;;
+
   * )
     usage
 esac
