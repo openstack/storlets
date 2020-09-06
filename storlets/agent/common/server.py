@@ -145,6 +145,7 @@ class SBusServer(object):
 
     @command_handler
     def ping(self, dtg):
+        self.logger.debug('Received ping. Responding')
         return CommandSuccess('OK')
 
     @command_handler

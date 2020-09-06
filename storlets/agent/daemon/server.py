@@ -158,6 +158,8 @@ class StorletDaemon(SBusServer):
     @command_handler
     def execute(self, dtg):
         task_id = str(uuid.uuid4())[:8]
+        self.logger.debug('Execute storlet %s (task %s)' %
+                          (self.storlet_name, task_id))
 
         while len(self.task_id_to_pid) >= self.pool_size:
             self._wait_child_process()
@@ -187,10 +189,11 @@ class StorletDaemon(SBusServer):
         out_fds = dtg.object_out_fds
         logger_fd = dtg.logger_out_fd
 
-        self.logger.debug('Start storlet invocation')
+        self.logger.debug('Started storlet invocation process')
         self.logger.debug(
-            'in_fds:%s in_md:%s out_md_fds:%s out_fds:%s logger_fd: %s'
-            % (in_fds, in_md, out_md_fds, out_fds, logger_fd))
+            'Invocation fds: '
+            'in_fds:%s in_md:%s out_md_fds:%s out_fds:%s logger_fd:%s' %
+            (in_fds, in_md, out_md_fds, out_fds, logger_fd))
 
         in_files = [self._create_input_file(st_md, md, in_fd)
                     for st_md, md, in_fd in zip(storlet_md, in_md, in_fds)]
@@ -199,11 +202,11 @@ class StorletDaemon(SBusServer):
                      for out_md_fd, out_fd in zip(out_md_fds, out_fds)]
 
         try:
-            self.logger.debug('Start storlet execution')
+            self.logger.debug('Start storlet invocation')
             with StorletLogger(self.storlet_name, logger_fd) as slogger:
                 handler = self.storlet_cls(slogger)
                 handler(in_files, out_files, params)
-            self.logger.debug('Completed')
+            self.logger.debug('Completed storlet invocation')
         except Exception:
             self.logger.exception('Error in storlet invocation')
         finally:
@@ -213,6 +216,7 @@ class StorletDaemon(SBusServer):
     @command_handler
     def cancel(self, dtg):
         task_id = dtg.task_id
+        self.logger.debug('Cancel task: %s' % task_id)
         if task_id not in self.task_id_to_pid:
             return CommandFailure('Task id %s is not found' % task_id, False)
 
@@ -227,6 +231,7 @@ class StorletDaemon(SBusServer):
 
     @command_handler
     def halt(self, dtg):
+        self.logger.debug('Terminating')
         return CommandSuccess('OK', False)
 
     def _terminate(self):

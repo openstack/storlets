@@ -373,7 +373,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.kill_path) as kill, \
                 mock.patch(self.waitpid_path) as waitpid:
             kill.side_effect = OSError()
-            exc_pattern = '^Failed to stop some storlet daemons: .*'
+            exc_pattern = '^Failed to kill some storlet daemons: .*'
             with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
                 self.dfactory.process_kill_all()
             self.assertIn('storleta', str(e.exception))
@@ -536,7 +536,8 @@ class TestStorletDaemonFactory(unittest.TestCase):
             waitpid.return_value = 0, 0
             ret = self.dfactory.start_daemon(DummyDatagram(prms))
             self.assertTrue(ret.status)
-            self.assertEqual('storleta is already running', ret.message)
+            self.assertEqual(
+                'The storlet daemon storleta is already running', ret.message)
             self.assertTrue(ret.iterable)
 
         # Unsupported language
@@ -556,7 +557,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             resp = self.dfactory.stop_daemon(
                 DummyDatagram({'storlet_name': 'storleta'}))
             self.assertTrue(resp.status)
-            self.assertEqual('Storlet storleta, PID = 1000, ErrCode = 0',
+            self.assertEqual('The storlet daemon storleta is stopped',
                              resp.message)
             self.assertTrue(resp.iterable)
 
@@ -614,8 +615,8 @@ class TestStorletDaemonFactory(unittest.TestCase):
             halt.return_value = SBusResponse(True, 'OK')
             resp = self.dfactory.halt(DummyDatagram())
             self.assertTrue(resp.status)
-            self.assertIn('storleta: terminated', resp.message)
-            self.assertIn('storletb: terminated', resp.message)
+            self.assertEqual(
+                'Stopped all storlet daemons. Terminating.', resp.message)
             self.assertFalse(resp.iterable)
 
     def test_stop_daemons(self):
