@@ -36,5 +36,5 @@ class StorletGatewayBase(object):
         raise NotImplementedError("Not implemented: "
                                   "validate_dependency_registration")
 
-    def invocation_flow(self, sreq):
+    def invocation_flow(self, sreq, extra_sources=None):
         raise NotImplementedError("Not implemented: invocation_flow")
