@@ -195,6 +195,8 @@ class StorletDaemonFactory(SBusServer):
             try:
                 resp = client.ping()
                 if resp.status:
+                    self.logger.debug('The storlet daemon {0} is started'
+                                      .format(storlet_name))
                     return True
             except SBusClientSendError:
                 pass
@@ -319,7 +321,8 @@ class StorletDaemonFactory(SBusServer):
                           .format(storlet_name, dmn_pid))
 
         if dmn_pid is None:
-            raise SDaemonError('{0} is not found'.format(storlet_name))
+            raise SDaemonError('The storlet daemon {0} is not found'
+                               .format(storlet_name))
 
         try:
             os.kill(dmn_pid, signal.SIGKILL)
@@ -331,7 +334,7 @@ class StorletDaemonFactory(SBusServer):
             return obtained_pid, obtained_code
         except OSError:
             self.logger.exception(
-                'Error when sending kill signal to the storlet daemon %s' %
+                'Error when killing the storlet daemon %s' %
                 storlet_name)
             raise SDaemonError('Failed to send kill signal to the storlet '
                                'daemon {0}'.format(storlet_name))
@@ -344,12 +347,13 @@ class StorletDaemonFactory(SBusServer):
                         stop some of the storlet daemons
         :raises SDaemonError: when failed to kill one of the storlet daemons
         """
+        self.logger.debug('Kill all storlet daemons')
         failed = []
         for storlet_name in list(self.storlet_name_to_pid):
             try:
                 self.process_kill(storlet_name)
             except SDaemonError:
-                self.logger.exception('Failed to stop the storlet daemon {0}'
+                self.logger.exception('Failed to kill the storlet daemon {0}'
                                       .format(storlet_name))
                 if try_all:
                     failed.append(storlet_name)
@@ -357,7 +361,7 @@ class StorletDaemonFactory(SBusServer):
                     raise
         if failed:
             names = ', '.join(failed)
-            raise SDaemonError('Failed to stop some storlet daemons: {0}'
+            raise SDaemonError('Failed to kill some storlet daemons: {0}'
                                .format(names))
 
     def shutdown_all_processes(self, try_all=True):
@@ -369,6 +373,7 @@ class StorletDaemonFactory(SBusServer):
         :returns: a list of the terminated storlet daemons
         :raises SDaemonError: when failed to kill one of the storlet daemons
         """
+        self.logger.debug('Shutdown all storlet daemons')
         terminated = []
         failed = []
         for storlet_name in list(self.storlet_name_to_pid):
@@ -402,9 +407,11 @@ class StorletDaemonFactory(SBusServer):
             'Shutdown the storlet daemon {0}'.format(storlet_name))
 
         dmn_pid = self.storlet_name_to_pid.get(storlet_name)
-        self.logger.debug('Storlet Daemon PID is {0}'.format(dmn_pid))
         if dmn_pid is None:
-            raise SDaemonError('{0} is not found'.format(storlet_name))
+            raise SDaemonError('PID of the storlet daemon {0} is not found'.
+                               format(storlet_name))
+        self.logger.debug('PID of the storlet daemon {0} is {1}'.
+                          format(storlet_name, dmn_pid))
 
         storlet_pipe_name = self.storlet_name_to_pipe_name[storlet_name]
         self.logger.debug('Send HALT command to {0} via {1}'.
@@ -428,6 +435,8 @@ class StorletDaemonFactory(SBusServer):
         try:
             os.waitpid(dmn_pid, 0)
             self.storlet_name_to_pid.pop(storlet_name)
+            self.logger.debug(
+                'The storlet daemon {0} is stopped'.format(storlet_name))
         except OSError:
             self.logger.exception(
                 'Error when waiting the storlet daemon {0}'.format(
@@ -448,7 +457,8 @@ class StorletDaemonFactory(SBusServer):
                         'daemon_language_version')):
                 msg = 'OK'
             else:
-                msg = '{0} is already running'.format(storlet_name)
+                msg = 'The storlet daemon {0} is already running'.format(
+                    storlet_name)
             return CommandSuccess(msg)
         except SDaemonError as err:
             self.logger.exception('Failed to start the sdaemon for {0}'
@@ -461,8 +471,8 @@ class StorletDaemonFactory(SBusServer):
         storlet_name = params['storlet_name']
         try:
             pid, code = self.process_kill(storlet_name)
-            msg = 'Storlet {0}, PID = {1}, ErrCode = {2}'.format(
-                storlet_name, pid, code)
+            msg = 'The storlet daemon {0} is stopped'.format(
+                storlet_name)
             return CommandSuccess(msg)
         except SDaemonError as err:
             self.logger.exception('Failed to kill the storlet daemon %s' %
@@ -498,11 +508,11 @@ class StorletDaemonFactory(SBusServer):
     @command_handler
     def halt(self, dtg):
         try:
-            terminated = self.shutdown_all_processes()
-            msg = '; '.join(['%s: terminated' % x for x in terminated])
+            self.shutdown_all_processes()
+            msg = 'Stopped all storlet daemons. Terminating.'
             return CommandSuccess(msg, False)
         except SDaemonError as err:
-            self.logger.exception('Failed to halt some storlet daemons')
+            self.logger.exception('Failed to stop some storlet daemons')
             return CommandFailure(err.args[0], False)
 
     def _terminate(self):
