@@ -1,0 +1,14 @@
+---
+prelude: >
+    In this cycle, Storlets includes some fixes to improve its stability.
+
+features:
+  - |
+    Now Storlets supports Python 3.8 to run server side modules like middleware
+    and gateway, as well as agent processes in containers.
+
+other:
+  - |
+    In this cycle Storlets still supports Python 2.7 because OpenStack Swift
+    still supports Python 2.7 as its runtime. This support will be droppend
+    once Swift drops its Python 2.7 support.
