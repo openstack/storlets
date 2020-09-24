@@ -1,3 +1,7 @@
 sphinx>=2.0.0,!=2.1.0 # BSD
 openstackdocstheme>=2.2.1 # Apache-2.0
 reno>=3.1.0 # Apache-2.0
+
+# TOD(takashi): The following items should be migrated to requirements.txt
+python-swiftclient>=3.1.0
+ipython<6.0
