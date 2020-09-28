@@ -22,7 +22,5 @@ ipywidgets<7.6.0;python_version>='3.4'
 jupyter
 nbformat
 
-ansible
-ansible-lint
 bashate==0.5.0;python_version=='2.7' # Apache-2.0
 bashate;python_version>='3.4'
