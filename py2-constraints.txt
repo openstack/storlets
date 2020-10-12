@@ -65,7 +65,6 @@ monotonic===1.5
 netifaces===0.10.9
 keystoneauth1===4.0.0
 cffi===1.14.0
-Babel===2.8.0
 greenlet===0.4.15
 oslo.utils===3.42.1
 gitdb===0.6.4
