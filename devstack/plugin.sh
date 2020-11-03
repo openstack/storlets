@@ -27,7 +27,7 @@
 # Add clean_storlets
 
 # Save trace setting
-_XTRACE_LIB_SWIFT=$(set +o | grep xtrace)
+_XTRACE_LIB_STORLETS=$(set +o | grep xtrace)
 set +o xtrace
 
 # Defaults
@@ -49,8 +49,8 @@ STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
 STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
 STORLET_MANAGEMENT_USER=${STORLET_MANAGEMENT_USER:-$USER}
 STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/home/docker_device}
-STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:18.04}
-STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_18.04}
+STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:20.04}
+STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_20.04}
 STORLETS_DOCKER_SWIFT_GROUP_ID=${STORLETS_DOCKER_SWIFT_GROUP_ID:-1003}
 STORLETS_DOCKER_SWIFT_USER_ID=${STORLETS_DOCKER_SWIFT_USER_ID:-1003}
 STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
@@ -136,7 +136,13 @@ function configure_swift_and_keystone_for_storlets {
     # Modify relevant Swift configuration files
     _generate_swift_middleware_conf
     _generate_storlet-docker-gateway
-    sudo python devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
+
+    if [ "${USE_PYTHON3}" == "False" ]; then
+        sudo python2 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
+    else
+        sudo python3 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
+    fi
+
     rm /tmp/swift_middleware_conf
     rm /tmp/storlet-docker-gateway.conf
 
@@ -201,15 +207,20 @@ function prepare_storlets_install {
       die $LINENO "Unsupported distro"
     fi
 
-    if python3_enabled; then
+    if [ "${USE_PYTHON3}" == "False" ]; then
+      # TODO(takashi): Remove this when we remove py2 support
+      install_package python2.7 python2.7-dev
+    else
       install_python3
     fi
+
 }
 
 function _generate_jre_dockerfile {
-    local PYTHON_PACKAGES='python2.7 python-dev python3.6 python3.6-dev'
+    # TODO(tkajinam): Remove py2 packages when we remove its support
+    local PYTHON_PACKAGES='python2.7 python2.7-dev python3.8 python3.8-dev'
     if python3_enabled; then
-        PYTHON_PACKAGES="python2.7 python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
+        PYTHON_PACKAGES="python2.7 python2.7-dev python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
     fi
 
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre11/Dockerfile
@@ -412,3 +423,11 @@ function uninstall_storlets {
     echo "Cleaning all storlets runtime stuff..."
     sudo rm -fr ${STORLETS_DOCKER_DEVICE}
 }
+
+# Restore xtrace
+$_XTRACE_LIB_STORLETS
+
+# Tell emacs to use shell-script-mode
+## Local variables:
+## mode: shell-script
+## End:

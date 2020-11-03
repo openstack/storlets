@@ -23,14 +23,14 @@ IDENTITY_API_VERSION=3
 
 SWIFT_DATA_DIR=/opt/stack/data/swift
 
-usage() {
+function usage {
     echo "Usage: s2aio.sh install"
     echo "       s2aio.sh start"
     echo "       s2aio.sh stop"
     exit 1
 }
 
-_prepare_devstack_env() {
+function _prepare_devstack_env {
     # Checkout devstack
     if [ ! -e $DEVSTACK_DIR ]; then
         git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
@@ -48,7 +48,7 @@ _prepare_devstack_env() {
     source devstack/plugin.sh
 }
 
-start_s2aio() {
+function start_s2aio {
     set -e
     swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all start
     /usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-public.ini &> /dev/null &
@@ -56,19 +56,19 @@ start_s2aio() {
     exit 0
 }
 
-_stop_s2aio() {
+function _stop_s2aio {
     set +e
     swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all stop
     sh -c 'ps aux | pgrep uwsgi | xargs kill -9'
     set -e
 }
 
-stop_s2aio() {
+function stop_s2aio {
     _stop_s2aio
     exit 0
 }
 
-install_swift_using_devstack() {
+function install_swift_using_devstack {
     cd $DEVSTACK_DIR
     ./stack.sh
     stop_swift
@@ -81,7 +81,7 @@ install_swift_using_devstack() {
     fi
 }
 
-install_s2aio() {
+function install_s2aio {
     _prepare_devstack_env
 
     install_swift_using_devstack
@@ -93,7 +93,7 @@ install_s2aio() {
     echo "export OS_AUTH_URL=$KEYSTONE_PUBLIC_URL" >> ~/.bashrc
 }
 
-uninstall_swift_using_devstack() {
+function uninstall_swift_using_devstack {
     _stop_s2aio
     cd $DEVSTACK_DIR
     ./unstack.sh
@@ -104,7 +104,7 @@ uninstall_swift_using_devstack() {
 }
 
 
-uninstall_s2aio() {
+function uninstall_s2aio {
     _prepare_devstack_env
 
     echo "Removing all storlets run time data"
