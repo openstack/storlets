@@ -429,8 +429,8 @@ class RunTimeSandbox(object):
         if (storlet_daemon_status == -1):
             # We failed to send a command to the factory.
             # Best we can do is execute the container.
-            self.logger.debug('Failed to check Storlet daemon status, '
-                              'restart Docker container')
+            self.logger.debug('Failed to check the storlet daemon status. '
+                              'Restart Docker container')
             self.restart()
             storlet_daemon_status = 0
 
@@ -441,13 +441,15 @@ class RunTimeSandbox(object):
                               'is running. Stopping daemon')
             res = self.stop_storlet_daemon(sreq.storlet_main)
             if res != 1:
+                self.logger.warning('Failed to stop the storlet daemon. '
+                                    'Restart Docker container')
                 self.restart()
             else:
                 self.logger.debug('Deamon stopped')
             storlet_daemon_status = 0
 
         if (storlet_daemon_status == 0):
-            self.logger.debug('Going to start storlet daemon!')
+            self.logger.debug('Going to start the storlet daemon!')
 
             # TODO(takashi): This is not needed for python application
             classpath = self._get_storlet_classpath(
