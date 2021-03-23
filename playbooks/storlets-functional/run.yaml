@@ -3,6 +3,6 @@
   roles:
     - tox
   vars:
-    - tox_envlist: func
+    - tox_envlist: func-py3
   environment:
     USE_PYTHON3: "False"
