@@ -232,7 +232,7 @@ class RunTimeSandbox(object):
 
         self.default_docker_image_name = \
             conf.get('default_docker_image_name',
-                     'ubuntu_18.04_jre11_storlets')
+                     'ubuntu_20.04_jre11_storlets')
 
     def ping(self):
         """

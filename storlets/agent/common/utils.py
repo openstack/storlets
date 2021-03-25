@@ -17,7 +17,7 @@ from logging.handlers import SysLogHandler
 
 # TODO(takashi): Make the following parameters configurable
 DEFAULT_PY2 = 2.7
-DEFAULT_PY3 = 3.6
+DEFAULT_PY3 = 3.8
 
 
 def get_logger(logger_name, log_level, container_id):
