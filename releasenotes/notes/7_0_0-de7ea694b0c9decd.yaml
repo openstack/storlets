@@ -1,0 +1,11 @@
+---
+prelude: >
+    In this cycle, Storlets is rebased on Focal Fossa(20.04) which is
+    the latest Ubuntu LTS release. It also includes some minor improvements
+    about its operability.
+
+upgrade:
+  - |
+    Now Storlets use Python 3.8 as default Python 3 runtime. If any application
+    has ``X-Object-Meta-Storlet-Language-Version`` set to ``3.6`` then
+    the metadata should be updated to ``3.8``.
