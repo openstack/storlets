@@ -115,7 +115,7 @@ https://wiki.openstack.org/wiki/Meetings/Storlets
 ------------
 IRC channel:
 ------------
-#openstack-storlets at irc.freenode.net
+#openstack-storlets at irc.oftc.net
 
 =========
 IRC Logs:
