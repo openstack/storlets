@@ -69,6 +69,7 @@ STORLETS_CACHE_DIR=${STORLETS_CACHE_DIR:-"$STORLETS_DOCKER_DEVICE"/cache/scopes}
 STORLETS_PIPES_DIR=${STORLETS_PIPES_DIR:-"$STORLETS_DOCKER_DEVICE"/pipes/scopes}
 STORLETS_RESTART_CONTAINER_TIMEOUT=${STORLETS_RESTART_CONTAINER_TIMEOUT:-3}
 STORLETS_RUNTIME_TIMEOUT=${STORLETS_RUNTIME_TIMEOUT:-40}
+STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-11}
 
 TMP_REGISTRY_PREFIX=/tmp/registry
 
@@ -202,7 +203,7 @@ function prepare_storlets_install {
     _install_docker
 
     if is_ubuntu; then
-      install_package openjdk-11-jdk-headless ant
+      install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
     else
       die $LINENO "Unsupported distro"
     fi
@@ -223,12 +224,12 @@ function _generate_jre_dockerfile {
         PYTHON_PACKAGES="python2.7 python2.7-dev python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
     fi
 
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre11/Dockerfile
+    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG
 MAINTAINER root
 
 RUN apt-get update && \
-    apt-get install ${PYTHON_PACKAGES} openjdk-11-jre-headless -y && \
+    apt-get install ${PYTHON_PACKAGES} openjdk-${STORLETS_JDK_VERSION}-jre-headless -y && \
     apt-get clean
 EOF
 }
@@ -236,10 +237,10 @@ EOF
 function create_base_jre_image {
     echo "Create base jre image"
     docker pull $STORLETS_DOCKER_BASE_IMG
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11
+    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
     _generate_jre_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11 .
+    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
+    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
     cd -
 }
 
@@ -273,8 +274,8 @@ EOF
 }
 
 function _generate_jre_storlet_dockerfile {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11
+    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets/Dockerfile
+FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}
 MAINTAINER root
 RUN [ "groupadd", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
 RUN [ "useradd", "-u" , "$STORLETS_DOCKER_SWIFT_USER_ID", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
@@ -287,11 +288,11 @@ EOF
 
 function create_storlet_engine_image {
     echo "Create Storlet engine image"
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets
+    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
     _generate_logback_xml
     _generate_jre_storlet_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre11_storlets
-    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11_storlets .
+    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
+    docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
     cd -
 }
 
@@ -368,7 +369,7 @@ EOF
 
 function _generate_default_tenant_dockerfile {
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre11_storlets
+FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets
 MAINTAINER root
 EOF
 }
