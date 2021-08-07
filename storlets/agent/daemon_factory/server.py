@@ -15,7 +15,6 @@
 import argparse
 import errno
 import os
-import pwd
 import signal
 import subprocess
 import sys
@@ -536,12 +535,6 @@ def main():
 
     try:
         SBus.start_logger("DEBUG", container_id=opts.container_id)
-
-        # Impersonate the swift user
-        pw = pwd.getpwnam('swift')
-        os.setresgid(pw.pw_gid, pw.pw_gid, pw.pw_gid)
-        os.setresuid(pw.pw_uid, pw.pw_uid, pw.pw_uid)
-
         # create an instance of daemon_factory
         factory = StorletDaemonFactory(opts.sbus_path, logger,
                                        opts.container_id)
