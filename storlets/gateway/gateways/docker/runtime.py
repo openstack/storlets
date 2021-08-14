@@ -236,6 +236,9 @@ class RunTimeSandbox(object):
             conf.get('default_docker_image_name',
                      'ubuntu_20.04_jre11_storlets')
 
+        self.max_containers_per_node = \
+            int(conf.get('max_containers_per_node', 0))
+
     def ping(self):
         """
         Ping to daemon factory process inside container
@@ -319,11 +322,20 @@ class RunTimeSandbox(object):
             else:
                 scontainer.stop(timeout=1)
 
+            # Check whether a new container can be started
+            if self.max_containers_per_node > 0:
+                all_scontainers = client.containers.list(
+                    filters={'label': 'managed_by=storlets'})
+                if len(all_scontainers) >= self.max_containers_per_node:
+                    raise StorletRuntimeException(
+                        "Cannot start a container because of limit")
+
             # Start the new one
             client.containers.run(
                 docker_image_name, detach=True, name=docker_container_name,
                 network_disabled=True, mounts=mounts, user='swift',
-                auto_remove=True, stop_signal='SIGHUP')
+                auto_remove=True, stop_signal='SIGHUP',
+                labels={'managed_by': 'storlets'})
         except docker.errors.ImageNotFound:
             msg = "Image %s is not found" % docker_image_name
             raise StorletRuntimeException(msg)
