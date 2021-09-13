@@ -1,0 +1,45 @@
+---
+prelude: >
+    Now Storlets supports some new features to optimize resource usage by
+    storlet containers. Also, management of docker containers was refactored
+    and re-implemented by the docker python sdk, to allow more flexible and
+    secure container management.
+
+features:
+  - |
+    The new timeout feature has been added to the agent processes running in
+    storlet containers. This feature makes storlet containers and storlet
+    daemon processes inside these containers to terminate automatically if
+    the process receives no requests for 300 seconds.
+
+  - |
+    Now storlet containers are started with auto remove flag enabled. Because
+    of this change the containers are automatically deleted after these are
+    stoped (manually or because of timeout).
+
+  - |
+    The agent processes inside storlet containers now accept SIGHUP signal
+    and shutdown gracefully.
+
+  - |
+    The new ``max_containers_per_node`` option has been added to the docker
+    gateway configuration file. This option limits the number of storlet
+    containers in a single node, and would be useful to distribute containers
+    among multiple nodes. This parameter should be carefully determined based
+    on actual workload. If the limit is too low, clients might experience
+    frequent 503 errors because the required storlet container cannot be
+    launched in the cluster.
+
+upgrade:
+  - |
+    The ``restart_docker_container`` script has been removed, and now
+    the storlet_handler middleware directly communicates with the docker daemon
+    to manage docker containers. Because of this change, now the user to run
+    swift processes (which is usually the ``swift`` user) should belong to
+    the ``docker`` group.
+
+  - |
+    Now ``managed_by=storlets`` is added as a tag to all storlet containers,
+    to look up containers launched by Storlets. All existing containers without
+    this tag should be stoped and removed during upgrade to use the new
+    ``max_containers_per_node`` option.
