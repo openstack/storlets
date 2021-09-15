@@ -1,6 +1,6 @@
-=====================
- Swift Release Notes
-=====================
+========================
+ Storlets Release Notes
+========================
 
 .. toctree::
    :maxdepth: 1
