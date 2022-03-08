@@ -1,0 +1,14 @@
+---
+prelude: >
+    Now Storlets supports Python 3.9 as runtime to run server side processes
+    as well as applications. Also, Yoga release will be the last release with
+    python 2.7 support.
+
+features:
+  - |
+    Now python 3.9 is officially supported as runtime.
+
+deprecations:
+  - |
+    Support for python 2.7 will be removed in next cycle, following the removal
+    plan in Swift.
