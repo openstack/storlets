@@ -149,9 +149,9 @@ function _install_docker {
     # See other projects that install docker
 
     wget http://get.docker.com -O install_docker.sh
-    sudo chmod 777 install_docker.sh
+    chmod 755 install_docker.sh
     sudo bash -x install_docker.sh
-    sudo rm install_docker.sh
+    rm install_docker.sh
 
     # Add swift user to docker group so that the user can manage docker
     # containers without sudo
