@@ -1,36 +1,20 @@
 - project:
     templates:
-      - openstack-python-jobs
       - openstack-python3-zed-jobs
       - publish-openstack-docs-pti
       - release-notes-jobs-python3
     check:
       jobs:
         - storlets-functional
-        - storlets-functional-py3
     gate:
       jobs:
         - storlets-functional
-        - storlets-functional-py3
 
 - job:
     name: storlets-functional
     pre-run: playbooks/storlets-functional/pre.yaml
     run: playbooks/storlets-functional/run.yaml
     post-run: playbooks/storlets-functional/post.yaml
-    nodeset: ubuntu-focal
-    timeout: 2400
-    voting: false
-    irrelevant-files:
-      - ^(api-ref|doc|releasenotes)/.*$
-      - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
-      - ^tests/unit/.*$
-
-- job:
-    name: storlets-functional-py3
-    pre-run: playbooks/storlets-functional/pre-py3.yaml
-    run: playbooks/storlets-functional/run-py3.yaml
-    post-run: playbooks/storlets-functional/post-py3.yaml
     nodeset: ubuntu-focal
     timeout: 2400
     irrelevant-files:

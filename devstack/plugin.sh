@@ -125,11 +125,7 @@ function configure_swift_and_keystone_for_storlets {
     _generate_swift_middleware_conf
     _generate_storlet-docker-gateway
 
-    if [ "${USE_PYTHON3}" == "False" ]; then
-        sudo python2 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
-    else
-        sudo python3 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
-    fi
+    sudo python3 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
 
     rm /tmp/swift_middleware_conf
     rm /tmp/storlet-docker-gateway.conf
