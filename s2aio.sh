@@ -33,7 +33,7 @@ function usage {
 function _prepare_devstack_env {
     # Checkout devstack
     if [ ! -e $DEVSTACK_DIR ]; then
-        git clone git://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+        git clone https://github.com/openstack/devstack.git $DEVSTACK_DIR
         if [ ${USE_PYTHON3} == "False" ]; then
           cp devstack/localrc.py2.sample $DEVSTACK_DIR/localrc
         else
