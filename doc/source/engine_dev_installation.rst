@@ -13,7 +13,7 @@ Clone devstack:
 
 ::
 
-    git clone git://github.com/openstack-dev/devstack.git
+    git clone https://github.com/openstack/devstack.git
 
 Create a localrc file under the devstack repository root directory:
 
