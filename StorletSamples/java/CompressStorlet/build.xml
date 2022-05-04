@@ -27,7 +27,7 @@
         <!--TODO: why do we need input.txt from storlets html?-->
         <target name="text">
             <exec dir="bin" executable="wget">
-                <arg line="https://github.com/openstack/storlets -O input.txt" />
+                <arg line="https://opendev.org/openstack/storlets -O input.txt" />
             </exec>
         </target>
     <target name="jar" depends="java">

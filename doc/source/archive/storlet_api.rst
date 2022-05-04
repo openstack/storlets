@@ -54,7 +54,7 @@ The X-Object-Meta-Storlet-Interface-Version header should be provided and set to
 Although not currently used, the X-Object-Meta-Storlet-Object-Metadata header must be provided and set to 'no'.
 See the Storlets Developer's manual for details of the signature of the invoke method.
 The content-type of the request should be set to 'application/octet-stream'.
-Additional details and examples can be found at <https://github.com/openstack/storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>.
+Additional details and examples can be found at <https://opendev.org/openstack/storlets/blob/master/doc/source/writing_and_deploying_storlets.rst>.
 
 ::
 
@@ -120,7 +120,7 @@ Storlets can be invoked in 3 ways:
     thumbnail extraction from an existing jpg.
 
 Invocation involves adding an extra header ('X-Run-Storlet') to the Swift original PUT/GET/COPY requests.
-Additional details and examples can be found in <https://github.com/openstack/storlets/blob/master/doc/source/archive/invoking_storlets.rst>.
+Additional details and examples can be found in <https://opendev.org/openstack/storlets/blob/master/doc/source/archive/invoking_storlets.rst>.
 
 Invoke a storlet upon object download
 -------------------------------------

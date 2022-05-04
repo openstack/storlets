@@ -12,7 +12,7 @@ Building changes off the upstream repository:
 ---------------------------------------------
 This covers the scenario where you'd like to add / change code on the latest version of the storlet repo, do read the initial gerrit setup section if you haven't already done so.
 
-* ``git clone https://github.com/openstack/storlets.git``
+* ``git clone https://opendev.org/openstack/storlets.git``
 
 This will clone the upstream repo.
 

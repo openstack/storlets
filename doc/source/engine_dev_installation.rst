@@ -13,7 +13,7 @@ Clone devstack:
 
 ::
 
-    git clone https://github.com/openstack/devstack.git
+    git clone https://opendev.org/openstack/devstack.git
 
 Create a localrc file under the devstack repository root directory:
 
@@ -144,7 +144,7 @@ Get and install the storlets code
 ::
 
     cd $HOME
-    git clone https://github.com/openstack/storlets.git
+    git clone https://opendev.org/openstack/storlets.git
     cd storlets
     sudo ./install_libs.sh
     sudo python setup.py install

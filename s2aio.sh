@@ -33,7 +33,7 @@ function usage {
 function _prepare_devstack_env {
     # Checkout devstack
     if [ ! -e $DEVSTACK_DIR ]; then
-        git clone https://github.com/openstack-dev/devstack.git $DEVSTACK_DIR
+        git clone https://opendev.org/openstack/devstack.git $DEVSTACK_DIR
         cp devstack/localrc.sample $DEVSTACK_DIR/localrc
     fi
 
