@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import configparser as ConfigParser
+import configparser
 from eventlet import Timeout
 from swift.common.swob import HTTPException, HTTPInternalServerError, wsgify
 from swift.common.utils import get_logger, register_swift_info
@@ -97,7 +97,7 @@ def filter_factory(global_conf, **local_conf):
     gateway_class = load_gateway(module_name)
     conf['gateway_module'] = gateway_class
 
-    configParser = ConfigParser.RawConfigParser()
+    configParser = configparser.RawConfigParser()
     configParser.read(conf.get('storlet_gateway_conf',
                                '/etc/swift/storlet_stub_gateway.conf'))
     gateway_conf = dict(configParser.items("DEFAULT"))

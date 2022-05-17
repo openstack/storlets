@@ -18,7 +18,6 @@ import unittest
 import tempfile
 import subprocess
 import nbformat
-import six
 
 
 COULD_BE_CHANGED = ['x-storlet-generated-from-account',
@@ -93,9 +92,9 @@ class TestJupyterExcecution(unittest.TestCase):
         return output_text_list
 
     def test_notebook(self):
-        if six.PY3:
-            self.skipTest("This test is currently incompatible with "
-                          "the latest Jupyer/iPython")
+        # TODO(takashi): Fix this
+        self.skipTest("This test is currently incompatible with "
+                      "the latest Jupyer/iPython")
         test_path = os.path.abspath(__file__)
         test_dir = os.path.dirname(test_path)
         original_notebook = os.path.join(test_dir, 'test_notebook.ipynb')
@@ -115,8 +114,8 @@ class TestJupyterExcecution(unittest.TestCase):
                 got_line = eval(got_line)
             except (NameError, SyntaxError, AttributeError):
                 # sanity, both line should be string type
-                self.assertIsInstance(expected_line, six.string_types)
-                self.assertIsInstance(got_line, six.string_types)
+                self.assertIsInstance(expected_line, str)
+                self.assertIsInstance(got_line, str)
                 # this is for normal text line (NOT json dict)
                 self.assertEqual(expected_line, got_line)
             else:

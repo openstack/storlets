@@ -19,7 +19,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 import eventlet
 import json
-from six import BytesIO, StringIO
+from io import BytesIO, StringIO
 
 import mock
 import unittest

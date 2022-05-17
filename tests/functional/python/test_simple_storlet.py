@@ -19,7 +19,7 @@ from swiftclient import client
 from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
-from six.moves.urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 
 
 class TestSimpleStorlet(StorletPythonFunctionalTest):

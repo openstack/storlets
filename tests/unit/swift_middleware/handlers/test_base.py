@@ -16,7 +16,7 @@
 import mock
 import unittest
 from contextlib import contextmanager
-from six import StringIO
+from io import StringIO
 
 from swift.common.swob import Request
 from storlets.gateway.common.exceptions import FileManagementError

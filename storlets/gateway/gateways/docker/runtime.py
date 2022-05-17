@@ -19,7 +19,6 @@ import select
 import stat
 import sys
 import time
-import six
 import docker
 import docker.errors
 from docker.types import Mount as DockerMount
@@ -708,7 +707,12 @@ class StorletInvocationProtocol(object):
                         % self.task_id)
                     pass
 
-            six.reraise(exc_type, exc_value, exc_traceback)
+            if exc_value is None:
+                exc_value = exc_traceback
+            if exc_value.__traceback__ is not exc_traceback:
+                raise exc_value.with_traceback(exc_traceback)
+            raise exc_value
+
         if fd not in r:
             raise StorletRuntimeException('Read fd is not ready')
 

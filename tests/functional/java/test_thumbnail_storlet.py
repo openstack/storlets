@@ -17,7 +17,7 @@
 from swiftclient import client as c
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
-from six.moves.urllib.request import Request, urlopen
+from urllib.request import Request, urlopen
 
 
 class TestThumbnailStorlet(StorletJavaFunctionalTest):

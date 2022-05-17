@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves.urllib.parse import quote
 from swift.common.middleware.copy import \
     _check_copy_from_header as check_copy_from_header, \
     _check_destination_header as check_destination_header, \
@@ -25,6 +24,8 @@ from swift.common.utils import config_true_value, public, FileLikeIter, \
 from swift.common.middleware.acl import clean_acl
 from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
+from urllib.parse import quote
+
 from storlets.swift_middleware.handlers.base import StorletBaseHandler, \
     NotStorletRequest, NotStorletExecution
 
