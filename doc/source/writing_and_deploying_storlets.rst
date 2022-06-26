@@ -163,8 +163,8 @@ development environment installation instructions_
 
   export OS_USERNAME=tester
   export OS_PASSWORD=testing
-  export OS_TENANT_NAME=test
-  export OS_AUTH_URL=http://127.0.0.1:5000/v2.0
+  export OS_PROJECT_NAME=test
+  export OS_AUTH_URL=http://127.0.0.1/identity/v3
 
 Here is the Swift client command for uploading the storlet. some notes:
 
@@ -263,16 +263,15 @@ in the deployment using Swift client section above.
       assert (status == 200 or status == 201)
 
   AUTH_IP = '127.0.0.1'
-  AUTH_PORT = '5000'
   ACCOUNT = 'test'
   USER_NAME = 'tester'
   PASSWORD = 'testing'
-  os_options = {'tenant_name': ACCOUNT}
+  os_options = {'project_name': ACCOUNT}
 
-  url, token = client.get_auth("http://" + AUTH_IP + ":" + AUTH_PORT + "/v2.0", ACCOUNT +":"+USER_NAME,
+  url, token = client.get_auth("http://" + AUTH_IP + "/identity/v3", USER_NAME,
                                PASSWORD,
                                os_options = os_options,
-                               auth_version="2.0")
+                               auth_version="3")
   put_storlet_object(url, token,'identitystorlet-1.0.jar','/tmp',
                      'org.openstack.storlet.identity.IdentityStorlet',
                      'get42')
