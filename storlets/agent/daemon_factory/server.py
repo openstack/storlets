@@ -113,9 +113,9 @@ class StorletDaemonFactory(SBusServer):
 
     def spawn_subprocess(self, pargs, env, storlet_name):
         """
-        Launch a JVM process for some storlet daemon
+        Launch a storlet daemon process
 
-        :param pargs: Arguments for the JVM
+        :param pargs: Arguments for the storlet daemon
         :param env: Environment value
         :param storlet_name: Name of the storlet to be executed
 
