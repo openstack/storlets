@@ -72,14 +72,7 @@ class StorletDaemonFactory(SBusServer):
         lib_dir = "/usr/local/lib/storlets"
         java_lib_dir = os.path.join(lib_dir, "java")
 
-        jar_deps = ['logback-classic-1.1.2.jar',
-                    'logback-core-1.1.2.jar',
-                    'slf4j-api-1.7.7.jar',
-                    'json_simple-1.1.jar',
-                    'SBusJavaFacade.jar',
-                    'SCommon.jar',
-                    'SDaemon.jar',
-                    '']
+        jar_deps = ['*', '']
         jar_deps = [os.path.join(java_lib_dir, x) for x in jar_deps]
         str_dmn_clspth = ':'.join(jar_deps + [storlet_path])
         str_library_path = ':'.join([lib_dir, java_lib_dir])

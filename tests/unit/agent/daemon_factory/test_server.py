@@ -74,13 +74,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             self.assertIn('CLASSPATH', env)
             self.assertEqual(
                 ['/default/classpath',
-                 '/usr/local/lib/storlets/java/logback-classic-1.1.2.jar',
-                 '/usr/local/lib/storlets/java/logback-core-1.1.2.jar',
-                 '/usr/local/lib/storlets/java/slf4j-api-1.7.7.jar',
-                 '/usr/local/lib/storlets/java/json_simple-1.1.jar',
-                 '/usr/local/lib/storlets/java/SBusJavaFacade.jar',
-                 '/usr/local/lib/storlets/java/SCommon.jar',
-                 '/usr/local/lib/storlets/java/SDaemon.jar',
+                 '/usr/local/lib/storlets/java/*',
                  '/usr/local/lib/storlets/java/',
                  'path/to/storlet/a'],
                 env['CLASSPATH'].split(':'))
