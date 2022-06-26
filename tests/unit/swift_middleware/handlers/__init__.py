@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import unittest
+from unittest import mock
 
 from storlets.gateway.gateways.stub import StorletGatewayStub
 from storlets.swift_middleware import storlet_handler

@@ -13,10 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
-import unittest
 from contextlib import contextmanager
 from io import StringIO
+import unittest
+from unittest import mock
 
 from swift.common.swob import Request
 from storlets.gateway.common.exceptions import FileManagementError

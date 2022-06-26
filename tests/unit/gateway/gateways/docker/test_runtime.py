@@ -13,18 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
-import os
-import unittest
-import tempfile
-import errno
 from contextlib import contextmanager
+import errno
 from io import StringIO
+import os
 from stat import ST_MODE
+import tempfile
+import unittest
+from unittest import mock
+
 import docker.client
 import docker.errors
 import docker.models.containers
-
 
 from storlets.sbus.client import SBusResponse
 from storlets.sbus.client.exceptions import SBusClientIOError, \
