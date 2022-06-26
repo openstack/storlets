@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import mock
 import unittest
+from unittest import mock
 
 from swift.common.swob import Request, HTTPOk, HTTPCreated
 from storlets.swift_middleware.handlers import StorletObjectHandler

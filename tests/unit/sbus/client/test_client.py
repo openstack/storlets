@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from contextlib import contextmanager
+import errno
 import json
-import mock
 import os
 import unittest
-import errno
-from contextlib import contextmanager
+from unittest import mock
 
 from storlets.sbus.client.exceptions import SBusClientSendError, \
     SBusClientMalformedResponse

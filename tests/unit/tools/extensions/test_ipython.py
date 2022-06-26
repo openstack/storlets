@@ -14,13 +14,14 @@
 # limitations under the License.
 
 from IPython.core.error import UsageError
+import itertools
 from io import FileIO as file
 from io import StringIO
-from storlets.tools.extensions.ipython import StorletMagics
-import unittest
-import mock
 import os
-import itertools
+import unittest
+from unittest import mock
+
+from storlets.tools.extensions.ipython import StorletMagics
 
 
 class FakeConnection(object):

@@ -13,16 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import eventlet
+from io import BytesIO, StringIO
+import json
 import os
 import os.path
 from shutil import rmtree
 from tempfile import mkdtemp
-import eventlet
-import json
-from io import BytesIO, StringIO
-
-import mock
 import unittest
+from unittest import mock
 
 from swift.common.swob import Request, Response
 from swift.common.utils import FileLikeIter

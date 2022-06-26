@@ -14,10 +14,11 @@
 # limitations under the License.
 
 from contextlib import contextmanager
-import mock
 import os
 import tempfile
 import unittest
+from unittest import mock
+
 from storlets.gateway.common.stob import FileDescriptorIterator
 
 

@@ -14,8 +14,8 @@
 # limitations under the License.
 from contextlib import contextmanager
 import errno
-import mock
 import unittest
+from unittest import mock
 
 from storlets.sbus import command as sbus_cmd
 from storlets.sbus.client import SBusResponse

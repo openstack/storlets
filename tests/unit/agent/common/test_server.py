@@ -12,9 +12,9 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import mock
 import json
 import unittest
+from unittest import mock
 
 from storlets.sbus import command as sbus_cmd
 from storlets.sbus.file_description import SBUS_FD_SERVICE_OUT
