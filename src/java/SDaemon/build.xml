@@ -33,11 +33,11 @@
                 <pathelement
                     path="../dependencies/json_simple-1.1.jar"/>
                 <pathelement
-                    path="../dependencies/slf4j-api-1.7.7.jar"/>
+                    path="../dependencies/slf4j-api-1.7.36.jar"/>
                 <pathelement
-                    path="../dependencies/logback-classic-1.1.2.jar"/>
+                    path="../dependencies/logback-classic-1.2.11.jar"/>
                 <pathelement
-                    path="../dependencies/logback-core-1.1.2.jar"/>
+                    path="../dependencies/logback-core-1.2.11.jar"/>
                 <pathelement path="."/>
             </classpath>
         </javac>
