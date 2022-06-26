@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves.urllib.parse import unquote
 from swift.common.internal_client import InternalClient
 from swift.common.swob import HTTPBadRequest, Response, Range, \
     HTTPServiceUnavailable
 from swift.common.utils import config_true_value
+from urllib.parse import unquote
 
 from storlets.gateway.common.exceptions import FileManagementError
 from storlets.gateway.common.file_manager import FileManager

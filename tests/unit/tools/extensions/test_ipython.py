@@ -14,16 +14,13 @@
 # limitations under the License.
 
 from IPython.core.error import UsageError
-from six.moves import StringIO
+from io import FileIO as file
+from io import StringIO
 from storlets.tools.extensions.ipython import StorletMagics
 import unittest
 import mock
 import os
 import itertools
-
-import six
-if six.PY3:
-    from io import FileIO as file
 
 
 class FakeConnection(object):

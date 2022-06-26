@@ -19,7 +19,7 @@ import unittest
 import tempfile
 import errno
 from contextlib import contextmanager
-from six import StringIO
+from io import StringIO
 from stat import ST_MODE
 import docker.client
 import docker.errors

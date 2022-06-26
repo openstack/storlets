@@ -15,7 +15,7 @@
 
 import logging
 import unittest
-from six import StringIO
+from io import StringIO
 
 from storlets.agent.common.utils import get_logger
 
