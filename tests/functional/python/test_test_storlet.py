@@ -114,7 +114,7 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
         exc_pattern = '^.*403 Forbidden.*$'
-        with self.assertRaisesRegexp(ClientException, exc_pattern):
+        with self.assertRaisesRegex(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
                                     self.container, 'test_object',
                                     headers=headers)
@@ -123,7 +123,7 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
         exc_pattern = '^.*403 Forbidden.*$'
-        with self.assertRaisesRegexp(ClientException, exc_pattern):
+        with self.assertRaisesRegex(ClientException, exc_pattern):
             swift_client.get_object(self.member_url, self.member_token,
                                     self.container, 'test_object',
                                     headers=headers)

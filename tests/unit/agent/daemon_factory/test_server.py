@@ -334,7 +334,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             waitpid.side_effect = OSError(errno.EPERM, '')
             exc_pattern = ('^No permission to access the storlet daemon'
                            ' storleta$')
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+            with self.assertRaisesRegex(SDaemonError, exc_pattern):
                 self.dfactory.get_process_status_by_pid(1000, 'storleta')
             self.assertEqual(1, waitpid.call_count)
             self.assertEqual((1000, 1), waitpid.call_args[0])
@@ -342,7 +342,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
         with mock.patch(self.os_waitpid_path) as waitpid:
             waitpid.side_effect = OSError()
             exc_pattern = '^Unknown error$'
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+            with self.assertRaisesRegex(SDaemonError, exc_pattern):
                 self.dfactory.get_process_status_by_pid(1000, 'storleta')
             self.assertEqual(1, waitpid.call_count)
             self.assertEqual((1000, 1), waitpid.call_args[0])
@@ -427,7 +427,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 mock.patch(self.os_waitpid_path) as waitpid:
             kill.side_effect = OSError()
             exc_pattern = '^Failed to kill some storlet daemons: .*'
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
+            with self.assertRaisesRegex(SDaemonError, exc_pattern) as e:
                 self.dfactory.process_kill_all()
             self.assertIn('storleta', str(e.exception))
             self.assertIn('storletb', str(e.exception))
@@ -444,7 +444,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             kill.side_effect = OSError()
             exc_pattern = ('^Failed to send kill signal to the storlet daemon '
                            'storlet[a-b]$')
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+            with self.assertRaisesRegex(SDaemonError, exc_pattern):
                 self.dfactory.process_kill_all(False)
             self.assertEqual(1, kill.call_count)
             self.assertEqual(0, waitpid.call_count)
@@ -476,7 +476,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 mock.patch(self.os_waitpid_path) as waitpid:
             halt.side_effect = SBusClientSendError()
             exc_pattern = '^Failed to shutdown some storlet daemons: .*'
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern) as e:
+            with self.assertRaisesRegex(SDaemonError, exc_pattern) as e:
                 self.dfactory.shutdown_all_processes()
             self.assertIn('storleta', str(e.exception))
             self.assertIn('storletb', str(e.exception))
@@ -495,7 +495,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             halt.side_effect = SBusClientSendError()
             exc_pattern = ('^Failed to send halt command to the storlet '
                            'daemon storlet[a-b]$')
-            with self.assertRaisesRegexp(SDaemonError, exc_pattern):
+            with self.assertRaisesRegex(SDaemonError, exc_pattern):
                 self.dfactory.shutdown_all_processes(False)
             self.assertEqual(1, halt.call_count)
             self.assertEqual(0, waitpid.call_count)
