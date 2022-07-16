@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from six.moves import configparser as ConfigParser
+import configparser
 import fileinput
 import os
 import pwd
@@ -233,7 +233,7 @@ def main(argv):
         usage(argv)
         exit(-1)
 
-    conf = ConfigParser.ConfigParser()
+    conf = configparser.ConfigParser()
     conf.read(argv[2])
     global swift_run_time_user
     swift_run_time_user = argv[3]
