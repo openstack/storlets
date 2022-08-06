@@ -67,8 +67,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Storlets Release Notes'
-copyright = u'%d, OpenStack Foundation' % datetime.datetime.now().year
+project = 'Storlets Release Notes'
+copyright = '%d, OpenStack Foundation' % datetime.datetime.now().year
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
