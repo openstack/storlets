@@ -1,0 +1,13 @@
+---
+prelude: >
+    From this version, storlets no longer supports pyhton 2.7 and requires
+    python 3.6 and later. Any deployment with python 2.7 should switch to
+    python 3.6+ during upgrade.
+
+upgrade:
+  - |
+    Support for python 2.7 has been removed. Python runtime should be upgraded
+    to Python 3.6+ during upgrade.
+
+  - |
+    A few dependent java packages have been updated to te latest versions.
