@@ -5,7 +5,7 @@
 hacking>=3.0.1,<3.1.0 # Apache-2.0
 
 coverage>=3.6
-nose
+nose2
 pexpect
 python-subunit>=0.0.18
 oslotest>=1.2.0  # Apache-2.0

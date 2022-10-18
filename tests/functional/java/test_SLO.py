@@ -19,7 +19,6 @@ import os
 import random
 import string
 from swiftclient import client as c
-from nose.plugins.attrib import attr
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
 
@@ -139,7 +138,6 @@ class TestSLO(StorletJavaFunctionalTest):
                         f.close()
                     self.ssertEqual(chunk, aux_content)
 
-    @attr('slow')
     def test_get_SLO(self):
         headers = {'X-Run-Storlet': self.storlet_name}
         headers.update(self.additional_headers)
@@ -151,6 +149,8 @@ class TestSLO(StorletJavaFunctionalTest):
                                      resp_chunk_size=1048576,
                                      headers=headers)
         self.compare_slo_to_chunks(body)
+
+    test_get_SLO.slo = 1
 
 
 class TestSloOnProxy(TestSLO):

@@ -18,7 +18,6 @@ import os
 import random
 import string
 from swiftclient import client as c
-from nose.plugins.attrib import attr
 from contextlib import contextmanager
 from tests.functional.java import StorletJavaFunctionalTest
 import unittest
@@ -127,7 +126,6 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
             except Exception:
                 pass
 
-    @attr('slow')
     def test_put_10MB_file(self):
         gf_file_path = '/tmp/10MB_file'
         with self._filecontext(gf_file_path):
@@ -148,6 +146,8 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                          headers, None, None, None, response)
             status = response.get('status')
             self.assertIn(status, [200, 201])
+
+    test_put_10MB_file.slow = 1
 
     def test_put(self):
         self.invoke_storlet('PUT')

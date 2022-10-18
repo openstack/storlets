@@ -16,7 +16,6 @@
 import os
 import tempfile
 from swiftclient import client
-from nose.plugins.attrib import attr
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
 from urllib.request import Request, urlopen
@@ -79,7 +78,6 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
             response_dict=resp)
         self.assertEqual(204, resp['status'])
 
-    @attr('slow')
     def test_put_10MB_file(self):
         with tempfile.NamedTemporaryFile() as f:
             with open(f.name, 'wb') as wf:
@@ -98,6 +96,8 @@ class TestSimpleStorlet(StorletPythonFunctionalTest):
 
             status = response.get('status')
             self.assertEqual(201, status)
+
+    test_put_10MB_file.slow = 1
 
     def test_copy_from(self):
         resp = dict()

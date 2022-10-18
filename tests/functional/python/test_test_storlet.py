@@ -16,7 +16,6 @@
 import threading
 from swiftclient import client as swift_client
 from swiftclient import ClientException
-from nose.plugins.attrib import attr
 from storlets.tools.utils import get_member_auth
 from tests.functional.python import StorletPythonFunctionalTest
 import unittest
@@ -89,9 +88,10 @@ class TestTestStorlet(StorletPythonFunctionalTest):
     def test_crash(self):
         self.invoke_storlet("crash")
 
-    @attr('slow')
     def test_hold(self):
         self.invoke_storlet("hold")
+
+    test_hold.slow = 1
 
     def invoke_storlet_in_parallel(self):
         mythreads = []
@@ -106,9 +106,10 @@ class TestTestStorlet(StorletPythonFunctionalTest):
         for t in mythreads:
             t.join()
 
-    @attr('slow')
     def test_parallel_print(self):
         self.invoke_storlet_in_parallel()
+
+    test_parallel_print.slow = 1
 
     def test_storlet_acl_get_fail(self):
         headers = {'X-Run-Storlet': self.storlet_name}
