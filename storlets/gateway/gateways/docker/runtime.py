@@ -233,7 +233,7 @@ class RunTimeSandbox(object):
 
         self.default_docker_image_name = \
             conf.get('default_docker_image_name',
-                     'ubuntu_22.04_jre11_storlets')
+                     'storlet_engine_image')
 
         self.max_containers_per_node = \
             int(conf.get('max_containers_per_node', 0))

@@ -256,7 +256,7 @@ function create_storlet_engine_image {
     _generate_logback_xml
     _generate_jre_storlet_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
-    sudo docker build -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
+    sudo docker build -t storlet_engine_image .
     cd -
 }
 
@@ -327,7 +327,7 @@ EOF
 
 function _generate_default_tenant_dockerfile {
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets
+FROM storlet_engine_image
 MAINTAINER root
 EOF
 }
