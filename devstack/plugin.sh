@@ -48,8 +48,8 @@ SWIFT_MEMBER_USER_PWD=member
 STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
 STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
 STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/home/docker_device}
-STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:20.04}
-STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_20.04}
+STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:22.04}
+STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_22.04}
 STORLETS_DOCKER_SWIFT_GROUP_ID=${STORLETS_DOCKER_SWIFT_GROUP_ID:-1003}
 STORLETS_DOCKER_SWIFT_USER_ID=${STORLETS_DOCKER_SWIFT_USER_ID:-1003}
 STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
@@ -204,7 +204,7 @@ function create_base_jre_image {
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
     _generate_jre_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
-    sudo docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
+    sudo docker build -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
     cd -
 }
 
@@ -256,7 +256,7 @@ function create_storlet_engine_image {
     _generate_logback_xml
     _generate_jre_storlet_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
-    sudo docker build -q -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
+    sudo docker build -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}_storlets .
     cd -
 }
 
@@ -337,7 +337,7 @@ function create_default_tenant_image {
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
     _generate_default_tenant_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
-    sudo docker build -q -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
+    sudo docker build -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
     cd -
 }
 

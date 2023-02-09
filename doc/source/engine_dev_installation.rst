@@ -159,20 +159,20 @@ Step 1: Create a working space for building the docker images, e.g.
 ::
 
     mkdir -p $HOME/docker_repos
-    sudo docker pull ubuntu:18.04
+    sudo docker pull ubuntu:22.04
 
 Step 2: Create a Docker image with Java
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre11
+    mkdir -p $HOME/docker_repos/ubuntu_22.04_jre11
 
-Create the file: $HOME/docker_repos/ubuntu_18.04_jre11/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_22.04_jre11/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu:18.04
+    FROM ubuntu:22.04
     MAINTAINER root
 
     # The following operations shoud be defined in one line
@@ -187,8 +187,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre11
-    sudo docker build -q -t ubuntu_18.04_jre11 .
+    cd $HOME/docker_repos/ubuntu_22.04_jre11
+    sudo docker build -q -t ubuntu_22.04_jre11 .
     cd -
 
 
@@ -196,15 +196,15 @@ Step 3: Augment the above created image with the storlets stuff
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_18.04_jre11_storlets
+    mkdir -p $HOME/docker_repos/ubuntu_22.04_jre11_storlets
     cd -
 
-Create the file: $HOME/docker_repos/ubuntu_18.04_jre11_storlets/Dockerfile
+Create the file: $HOME/docker_repos/ubuntu_22.04_jre11_storlets/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_18.04_jre11
+    FROM ubuntu_22.04_jre11
 
     MAINTAINER root
 
@@ -219,8 +219,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre11_storlets
-    sudo docker build -q -t ubuntu_18.04_jre11_storlets .
+    cd $HOME/docker_repos/ubuntu_22.04_jre11_storlets
+    sudo docker build -q -t ubuntu_22.04_jre11_storlets .
     cd -
 
 Step 4: Create a tenant specific image. The engine looks for images
@@ -239,12 +239,12 @@ The response from the above contains the account line, e.g.:
 
 The account id is the number following the 'AUTH\_' prefix.
 
-Next create the file $HOME/docker_repos/ubuntu_18.04_jre11_storlets_<account id>/Dockerfile
+Next create the file $HOME/docker_repos/ubuntu_22.04_jre11_storlets_<account id>/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_18.04_jre11_storlets
+    FROM ubuntu_22.04_jre11_storlets
     MAINTAINER root
 
 
@@ -252,7 +252,7 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_18.04_jre11_storlets_<account id>
+    cd $HOME/docker_repos/ubuntu_22.04_jre11_storlets_<account id>
     sudo docker build -q -t <account id> .
     cd -
 
