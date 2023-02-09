@@ -111,24 +111,24 @@ function uninstall_s2aio {
 
 COMMAND="$1"
 case $COMMAND in
-  "install" )
-    install_s2aio
-    ;;
+    "install" )
+        install_s2aio
+        ;;
 
-  "uninstall" )
-    uninstall_s2aio
-    ;;
+    "uninstall" )
+        uninstall_s2aio
+        ;;
 
-  "start" )
-    start_s2aio
-    ;;
+    "start" )
+        start_s2aio
+        ;;
 
-  "stop" )
-    stop_s2aio
-    ;;
+    "stop" )
+        stop_s2aio
+        ;;
 
-  * )
-    usage
+    * )
+        usage
 esac
 
 set +e

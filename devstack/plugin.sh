@@ -158,15 +158,15 @@ function _install_docker {
     # containers without sudo
     sudo grep -q docker /etc/group
     if [ $? -ne 0 ]; then
-      sudo groupadd docker
+        sudo groupadd docker
     fi
     add_user_to_group $STORLETS_SWIFT_RUNTIME_USER docker
 
     if [ $STORLETS_SWIFT_RUNTIME_USER == $USER ]; then
-      # NOTE(takashi): We need this workaroud because we can't reload
-      #                user-group relationship in bash scripts
-      DOCKER_UNIX_SOCKET=/var/run/docker.sock
-      sudo chown $USER:$USER $DOCKER_UNIX_SOCKET
+        # NOTE(takashi): We need this workaroud because we can't reload
+        #                user-group relationship in bash scripts
+        DOCKER_UNIX_SOCKET=/var/run/docker.sock
+        sudo chown $USER:$USER $DOCKER_UNIX_SOCKET
     fi
 
     # Restart docker daemon
@@ -177,9 +177,9 @@ function prepare_storlets_install {
     _install_docker
 
     if is_ubuntu; then
-      install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
+        install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
     else
-      die $LINENO "Unsupported distro"
+        die $LINENO "Unsupported distro"
     fi
 
     install_python3
