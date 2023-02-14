@@ -215,9 +215,12 @@ class RunTimeSandbox(object):
         self.paths = RunTimePaths(scope, conf)
         self.scope = scope
 
-        self.sandbox_ping_interval = 0.5
+        self.sandbox_ping_interval = \
+            float(conf.get('sandbox_ping_interval', 0.5))
+        self.sandbox_stop_timeout = \
+            float(conf.get('stop_linux_container_timeout', 1))
         self.sandbox_wait_timeout = \
-            int(conf.get('restart_linux_container_timeout', 10))
+            float(conf.get('restart_linux_container_timeout', 10))
 
         self.docker_repo = conf.get('docker_repo', '')
         self.docker_image_name_prefix = 'tenant'
@@ -319,7 +322,7 @@ class RunTimeSandbox(object):
                 # The container is not yet created
                 pass
             else:
-                scontainer.stop(timeout=1)
+                scontainer.stop(timeout=self.sandbox_stop_timeout)
 
             # Check whether a new container can be started
             if self.max_containers_per_node > 0:

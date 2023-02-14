@@ -107,7 +107,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :param scope: scope name to identify the container
         """
         super(StorletGatewayDocker, self).__init__(conf, logger, scope)
-        self.storlet_timeout = int(self.conf.get('storlet_timeout', 40))
+        self.storlet_timeout = float(self.conf.get('storlet_timeout', 40))
         self.paths = RunTimePaths(scope, conf)
 
     @classmethod
