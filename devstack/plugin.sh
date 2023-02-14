@@ -140,10 +140,15 @@ function configure_swift_and_keystone_for_storlets {
 }
 
 function _install_docker {
+    # Install apparmor to workaround
+    # https://github.com/moby/moby/issues/44900
+    if is_ubuntu; then
+        install_package apparmor
+    fi
+
     # TODO: Add other dirstors.
     # This one is geared towards Ubuntu
     # See other projects that install docker
-
     wget http://get.docker.com -O install_docker.sh
     chmod 755 install_docker.sh
     sudo bash -x install_docker.sh
