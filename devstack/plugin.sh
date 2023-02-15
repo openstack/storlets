@@ -186,7 +186,7 @@ function prepare_storlets_install {
 }
 
 function _generate_jre_dockerfile {
-    PYTHON_PACKAGES="python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
+    PYTHON_PACKAGES="python3 python3-dev python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
 
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG

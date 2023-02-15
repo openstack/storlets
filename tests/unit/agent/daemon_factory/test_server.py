@@ -23,7 +23,6 @@ from storlets.sbus.client.exceptions import SBusClientSendError
 
 from storlets.agent.daemon_factory.server import SDaemonError, \
     StorletDaemonFactory
-from storlets.agent.common.utils import DEFAULT_PY3
 
 from tests.unit import FakeLogger
 from tests.unit.agent.common import test_server
@@ -87,9 +86,9 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 env['LD_LIBRARY_PATH'].split(':'))
 
     def test_get_python_args(self):
-        self._test_get_python_args(None, DEFAULT_PY3)
-        self._test_get_python_args(DEFAULT_PY3, DEFAULT_PY3)
-        self._test_get_python_args(3, DEFAULT_PY3)
+        self._test_get_python_args(None, '3')
+        self._test_get_python_args('3.10', '3.10')
+        self._test_get_python_args('3', '3')
 
     def _test_get_python_args(self, version, expected):
         dummy_env = {'PYTHONPATH': '/default/pythonpath'}

@@ -15,8 +15,6 @@
 import logging
 from logging.handlers import SysLogHandler
 
-DEFAULT_PY3 = '3.10'
-
 
 def get_logger(logger_name, log_level, container_id):
     """
