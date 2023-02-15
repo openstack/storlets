@@ -17,7 +17,6 @@
 import os
 import shutil
 
-from storlets.agent.common.utils import DEFAULT_PY3
 from storlets.gateway.common.stob import StorletRequest
 from storlets.gateway.gateways.base import StorletGatewayBase
 from storlets.gateway.gateways.docker.runtime import RunTimePaths, \
@@ -129,11 +128,11 @@ class StorletGatewayDocker(StorletGatewayBase):
                 raise ValueError('Storlet name is incorrect')
         elif params['Language'].lower() == 'python':
             try:
-                version = int(float(params.get('Language-Version', 3)))
+                version = float(params.get('Language-Version', 3))
             except ValueError:
                 raise ValueError('Language-Version is invalid')
 
-            if version not in [3, DEFAULT_PY3]:
+            if int(version) != 3:
                 # TODO(kota_): more strict version check should be nice.
                 raise ValueError('Not supported version specified')
 
