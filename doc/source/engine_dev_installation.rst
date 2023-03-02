@@ -178,7 +178,7 @@ with the following content:
     # The following operations shoud be defined in one line
     # to prevent docker images from including apt cache file.
     RUN apt-get update && \
-    apt-get install python && \
+    apt-get install python3 && \
     apt-get install software-properties-common && \
     apt-get install openjdk-11-jre-headless ant  && \
     apt-get clean
@@ -188,7 +188,7 @@ Build the image
 ::
 
     cd $HOME/docker_repos/ubuntu_22.04_jre11
-    sudo docker build -q -t ubuntu_22.04_jre11 .
+    sudo docker build -t ubuntu_22.04_jre11 .
     cd -
 
 
@@ -196,10 +196,10 @@ Step 3: Augment the above created image with the storlets stuff
 
 ::
 
-    mkdir -p $HOME/docker_repos/ubuntu_22.04_jre11_storlets
+    mkdir -p $HOME/docker_repos/storlet_engine_image
     cd -
 
-Create the file: $HOME/docker_repos/ubuntu_22.04_jre11_storlets/Dockerfile
+Create the file: $HOME/docker_repos/storlet_engine_image/Dockerfile
 with the following content:
 
 ::
@@ -219,8 +219,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_22.04_jre11_storlets
-    sudo docker build -q -t ubuntu_22.04_jre11_storlets .
+    cd $HOME/docker_repos/storlet_engine_image
+    sudo docker build -t storlet_engine_image .
     cd -
 
 Step 4: Create a tenant specific image. The engine looks for images
@@ -239,12 +239,12 @@ The response from the above contains the account line, e.g.:
 
 The account id is the number following the 'AUTH\_' prefix.
 
-Next create the file $HOME/docker_repos/ubuntu_22.04_jre11_storlets_<account id>/Dockerfile
+Next create the file $HOME/docker_repos/storlet_engine_image_<account id>/Dockerfile
 with the following content:
 
 ::
 
-    FROM ubuntu_22.04_jre11_storlets
+    FROM storlet_engine_image
     MAINTAINER root
 
 
@@ -252,8 +252,8 @@ Build the image
 
 ::
 
-    cd $HOME/docker_repos/ubuntu_22.04_jre11_storlets_<account id>
-    sudo docker build -q -t <account id> .
+    cd $HOME/docker_repos/storlet_engine_image_<account id>
+    sudo docker build -t <account id> .
     cd -
 
 Create the storlets run time environment
