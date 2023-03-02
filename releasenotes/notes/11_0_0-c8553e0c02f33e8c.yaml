@@ -1,0 +1,33 @@
+---
+prelude: >
+    This is the first release which supports Ubuntu 22.04 (Jammy Jellyfish).
+    Some improvements to similify upgrade and allow more flexible tunings have
+    been added.
+
+features:
+  - |
+    Now storlets support Ubuntu 22.04 (Jammy Jellyfish).
+
+  - |
+    The following new options have been added to docker gateway.
+
+    - ``sandbox_ping_interval``
+    - ``stop_linux_container_timeout``
+
+  - |
+    The following options of docker gateway now supports float values.
+    Previously these options converted float values to integer values.
+
+    - ``restart_linux_container_timeout``
+    - ``storlet_timeout``
+
+upgrade:
+  - |
+    Now a storlet application uses the default python (python3) unless it
+    requires a specific minor version. Make sure the default python3 command
+    is available in runtime images.
+
+  - |
+    Default value of the ``default_docker_image_name`` option has been updated
+    and now is set to ``storlet_engine_image``. Please make sure this option
+    is configured in case the previous image name should be used.
