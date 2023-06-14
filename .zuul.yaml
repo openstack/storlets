@@ -37,3 +37,5 @@
       - ^(api-ref|doc|releasenotes)/.*$
       - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
       - ^tests/unit/.*$
+    vars:
+      ensure_tox_version: '<4'
