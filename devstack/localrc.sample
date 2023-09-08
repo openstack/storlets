@@ -14,3 +14,6 @@ SWIFT_SERVICE_LISTEN_ADDRESS=$HOST_IP
 SWIFT_LOOPBACK_DISK_SIZE=20G
 SWIFT_MAX_FILE_SIZE=5368709122
 SWIFT_HASH=1234567890
+# TODO(tkajinam): This should be removed once we address all issues with
+#                 the global virtualenv
+GLOBAL_VENV=False
