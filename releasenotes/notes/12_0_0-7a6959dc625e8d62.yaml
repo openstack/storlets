@@ -1,0 +1,8 @@
+---
+prelude: >
+    This version is tested with OpenStack Swift 2023.2 release.
+
+upgrade:
+  - |
+    Default values of directory path options have been updated and now
+    server data is stored in `/var/lib/storlets` by default.
