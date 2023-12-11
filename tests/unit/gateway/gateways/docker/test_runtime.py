@@ -257,27 +257,27 @@ class TestRunTimeSandbox(unittest.TestCase):
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping:
             ping.return_value = SBusResponse(True, 'OK')
-            self.assertEqual(self.sbox.ping(), 1)
+            self.assertTrue(self.sbox.ping())
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping:
             ping.return_value = SBusResponse(False, 'Error')
-            self.assertEqual(self.sbox.ping(), 0)
+            self.assertFalse(self.sbox.ping())
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping:
             ping.side_effect = SBusClientSendError()
-            self.assertEqual(self.sbox.ping(), -1)
+            self.assertFalse(self.sbox.ping())
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping:
             ping.side_effect = SBusClientMalformedResponse()
-            self.assertEqual(self.sbox.ping(), -1)
+            self.assertFalse(self.sbox.ping())
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.'
                         'SBusClient.ping') as ping:
             ping.side_effect = SBusClientIOError()
-            self.assertEqual(self.sbox.ping(), -1)
+            self.assertFalse(self.sbox.ping())
 
     def test_wait(self):
         with mock.patch('storlets.gateway.gateways.docker.runtime.'

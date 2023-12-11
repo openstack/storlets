@@ -245,22 +245,20 @@ class RunTimeSandbox(object):
         """
         Ping to daemon factory process inside container
 
-        :returns:  1 when the daemon factory is responsive
-                   0 when the daemon factory is not responsive
-                  -1 when it fails to send command to the process
+        :returns: True when the daemon factory is responsive
+                  False when the daemon factory is not responsive or it fails
+                  to send command to the process
         """
         pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.ping()
-            if resp.status:
-                return 1
-            else:
+            if not resp.status:
                 self.logger.error('Failed to ping to daemon factory: %s' %
                                   resp.message)
-                return 0
+            return resp.status
         except SBusClientException:
-            return -1
+            return False
 
     def wait(self):
         """
@@ -269,19 +267,9 @@ class RunTimeSandbox(object):
         :raises StorletTimeout: the sandbox has not started in
                                 sandbox_wait_timeout
         """
-        try:
-            with StorletTimeout(self.sandbox_wait_timeout):
-                while True:
-                    rc = self.ping()
-                    if (rc != 1):
-                        time.sleep(self.sandbox_ping_interval)
-                        continue
-                    else:
-                        return
-        except StorletTimeout:
-            self.logger.exception("wait for sandbox %s timedout"
-                                  % self.scope)
-            raise
+        with StorletTimeout(self.sandbox_wait_timeout):
+            while not self.ping():
+                time.sleep(self.sandbox_ping_interval)
 
     def _restart(self, docker_image_name):
         """
@@ -384,14 +372,12 @@ class RunTimeSandbox(object):
                 self.storlet_daemon_thread_pool_size,
                 language_version)
 
-            if resp.status:
-                return 1
-            else:
+            if not resp.status:
                 self.logger.error('Failed to start storlet daemon: %s' %
                                   resp.message)
-                return 0
+                raise StorletRuntimeException('Daemon start failed')
         except SBusClientException:
-            return -1
+            raise StorletRuntimeException('Daemon start failed')
 
     def stop_storlet_daemon(self, storlet_id):
         """
@@ -401,14 +387,12 @@ class RunTimeSandbox(object):
         client = SBusClient(pipe_path)
         try:
             resp = client.stop_daemon(storlet_id)
-            if resp.status:
-                return 1
-            else:
+            if not resp.status:
                 self.logger.error('Failed to stop storlet daemon: %s' %
                                   resp.message)
-                return 0
+                raise StorletRuntimeException('Daemon stop failed')
         except SBusClientException:
-            return -1
+            raise StorletRuntimeException('Daemon stop failed')
 
     def get_storlet_daemon_status(self, storlet_id):
         """
@@ -461,8 +445,10 @@ class RunTimeSandbox(object):
             # stop it.
             self.logger.debug('The cache was updated, and the storlet daemon '
                               'is running. Stopping daemon')
-            res = self.stop_storlet_daemon(sreq.storlet_main)
-            if res != 1:
+
+            try:
+                self.stop_storlet_daemon(sreq.storlet_main)
+            except StorletRuntimeException:
                 self.logger.warning('Failed to stop the storlet daemon. '
                                     'Restart Docker container')
                 self.restart()
@@ -477,16 +463,10 @@ class RunTimeSandbox(object):
             classpath = self._get_storlet_classpath(
                 sreq.storlet_main, sreq.storlet_id, sreq.dependencies)
 
-            daemon_status = self.start_storlet_daemon(
+            self.start_storlet_daemon(
                 classpath, sreq.storlet_main, sreq.storlet_language,
                 sreq.storlet_language_version)
-
-            if daemon_status != 1:
-                self.logger.error('Daemon start Failed, returned code is %d' %
-                                  daemon_status)
-                raise StorletRuntimeException('Daemon start failed')
-            else:
-                self.logger.debug('Daemon started')
+            self.logger.debug('Daemon started')
 
 
 """---------------------------------------------------------------------------
