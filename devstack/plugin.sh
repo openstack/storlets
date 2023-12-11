@@ -198,11 +198,11 @@ function create_base_jre_image {
     mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
     _generate_jre_dockerfile
     cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
-    sudo docker build -t ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION} .
+    sudo docker build -t storlet_engine_image .
     cd -
 }
 
-function _generate_logback_xml {
+function create_logback_xml {
     sudo tee /usr/local/lib/storlets/logback.xml <<EOF >/dev/null
 <configuration>
   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -231,29 +231,6 @@ EOF
     sudo chmod 0744 /usr/local/lib/storlets/logback.xml
 }
 
-function _generate_jre_storlet_dockerfile {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets/Dockerfile
-FROM ${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}
-MAINTAINER root
-RUN [ "groupadd", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
-RUN [ "useradd", "-u" , "$STORLETS_DOCKER_SWIFT_USER_ID", "-g", "$STORLETS_DOCKER_SWIFT_GROUP_ID", "swift" ]
-
-CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
-
-ENTRYPOINT ["/usr/local/libexec/storlets/init_container.sh"]
-EOF
-}
-
-function create_storlet_engine_image {
-    echo "Create Storlet engine image"
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
-    _generate_logback_xml
-    _generate_jre_storlet_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}_storlets
-    sudo docker build -t storlet_engine_image .
-    cd -
-}
-
 function install_storlets_code {
     echo "Installing storlets"
     cd $REPO_DIR
@@ -271,6 +248,7 @@ function install_storlets_code {
     # NOTE(takashi): We need --no-deps to avoid enum34 installed in py 2 env,
     #                which causes failure in py3 execution.
     pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
+    sudo mkdir -p -m 755 /usr/local/libexec/storlets
     for bin_file in storlets-daemon storlets-daemon-factory ; do
         sudo cp `which ${bin_file}` /usr/local/libexec/storlets/
     done
@@ -359,8 +337,10 @@ function install_storlets {
 
     echo "Create Docker images"
     create_base_jre_image
-    create_storlet_engine_image
     create_default_tenant_image
+
+    echo "Create logback xml file"
+    create_logback_xml
 
     echo "Create test configuration file"
     create_test_config_file

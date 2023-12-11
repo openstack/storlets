@@ -153,6 +153,10 @@ class RunTimePaths(object):
     def host_factory_pipe(self):
         return os.path.join(self.host_pipe_dir, self.factory_pipe_name)
 
+    @property
+    def sandbox_factory_pipe(self):
+        return os.path.join(self.sandbox_pipe_dir, self.factory_pipe_name)
+
     def get_host_storlet_pipe(self, storlet_id):
         return os.path.join(self.host_pipe_dir, storlet_id)
 
@@ -228,6 +232,8 @@ class RunTimeSandbox(object):
         # TODO(add line in conf)
         self.storlet_daemon_thread_pool_size = \
             int(conf.get('storlet_daemon_thread_pool_size', 5))
+        self.storlet_daemon_factory_debug_level = \
+            conf.get('storlet_daemon_factory_debug_level', 'DEBUG')
         self.storlet_daemon_debug_level = \
             conf.get('storlet_daemon_debug_level', 'DEBUG')
 
@@ -334,8 +340,25 @@ class RunTimeSandbox(object):
 
             # Start the new one
             client.containers.run(
-                docker_image_name, detach=True, name=docker_container_name,
-                network_disabled=True, mounts=mounts, user='swift',
+                docker_image_name, detach=True,
+                command=[
+                    self.paths.sandbox_factory_pipe,
+                    self.storlet_daemon_factory_debug_level,
+                    docker_container_name
+                ],
+                entrypoint=[
+                    os.path.join(
+                        self.paths.sandbox_storlet_native_bin_dir,
+                        'storlets-daemon-factory'
+                    )
+                ],
+                environment={
+                    'PYTHONPATH': os.path.join(
+                        self.paths.sandbox_storlet_native_lib_dir, 'python'
+                    )
+                },
+                name=docker_container_name, network_disabled=True,
+                mounts=mounts, user=os.getuid(),
                 auto_remove=True, stop_signal='SIGHUP',
                 labels={'managed_by': 'storlets'})
         except docker.errors.ImageNotFound:

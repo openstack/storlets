@@ -183,47 +183,15 @@ with the following content:
     apt-get install openjdk-11-jre-headless ant  && \
     apt-get clean
 
-Build the image
+Build the image and name it *storlet_engine_image*.
 
 ::
 
     cd $HOME/docker_repos/ubuntu_22.04_jre11
-    sudo docker build -t ubuntu_22.04_jre11 .
-    cd -
-
-
-Step 3: Augment the above created image with the storlets stuff
-
-::
-
-    mkdir -p $HOME/docker_repos/storlet_engine_image
-    cd -
-
-Create the file: $HOME/docker_repos/storlet_engine_image/Dockerfile
-with the following content:
-
-::
-
-    FROM ubuntu_22.04_jre11
-
-    MAINTAINER root
-
-    RUN [ "groupadd", "-g", "1003", "swift" ]
-    RUN [ "useradd", "-u" , "1003", "-g", "1003", "swift" ]
-
-    CMD ["prod", "/mnt/channels/factory_pipe", "DEBUG"]
-
-    ENTRYPOINT ["/usr/local/libexec/storlets/init_container.sh"]
-
-Build the image
-
-::
-
-    cd $HOME/docker_repos/storlet_engine_image
     sudo docker build -t storlet_engine_image .
     cd -
 
-Step 4: Create a tenant specific image. The engine looks for images
+Step 3: Create a tenant specific image. The engine looks for images
 having the name <tenand id>.
 First, we get the tenant id. Using the Swift cli and the above create user do:
 
