@@ -24,7 +24,9 @@
         <mkdir dir="bin" />
         <javac srcdir="src" destdir="bin"
                classpath="../../../src/java/SCommon/bin/SCommon.jar"
-               includeantruntime="false" />
+               includeantruntime="false">
+            <compilerarg value="-Xlint"/>
+        </javac>
     </target>
 
     <target name="jar" depends="java">

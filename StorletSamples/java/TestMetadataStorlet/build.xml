@@ -24,6 +24,7 @@
                 <pathelement
                     path="../../../src/java/SCommon/bin/SCommon.jar"/>
             </classpath>
+            <compilerarg value="-Xlint"/>
         </javac>
         <jar destfile="bin/testmetadatastorlet-1.0.jar"
              basedir="bin"

@@ -29,7 +29,9 @@
             destdir="bin"
             classpath="../dependencies/json_simple-1.1.jar"
             includeantruntime="false"
-            nativeheaderdir='.'/>
+            nativeheaderdir='.'>
+            <compilerarg value="-Xlint"/>
+        </javac>
     </target>
 
     <target name="so" depends="java">
