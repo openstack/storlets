@@ -56,8 +56,8 @@ public class Utils {
         return val;
     }
 
-    public static boolean getBoolean(Map<String, String> parameters, String paramName, boolean paramDefaultValue, final StorletLogger log) {
-        String paramValue = getParam(parameters, paramName, (new Boolean(paramDefaultValue)).toString(), log, Boolean.FALSE);
+    public static boolean getBoolean(Map<String, String> parameters, String paramName, boolean defaultValue, final StorletLogger log) {
+        String paramValue = getParam(parameters, paramName, Boolean.toString(defaultValue), log, Boolean.FALSE);
         return Boolean.parseBoolean(paramValue);
     }
 

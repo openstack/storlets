@@ -28,6 +28,7 @@ import org.openstack.storlet.sbus.SBusBackend.eLogLevel;
 public class SBus {
     private SBusHandler hServerSideSBus_;
     private SBusBackend SBusBack_;
+    private String ContainerId_;
 
     /*------------------------------------------------------------------------
      * CTOR
@@ -36,7 +37,7 @@ public class SBus {
      * */
     public SBus(final String contId) throws IOException {
         SBusBack_ = new SBusBackend();
-        SBusBack_.startLogger(eLogLevel.SBUS_LOG_DEBUG, contId);
+        ContainerId_ = contId;
     }
 
     /*------------------------------------------------------------------------
@@ -77,11 +78,20 @@ public class SBus {
     }
 
     /*------------------------------------------------------------------------
-     * DTOR
+     * startLogger
+     *
+     * Start logging
+     * */
+    public void startLogger() {
+        SBusBack_.startLogger(eLogLevel.SBUS_LOG_DEBUG, ContainerId_);
+    }
+
+    /*------------------------------------------------------------------------
+     * stopLogger
      * 
      * Stop logging
      * */
-    public void finalize() {
+    public void stopLogger() {
         SBusBack_.stopLogger();
     }
 }

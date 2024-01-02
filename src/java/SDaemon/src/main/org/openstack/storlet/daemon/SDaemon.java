@@ -65,7 +65,7 @@ public class SDaemon {
         IStorlet storlet = null;
         try {
             Class<?> c = Class.forName(strStorletClassName);
-            storlet = (IStorlet) c.newInstance();
+            storlet = (IStorlet) c.getDeclaredConstructor().newInstance();
         } catch (Exception e) {
             logger_.error(strStorletName_ + ": Failed to load storlet class "
                     + strStorletClassName + "class path is "
@@ -126,6 +126,7 @@ public class SDaemon {
         storletTaskFactory_ = new STaskFactory(storlet, logger_);
         logger_.trace("Instanciating SBus");
         sbus_ = new SBus(strContId);
+        sbus_.startLogger();
         try {
             logger_.trace("Initialising SBus");
             sbus_.create(strSBusPath);
@@ -214,5 +215,6 @@ public class SDaemon {
         logger_.info(strStorletName_ + ": Daemon for storlet " + strStorletName_ +
             " is going down...");
         sExecManager_.terminate();
+        sbus_.stopLogger();
     }
 }
