@@ -91,7 +91,7 @@ public class SExecutionTask extends SAbstractTask implements Runnable {
     @Override
     public boolean exec() {
         boolean bStatus = true;
-        this.taskId_ = this.sExecManager_.submitTask((SExecutionTask) this);
+        this.taskId_ = this.sExecManager_.submitTask(this);
         return respond(this.sOut_, true, new String("OK"), this.taskId_);
     }
 

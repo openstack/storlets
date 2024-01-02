@@ -163,9 +163,8 @@ public class IdentityStorlet implements IStorlet {
          * Copy data from input stream to output stream
          */
         log.emitLog("Copying data");
-        StorletInputStream psis = (StorletInputStream) inputStreams.get(0);
-        InputStream is;
-        is = psis.getStream();
+        StorletInputStream psis = inputStreams.get(0);
+        InputStream is = psis.getStream();
 
         OutputStream os = storletObjectOutputStream.getStream();
         final byte[] buffer = new byte[iChunkSize];

@@ -86,8 +86,7 @@ public class MultiInputStorlet implements IStorlet {
         final byte[] buffer = new byte[65536];
         try {
             for(StorletInputStream psis : inputStreams){
-                InputStream is;
-                is = psis.getStream();
+                InputStream is = psis.getStream();
 
                 String readString = null;
                 try {

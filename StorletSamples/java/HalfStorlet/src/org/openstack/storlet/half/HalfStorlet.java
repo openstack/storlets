@@ -51,9 +51,8 @@ public class HalfStorlet implements IStorlet {
          * Copy every other byte from input stream to output stream
          */
         log.emitLog("Copying every other byte");
-        StorletInputStream psis = (StorletInputStream) inputStreams.get(0);
-        InputStream is;
-        is = psis.getStream();
+        StorletInputStream psis = inputStreams.get(0);
+        InputStream is = psis.getStream();
 
         OutputStream os = storletObjectOutputStream.getStream();
         try {
