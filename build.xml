@@ -49,29 +49,4 @@
     <!-- Overall install -->
     <target name="install" depends="install_engine" />
     <target name="uninstall" depends="uninstall_engine" />
-
-    <!--            Deploy          -->
-    <!-- To execute the below tasks you must have:
-         (1) ansible installed
-         (2) hosts file configured
-    -->
-    <target name="deploy_host_engine" depends="build_engine">
-        <exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
-            <arg value="-s"/>
-            <arg value="-i"/>
-            <arg value="storlets_dynamic_inventory.py"/>
-            <arg value="host_side_storlet_engine.yml"/>
-        </exec>
-    </target>
-
-    <target name="deploy_container_engine" depends="build_engine">
-        <exec executable="ansible-playbook" dir="install/storlets" failonerror="true">
-            <arg value="-s"/>
-            <arg value="-i"/>
-            <arg value="storlets_dynamic_inventory.py"/>
-            <arg value="container_storlet_engine.yml"/>
-        </exec>
-    </target>
-
-    <target name="deploy" depends="deploy_host_engine, deploy_container_engine"/>
 </project>
