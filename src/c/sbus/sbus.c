@@ -253,7 +253,7 @@ int dump_data_to_bytestream( char** pp_bytestream,
         n_offset += int_size;
         memcpy( *pp_bytestream + n_offset, (void*) &n_msg_len, int_size );
         n_offset += int_size;
-    memcpy( *pp_bytestream + n_offset, (void*) str_files_metadata,
+        memcpy( *pp_bytestream + n_offset, (void*) str_files_metadata,
                 n_files_metadata_len );
         n_offset += n_files_metadata_len;
         memcpy( *pp_bytestream + n_offset, (void*) str_msg_data, n_msg_len );
@@ -488,8 +488,8 @@ int sbus_recv_msg( int n_sbus_handler,
     int n_msg_len = recvmsg( n_sbus_handler, &recv_msg, 0 );
     if( n_msg_len < 0 ) {
         syslog(LOG_ERR, "sbus_recv_msg: recvmsg failed. %s", strerror(errno));
-    close(n_sbus_handler);
-    n_status = -1;
+        close(n_sbus_handler);
+        n_status = -1;
     }
 
     if( 0 <= n_status ) {
