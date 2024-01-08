@@ -40,22 +40,23 @@ function _prepare_devstack_env {
     source $DEVSTACK_DIR/stackrc
     source $DEVSTACK_DIR/functions
     source $DEVSTACK_DIR/functions-common
+    source $DEVSTACK_DIR/lib/keystone
     source $DEVSTACK_DIR/lib/swift
     source devstack/plugin.sh
 }
 
 function start_s2aio {
     set -e
-    swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all start
-    /usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-public.ini &> /dev/null &
-    /usr/local/bin/uwsgi /etc/keystone/keystone-uwsgi-admin.ini &> /dev/null &
+    start_keystone
+    start_swift
     exit 0
 }
 
 function _stop_s2aio {
     set +e
     swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all stop
-    sh -c 'ps aux | pgrep uwsgi | xargs kill -9'
+    stop_keystone
+    stop_swift
     set -e
 }
 
@@ -67,14 +68,7 @@ function stop_s2aio {
 function install_swift_using_devstack {
     cd $DEVSTACK_DIR
     ./stack.sh
-    stop_swift
     cd -
-
-    # add entry to fstab
-    mount_added=$(grep swift.img /etc/fstab | wc -l)
-    if [ $mount_added -eq 0 ]; then
-        sudo sh -c 'echo "/opt/stack/data/swift/drives/images/swift.img /opt/stack/data/swift/drives/sdb1 xfs loop" >> /etc/fstab'
-    fi
 }
 
 function install_s2aio {
@@ -94,9 +88,6 @@ function uninstall_swift_using_devstack {
     cd $DEVSTACK_DIR
     ./unstack.sh
     cd -
-
-    echo "Removing swift device mount, creating /etc/fstab.bak"
-    sudo sed -i.bak '/swift.img/d'  /etc/fstab
 }
 
 function uninstall_s2aio {
