@@ -15,7 +15,3 @@ rsync
 xfsprogs
 libssl-dev [platform:dpkg]
 openssl-devel [platform:rpm]
-
-# N.B. uwsgi-plugin-python is needed only for s2aio.sh start/stop for keystone
-# so that we will be able to remove if devstack or devstack plugin installs it
-uwsgi-plugin-python3 [platform:dpkg]
