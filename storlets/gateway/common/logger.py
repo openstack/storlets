@@ -31,9 +31,10 @@ class StorletLogger(object):
         try:
             log_dir_path = os.path.dirname(self.log_path)
             if not os.path.exists(log_dir_path):
-                os.makedirs(log_dir_path)
+                os.makedirs(log_dir_path, 0o700)
 
             self._file = open(self.log_path, 'a')
+            os.chmod(self.log_path, 0o600)
         except Exception:
             raise
 
