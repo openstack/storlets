@@ -279,7 +279,7 @@ class StorletGatewayDocker(StorletGatewayBase):
             get_func = sreq.file_manager.get_dependency
 
         if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir, 0o755)
+            os.makedirs(cache_dir, 0o700)
 
         # cache_target_path is the actual object we need to deal with
         # e.g. a concrete storlet or dependency we need to bring/update
@@ -312,15 +312,16 @@ class StorletGatewayDocker(StorletGatewayBase):
             # bring the object from storge
             data_iter, perm = get_func(obj_name)
 
+            if perm:
+                perm = int(perm, 8) & 0o700
+            else:
+                perm = 0o600
+
             # TODO(takashi): Do not directly write to target path
             with open(cache_target_path, 'wb') as fn:
+                os.chmod(cache_target_path, perm)
                 for data in data_iter:
                     fn.write(data)
-
-            if not is_storlet:
-                if not perm:
-                    perm = '0600'
-                os.chmod(cache_target_path, int(perm, 8))
 
         # The node's local cache is now updated.
         # We now verify if we need to update the
@@ -334,7 +335,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         docker_target_path = os.path.join(docker_storlet_path, obj_name)
 
         if not os.path.exists(docker_storlet_path):
-            os.makedirs(docker_storlet_path, 0o755)
+            os.makedirs(docker_storlet_path, 0o700)
             update_docker = True
         elif not os.path.isfile(docker_target_path):
             update_docker = True
