@@ -340,13 +340,11 @@ class StorletGatewayDocker(StorletGatewayBase):
         elif not os.path.isfile(docker_target_path):
             update_docker = True
         else:
-            fstat_cached_object = os.stat(cache_target_path)
-            fstat_docker_object = os.stat(docker_target_path)
-            b_size_changed = fstat_cached_object.st_size \
-                != fstat_docker_object.st_size
-            b_time_changed = float(fstat_cached_object.st_mtime) < \
-                float(fstat_docker_object.st_mtime)
-            if (b_size_changed or b_time_changed):
+            fstat_cached = os.stat(cache_target_path)
+            fstat_docker = os.stat(docker_target_path)
+            if fstat_cached.st_size != fstat_docker.st_size:
+                update_docker = True
+            if fstat_cached.st_mtime < fstat_docker.st_mtime:
                 update_docker = True
 
         if update_docker:
