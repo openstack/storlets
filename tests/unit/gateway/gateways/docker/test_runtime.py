@@ -513,26 +513,30 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
                         'execute') as execute:
             execute.return_value = SBusResponse(True, 'OK', 'someid')
-            self.protocol._send_execute_command()
+            with self.protocol.storlet_logger.activate():
+                self.protocol._send_execute_command()
             self.assertEqual('someid', self.protocol.task_id)
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
                         'execute') as execute:
             execute.return_value = SBusResponse(True, 'OK')
             with self.assertRaises(StorletRuntimeException):
-                self.protocol._send_execute_command()
+                with self.protocol.storlet_logger.activate():
+                    self.protocol._send_execute_command()
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
                         'execute') as execute:
             execute.return_value = SBusResponse(False, 'NG', 'someid')
             with self.assertRaises(StorletRuntimeException):
-                self.protocol._send_execute_command()
+                with self.protocol.storlet_logger.activate():
+                    self.protocol._send_execute_command()
 
         with mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient.'
                         'execute') as execute:
             execute.side_effect = SBusClientIOError()
             with self.assertRaises(StorletRuntimeException):
-                self.protocol._send_execute_command()
+                with self.protocol.storlet_logger.activate():
+                    self.protocol._send_execute_command()
 
     def test_invocation_protocol(self):
         # os.pipe will be called 3 times
@@ -572,7 +576,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
             self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
-        self.assertEqual(4, len(protocol.remote_fds))
+        with protocol.storlet_logger.activate():
+            self.assertEqual(4, len(protocol.remote_fds))
 
         # extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
@@ -580,7 +585,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request])
-        self.assertEqual(5, len(protocol.remote_fds))
+        with protocol.storlet_logger.activate():
+            self.assertEqual(5, len(protocol.remote_fds))
 
         # 2 more extra_resources expands the remote_fds
         storlet_request = DockerStorletRequest(
@@ -588,7 +594,8 @@ class TestStorletInvocationProtocol(unittest.TestCase):
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger,
             extra_sources=[storlet_request] * 3)
-        self.assertEqual(7, len(protocol.remote_fds))
+        with protocol.storlet_logger.activate():
+            self.assertEqual(7, len(protocol.remote_fds))
 
     def test_open_writer_with_invalid_fd(self):
         invalid_fds = (

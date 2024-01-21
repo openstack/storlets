@@ -64,7 +64,9 @@ class TestStorletLogger(unittest.TestCase):
             self.logger.close()
 
     def test_getfd(self):
-        self.assertIsNone(self.logger.getfd())
+        with self.assertRaises(StorletLoggerError):
+            self.logger.getfd()
+
         self.logger.open()
         self.assertIsNotNone(self.logger.getfd())
         self.logger.close()

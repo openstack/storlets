@@ -28,20 +28,16 @@ class StorletLogger(object):
         if self._file is not None:
             raise StorletLoggerError('StorletLogger is already open')
 
-        try:
-            log_dir_path = os.path.dirname(self.log_path)
-            if not os.path.exists(log_dir_path):
-                os.makedirs(log_dir_path, 0o700)
+        log_dir_path = os.path.dirname(self.log_path)
+        if not os.path.exists(log_dir_path):
+            os.makedirs(log_dir_path, 0o700)
 
-            self._file = open(self.log_path, 'a')
-            os.chmod(self.log_path, 0o600)
-        except Exception:
-            raise
+        self._file = open(self.log_path, 'a')
+        os.chmod(self.log_path, 0o600)
 
     def getfd(self):
         if self._file is None:
-            # TODO(kota_): Is it safe to return None?
-            return None
+            raise StorletLoggerError('StorletLogger is not open')
         return self._file.fileno()
 
     def getsize(self):
@@ -52,12 +48,8 @@ class StorletLogger(object):
         if self._file is None:
             raise StorletLoggerError('StorletLogger is not open')
 
-        try:
-            self._file.close()
-        except Exception:
-            raise
-        else:
-            self._file = None
+        self._file.close()
+        self._file = None
 
     @contextmanager
     def activate(self):
