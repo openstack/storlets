@@ -1,7 +1,6 @@
 [run]
 branch = True
 source = storlets
-omit = storlets/openstack/*
 
 [report]
 ignore_errors = True
