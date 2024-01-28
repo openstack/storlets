@@ -306,20 +306,7 @@ with the following content:
     docker_repo =
     restart_linux_container_timeout = 3
 
-Step 4:
-Create and edit the file /etc/swift/storlet-proxy-server.conf:
-
-::
-
-    cp /etc/swift/proxy-server.conf /etc/swift/storlet-proxy-server.conf
-
-Change the pipeline in /etc/swift/storlet-proxy-server.conf to be:
-
-::
-
-    pipeline = proxy-logging cache slo proxy-logging proxy-server
-
-Step 5: restart swift
+Step 4: restart swift
 
 ::
 

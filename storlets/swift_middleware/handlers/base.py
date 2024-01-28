@@ -205,7 +205,8 @@ class StorletBaseHandler(object):
         self.storlet_container = containers['storlet']
         self.storlet_dependency = containers['dependency']
         self.log_container = containers['log']
-        self.client_conf_file = '/etc/swift/storlet-proxy-server.conf'
+        self.ic_conf_path = conf.get('internal_client_conf_path',
+                                     '/etc/swift/internal-client.conf')
 
     def _setup_gateway(self):
         """
@@ -480,7 +481,7 @@ class StorletBaseHandler(object):
         options['file_manager'] = \
             SwiftFileManager(self.account, self.storlet_container,
                              self.storlet_dependency, self.log_container,
-                             self.client_conf_file, self.logger)
+                             self.ic_conf_path, self.logger)
 
         return options
 
