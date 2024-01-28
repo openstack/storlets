@@ -248,8 +248,8 @@ class TestRunTimeSandbox(unittest.TestCase):
     def setUp(self):
         self.logger = FakeLogger()
         # TODO(takashi): take these values from config file
-        self.conf = {'docker_repo': 'localhost:5001',
-                     'default_docker_image_name': 'defaultimage'}
+        self.conf = {'container_image_namespace': 'localhost:5001',
+                     'default_container_image_name': 'defaultimage'}
         self.scope = '0123456789abc'
         self.sbox = RunTimeSandbox(self.scope, self.conf, self.logger)
 

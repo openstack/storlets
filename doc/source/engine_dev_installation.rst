@@ -303,7 +303,7 @@ with the following content:
     storlets_dir = /var/lib/storlets/storlets/scopes
     pipes_dir = /var/lib/storlets/pipes/scopes
     storlet_timeout = 40
-    docker_repo =
+    container_image_namespace =
     restart_linux_container_timeout = 3
 
 Step 4:

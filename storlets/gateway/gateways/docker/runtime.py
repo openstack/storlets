@@ -226,8 +226,9 @@ class RunTimeSandbox(object):
         self.sandbox_wait_timeout = \
             float(conf.get('restart_linux_container_timeout', 10))
 
-        self.docker_repo = conf.get('docker_repo', '')
-        self.docker_image_name_prefix = 'tenant'
+        self.container_image_namespace = \
+            conf.get('docker_repo', conf.get('container_image_namespace'))
+        self.container_image_name_prefix = 'tenant'
 
         # TODO(add line in conf)
         self.storlet_daemon_thread_pool_size = \
@@ -240,9 +241,10 @@ class RunTimeSandbox(object):
         # TODO(change logger's route if possible)
         self.logger = logger
 
-        self.default_docker_image_name = \
-            conf.get('default_docker_image_name',
-                     'storlet_engine_image')
+        self.default_container_image_name = conf.get(
+            'default_docker_image_name',
+            conf.get('default_container_image_name', 'storlet_engine_image')
+        )
 
         self.max_containers_per_node = \
             int(conf.get('max_containers_per_node', 0))
@@ -288,19 +290,19 @@ class RunTimeSandbox(object):
             while not self.ping():
                 time.sleep(self.sandbox_ping_interval)
 
-    def _restart(self, docker_image_name):
+    def _restart(self, container_image_name):
         """
-        Restarts the scope's sandbox using the specified docker image
+        Restarts the scope's sandbox using the specified container image
 
-        :param docker_image_name: name of the docker image to start
+        :param container_image_name: name of the container image to start
         :raises StorletRuntimeException: when failed to restart the container
         """
-        if self.docker_repo:
-            docker_image_name = '%s/%s' % (self.docker_repo,
-                                           docker_image_name)
+        if self.container_image_namespace:
+            container_image_name = '%s/%s' % (self.container_image_namespace,
+                                              container_image_name)
 
-        docker_container_name = '%s_%s' % (self.docker_image_name_prefix,
-                                           self.scope)
+        container_name = '%s_%s' % (self.container_image_name_prefix,
+                                    self.scope)
 
         mounts = [
             DockerMount('/dev/log', '/dev/log', type='bind'),
@@ -322,7 +324,7 @@ class RunTimeSandbox(object):
             client = docker.from_env()
             # Stop the existing storlet container
             try:
-                scontainer = client.containers.get(docker_container_name)
+                scontainer = client.containers.get(container_name)
             except docker.errors.NotFound:
                 # The container is not yet created
                 pass
@@ -339,11 +341,11 @@ class RunTimeSandbox(object):
 
             # Start the new one
             client.containers.run(
-                docker_image_name, detach=True,
+                container_image_name, detach=True,
                 command=[
                     self.paths.sandbox_factory_pipe,
                     self.storlet_daemon_factory_debug_level,
-                    docker_container_name
+                    container_name
                 ],
                 entrypoint=[
                     os.path.join(
@@ -356,7 +358,7 @@ class RunTimeSandbox(object):
                         self.paths.sandbox_storlet_native_lib_dir, 'python'
                     )
                 },
-                name=docker_container_name, network_disabled=True,
+                name=container_name, network_disabled=True,
                 mounts=mounts, user=os.getuid(),
                 auto_remove=True, stop_signal='SIGHUP',
                 cpu_period=self.container_cpu_period,
@@ -366,7 +368,7 @@ class RunTimeSandbox(object):
                 cpuset_mems=self.container_cpuset_mems,
                 labels={'managed_by': 'storlets'})
         except docker.errors.ImageNotFound:
-            msg = "Image %s is not found" % docker_image_name
+            msg = "Image %s is not found" % container_image_name
             raise StorletRuntimeException(msg)
         except docker.errors.APIError:
             self.logger.exception("Failed to manage docker containers")
@@ -379,9 +381,9 @@ class RunTimeSandbox(object):
         """
         self.paths.create_host_pipe_dir()
 
-        docker_image_name = self.scope
+        container_image_name = self.scope
         try:
-            self._restart(docker_image_name)
+            self._restart(container_image_name)
             self.wait()
         except StorletTimeout:
             raise
@@ -389,11 +391,11 @@ class RunTimeSandbox(object):
             # We were unable to start docker container from the tenant image.
             # Let us try to start docker container from default image.
             self.logger.exception("Failed to start docker container from "
-                                  "tenant image %s" % docker_image_name)
+                                  "tenant image %s" % container_image_name)
 
             self.logger.info("Trying to start docker container from default "
-                             "image: %s" % self.default_docker_image_name)
-            self._restart(self.default_docker_image_name)
+                             "image: %s" % self.default_container_image_name)
+            self._restart(self.default_container_image_name)
             self.wait()
 
     def start_storlet_daemon(
