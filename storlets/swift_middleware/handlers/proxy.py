@@ -93,16 +93,17 @@ class StorletProxyHandler(StorletBaseHandler):
         :param resp: swob.Response instance
         :return: Whether we should execute the storlet at proxy
         """
-        # SLO / proxy only case:
-        # storlet to be invoked now at proxy side:
-        slo_resposne = False
+        checks = [
+            self.execute_on_proxy,
+            self.execute_range_on_proxy
+        ]
         if resp:
-            slo_resposne = self.is_slo_response(resp)
+            checks.extend([
+                self.is_slo_response(resp),
+                self.is_symlink_response(resp)
+            ])
 
-        runnable = any(
-            [self.execute_on_proxy,
-             self.execute_range_on_proxy,
-             slo_resposne])
+        runnable = any(checks)
         return runnable
 
     @property
@@ -123,6 +124,26 @@ class StorletProxyHandler(StorletBaseHandler):
     @property
     def is_put_copy_request(self):
         return 'X-Copy-From' in self.request.headers
+
+    def is_symlink_response(self, resp):
+        """
+        Determins whether the response is a symlink one
+
+        :param resp: swob.Response instance
+        :return: Whenther the response is a slo one
+        """
+        self.logger.debug(
+            'Verify if {0} is a symlink'.format(self.path))
+
+        symlink_header = 'X-Symlink-Target'
+        is_symlink = symlink_header in resp.headers
+        if is_symlink:
+            self.logger.debug(
+                '{0} is indeed a symlink'.format(self.path))
+        else:
+            self.logger.debug(
+                '{0} is NOT a symlink'.format(self.path))
+        return is_symlink
 
     def _parse_storlet_params(self, headers):
         """

@@ -220,6 +220,23 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             calls = self.base_app.get_calls()
             self.assertEqual(2, len(calls))
 
+    def test_GET_symlink_with_storlets(self):
+        target = '/v1/AUTH_a/c/o'
+        self.base_app.register('GET', target, HTTPOk,
+                               headers={'x-symlink-target': 'c/o2'},
+                               body=b'FAKE APP')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar'}
+            resp = self.get_request_response(target, 'GET', headers=headers)
+            self.assertEqual('200 OK', resp.status)
+            self.assertEqual(b'FAKE APP', resp.body)
+
+            calls = self.base_app.get_calls()
+            self.assertEqual(2, len(calls))
+
     def test_GET_with_storlets_no_object(self):
         target = '/v1/AUTH_a/c/'
         self.base_app.register('GET', target, HTTPOk,

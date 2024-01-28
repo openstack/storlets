@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from swift.common.request_helpers import get_sys_meta_prefix
 from swift.common.swob import HTTPMethodNotAllowed, \
     HTTPRequestedRangeNotSatisfiable, Range
 from swift.common.utils import public
@@ -43,6 +44,26 @@ class StorletObjectHandler(StorletBaseHandler):
         if the object is a SLO
         """
         return self.request.params.get('multipart-manifest') == 'get'
+
+    def is_symlink_response(self, resp):
+        """
+        Determins whether the response is a symlink one
+
+        :param resp: swob.Response instance
+        :return: Whenther the response is a slo one
+        """
+        self.logger.debug(
+            'Verify if {0} is a symlink'.format(self.path))
+
+        symlink_header = get_sys_meta_prefix('object') + 'symlink-target'
+        is_symlink = symlink_header in resp.headers
+        if is_symlink:
+            self.logger.debug(
+                '{0} is indeed a symlink'.format(self.path))
+        else:
+            self.logger.debug(
+                '{0} is NOT a symlink'.format(self.path))
+        return is_symlink
 
     def _get_storlet_invocation_options(self, req):
         options = super(StorletObjectHandler, self).\
@@ -108,7 +129,9 @@ class StorletObjectHandler(StorletBaseHandler):
             [self.execute_on_proxy,
              self.execute_range_on_proxy,
              self.is_slo_get_request,
-             self.is_slo_response(orig_resp)])
+             self.is_slo_response(orig_resp),
+             self.is_symlink_response(orig_resp)
+             ])
 
         if not_runnable:
             # Storlet must be invoked on proxy as it is:
