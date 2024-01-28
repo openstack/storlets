@@ -16,8 +16,6 @@
 import eventlet
 from io import BytesIO, StringIO
 import json
-import os
-import os.path
 from shutil import rmtree
 from tempfile import mkdtemp
 import unittest
@@ -225,28 +223,6 @@ class TestStorletDockerGateway(unittest.TestCase):
         self.container = 'container'
         self.obj = 'object'
         self.sobj = 'storlet-1.0.jar'
-
-        # TODO(kota_): should be 'storlet-internal-client.conf' actually
-        ic_conf_path = os.path.join(self.tempdir,
-                                    'internal-client.conf')
-        with open(ic_conf_path, 'wb') as f:
-            f.write(b"""
-[DEFAULT]
-[pipeline:main]
-pipeline = catch_errors proxy-logging cache proxy-server
-
-[app:proxy-server]
-use = egg:swift#proxy
-
-[filter:cache]
-use = egg:swift#memcache
-
-[filter:proxy-logging]
-use = egg:swift#proxy_logging
-
-[filter:catch_errors]
-use = egg:swift#catch_errors
-""")
 
         self.gateway = StorletGatewayDocker(
             self.sconf, self.logger, self.account)
