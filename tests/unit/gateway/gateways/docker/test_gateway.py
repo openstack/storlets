@@ -228,7 +228,7 @@ class TestStorletDockerGateway(unittest.TestCase):
 
         # TODO(kota_): should be 'storlet-internal-client.conf' actually
         ic_conf_path = os.path.join(self.tempdir,
-                                    'storlet-proxy-server.conf')
+                                    'internal-client.conf')
         with open(ic_conf_path, 'wb') as f:
             f.write(b"""
 [DEFAULT]

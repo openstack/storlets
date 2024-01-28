@@ -44,6 +44,8 @@ SWIFT_DEFAULT_USER_PWD=testing
 SWIFT_MEMBER_USER=tester_member
 SWIFT_MEMBER_USER_PWD=member
 
+SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
+
 # Storlets install tunables
 STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
 STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
@@ -54,7 +56,6 @@ STORLETS_DOCKER_SWIFT_GROUP_ID=${STORLETS_DOCKER_SWIFT_GROUP_ID:-1003}
 STORLETS_DOCKER_SWIFT_USER_ID=${STORLETS_DOCKER_SWIFT_USER_ID:-1003}
 STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
 STORLETS_SWIFT_RUNTIME_GROUP=${STORLETS_SWIFT_RUNTIME_GROUP:-$USER}
-STORLETS_MIDDLEWARE_NAME=storlet_handler
 STORLETS_STORLET_CONTAINER_NAME=${STORLETS_STORLET_CONTAINER_NAME:-storlet}
 STORLETS_DEPENDENCY_CONTAINER_NAME=${STORLETS_DEPENDENCY_CONTAINER_NAME:-dependency}
 STORLETS_LOG_CONTAIER_NAME=${STORLETS_LOG_CONTAIER_NAME:-log}
@@ -122,13 +123,8 @@ function configure_swift_and_keystone_for_storlets {
     fi
 
     # Modify relevant Swift configuration files
-    _generate_swift_middleware_conf
-    _generate_storlet-docker-gateway
-
-    sudo python3 devstack/swift_config.py install /tmp/swift_middleware_conf $STORLETS_SWIFT_RUNTIME_USER
-
-    rm /tmp/swift_middleware_conf
-    rm /tmp/storlet-docker-gateway.conf
+    _modify_swift_conf
+    _generate_gateway_conf
 
     # Create storlet related containers and set ACLs
     start_swift
@@ -263,38 +259,57 @@ function install_storlets_code {
     cd -
 }
 
-function _generate_swift_middleware_conf {
-    cat <<EOF > /tmp/swift_middleware_conf
-[proxy-confs]
-proxy_server_conf_file = ${SWIFT_CONF_DIR}/proxy-server.conf
-storlet_proxy_server_conf_file = ${SWIFT_CONF_DIR}/storlet-proxy-server.conf
+function _modify_swift_conf {
+    local swift_proxy_config
+    swift_proxy_config=${SWIFT_CONF_DIR}/proxy-server.conf
+    iniset ${swift_proxy_config} "filter:storlet_handler" use "egg:storlets#storlet_handler"
+    iniset ${swift_proxy_config} "filter:storlet_handler" execution_server proxy
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_container $STORLETS_STORLET_CONTAINER_NAME
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_dependency $STORLETS_DEPENDENCY_CONTAINER_NAME
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_log $STORLETS_LOG_CONTAIER_NAME
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_gateway_module $STORLETS_GATEWAY_MODULE
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_gateway_conf $STORLETS_GATEWAY_CONF_FILE
+    iniset ${swift_proxy_config} "filter:storlet_handler" storlet_execute_on_proxy_only $STORLETS_PROXY_EXECUTION_ONLY
 
-[object-confs]
-object_server_conf_files = ${SWIFT_CONF_DIR}/object-server/1.conf
+    local proxy_pipeline
+    proxy_pipeline=$(iniget ${swift_proxy_config} "pipeline:main" pipeline)
+    if ! [[ "${proxy_pipeline}" =~ " storlet_handler copy " ]]; then
+        proxy_pipeline=$(echo "${proxy_pipeline}" | sed "s/ copy / storlet_handler copy /")
+        iniset ${swift_proxy_config} "pipeline:main" pipeline "${proxy_pipeline}"
+    fi
 
-[common-confs]
-storlet_middleware = $STORLETS_MIDDLEWARE_NAME
-storlet_container = $STORLETS_STORLET_CONTAINER_NAME
-storlet_dependency = $STORLETS_DEPENDENCY_CONTAINER_NAME
-#storlet_log = $STORLETS_LOG_CONTAIER_NAME
-storlet_gateway_module = $STORLETS_GATEWAY_MODULE
-storlet_gateway_conf = $STORLETS_GATEWAY_CONF_FILE
-storlet_proxy_execution = $STORLETS_PROXY_EXECUTION_ONLY
-EOF
+    local node_number
+    for node_number in ${SWIFT_REPLICAS_SEQ}; do
+        local swift_obj_config
+        local obj_pipeline
+
+        swift_obj_config=${SWIFT_CONF_DIR}/object-server/${node_number}.conf
+        obj_pipeline=$(iniget ${swift_obj_config} "pipeline:main" pipeline)
+        if ! [[ "${obj_pipeline}" =~ " storlet_handler object-server$" ]]; then
+            obj_pipeline=$(echo "${obj_pipeline}" | sed "s/ object-server$/ storlet_handler object-server/")
+            iniset ${swift_obj_config} "pipeline:main" pipeline "${obj_pipeline}"
+        fi
+
+        iniset ${swift_obj_config} "filter:storlet_handler" use "egg:storlets#storlet_handler"
+        iniset ${swift_obj_config} "filter:storlet_handler" execution_server object
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_container $STORLETS_STORLET_CONTAINER_NAME
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_dependency $STORLETS_DEPENDENCY_CONTAINER_NAME
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_log $STORLETS_LOG_CONTAIER_NAME
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_gateway_module $STORLETS_GATEWAY_MODULE
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_gateway_conf $STORLETS_GATEWAY_CONF_FILE
+        iniset ${swift_obj_config} "filter:storlet_handler" storlet_execute_on_proxy_only $STORLETS_PROXY_EXECUTION_ONLY
+    done
 }
 
-function _generate_storlet-docker-gateway {
-    cat <<EOF > /tmp/storlet-docker-gateway.conf
-[DEFAULT]
-storlet_logcontainer = $STORLETS_LOG_CONTAIER_NAME
-cache_dir = $STORLETS_CACHE_DIR
-log_dir = $STORLETS_LOGS_DIR
-script_dir = $STORLETS_SCRIPTS_DIR
-storlets_dir = $STORLETS_STORLETS_DIR
-pipes_dir = $STORLETS_PIPES_DIR
-restart_linux_container_timeout = $STORLETS_RESTART_CONTAINER_TIMEOUT
-storlet_timeout = $STORLETS_RUNTIME_TIMEOUT
-EOF
+function _generate_gateway_conf {
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlet_logcontainer $STORLETS_LOG_CONTAIER_NAME
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT cache_dir $STORLETS_CACHE_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT log_dir $STORLETS_LOGS_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT script_dir $STORLETS_SCRIPTS_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlets_dir $STORLETS_STORLETS_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT pipes_dir $STORLETS_PIPES_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT restart_linux_container_timeout $STORLETS_RESTART_CONTAINER_TIMEOUT
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlet_timeout $STORLETS_RUNTIME_TIMEOUT
 }
 
 function _generate_default_tenant_dockerfile {
@@ -355,6 +370,8 @@ function uninstall_storlets {
 
     echo "Cleaning all storlets runtime stuff..."
     sudo rm -fr ${STORLETS_DOCKER_DEVICE}
+    # TODO(tkajinam): Remove config options
+    # TODO(tkajinam): Remove docker containers/images
 }
 
 # Restore xtrace
