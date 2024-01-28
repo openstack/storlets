@@ -247,6 +247,15 @@ class RunTimeSandbox(object):
         self.max_containers_per_node = \
             int(conf.get('max_containers_per_node', 0))
 
+        self.container_cpu_period = int(conf.get('container_cpu_period', 0))
+        self.container_cpu_quota = int(conf.get('container_cpu_quota', 0))
+        self.container_mem_limit = conf.get('container_mem_limit', 0)
+        # NOTE(tkajinam): memory limit can be a string with unit like 1024m
+        try:
+            self.container_mem_limit = int(self.container_mem_limit)
+        except TypeError:
+            pass
+
     def ping(self):
         """
         Ping to daemon factory process inside container
@@ -348,6 +357,9 @@ class RunTimeSandbox(object):
                 name=docker_container_name, network_disabled=True,
                 mounts=mounts, user=os.getuid(),
                 auto_remove=True, stop_signal='SIGHUP',
+                cpu_period=self.container_cpu_period,
+                cpu_quota=self.container_cpu_quota,
+                mem_limit=self.container_mem_limit,
                 labels={'managed_by': 'storlets'})
         except docker.errors.ImageNotFound:
             msg = "Image %s is not found" % docker_image_name
