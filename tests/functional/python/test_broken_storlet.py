@@ -22,7 +22,6 @@ import unittest
 class TestBrokenStorlet(StorletPythonFunctionalTest):
     def setUp(self, version=None):
         self.storlet_log = 'broken.log'
-        self.content = 'abcdefghijklmonp'
         self.additional_headers = {}
         super(TestBrokenStorlet, self).setUp(
             storlet_dir='broken',
@@ -32,14 +31,20 @@ class TestBrokenStorlet(StorletPythonFunctionalTest):
             version=version)
 
     def test_get(self):
-        resp = dict()
         req_headers = {'X-Run-Storlet': self.storlet_name}
+        req_headers.update(self.additional_headers)
         with self.assertRaises(ClientException) as cm:
             client.get_object(
                 self.url, self.token, self.container, self.storlet_file,
-                response_dict=resp, headers=req_headers)
+                headers=req_headers)
         e = cm.exception
         self.assertEqual(e.http_status, 503)
+
+
+class TestBrokenStorletOnProxy(TestBrokenStorlet):
+    def setUp(self):
+        super(TestBrokenStorletOnProxy, self).setUp()
+        self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
 
 
 if __name__ == '__main__':
