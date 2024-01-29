@@ -257,6 +257,7 @@ class RunTimeSandbox(object):
             pass
         self.container_cpuset_cpus = conf.get('container_cpuset_cpus')
         self.container_cpuset_mems = conf.get('container_cpuset_mems')
+        self.container_pids_limit = int(conf.get('container_pids_limit', 0))
 
     def ping(self):
         """
@@ -364,6 +365,7 @@ class RunTimeSandbox(object):
                 mem_limit=self.container_mem_limit,
                 cpuset_cpus=self.container_cpuset_cpus,
                 cpuset_mems=self.container_cpuset_mems,
+                pids_limit=self.container_pids_limit,
                 labels={'managed_by': 'storlets'})
         except docker.errors.ImageNotFound:
             msg = "Image %s is not found" % docker_image_name
