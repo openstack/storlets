@@ -33,89 +33,60 @@ class TestSLO(StorletPythonFunctionalTest):
             storlet_file=None,
             headers={})
 
-        for cont in ('container1', 'container2', 'container3'):
-            self.create_container(cont)
         self.create_local_chunks()
         self.put_SLO()
-        self.get_SLO()
 
     def create_local_chunks(self):
-        for i in range(9):
+        for i in range(10):
             self.chunks.append(
                 ''.join([random.choice(string.ascii_uppercase + string.digits)
-                         for _ in range(1024 * 1024)]).encode('ascii'))
-
-    def get_SLO(self):
-        response = dict()
-        headers, body = client.get_object(self.url, self.token, self.container,
-                                          'assembly', http_conn=None,
-                                          resp_chunk_size=1024 * 1024,
-                                          query_string=None,
-                                          response_dict=response,
-                                          headers=None)
-
-        for (i, chunk) in enumerate(body):
-            self.assertEqual(chunk, self.chunks[i])
+                         for _ in range(1024)]).encode('ascii'))
 
     def put_SLO(self):
         assembly = []
-        for i in range(9):
+        for i in range(10):
             oname = 'slo_chunk_%d' % i
-            content_length = None
-            response = dict()
-            client.put_object(self.url, self.token,
-                              self.container, oname, self.chunks[i],
-                              content_length, None, None,
-                              "application/octet-stream",
-                              None, None, None, None, response)
-            status = response.get('status')
-            self.assertEqual(2, status // 100)
+            etag = client.put_object(self.url, self.token,
+                                     self.container, oname, self.chunks[i],
+                                     content_type="application/octet-stream")
 
-            headers = response.get('headers')
             segment = dict()
             segment['path'] = '%s/%s' % (self.container, oname)
-            segment['size_bytes'] = 1024 * 1024
-            segment['etag'] = headers['etag']
+            segment['size_bytes'] = 1024
+            segment['etag'] = etag
             assembly.append(segment)
 
-        content_length = None
-        response = dict()
         headers = {'x-object-meta-prop1': 'val1'}
         client.put_object(self.url, self.token, self.container,
                           'assembly', json.dumps(assembly),
-                          content_length=None, etag=None, chunk_size=None,
                           headers=headers,
-                          query_string='multipart-manifest=put',
-                          response_dict=response)
-        status = response.get('status')
-        self.assertEqual(2, status // 100)
+                          query_string='multipart-manifest=put')
 
     def compare_slo_to_chunks(self, body):
+        length = 0
         for (i, chunk) in enumerate(body):
-            if chunk:
-                if i in range(9):
-                    self.assertEqual(chunk, self.chunks[i])
-                else:
-                    aux_content = b''
-                    for j in range(1, 4):
-                        oname = 'aux_file%d' % j
-                        with open(oname, 'rb') as f:
-                            aux_content += f.read()
-                    self.asertEqual(chunk, aux_content)
+            self.assertEqual(chunk, self.chunks[i])
+            length += 1
+        self.assertEqual(length, 10)
 
-    def test_get_SLO(self):
-        headers = {'X-Run-Storlet': self.storlet_name}
-        headers.update(self.additional_headers)
-        response = dict()
-        headers, body = client.get_object(self.url, self.token,
-                                          self.container, 'assembly',
-                                          query_string=None,
-                                          response_dict=response,
-                                          resp_chunk_size=1024 * 1024,
-                                          headers=headers)
+    def test_get_SLO_without_storlet(self):
+        _, body = client.get_object(self.url, self.token,
+                                    self.container, 'assembly',
+                                    resp_chunk_size=1024)
         self.compare_slo_to_chunks(body)
 
-    test_get_SLO.slow = 1
+    test_get_SLO_without_storlet.slow = 1
+
+    def test_get_SLO_with_storlet(self):
+        headers = {'X-Run-Storlet': self.storlet_name}
+        headers.update(self.additional_headers)
+        _, body = client.get_object(self.url, self.token,
+                                    self.container, 'assembly',
+                                    resp_chunk_size=1024,
+                                    headers=headers)
+        self.compare_slo_to_chunks(body)
+
+    test_get_SLO_with_storlet.slow = 1
 
 
 class TestSLOOnProxy(TestSLO):
