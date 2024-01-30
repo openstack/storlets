@@ -111,7 +111,7 @@ use = egg:swift#proxy
 # post_quorum_timeout = 0.5
 #
 # How long without an error before a node's error count is reset. This will
-# also be how long before a node is reenabled after suppression is triggered.
+# also be how long before a node is re-enabled after suppression is triggered.
 # error_suppression_interval = 60
 #
 # How many errors can accumulate before a node is temporarily ignored.

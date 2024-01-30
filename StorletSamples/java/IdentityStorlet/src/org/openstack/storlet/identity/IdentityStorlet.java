@@ -191,10 +191,10 @@ public class IdentityStorlet implements IStorlet {
             }
             os.close();
         } catch (Exception e) {
-            log.emitLog("Copying data from inut stream to output stream failed: "
+            log.emitLog("Copying data from input stream to output stream failed: "
                     + e.getMessage());
             throw new StorletException(
-                    "Copying data from inut stream to output stream failed: "
+                    "Copying data from input stream to output stream failed: "
                             + e.getMessage());
         } finally {
             try {

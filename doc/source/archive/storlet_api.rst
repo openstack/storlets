@@ -196,7 +196,7 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
     'X-Auth-Token': {authorization_token}
 
 In the PUT case the storlet acts upon the object appearing in the 'X-Copy-From' header, creating the object appearing in the request path.
-In the COPY case the storlet acts upon the object appeairng in the requets path, crating the object appearing in the 'Destination' header.
+In the COPY case the storlet acts upon the object appeairng in the request path, crating the object appearing in the 'Destination' header.
 
 Specifying any of the headers below while invoking a storlet upon copy will result in '400 Bad Request'
  - 'X-Copy-From-Account'

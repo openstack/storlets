@@ -127,7 +127,7 @@ class StorletProxyHandler(StorletBaseHandler):
 
     def is_symlink_response(self, resp):
         """
-        Determins whether the response is a symlink one
+        Determines whether the response is a symlink one
 
         :param resp: swob.Response instance
         :return: Whenther the response is a slo one
@@ -159,7 +159,7 @@ class StorletProxyHandler(StorletBaseHandler):
 
     def _validate_registration(self, req):
         """
-        Validate parameters about storlet/dependency object when registrating
+        Validate parameters about storlet/dependency object when registering
 
         :params req: swob.Request instance
         :raises ValueError: If some parameters are wrong
@@ -190,7 +190,7 @@ class StorletProxyHandler(StorletBaseHandler):
         storlet ACL update
 
         :params req: swob.Request instance
-        :return: the resulting acl string that hould be added
+        :return: the resulting acl string that should be added
         :raises HTTPBadRequest: If a header is missing or mulformed
         """
         # Make sure we are not meddling with the storlet containers
@@ -293,8 +293,8 @@ class StorletProxyHandler(StorletBaseHandler):
 
     def gather_extra_sources(self):
         # (kota_): I know this is a crazy hack to set the resp
-        # dinamically so that this is a temprorary way to make sure
-        # the capability, this aboslutely needs cleanup more genelic
+        # dynamically so that this is a temporary way to make sure
+        # the capability, this absolutely needs cleanup more genelic
         if 'X-Storlet-Extra-Resources' in self.request.headers:
             try:
                 resources = list_from_csv(

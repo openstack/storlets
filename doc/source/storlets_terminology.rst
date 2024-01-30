@@ -1,7 +1,7 @@
 Storlets Terminology
 ====================
 The overall storlets mechanism involves a lot of moving parts as well as
-poeple or roles involved throughout the usage of the system. We give below
+people or roles involved throughout the usage of the system. We give below
 a definition of the various terms used throughout the documentation.
 
 Storlet

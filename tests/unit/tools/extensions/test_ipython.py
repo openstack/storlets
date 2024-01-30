@@ -44,7 +44,7 @@ class FakeConnection(object):
         return (self._fake_headers, resp_body)
 
     # Those 3 methods are just for entry point difference from the caller
-    # but all methods returns same response format with updateing response_dict
+    # but all methods returns same response format with updating response_dict
     def get_object(self, *args, **kwargs):
         return self._return_fake_response(**kwargs)
 

@@ -95,7 +95,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('HEAD', calls[0][0])
             self.assertEqual(storlet, calls[0][1])
 
-            # The last one is exexution GET call
+            # The last one is execution GET call
             self.assertEqual(target, calls[-1][1])
             self.assertIn('X-Run-Storlet', calls[-1][2])
 

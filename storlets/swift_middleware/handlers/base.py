@@ -65,7 +65,7 @@ class SwiftFileManager(FileManager):
     @property
     def client(self):
         # TODO(kota_): IMO, we need to make this to self._client environ to
-        #              get rid of redundant instanciation
+        #              get rid of redundant instantiation
         return InternalClient(self.conf_file, 'SA', 1)
 
     def _get_object(self, container, obj, headers=None):
@@ -187,7 +187,7 @@ class StorletBaseHandler(object):
         """
         :param request: swob.Request instance
         :param conf: middleware conf dict
-        :param gateway_conf: gatway conf dict
+        :param gateway_conf: gateway conf dict
         :param app: wsgi Application
         :param logger: logger instance
         """
@@ -354,7 +354,7 @@ class StorletBaseHandler(object):
 
     def is_slo_response(self, resp):
         """
-        Determins whether the response is a slo one
+        Determines whether the response is a slo one
 
         :param resp: swob.Response instance
         :return: Whenther the response is a slo one
@@ -373,7 +373,7 @@ class StorletBaseHandler(object):
 
     def _update_storlet_parameters_from_headers(self):
         """
-        Extract parameters for header (an alternative to parmeters through
+        Extract parameters for header (an alternative to parameters through
         the query string)
 
         """
@@ -442,7 +442,7 @@ class StorletBaseHandler(object):
 
             self._set_metadata_in_headers(new_headers, sresp.user_metadata)
             response = Response(headers=new_headers, app_iter=sresp.data_iter,
-                                reuqest=self.request)
+                                request=self.request)
         except StorletRuntimeException:
             response = HTTPServiceUnavailable()
 
@@ -490,7 +490,7 @@ class StorletBaseHandler(object):
         Build a storlet_gatway.common.stob.StorletRequest (or its child)
         instance for storlet invocation
 
-        :param req: an instane of swift.common.swob.Request
+        :param req: an instance of swift.common.swob.Request
         :param sheaders: swift.common.swob.HeaderKeyDict instance which
                          includes object metadata information to be passed
                          to storlet daemon

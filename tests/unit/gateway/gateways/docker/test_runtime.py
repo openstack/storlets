@@ -222,7 +222,7 @@ class TestRuntimePaths(unittest.TestCase):
         self.assertEqual(
             '/var/lib/storlets/storlets/scopes/account/Storlet-1.0.jar',
             runtime_paths.get_host_storlet_dir(storlet_id))
-        # And this one is a mount poit in sand box?
+        # And this one is a mount point in sand box?
         self.assertEqual('/home/swift/Storlet-1.0.jar',
                          runtime_paths.get_sbox_storlet_dir(storlet_id))
 

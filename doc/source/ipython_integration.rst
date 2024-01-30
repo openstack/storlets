@@ -41,7 +41,7 @@ Deploy a Python storlet
 General background on storlets deployment is found `here <http://storlets.readthedocs.io/en/latest/writing_and_deploying_storlets.html#storlet-deployment-guidelines>`__.
 
 In a new notebook cell, enter the '%%storletapp' directive
-followed by the storlet name. Followng that type the storlet code.
+followed by the storlet name. Following that type the storlet code.
 Below is an example of a simple 'identitiy' storlet.
 Executing the cell will deploy the storlet into Swift.
 
@@ -96,7 +96,7 @@ General information on storlet invocation can be found `here <http://storlets.re
 
 Here is how an invocation works:
 
-#. Define an optional dictionay variable params that would hold the invocation parameters:
+#. Define an optional dictionary variable params that would hold the invocation parameters:
 
     ::
 

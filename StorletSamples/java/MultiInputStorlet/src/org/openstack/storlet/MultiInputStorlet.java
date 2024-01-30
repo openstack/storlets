@@ -105,7 +105,7 @@ public class MultiInputStorlet implements IStorlet {
                     try {
                         psis.close();
                     } catch (Exception e) {
-                        log.emitLog("Falied to close input steram " + e.getMessage());
+                        log.emitLog("Failed to close input stream " + e.getMessage());
                     }
                 }
             }
@@ -116,7 +116,7 @@ public class MultiInputStorlet implements IStorlet {
             try {
                 os.close();
             } catch (IOException e) {
-                log.emitLog("Falied to close input steram " + e.getMessage());
+                log.emitLog("Failed to close input stream " + e.getMessage());
             }
         }
         log.emitLog("MultiInputStorlet Invocation done");

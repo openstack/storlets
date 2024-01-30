@@ -87,7 +87,7 @@ MESSAGES = {
 
 
 def usage():
-    print("Useage: deploy_storlet.py <path to conf>")
+    print("Usage: deploy_storlet.py <path to conf>")
 
 
 def main(argv):

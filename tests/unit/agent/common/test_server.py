@@ -114,7 +114,7 @@ def create_fake_sbus_class(scenario):
     """
     class FakeSBus(object):
         """
-        Fake SBus communication according feeded scenario.
+        Fake SBus communication according fed scenario.
         The scenario must be ordered by calls
         """
         def __init__(self):

@@ -41,7 +41,7 @@ class StorletHandlerMiddleware(object):
         Generate Handler class based on execution_server parameter
 
         :param exec_server: Where this storlet_middleware is running.
-                            This should value shoud be 'proxy' or 'object'
+                            This should value should be 'proxy' or 'object'
         :raise ValueError: If exec_server is invalid
         """
         if exec_server == 'proxy':
@@ -80,7 +80,7 @@ class StorletHandlerMiddleware(object):
             self.logger.exception('Internal request timed out')
             raise HTTPInternalServerError(body='Internal request timed out')
         except HTTPException:
-            # TODO(takashi): Shoud we generate this log for all error?
+            # TODO(takashi): Should we generate this log for all error?
             #                (ex. 404 when the object is not found)
             self.logger.exception('Storlet execution failed')
             raise

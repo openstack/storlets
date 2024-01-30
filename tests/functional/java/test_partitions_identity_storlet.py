@@ -139,7 +139,7 @@ class TestPartitionsIdentityStorlet(StorletJavaFunctionalTest):
 
     def test_first_range(self):
         for max_record_line in range(5):
-            # The maximium line length in this section is 14
+            # The maximum line length in this section is 14
             # includuing the new line. and so any max length >=14
             # should be good.
             self._test_first_range(80)

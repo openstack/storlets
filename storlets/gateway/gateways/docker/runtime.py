@@ -105,7 +105,7 @@ class RunTimePaths(object):
 
     def __init__(self, scope, conf):
         """
-        Constract RunTimePaths instance
+        Construct RunTimePaths instance
 
         :param scope: scope name to be used as container name
         :param conf: gateway conf
@@ -190,15 +190,15 @@ class RunTimePaths(object):
 """---------------------------------------------------------------------------
 Docker Stateful Container API
 The RunTimeSandbox serve as an API between the Docker Gateway and
-a re-usable per scope sandbox
+a reusable per scope sandbox
 ---------------------------------------------------------------------------"""
 
 
 class RunTimeSandbox(object):
     """
-    The RunTimeSandbox represents a re-usable per scope sandbox.
+    The RunTimeSandbox represents a reusable per scope sandbox.
 
-    The sandbox is re-usable in the sense that it can run several storlet
+    The sandbox is reusable in the sense that it can run several storlet
     daemons.
 
     The following methods are supported:
@@ -579,7 +579,7 @@ class StorletInvocationProtocol(object):
     @property
     def remote_fds(self):
         """
-        A list of sbus file descirptors passed to remote side
+        A list of sbus file descriptors passed to remote side
         """
         storlets_metadata = {}
         if self.srequest.has_range:
@@ -647,7 +647,7 @@ class StorletInvocationProtocol(object):
                     raise
                 # TODO(kota_): fd might be closed already, so if already
                 # closed, OSError will be raised. we need more refactor to
-                # keep clean the file discriptors.
+                # keep clean the file descriptors.
                 pass
 
     def _close_remote_side_descriptors(self):

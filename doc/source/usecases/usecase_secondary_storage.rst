@@ -1,11 +1,11 @@
-Queriable "Secondary Storage" Data
+Queryable "Secondary Storage" Data
 ==================================
 It is said that the primary use case for object stores is to serve as secondary
 storage. With the increasing amount of data being gathered and analysed
 (have someone said IoT?) much of this data will make it to secondary storage.
 
 Being kept on secondary storage does not mean that the data does not
-need to be queriable anymore: A recent identified trend may be searched
+need to be queryable anymore: A recent identified trend may be searched
 for in older data that was moved to secondary storage. Storlets allow an
 efficient and simple querying of data that resides in Swift.
 
@@ -14,7 +14,7 @@ known practice to aggregate data as it gets older. Storlets can serve
 as 'in place' data aggregators.
 
 Below are more concrete use cases that fall under the definition of
-efficient queriable secondary storage data.
+efficient queryable secondary storage data.
 
 Pushing down SQL filtering from Spark
 -------------------------------------

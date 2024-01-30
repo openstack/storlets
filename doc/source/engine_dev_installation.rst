@@ -175,7 +175,7 @@ with the following content:
     FROM ubuntu:22.04
     MAINTAINER root
 
-    # The following operations shoud be defined in one line
+    # The following operations should be defined in one line
     # to prevent docker images from including apt cache file.
     RUN apt-get update && \
     apt-get install python3 && \
@@ -245,7 +245,7 @@ Configure Swift to work with the middleware components
 Step 1: Edit the proxy server config file /etc/swift/proxy-server.conf and
 do the following:
 
- #. Add the storlet_handler to the proxy server pipline just before the slo middleware as shown below:
+ #. Add the storlet_handler to the proxy server pipeline just before the slo middleware as shown below:
 
  ::
 
@@ -269,7 +269,7 @@ In a SAIO environment these would be:
 /etc/swift/object-server/1.conf through /etc/swift/object-server/4.conf
 otherwise the file is typically /etc/swift/object-server.conf
 
- 1. Add the storlet_handler to the object server pipline just before the slo object-server as shown below:
+ 1. Add the storlet_handler to the object server pipeline just before the slo object-server as shown below:
 
  ::
 

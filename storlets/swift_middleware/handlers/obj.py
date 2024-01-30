@@ -47,7 +47,7 @@ class StorletObjectHandler(StorletBaseHandler):
 
     def is_symlink_response(self, resp):
         """
-        Determins whether the response is a symlink one
+        Determines whether the response is a symlink one
 
         :param resp: swob.Response instance
         :return: Whenther the response is a slo one
@@ -69,7 +69,7 @@ class StorletObjectHandler(StorletBaseHandler):
         options = super(StorletObjectHandler, self).\
             _get_storlet_invocation_options(req)
 
-        # If the request is a storlet request with an simgle input range, we
+        # If the request is a storlet request with an single input range, we
         # pass range parameters to storlet gateway, to realize range handling
         # with keepling zero copy
         if self.is_storlet_range_request and \

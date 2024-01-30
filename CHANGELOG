@@ -14,7 +14,7 @@ storlets (0.6.0)
   * Minor improvements and bug fixes
 
 storlets (0.5.0, Openstack Pike)
-  * Extending IPython intgration
+  * Extending IPython integration
 
   * Storlet execution on GET with multiple files using a single stream
     using MULTIPART MIME
@@ -49,7 +49,7 @@ storlets (0.3.0, Openstack Newton)
 
   * Introduction of Storlets ACLs. The storlet middleware now supports
     a POST verb for allowing a certain user READ access to a container
-    ony via a certain storlet. Thus, a user which has no read access
+    only via a certain storlet. Thus, a user which has no read access
     to a container can get access only if the request has the appropriate
     storlet specified in the X-Run-Storlet header.
 

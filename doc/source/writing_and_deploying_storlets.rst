@@ -106,7 +106,7 @@ We support two types of dependencies:
 Storlet Object Metadata
 -----------------------
 Uploading a storlet must be done to a designated container, called by default "storlet". The uploaded object
-must carry the following metadata. See the specific langauge guides for more information.
+must carry the following metadata. See the specific language guides for more information.
 
    ::
 

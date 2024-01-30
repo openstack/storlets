@@ -197,7 +197,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
     def invocation_flow(self, sreq, extra_sources=None):
         """
-        Invoke the backend protocl with gateway
+        Invoke the backend protocol with gateway
 
         :param sreq: StorletRequest instance
         :param extra_sources (WIP): A list of StorletRequest instance to gather
@@ -267,7 +267,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         :params sreq: DockerStorletRequest instance
         :params is_storlet: True if the object is a storlet object
                             False if the object is a dependency object
-        :returns: Wheather the Docker container was updated with obj_name
+        :returns: Whether the Docker container was updated with obj_name
         """
         # Determine the cache we are to work with
         # e.g. dependency or storlet
@@ -295,7 +295,7 @@ class StorletGatewayDocker(StorletGatewayBase):
         elif is_storlet:
             # The cache_target_path exists, we test if it is up-to-date
             # with the metadata we got.
-            # We mention that this is currenlty applicable for storlets
+            # We mention that this is currently applicable for storlets
             # only, and not for dependencies.
             # This will change when we will head dependencies as well
             fstat = os.stat(cache_target_path)
@@ -309,7 +309,7 @@ class StorletGatewayDocker(StorletGatewayBase):
 
         if update_cache:
             # If the cache needs to be updated, then get on with it
-            # bring the object from storge
+            # bring the object from storage
             data_iter, perm = get_func(obj_name)
 
             if perm:

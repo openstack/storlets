@@ -124,7 +124,7 @@ public class SDaemon {
             return;
 
         storletTaskFactory_ = new STaskFactory(storlet, logger_);
-        logger_.trace("Instanciating SBus");
+        logger_.trace("Instantiating SBus");
         sbus_ = new SBus(strContId);
         sbus_.startLogger();
         try {

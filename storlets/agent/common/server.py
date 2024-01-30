@@ -34,11 +34,11 @@ class CommandResponse(Exception):
 
     def __init__(self, status, message, iterable=True, task_id=None):
         """
-        Constract CommandResponse instance
+        Construct CommandResponse instance
 
         :param status: task status
         :param message: message to be returned and logged
-        :param iterable: wheter we can keep SDaemon process running
+        :param iterable: whether we can keep SDaemon process running
         :param task_id: ID assigned to the requested task
         """
         self.status = status
@@ -184,7 +184,7 @@ class SBusServer(object):
         Main loop to run storlet application
 
         :returns: EXIT_SUCCESS when the loop exists normally
-                  EXIT_FAILURE when some error occurd in main loop
+                  EXIT_FAILURE when an error occurs in main loop
         """
         sbus = SBus()
         fd = sbus.create(self.sbus_path)

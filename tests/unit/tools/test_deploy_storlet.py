@@ -23,7 +23,7 @@ class TestDeployStorlet(unittest.TestCase):
     #              - no class found in the jar
     #              - not a class in the list
     #              - fail to open the jar file
-    #                (e.g. no such a file or directry)
+    #                (e.g. no such a file or directory)
     def test_deploy_storlet_main_java(self):
         class MockZipFile(mock.MagicMock):
             def infolist(self):

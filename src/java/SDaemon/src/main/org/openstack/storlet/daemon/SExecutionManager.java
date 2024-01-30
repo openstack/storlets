@@ -32,7 +32,7 @@ import java.util.concurrent.*;
 /*----------------------------------------------------------------------------
  * SExecutionManager
  *
- * This class manages tread workers to execute storlet application
+ * This class manages thread workers to execute storlet application
  * */
 public class SExecutionManager {
 

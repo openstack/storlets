@@ -153,7 +153,7 @@ function _install_docker {
     add_user_to_group $STORLETS_SWIFT_RUNTIME_USER docker
 
     if [ $STORLETS_SWIFT_RUNTIME_USER == $USER ]; then
-        # NOTE(takashi): We need this workaroud because we can't reload
+        # NOTE(takashi): We need this workaround because we can't reload
         #                user-group relationship in bash scripts
         DOCKER_UNIX_SOCKET=/var/run/docker.sock
         sudo chown $USER:$USER $DOCKER_UNIX_SOCKET

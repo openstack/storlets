@@ -78,7 +78,7 @@ Code Organization
 - doc/source/: Documentation
 - install/: Installation scripts
 
-  - swift/: Scripts for invoking an extenral Swift ansible installation scrpts
+  - swift/: Scripts for invoking an extenral Swift ansible installation scripts
   - storlets/: Scripts for installing storlets over a Swift cluster
 
 - tests/: Unit and functional tests

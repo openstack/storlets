@@ -220,7 +220,7 @@ public class CSVStorlet implements IStorlet, PushdownStorletConstants, SparkInde
                             }
                     }
                     if (rangeBytesLeft > 0) {
-                        Utils.doubleLogPrint(logger,"got a null line with more bytes ot read: " + String.valueOf(rangeBytesLeft));
+                        Utils.doubleLogPrint(logger,"got a null line with more bytes to read: " + String.valueOf(rangeBytesLeft));
                     }
 
                     if ( (line == null) && (rangeBytesLeft > 1024)) {

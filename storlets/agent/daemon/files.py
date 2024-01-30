@@ -180,7 +180,7 @@ class StorletRangeInputFile(StorletInputFile):
         self.start = start
         self.end = end
         # TODO(takashi): Currently we use range input file only for zero copy
-        #                case, so can execute seek on fd. Myabe we need some
+        #                case, so can execute seek on fd. Maybe we need some
         #                mechanism to confirm the fd is seekable.
         self.obj_file.seek(self.start, 0)
         self.point = self.start

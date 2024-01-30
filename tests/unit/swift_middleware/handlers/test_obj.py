@@ -202,7 +202,7 @@ class TestStorletObjectHandler(unittest.TestCase):
         handler = self.handler_class(
             req, self.conf, self.gateway_conf, mock.MagicMock(),
             mock.MagicMock())
-        # FIXME: stil hold api version 0 at ObjectHandler but will be
+        # FIXME: still hold api version 0 at ObjectHandler but will be
         #        deprecated if it's never used.
         self.assertEqual('0', handler.api_version)
         self.assertEqual('acc', handler.account)

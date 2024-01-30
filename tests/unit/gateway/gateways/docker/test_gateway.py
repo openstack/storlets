@@ -477,7 +477,7 @@ class TestStorletDockerGateway(unittest.TestCase):
         # prepare nested mock patch
         # SBus -> mock SBus.send() for container communication
         # os.read -> mock reading the file descriptor from container
-        # select.slect -> mock fd communication which can be readable
+        # select.select -> mock fd communication which can be readable
         @mock.patch('storlets.gateway.gateways.docker.runtime.SBusClient')
         @mock.patch('storlets.gateway.gateways.docker.runtime.os.read',
                     mock_read)

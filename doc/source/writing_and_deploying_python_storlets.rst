@@ -68,14 +68,14 @@ Deploying a Python Storlet
 --------------------------
 Below are specific guidelines for deploying a Python storlet:
 
-#. The object name of the python module containing the storlet class implemetation
+#. The object name of the python module containing the storlet class implementation
    must end with .py
 
 #. Any python modules that the class implementation is dependent on should be uploaded as separate .py(s).
 
-#. The 'X-Object-Meta-Storlet-Main' metadata key shold be of the form: <module_name>.<class_name>. For example,
+#. The 'X-Object-Meta-Storlet-Main' metadata key should be of the form: <module_name>.<class_name>. For example,
    if the storlet name is SimpleStorlet and it resides in simple_storlet.py, then the
-   'X-Object-Meta-Storlet-Main' metadata key shold be "simple_storlet.SimpleStorlet"
+   'X-Object-Meta-Storlet-Main' metadata key should be "simple_storlet.SimpleStorlet"
 
 Deploying a Python Dependency
 -----------------------------

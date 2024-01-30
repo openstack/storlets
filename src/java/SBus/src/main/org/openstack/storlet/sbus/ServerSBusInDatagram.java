@@ -89,7 +89,7 @@ public class ServerSBusInDatagram {
      *     },
      *     ...
      * ]
-     * All the values in the above JSON elemens are strings.
+     * All the values in the above JSON elements are strings.
      * Once constructed the class provides all necessary accessors to the parsed
      * fields.
      * @param msg   the raw mwssage consisting of the string encoded json formats

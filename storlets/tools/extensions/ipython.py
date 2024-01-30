@@ -39,7 +39,7 @@ class Response(object):
     Response object to return the object to ipython cell
 
     :param status: int for status code
-    :param headers: a dict for repsonse headers
+    :param headers: a dict for response headers
     :param body_iter: an iterator object which takes the body content from
     """
     def __init__(self, status, headers, body_iter=None):
@@ -190,7 +190,7 @@ class StorletMagics(Magics):
     )
     @magic_arguments.argument(
         '--print-result', action='store_true', default=False,
-        help='Print result objet to stdout. Note that this may be a large'
+        help='Print result object to stdout. Note that this may be a large'
              'binary depends on your app'
     )
     @cell_magic

@@ -45,7 +45,7 @@ def put_storlet_object(url, token, storlet, dependencies, storlet_main_class,
 
     :param url: swift endpoint url
     :param token: token string to access to swift
-    :param storlet: storlet file to be registerd
+    :param storlet: storlet file to be registered
     :param dependencies: a list of dependency files
     :param storlet_main_class: name of the storlet main class
     :param language: storlet language. default value is Java
@@ -86,7 +86,7 @@ def deploy_storlet(url, token, storlet, storlet_main_class, dependencies,
 
     :param url: swift endpoint url
     :param token: token string to access swift
-    :param storlet: storlet file to be registerd
+    :param storlet: storlet file to be registered
     :param dependencies: a list of dependency files to be registered
     :param language: storlet language. default value is Java
     :param version: storlet language version. default is 3 for python

@@ -17,7 +17,7 @@ import unittest
 
 
 class TestStorletHandlerMiddleware(unittest.TestCase):
-    # TODO(takashi): should implemente some unit test cases
+    # TODO(takashi): should implement some unit test cases
     pass
 
 

@@ -250,7 +250,7 @@ def main():
     parser.add_argument('sbus_path', help='the path to unix domain socket')
     parser.add_argument('log_level', help='log level')
     parser.add_argument('pool_size', type=int,
-                        help='the maximun thread numbers used swapns for '
+                        help='the maximum thread numbers used swapns for '
                              'one storlet application')
     parser.add_argument('container_id', help='container id')
     opts = parser.parse_args()

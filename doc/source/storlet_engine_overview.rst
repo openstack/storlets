@@ -37,7 +37,7 @@ The storlet engine is tightly coupled with accounts in Swift in the following ma
 The Docker image
 ----------------
 As mentioned above there is a Docker image per account that is enabled for storlets.
-At a high level this image containes:
+At a high level this image containers:
 
 #. A Java run time environment. This is needed when you run storlets written in Java
 #. A daemon factory. A Python process that starts as part of the Docker container bring up.

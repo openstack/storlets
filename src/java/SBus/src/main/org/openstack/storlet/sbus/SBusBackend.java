@@ -60,7 +60,7 @@ public class SBusBackend {
             strLogLevel = "OFF";
             break;
         default:
-            strLogLevel = "WARNINIG";
+            strLogLevel = "WARNING";
             break;
         }
         SBusJNIObj_.startLogger(strLogLevel, contId);

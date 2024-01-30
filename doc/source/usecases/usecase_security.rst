@@ -11,7 +11,7 @@ once that information is obscured. Some examples are:
 #. Smart electricity meters raw data can be made available to usage analysis
    applications if the data is being averaged. The raw data is sensitive as it can reveal
    e.g. the time at which the residents are at home.
-#. Pictures of landscape having poeple in them can be made available to e.g. google earth
+#. Pictures of landscape having people in them can be made available to e.g. google earth
    if the faces are blurred.
 #. 3D designs can be made available to manufacturers after a slicing lossy transformation.
 

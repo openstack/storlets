@@ -65,7 +65,7 @@ class TestJupyterExcecution(unittest.TestCase):
         if 'text' in node:
             for line in node['text'].split('\n'):
                 if line:
-                    # NOTE: extract bytes lines appreared in the cell
+                    # NOTE: extract bytes lines appeared in the cell
                     #  in PY2, it's NOT needed but in PY3 it is required
                     #  because PY3 explicitly add 'b' prefix to bytes
                     #  objects

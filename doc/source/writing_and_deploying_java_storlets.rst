@@ -95,7 +95,7 @@ Below are specific guidelines for deploying a Java storlet:
 #. The name of the  Java storlet being uploaded must be of the form <name>-<version>, e.g.
    identitystorlet-1.0.jar
 
-#. The 'X-Object-Meta-Storlet-Main' metadata key shold be the name of the class implementing
+#. The 'X-Object-Meta-Storlet-Main' metadata key should be the name of the class implementing
    the IStorlet interface. E.g. "org.openstack.storlet.identity.IdentityStorlet"
 
 Deploying a Java Dependency

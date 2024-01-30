@@ -336,7 +336,7 @@ class StorletDaemonFactory(SBusServer):
         """
         Kill every one.
 
-        :param try_all: wheather we try to kill all process if we fail to
+        :param try_all: whether we try to kill all process if we fail to
                         stop some of the storlet daemons
         :raises SDaemonError: when failed to kill one of the storlet daemons
         """
@@ -361,7 +361,7 @@ class StorletDaemonFactory(SBusServer):
         """
         send HALT command to every spawned process
 
-        :param try_all: wheather we try to kill all process if we fail to
+        :param try_all: whether we try to kill all process if we fail to
                         stop some of the storlet daemons
         :returns: a list of the terminated storlet daemons
         :raises SDaemonError: when failed to kill one of the storlet daemons
@@ -540,5 +540,5 @@ def main():
         sys.exit(factory.main_loop())
 
     except Exception:
-        logger.eception('Unhandled exception')
+        logger.exception('Unhandled exception')
         sys.exit(EXIT_FAILURE)

@@ -55,7 +55,7 @@ class FakeStorletFileOut(FakeStorletFile):
         if self._metadata is not None:
             raise IOError('Sending metadata twice is not allowed')
         self._metadata = {}
-        # expect the incomming metadata should be dict
+        # expect the incoming metadata should be dict
         self._metadata.update(metadata)
 
     def read(self):

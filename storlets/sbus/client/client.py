@@ -43,7 +43,7 @@ class SBusClient(object):
 
     def _parse_response(self, str_response):
         """
-        Parse response string recieved from container side
+        Parse response string received from container side
 
         :param str_response: response string
         :returns: SBusResponse instance
