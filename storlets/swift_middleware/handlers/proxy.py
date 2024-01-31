@@ -153,7 +153,7 @@ class StorletProxyHandler(StorletBaseHandler):
         """
         params = dict()
         for key in headers:
-            if key.startswith('X-Object-Meta-Storlet'):
+            if key.startswith('X-Object-Meta-Storlet-'):
                 params[key[len('X-Object-Meta-Storlet-'):]] = headers[key]
         return params
 
@@ -425,7 +425,7 @@ class StorletProxyHandler(StorletBaseHandler):
     def _remove_storlet_headers(self, headers):
         for key in list(headers):
             if (key.startswith('X-Storlet-') or
-                    key.startswith('X-Object-Meta-Storlet') or
+                    key.startswith('X-Object-Meta-Storlet-') or
                     key == 'X-Run-Storlet'):
                 headers.pop(key)
 

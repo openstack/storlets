@@ -451,7 +451,7 @@ class StorletBaseHandler(object):
     def _get_user_metadata(self, headers):
         metadata = {}
         for key in headers:
-            if key.startswith('X-Object-Meta-Storlet'):
+            if key.startswith('X-Object-Meta-Storlet-'):
                 pass
             elif key.startswith('X-Object-Meta-'):
                 short_key = key[len('X-Object-Meta-'):]
