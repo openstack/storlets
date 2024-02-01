@@ -21,6 +21,7 @@
       - ^api-ref/.*$
       - ^doc/.*$
       - ^releasenotes/.*$
+      - ^.gitignore$
       - ^.gitreview$
       - ^.mailmap$
       - ^AUTHORS$
