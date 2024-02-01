@@ -38,7 +38,7 @@ Unit tests can be invoked using:
 
 ::
 
-    ./.unittests
+    tox -e py3
 
 from the repo root.
 
