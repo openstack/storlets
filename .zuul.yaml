@@ -18,6 +18,12 @@
     nodeset: ubuntu-jammy
     timeout: 2400
     irrelevant-files:
-      - ^(api-ref|doc|releasenotes)/.*$
-      - ^(.gitreview|.mailmap|AUTHORS|CHANGELOG)$
+      - ^api-ref/.*$
+      - ^doc/.*$
+      - ^releasenotes/.*$
+      - ^.gitreview$
+      - ^.mailmap$
+      - ^AUTHORS$
+      - ^CHANGELOG$
+      - ^README.rst$
       - ^tests/unit/.*$
