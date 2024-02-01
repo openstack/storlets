@@ -53,33 +53,38 @@ end-to-end scenarios using various storlets, including faulty ones. For more inf
 please refer to the:
 `"Development and Testing Guide" <https://docs.openstack.org/storlets/latest/engine_dev_tests.html>`__.
 
-Code Organization
-~~~~~~~~~~~~~~~~~
+Repository Structure
+~~~~~~~~~~~~~~~~~~~~
 
-- Engine/: The code comprising the middleware and the compute engine
+- doc/source/: Documentation
 
-  - SBus/: A protocol layer between the middleware and the sandbox used to execute storlets
+- etc/: Sample config files
 
-    - SBusJavaFacade/: A Java implementation of the protocol
-    - SBusPythonFacade/: A Python implementation of the protocol
-    - SBusTransportLayer/: A thin layer in "C" used for passing fds between the middleware and container
+- storlets/: Python codes
 
-  - SCommon/: A Java library required for storlets development
-  - SDaemon/: A generic Java daemon for loading storlets at runtime
-  - SMSCripts/: Run time scripts for doing Docker management commands
-  - agent/: Python code for Docker side storlets process management
-  - swift/: Python swift side code
+  - agent/: Python code for Docker side agents
 
-    - etc/: Sample config files
-    - storlet_gateway/: Run time loadable code for managing storlets execution
-    - storlet_middleware/: Swift middleware dealing with storlet invocation requests
+    - common/: An agent for storlets process management
+    - daemon/: An agent for execution of python applications
+    - daemon_factory/: Pyth
+
+  - gateway/: Run time loadable code for managing storlets execution
+  - sbus/: A Java implementation of the SBUS communication protocol
+  - swift_middleware/: Swift middleware dealing with storlet invocation requests
 
 - StorletSamples/: Storlets examples, used for functional testing
-- doc/source/: Documentation
-- install/: Installation scripts
 
-  - swift/: Scripts for invoking an extenral Swift ansible installation scripts
-  - storlets/: Scripts for installing storlets over a Swift cluster
+- src/: C and Java codes
+
+  - c/: All codes
+
+    - sbus/: A core implementation of the SBUS protocol, which is used for passing fsd between the middleware and container
+
+  - java/: Java codes
+
+    - SBus:/ A Java implementation of the SBUS communication protocol
+    - SCommon/: A Java library required for storlets development
+    - SDaemon/: A generic Java daemon for loading storlets at runtime
 
 - tests/: Unit and functional tests
 
