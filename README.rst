@@ -23,13 +23,13 @@ Docs
 ----
 
 The storlerts documentation is auto-generated after every commit and available
-online at https://storlets.readthedocs.io/en/latest/
+online at https://docs.openstack.org/storlets/latest/
 
 Getting Started for Users
 -------------------------
 
 The fastest way to get started is
-`"S2AIO - Swift Storlets All In One" <https://storlets.readthedocs.io/en/latest/getting_started.html>`__.
+`"S2AIO - Swift Storlets All In One" <https://docs.openstack.org/storlets/latest/getting_started.html>`__.
 
 For Engine Developers
 ---------------------
@@ -38,7 +38,7 @@ Getting Started
 ~~~~~~~~~~~~~~~
 
 The best way to get started is following this guide:
-`"Installing a Development Environment" <https://storlets.readthedocs.io/en/latest/engine_dev_installation.html>`__.
+`"Installing a Development Environment" <https://docs.openstack.org/storlets/latest/engine_dev_installation.html>`__.
 
 Tests
 ~~~~~
@@ -51,7 +51,7 @@ There are two types of tests included in the Storlets repo.
 Unit tests, are, well, unit tests... The functional tests are black box tests validating
 end-to-end scenarios using various storlets, including faulty ones. For more information
 please refer to the:
-`"Development and Testing Guide" <https://storlets.readthedocs.io/en/latest/engine_dev_tests.html>`__.
+`"Development and Testing Guide" <https://docs.openstack.org/storlets/latest/engine_dev_tests.html>`__.
 
 Code Organization
 ~~~~~~~~~~~~~~~~~
@@ -90,14 +90,7 @@ For Storlets Developers
 
 Currently, storlets can be developed in Java only.
 To get started, follow:
-`"S2AIO - Swift Storlets All In One" <https://storlets.readthedocs.io/en/latest/getting_started.html>`__.
+`"S2AIO - Swift Storlets All In One" <https://docs.openstack.org/storlets/latest/s2aio.html>`__.
 
 The write and deploy a storlet, follow:
-`"Writing and deploying storlets" <https://storlets.readthedocs.io/en/latest/writing_and_deploying_storlets.html>`__.
-
-For Deployers
--------------
-
-Instructions for how to deploy Storlets over an existing Swift cluster (not SAIO):
-`"Deploying storlets over an existing Swift cluster" <https://storlets.readthedocs.io/en/latest/deployer_installation.html>`__.
-
+`"Writing and deploying storlets" <https://docs.openstack.org/storlets/latest/writing_and_deploying_storlets.html>`__.
