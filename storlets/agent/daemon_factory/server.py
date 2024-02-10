@@ -130,15 +130,13 @@ class StorletDaemonFactory(SBusServer):
         self.logger.debug('Starting subprocess: pargs:{0} env:{1}'
                           .format(str_pargs, env))
 
-        # TODO(takashi): We had better use contextmanager
-        # TODO(takashi): Where is this closed?
         try:
-            dn = open(os.devnull, 'wb')
             daemon_p = subprocess.Popen(
-                pargs, stdout=dn, stderr=subprocess.PIPE,
+                pargs, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                 close_fds=True, shell=False, env=env)
             logger_p = subprocess.Popen(
-                'logger', stdin=daemon_p.stderr, stdout=dn, stderr=dn,
+                'logger', stdin=daemon_p.stderr,
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 close_fds=True, shell=False)
         except OSError:
             self.logger.exception('Unable to start subprocess')
