@@ -166,15 +166,14 @@ function prepare_storlets_install {
 
     if is_ubuntu; then
         install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
+        install_package python3 python3-dev
     else
         die $LINENO "Unsupported distro"
     fi
-
-    install_python3
 }
 
 function _generate_jre_dockerfile {
-    PYTHON_PACKAGES="python3 python3-dev python${PYTHON3_VERSION} python${PYTHON3_VERSION}-dev"
+    PYTHON_PACKAGES="python3 python${PYTHON3_VERSION}"
 
     cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG
