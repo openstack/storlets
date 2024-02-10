@@ -18,20 +18,20 @@
     <!-- Bring build Dependencies-->
     <target name="dependencies" >
         <mkdir dir="dependencies" />
-        <get src="https://repo1.maven.org/maven2/com/googlecode/json-simple/json-simple/1.1/json-simple-1.1.jar"
-            dest="dependencies/json_simple-1.1.jar"
+        <get src="https://repo1.maven.org/maven2/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
+            dest="dependencies/json-simple-1.1.1.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.4.9/logback-classic-1.4.9.jar"
-            dest="dependencies/logback-classic-1.4.9.jar"
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.4.14/logback-classic-1.4.14.jar"
+            dest="dependencies/logback-classic-1.4.14.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.4.9/logback-core-1.4.9.jar"
-            dest="dependencies/logback-core-1.4.9.jar"
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.4.14/logback-core-1.4.14.jar"
+            dest="dependencies/logback-core-1.4.14.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.9/slf4j-api-2.0.9.jar"
-            dest="dependencies/slf4j-api-2.0.9.jar"
+        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.12/slf4j-api-2.0.12.jar"
+            dest="dependencies/slf4j-api-2.0.12.jar"
             verbose="true"
             usetimestamp="true"/>
     </target>

@@ -29,10 +29,10 @@
         <javac srcdir="src/main" destdir="bin" includeantruntime="false">
             <classpath>
                 <pathelement path="../SBus/bin/SBusJavaFacade.jar"/>
-                <pathelement path="../dependencies/json_simple-1.1.jar"/>
-                <pathelement path="../dependencies/slf4j-api-2.0.9.jar"/>
-                <pathelement path="../dependencies/logback-classic-1.4.9.jar"/>
-                <pathelement path="../dependencies/logback-core-1.4.9.jar"/>
+                <pathelement path="../dependencies/json-simple-1.1.1.jar"/>
+                <pathelement path="../dependencies/slf4j-api-2.0.12.jar"/>
+                <pathelement path="../dependencies/logback-classic-1.4.14.jar"/>
+                <pathelement path="../dependencies/logback-core-1.4.14.jar"/>
                 <pathelement path="."/>
             </classpath>
         </javac>

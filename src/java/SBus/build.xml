@@ -27,7 +27,7 @@
         <javac
             srcdir="src/main"
             destdir="bin"
-            classpath="../dependencies/json_simple-1.1.jar"
+            classpath="../dependencies/json-simple-1.1.1.jar"
             includeantruntime="false"
             nativeheaderdir='.'>
             <compilerarg value="-Xlint"/>
