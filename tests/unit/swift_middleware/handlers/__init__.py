@@ -16,7 +16,7 @@
 import unittest
 from unittest import mock
 
-from storlets.gateway.gateways.stub import StorletGatewayStub
+from storlets.gateway.gateways.stub import StubStorletGateway
 from storlets.swift_middleware import storlet_handler
 
 from tests.unit import FakeLogger
@@ -25,7 +25,7 @@ from tests.unit.swift_middleware import FakeApp
 
 def create_handler_config(exec_server):
     return {'execution_server': exec_server,
-            'gateway_module': StorletGatewayStub}
+            'gateway_module': StubStorletGateway}
 
 
 class BaseTestStorletMiddleware(unittest.TestCase):

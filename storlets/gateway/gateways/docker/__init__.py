@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from storlets.gateway.gateways.docker.gateway import StorletGatewayDocker
+from storlets.gateway.gateways.docker.gateway import DockerStorletGateway
 
 __all__ = [
-    'StorletGatewayDocker',
+    'DockerStorletGateway',
 ]
