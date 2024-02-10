@@ -6,10 +6,12 @@
 #       so you may need root privilege to execute this script
 set -x
 
+STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-11}
+
 # install c library
 cd src/c/sbus
 make && make install
 cd -
 
 # Install java library
-ant install
+STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION} ant install

@@ -16,6 +16,8 @@
 <project>
     <property name="jarname" value="SBusJavaFacade.jar"/>
     <property name="libdir" value="/usr/local/lib/storlets/java"/>
+    <property environment="env"/>
+    <property name="env.STORLETS_JDK_VERSION" value="11"/>
 
     <target name="clean">
         <delete dir="bin" />
@@ -37,8 +39,8 @@
     <target name="so" depends="java">
         <exec dir="." executable="gcc">
             <arg line="-shared -o bin/libjsbus.so -fPIC" />
-            <arg line="-I/usr/lib/jvm/java-11-openjdk-amd64/include/" />
-            <arg line="-I/usr/lib/jvm/java-11-openjdk-amd64/include/linux/" />
+            <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk-amd64/include/" />
+            <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk-amd64/include/linux/" />
             <arg line="-I../../c/sbus/" />
             <arg line="SBusJNI.c ../../c/sbus/sbus.c" />
         </exec>
