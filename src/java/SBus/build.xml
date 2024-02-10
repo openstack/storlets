@@ -39,8 +39,13 @@
     <target name="so" depends="java">
         <exec dir="." executable="gcc">
             <arg line="-shared -o bin/libjsbus.so -fPIC" />
+            <!-- Ubuntu -->
             <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk-amd64/include/" />
             <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk-amd64/include/linux/" />
+            <!-- CentOS -->
+            <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk/include/" />
+            <arg line="-I/usr/lib/jvm/java-${env.STORLETS_JDK_VERSION}-openjdk/include/linux" />
+            <!-- common -->
             <arg line="-I../../c/sbus/" />
             <arg line="SBusJNI.c ../../c/sbus/sbus.c" />
         </exec>
