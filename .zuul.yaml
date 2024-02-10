@@ -6,6 +6,7 @@
     check:
       jobs:
         - storlets-functional
+        - storlets-functional-centos-9-stream
     gate:
       jobs:
         - storlets-functional
@@ -28,3 +29,9 @@
       - ^CHANGELOG$
       - ^README.rst$
       - ^tests/unit/.*$
+
+- job:
+    name: storlets-functional-centos-9-stream
+    parent: storlets-functional
+    nodeset: centos-9-stream
+    voting: false

@@ -50,8 +50,11 @@ SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
 STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
 STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
 STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/var/lib/storlets}
-STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:22.04}
-STORLETS_DOCKER_BASE_IMG_NAME=${STORLETS_DOCKER_BASE_IMG_NAME:-ubuntu_22.04}
+if is_fedora; then
+    STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-quay.io/centos/centos:stream9}
+else
+    STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:22.04}
+fi
 STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
 STORLETS_SWIFT_RUNTIME_GROUP=${STORLETS_SWIFT_RUNTIME_GROUP:-$USER}
 STORLETS_STORLET_CONTAINER_NAME=${STORLETS_STORLET_CONTAINER_NAME:-storlet}
@@ -134,9 +137,10 @@ function configure_swift_and_keystone_for_storlets {
 }
 
 function _install_docker {
-    # TODO: Add other dirstors.
-    # This one is geared towards Ubuntu
-    # See other projects that install docker
+    if is_fedora; then
+        # NOTE(tkajinam): install_docker.sh requires the yum command
+        sudo dnf install -y yum
+    fi
     wget http://get.docker.com -O install_docker.sh
     chmod 755 install_docker.sh
     sudo bash -x install_docker.sh
@@ -150,47 +154,57 @@ function _install_docker {
     fi
     add_user_to_group $STORLETS_SWIFT_RUNTIME_USER docker
 
+    # Ensure docker daemon is started
+    start_service docker
     if [ $STORLETS_SWIFT_RUNTIME_USER == $USER ]; then
         # NOTE(takashi): We need this workaround because we can't reload
         #                user-group relationship in bash scripts
         DOCKER_UNIX_SOCKET=/var/run/docker.sock
         sudo chown $USER:$USER $DOCKER_UNIX_SOCKET
     fi
-
-    # Restart docker daemon
-    restart_service docker
 }
 
 function prepare_storlets_install {
     _install_docker
 
-    if is_ubuntu; then
+    if is_fedora; then
+        install_package java-${STORLETS_JDK_VERSION}-openjdk-devel ant
+        install_package python3 python3-devel
+    else
         install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
         install_package python3 python3-dev
-    else
-        die $LINENO "Unsupported distro"
     fi
 }
 
 function _generate_jre_dockerfile {
-    PYTHON_PACKAGES="python3 python${PYTHON3_VERSION}"
-
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/${STORLETS_DOCKER_BASE_IMG_NAME}_jre${STORLETS_JDK_VERSION}/Dockerfile
+    if is_fedora; then
+        JDK_PACKAGE="java-${STORLETS_JDK_VERSION}-openjdk-headless"
+        PYTHON_PACKAGES="python3"
+        cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image/Dockerfile
 FROM $STORLETS_DOCKER_BASE_IMG
 MAINTAINER root
-
+RUN dnf install ${PYTHON_PACKAGES} ${JDK_PACKAGE} util-linux-core -y && \
+    dnf clean all
+EOF
+    else
+        JDK_PACKAGE="openjdk-${STORLETS_JDK_VERSION}-jdk-headless"
+        PYTHON_PACKAGES="python3 python3.10"
+        cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image/Dockerfile
+FROM $STORLETS_DOCKER_BASE_IMG
+MAINTAINER root
 RUN apt-get update && \
-    apt-get install ${PYTHON_PACKAGES} openjdk-${STORLETS_JDK_VERSION}-jre-headless -y && \
+    apt-get install ${PYTHON_PACKAGES} ${JDK_PACKAGE} -y && \
     apt-get clean
 EOF
+    fi
 }
 
 function create_base_jre_image {
     echo "Create base jre image"
     sudo docker pull $STORLETS_DOCKER_BASE_IMG
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
+    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image
     _generate_jre_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/"$STORLETS_DOCKER_BASE_IMG_NAME"_jre${STORLETS_JDK_VERSION}
+    cd ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image
     sudo docker build -t storlet_engine_image .
     cd -
 }
