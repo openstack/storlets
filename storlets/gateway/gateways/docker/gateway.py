@@ -23,9 +23,6 @@ from storlets.gateway.gateways.docker.runtime import RunTimePaths, \
     RunTimeSandbox, StorletInvocationProtocol
 
 
-CONDITIONAL_KEYS = ['IF_MATCH', 'IF_NONE_MATCH', 'IF_MODIFIED_SINCE',
-                    'IF_UNMODIFIED_SINCE']
-
 """---------------------------------------------------------------------------
 The Storlet Gateway API
 The API is made of:
