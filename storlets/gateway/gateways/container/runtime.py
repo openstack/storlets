@@ -232,17 +232,29 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
         self.max_containers_per_node = \
             int(conf.get('max_containers_per_node', 0))
 
-        self.container_cpu_period = int(conf.get('container_cpu_period', 0))
-        self.container_cpu_quota = int(conf.get('container_cpu_quota', 0))
-        self.container_mem_limit = conf.get('container_mem_limit', 0)
+        self.container_cpu_period = \
+            self._load_int_opt(conf, 'container_cpu_period')
+        self.container_cpu_quota = \
+            self._load_int_opt(conf, 'container_cpu_quota')
+
+        self.container_mem_limit = conf.get('container_mem_limit')
         # NOTE(tkajinam): memory limit can be a string with unit like 1024m
         try:
-            self.container_mem_limit = int(self.container_mem_limit)
+            if self.container_mem_limit is not None:
+                self.container_mem_limit = int(self.container_mem_limit)
         except TypeError:
             pass
+
         self.container_cpuset_cpus = conf.get('container_cpuset_cpus')
         self.container_cpuset_mems = conf.get('container_cpuset_mems')
-        self.container_pids_limit = int(conf.get('container_pids_limit', 0))
+
+        self.container_pids_limit = \
+            self._load_int_opt(conf, 'container_pids_limit')
+
+    def _load_int_opt(self, conf, key):
+        if key not in conf:
+            return None
+        return int(conf[key])
 
     def ping(self):
         """

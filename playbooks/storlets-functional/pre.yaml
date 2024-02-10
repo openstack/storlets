@@ -8,6 +8,8 @@
           ./s2aio.sh install
         executable: /bin/bash
         chdir: 'src/{{ zuul.project.canonical_name }}'
+      environment:
+        STORLETS_GATEWAY_MODULE: '{{ storlets_gateway_module }}'
 
     - shell:
         cmd: |

@@ -6,6 +6,7 @@
     check:
       jobs:
         - storlets-functional
+        - storlets-functional-podman
         - storlets-functional-centos-9-stream
     gate:
       jobs:
@@ -29,6 +30,15 @@
       - ^CHANGELOG$
       - ^README.rst$
       - ^tests/unit/.*$
+    vars:
+      storlets_gateway_module: docker
+
+- job:
+    name: storlets-functional-podman
+    parent: storlets-functional
+    voting: false
+    vars:
+      storlets_gateway_module: podman
 
 - job:
     name: storlets-functional-centos-9-stream
