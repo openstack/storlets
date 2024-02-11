@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import abc
+
 from storlets.gateway.common.stob import StorletRequest
 
 
-class StorletGatewayBase(object):
+class StorletGatewayBase(object, metaclass=abc.ABCMeta):
 
     request_class = StorletRequest
 
@@ -27,14 +29,15 @@ class StorletGatewayBase(object):
         self.scope = scope
 
     @classmethod
+    @abc.abstractmethod
     def validate_storlet_registration(cls, params, obj):
-        raise NotImplementedError("Not implemented: "
-                                  "validate_storlet_registration")
+        pass
 
     @classmethod
+    @abc.abstractmethod
     def validate_dependency_registration(cls, params, obj):
-        raise NotImplementedError("Not implemented: "
-                                  "validate_dependency_registration")
+        pass
 
+    @abc.abstractmethod
     def invocation_flow(self, sreq, extra_sources=None):
-        raise NotImplementedError("Not implemented: invocation_flow")
+        pass
