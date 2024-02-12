@@ -154,40 +154,39 @@ class StorletData(object):
         return self.data_fd is not None
 
 
-class StorletRequest(StorletData):
+class StorletRequest(object):
+    """
+    The StorletRequest class represents a request to be processed by
+    the storlet.
+    """
 
     required_options = []
 
-    def __init__(self, storlet_id, params, user_metadata,
-                 data_iter=None, data_fd=None, options=None,
-                 timeout=10, cancel=None):
+    def __init__(self, storlet_id, params, data, options=None,
+                 extra_data_list=None):
         """
         :param storlet_id: storlet id
         :param params: parameters for storlet execution
-        :param user_metadata: user metadata related to the data to be processed
-        :param data_iter: iterator to read data to be processed
-        :param data_fd: File descriptor to read data to be processed
+        :param data: StorletData instance
         :param options: options specific to StorletRequest types
-        :param timeout: Timeout to be set for data reading
-        :param cancel: cancel operation to be executed when timeout happens
+        :param extra_data_list: List of StorletData instances
         :raises ValueError: when some of the required options are missing
         """
-        super(StorletRequest, self).__init__(
-            user_metadata, data_iter, data_fd, timeout, cancel)
         self.storlet_id = storlet_id
         self.params = copy.deepcopy(params)
-        if options is None:
-            self.options = {}
-        else:
-            self.options = options
+        self.data = data
+        self.options = options or {}
+        self.extra_data_list = extra_data_list or []
 
         for opt in self.required_options:
             if options.get(opt) is None:
                 raise ValueError('Required option %s is missing' % opt)
 
 
-class StorletResponse(StorletData):
-    def __init__(self, user_metadata, data_iter=None, data_fd=None,
-                 timeout=10, cancel=None):
-        super(StorletResponse, self).__init__(
-            user_metadata, data_iter, data_fd, timeout, cancel)
+class StorletResponse(object):
+    """
+    The StorletResponse class represents a response from the storlet
+    """
+
+    def __init__(self, data):
+        self.data = data

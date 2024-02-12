@@ -19,9 +19,10 @@ from swift.common.swob import HTTPBadRequest, Response, Range, \
 from swift.common.utils import config_true_value
 from urllib.parse import unquote
 
-from storlets.gateway.common.exceptions import FileManagementError
+from storlets.gateway.common.exceptions import FileManagementError, \
+    StorletRuntimeException
 from storlets.gateway.common.file_manager import FileManager
-from storlets.gateway.common.exceptions import StorletRuntimeException
+from storlets.gateway.common.stob import StorletData
 
 
 class NotStorletRequest(Exception):
@@ -440,8 +441,10 @@ class StorletBaseHandler(object):
                     resp.headers['Content-Range']
                 new_headers.pop('Content-Range')
 
-            self._set_metadata_in_headers(new_headers, sresp.user_metadata)
-            response = Response(headers=new_headers, app_iter=sresp.data_iter,
+            self._set_metadata_in_headers(new_headers,
+                                          sresp.data.user_metadata)
+            response = Response(headers=new_headers,
+                                app_iter=sresp.data.data_iter,
                                 request=self.request)
         except StorletRuntimeException:
             response = HTTPServiceUnavailable()
@@ -505,10 +508,8 @@ class StorletBaseHandler(object):
         options = self._get_storlet_invocation_options(req)
 
         if hasattr(sbody_iter, '_fp'):
-            sreq = self.sreq_class(storlet_id, req.params, user_metadata,
-                                   data_fd=sbody_iter._fp.fileno(),
-                                   options=options)
+            data = StorletData(user_metadata, data_fd=sbody_iter._fp.fileno())
         else:
-            sreq = self.sreq_class(storlet_id, req.params, user_metadata,
-                                   data_iter=sbody_iter, options=options)
-        return sreq
+            data = StorletData(user_metadata, data_iter=sbody_iter)
+
+        return self.sreq_class(storlet_id, req.params, data, options=options)

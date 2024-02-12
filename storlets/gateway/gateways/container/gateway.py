@@ -24,33 +24,22 @@ from storlets.gateway.gateways.container.runtime import RunTimePaths, \
 
 
 class ContainerStorletRequest(StorletRequest):
-    """
-    The ContainerStorletRequest class represents a request to be processed by
-    the storlet the request is derived from the Swift request and
-    essentially consists of:
-    1. A data stream to be processed
-    2. Metadata identifying the stream
-    """
 
-    # TODO(takashi): Some of following parameters should be defined common
-    #                parameters for StorletRequest
     required_options = ['storlet_main', 'storlet_language', 'file_manager']
 
-    def __init__(self, storlet_id, params, user_metadata, data_iter=None,
-                 data_fd=None, options=None):
+    def __init__(self, storlet_id, params, data, options=None,
+                 extra_data_list=None):
         """
         :param storlet_id: storlet id
         :param params: execution parameters
-        :param user_metadata: user metadata
-        :param data_iter: an iterator to read data
-        :param data_fd: a file descriptor to read data
-        :param options: a dictionaly which stores gateway specific options.
+        :param data: StorletData instance
+        :param options: options specific to ContainerStorletRequest
+        :param extra_data_list: List of StorletData instances
         :raises ValueError: when some of the required options (storlet_main
                             and file_manager) are missing
         """
         super(ContainerStorletRequest, self).__init__(
-            storlet_id, params, user_metadata, data_iter, data_fd,
-            options=options)
+            storlet_id, params, data, options, extra_data_list)
 
         self.generate_log = self.options.get('generate_log', False)
 
@@ -181,14 +170,11 @@ class StorletGatewayContainer(StorletGatewayBase):
                 raise ValueError('Mandatory parameter is missing'
                                  ': {0}'.format(md))
 
-    def invocation_flow(self, sreq, extra_sources=None):
+    def invocation_flow(self, sreq):
         """
         Invoke the backend protocol with gateway
 
         :param sreq: StorletRequest instance
-        :param extra_sources (WIP): A list of StorletRequest instance to gather
-                                    as extra resoureces to feed to storlet
-                                    container as data source
         :return: StorletResponse instance
         """
         run_time_sbox = self.sandbox(self.scope, self.conf, self.logger)
@@ -204,8 +190,7 @@ class StorletGatewayContainer(StorletGatewayBase):
                                               storlet_pipe_path,
                                               slog_path,
                                               self.storlet_timeout,
-                                              self.logger,
-                                              extra_sources=extra_sources)
+                                              self.logger)
 
         sresp = sprotocol.communicate()
 

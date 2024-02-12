@@ -32,7 +32,7 @@ from storlets.sbus import file_description as sbus_fd
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
 from storlets.gateway.common.logger import StorletLogger
-from storlets.gateway.common.stob import StorletResponse
+from storlets.gateway.common.stob import StorletData, StorletResponse
 
 MAX_METADATA_SIZE = 4096
 
@@ -435,12 +435,9 @@ class StorletInvocationProtocol(object):
     :param storlet_logger_path: path string to log file
     :param timeout: integer of timeout for waiting the resp from container
     :param logger: logger instance
-    :param extra_sources (WIP): a list of StorletRequest instances
-                                which keep data_iter for adding extra source
-                                as data stream
     """
     def __init__(self, srequest, storlet_pipe_path, storlet_logger_path,
-                 timeout, logger, extra_sources=None):
+                 timeout, logger):
         self.srequest = srequest
         self.storlet_pipe_path = storlet_pipe_path
         self.storlet_logger = StorletLogger(storlet_logger_path)
@@ -457,8 +454,7 @@ class StorletInvocationProtocol(object):
         self._input_data_write_fd = None
 
         self.extra_data_sources = []
-        extra_sources = extra_sources or []
-        for source in extra_sources:
+        for source in self.srequest.extra_data_list:
             if source.has_fd:
                 # TODO(kota_): it may be data_fd in the future.
                 raise Exception(
@@ -473,8 +469,8 @@ class StorletInvocationProtocol(object):
         """
         File descriptor to read the input body content
         """
-        if self.srequest.has_fd:
-            return self.srequest.data_fd
+        if self.srequest.data.has_fd:
+            return self.srequest.data.data_fd
         else:
             return self._input_data_read_fd
 
@@ -489,16 +485,21 @@ class StorletInvocationProtocol(object):
                 {'start': str(self.srequest.start),
                  'end': str(self.srequest.end)})
 
-        fds = [SBusFileDescriptor(sbus_fd.SBUS_FD_INPUT_OBJECT,
-                                  self.input_data_read_fd,
-                                  storage_metadata=self.srequest.user_metadata,
-                                  storlets_metadata=storlets_metadata),
-               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT,
-                                  self.data_write_fd),
-               SBusFileDescriptor(sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
-                                  self.metadata_write_fd),
-               SBusFileDescriptor(sbus_fd.SBUS_FD_LOGGER,
-                                  self.storlet_logger.getfd())]
+        fds = [
+            SBusFileDescriptor(
+                sbus_fd.SBUS_FD_INPUT_OBJECT,
+                self.input_data_read_fd,
+                storage_metadata=self.srequest.data.user_metadata,
+                storlets_metadata=storlets_metadata),
+            SBusFileDescriptor(
+                sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+                self.data_write_fd),
+            SBusFileDescriptor(
+                sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+                self.metadata_write_fd),
+            SBusFileDescriptor(
+                sbus_fd.SBUS_FD_LOGGER,
+                self.storlet_logger.getfd())]
 
         for source in self.extra_data_sources:
             fd = SBusFileDescriptor(
@@ -527,7 +528,7 @@ class StorletInvocationProtocol(object):
         """
         Create all pipse used for Storlet execution
         """
-        if not self.srequest.has_fd:
+        if not self.srequest.data.has_fd:
             self._input_data_read_fd, self._input_data_write_fd = os.pipe()
         self.data_read_fd, self.data_write_fd = os.pipe()
         self.metadata_read_fd, self.metadata_write_fd = os.pipe()
@@ -557,7 +558,7 @@ class StorletInvocationProtocol(object):
         Close all of the container side descriptors
         """
         fds = [self.data_write_fd, self.metadata_write_fd]
-        if not self.srequest.has_fd:
+        if not self.srequest.data.has_fd:
             fds.append(self.input_data_read_fd)
         fds.extend([source['read_fd'] for source in self.extra_data_sources])
         for fd in fds:
@@ -682,7 +683,7 @@ class StorletInvocationProtocol(object):
         try:
             self._invoke()
 
-            if not self.srequest.has_fd:
+            if not self.srequest.data.has_fd:
                 self._wait_for_write_with_timeout(self._input_data_write_fd)
 
                 # We do the writing in a different thread.
@@ -695,7 +696,7 @@ class StorletInvocationProtocol(object):
                 #    of the Storlet writer.
                 eventlet.spawn_n(self._write_input_data,
                                  self._input_data_write_fd,
-                                 self.srequest.data_iter)
+                                 self.srequest.data.data_iter)
 
             for source in self.extra_data_sources:
                 # NOTE(kota_): not sure right now if using eventlet.spawn_n is
@@ -709,11 +710,12 @@ class StorletInvocationProtocol(object):
             out_md = self._read_metadata()
             self._wait_for_read_with_timeout(self.data_read_fd)
 
-            return StorletResponse(out_md, data_fd=self.data_read_fd,
-                                   cancel=self._cancel)
+            data = StorletData(out_md, data_fd=self.data_read_fd,
+                               cancel=self._cancel)
+            return StorletResponse(data)
         except Exception:
             self._close_local_side_descriptors()
-            if not self.srequest.has_fd:
+            if not self.srequest.data.has_fd:
                 self._close_input_data_descriptors()
             raise
 

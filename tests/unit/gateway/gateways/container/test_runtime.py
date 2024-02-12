@@ -26,6 +26,7 @@ from storlets.sbus.client import SBusResponse
 from storlets.sbus.client.exceptions import SBusClientIOError
 from storlets.gateway.common.exceptions import StorletRuntimeException, \
     StorletTimeout
+from storlets.gateway.common.stob import StorletData
 from storlets.gateway.gateways.container.gateway import ContainerStorletRequest
 from storlets.gateway.gateways.container.runtime import \
     RunTimePaths, StorletInvocationProtocol
@@ -249,8 +250,9 @@ class TestStorletInvocationProtocol(unittest.TestCase):
                         'storlet_dependency': 'dep1,dep2',
                         'storlet_language': 'java',
                         'file_manager': FakeFileManager('storlet', 'dep')}
+        data = StorletData({}, iter(StringIO()))
         storlet_request = ContainerStorletRequest(
-            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+            self.storlet_id, {}, data, options=self.options)
         self.protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
 
@@ -324,28 +326,37 @@ class TestStorletInvocationProtocol(unittest.TestCase):
 
     def test_invocation_protocol_remote_fds(self):
         # In default, we have 4 fds in remote_fds
+        data = StorletData({}, iter(StringIO()))
         storlet_request = ContainerStorletRequest(
-            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+            self.storlet_id, {}, data, options=self.options)
         protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
         with protocol.storlet_logger.activate():
             self.assertEqual(4, len(protocol.remote_fds))
 
         # extra_resources expands the remote_fds
+        data = StorletData({}, iter(StringIO()))
+        extra_data_list = [StorletData({}, iter(StringIO()))]
         storlet_request = ContainerStorletRequest(
-            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+            self.storlet_id, {}, data, options=self.options,
+            extra_data_list=extra_data_list)
         protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1, self.logger,
-            extra_sources=[storlet_request])
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger)
         with protocol.storlet_logger.activate():
             self.assertEqual(5, len(protocol.remote_fds))
 
         # 2 more extra_resources expands the remote_fds
+        data = StorletData({}, iter(StringIO()))
+        extra_data_list = [
+            StorletData({}, iter(StringIO())),
+            StorletData({}, iter(StringIO())),
+            StorletData({}, iter(StringIO()))
+        ]
         storlet_request = ContainerStorletRequest(
-            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+            self.storlet_id, {}, data, options=self.options,
+            extra_data_list=extra_data_list)
         protocol = StorletInvocationProtocol(
-            storlet_request, self.pipe_path, self.log_file, 1, self.logger,
-            extra_sources=[storlet_request] * 3)
+            storlet_request, self.pipe_path, self.log_file, 1, self.logger)
         with protocol.storlet_logger.activate():
             self.assertEqual(7, len(protocol.remote_fds))
 
@@ -401,8 +412,9 @@ class TestStorletInvocationProtocolPython(TestStorletInvocationProtocol):
                         'storlet_language': 'python',
                         'language_version': '3.6',
                         'file_manager': FakeFileManager('storlet', 'dep')}
+        data = StorletData({}, iter(StringIO()))
         storlet_request = ContainerStorletRequest(
-            self.storlet_id, {}, {}, iter(StringIO()), options=self.options)
+            self.storlet_id, {}, data, options=self.options)
         self.protocol = StorletInvocationProtocol(
             storlet_request, self.pipe_path, self.log_file, 1, self.logger)
 

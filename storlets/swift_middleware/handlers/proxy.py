@@ -26,6 +26,7 @@ from swift.common.wsgi import make_subrequest
 from swift.proxy.controllers.base import get_account_info
 from urllib.parse import quote
 
+from storlets.gateway.common.stob import StorletData
 from storlets.swift_middleware.handlers.base import StorletBaseHandler, \
     NotStorletRequest, NotStorletExecution
 
@@ -279,7 +280,9 @@ class StorletProxyHandler(StorletBaseHandler):
     def _call_gateway(self, resp):
         sreq = self._build_storlet_request(self.request, resp.headers,
                                            resp.app_iter)
-        return self.gateway.invocation_flow(sreq, self.extra_sources)
+        if self.extra_sources:
+            sreq.extra_data_list = self.extra_sources
+        return self.gateway.invocation_flow(sreq)
 
     def augment_storlet_request(self, params):
         """
@@ -314,8 +317,8 @@ class StorletProxyHandler(StorletBaseHandler):
                     # expicially, in parallel with primary GET
 
                     self.extra_sources.append(
-                        self._build_storlet_request(
-                            self.request, sub_resp.headers,
+                        StorletData(
+                            self._get_user_metadata(sub_resp.headers),
                             sub_resp.app_iter))
             except ValueError:
                 raise HTTPBadRequest(
@@ -468,10 +471,12 @@ class StorletProxyHandler(StorletBaseHandler):
             sreq = self._build_storlet_request(self.request, src_resp.headers,
                                                src_resp.app_iter)
             self.gather_extra_sources()
-            sresp = self.gateway.invocation_flow(sreq, self.extra_sources)
-            data_iter = sresp.data_iter
+            if self.extra_sources:
+                sreq.extra_data_list = self.extra_sources
+            sresp = self.gateway.invocation_flow(sreq)
+            data_iter = sresp.data.data_iter
             self._set_metadata_in_headers(self.request.headers,
-                                          sresp.user_metadata)
+                                          sresp.data.user_metadata)
         else:
             data_iter = src_resp.app_iter
 
@@ -510,8 +515,8 @@ class StorletProxyHandler(StorletBaseHandler):
 
         sresp = self.gateway.invocation_flow(sreq)
         self._set_metadata_in_headers(self.request.headers,
-                                      sresp.user_metadata)
-        return self.handle_put_copy_response(sresp.data_iter)
+                                      sresp.data.user_metadata)
+        return self.handle_put_copy_response(sresp.data.data_iter)
 
     @public
     def COPY(self):

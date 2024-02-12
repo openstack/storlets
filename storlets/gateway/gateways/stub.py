@@ -14,7 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from storlets.gateway.common.stob import StorletRequest, StorletResponse
+from storlets.gateway.common.stob import StorletRequest, \
+    StorletResponse, StorletData
 from storlets.gateway.gateways.base import StorletGatewayBase
 
 
@@ -36,10 +37,10 @@ class StubStorletGateway(StorletGatewayBase):
     def validate_dependency_registration(cls, params, obj):
         pass
 
-    def indentity_invocation(self, user_metadata, data_iter):
+    def indentity_invocation(self, sreq):
         self.logger.debug("Identity invocation is called")
-        return StorletResponse(user_metadata, data_iter)
+        data = StorletData(sreq.data.user_metadata, sreq.data.data_iter)
+        return StorletResponse(data)
 
     def invocation_flow(self, sreq, extra_resources=None):
-        return self.indentity_invocation(sreq.user_metadata,
-                                         sreq.data_iter)
+        return self.indentity_invocation(sreq)

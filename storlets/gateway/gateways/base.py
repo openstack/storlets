@@ -39,5 +39,5 @@ class StorletGatewayBase(object, metaclass=abc.ABCMeta):
         pass
 
     @abc.abstractmethod
-    def invocation_flow(self, sreq, extra_sources=None):
+    def invocation_flow(self, sreq):
         pass

@@ -21,10 +21,11 @@ from tempfile import mkdtemp
 import unittest
 from unittest import mock
 
-from swift.common.swob import Request, Response
+from swift.common.swob import Response
 from swift.common.utils import FileLikeIter
 
 from storlets.sbus.client import SBusResponse
+from storlets.gateway.common.stob import StorletData
 from storlets.gateway.gateways.container.gateway import ContainerStorletRequest
 from tests.unit import FakeLogger
 from tests.unit.gateway.gateways import FakeFileManager
@@ -37,15 +38,16 @@ class TestContainerStorletRequest(unittest.TestCase):
         storlet_id = 'Storlet-1.0.jar'
         params = {'Param1': 'Value1', 'Param2': 'Value2'}
         metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+        data = StorletData(metadata, iter(StringIO()))
 
         # with dependencies
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        iter(StringIO()), options=options)
-        self.assertEqual(metadata, dsreq.user_metadata)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
+        self.assertEqual(metadata, dsreq.data.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
@@ -57,9 +59,9 @@ class TestContainerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        iter(StringIO()), options=options)
-        self.assertEqual(metadata, dsreq.user_metadata)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
+        self.assertEqual(metadata, dsreq.data.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
@@ -71,35 +73,33 @@ class TestContainerStorletRequest(unittest.TestCase):
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         with self.assertRaises(ValueError):
-            ContainerStorletRequest(storlet_id, params, metadata,
-                                    iter(StringIO()), options=options)
+            ContainerStorletRequest(storlet_id, params, data, options=options)
 
         # storlet_main is not given
         options = {'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
         with self.assertRaises(ValueError):
-            ContainerStorletRequest(storlet_id, params, metadata,
-                                    iter(StringIO()), options=options)
+            ContainerStorletRequest(storlet_id, params, data, options=options)
 
         # file_manager is not given
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_language': 'java'}
         with self.assertRaises(ValueError):
-            ContainerStorletRequest(storlet_id, params, metadata,
-                                    iter(StringIO()), options=options)
+            ContainerStorletRequest(storlet_id, params, data, options=options)
 
         # Python
         storlet_id = 'storlet.py'
         params = {'Param1': 'Value1', 'Param2': 'Value2'}
         metadata = {'MetaKey1': 'MetaValue1', 'MetaKey2': 'MetaValue2'}
+        data = StorletData(metadata, iter(StringIO()))
 
         # without language version
         options = {'storlet_main': 'storlet.Storlet',
                    'storlet_language': 'python',
                    'file_manager': FakeFileManager('storlet', 'dep')}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        iter(StringIO()), options=options)
-        self.assertEqual(metadata, dsreq.user_metadata)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
+        self.assertEqual(metadata, dsreq.data.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('storlet.py', dsreq.storlet_id)
         self.assertEqual('storlet.Storlet', dsreq.storlet_main)
@@ -112,9 +112,9 @@ class TestContainerStorletRequest(unittest.TestCase):
                    'storlet_language': 'python',
                    'storlet_language_version': '3.6',
                    'file_manager': FakeFileManager('storlet', 'dep')}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        iter(StringIO()), options=options)
-        self.assertEqual(metadata, dsreq.user_metadata)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
+        self.assertEqual(metadata, dsreq.data.user_metadata)
         self.assertEqual(params, dsreq.params)
         self.assertEqual('storlet.py', dsreq.storlet_id)
         self.assertEqual('storlet.Storlet', dsreq.storlet_main)
@@ -126,14 +126,16 @@ class TestContainerStorletRequest(unittest.TestCase):
         storlet_id = 'Storlet-1.0.jar'
         params = {}
         metadata = {}
+        data = StorletData(metadata, None, 0)
+
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 1,
                    'range_end': 6}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        None, 0, options=options)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
 
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
@@ -149,8 +151,8 @@ class TestContainerStorletRequest(unittest.TestCase):
                    'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 0,
                    'range_end': 0}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        None, 0, options=options)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
 
         self.assertEqual('Storlet-1.0.jar', dsreq.storlet_id)
         self.assertEqual('org.openstack.storlet.Storlet', dsreq.storlet_main)
@@ -168,8 +170,9 @@ class TestContainerStorletRequest(unittest.TestCase):
                    'storlet_dependency': 'dep1,dep2',
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        None, 0, options=options)
+        data = StorletData(metadata, None, 0)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
         self.assertFalse(dsreq.has_range)
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
@@ -178,8 +181,8 @@ class TestContainerStorletRequest(unittest.TestCase):
                    'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 1,
                    'range_end': 6}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        None, 0, options=options)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
         self.assertTrue(dsreq.has_range)
 
         options = {'storlet_main': 'org.openstack.storlet.Storlet',
@@ -188,8 +191,8 @@ class TestContainerStorletRequest(unittest.TestCase):
                    'file_manager': FakeFileManager('storlet', 'dep'),
                    'range_start': 0,
                    'range_end': 6}
-        dsreq = ContainerStorletRequest(storlet_id, params, metadata,
-                                        None, 0, options=options)
+        dsreq = ContainerStorletRequest(storlet_id, params, data,
+                                        options=options)
         self.assertTrue(dsreq.has_range)
 
 
@@ -430,11 +433,14 @@ class ContainerGatewayTestMixin(object):
                    'storlet_language': 'java',
                    'file_manager': FakeFileManager('storlet', 'dep')}
 
+        data = StorletData(
+            user_metadata={},
+            data_iter=iter('body'))
         st_req = ContainerStorletRequest(
             storlet_id=self.sobj,
             params={},
-            user_metadata={},
-            data_iter=iter('body'), options=options)
+            data=data,
+            options=options)
 
         # TODO(kota_): need more efficient way for emuration of return value
         # from SDaemon
@@ -487,9 +493,9 @@ class ContainerGatewayTestMixin(object):
             client.start_daemon.return_value = SBusResponse(True, 'OK')
             client.execute.return_value = SBusResponse(True, 'OK', 'someid')
 
-            sresp = self.gateway.invocation_flow(st_req, extra_sources)
+            sresp = self.gateway.invocation_flow(st_req)
             eventlet.sleep(0.1)
-            file_like = FileLikeIter(sresp.data_iter)
+            file_like = FileLikeIter(sresp.data.data_iter)
             self.assertEqual(b'something', file_like.read())
 
         # I hate the decorator to return an instance but to track current
@@ -503,11 +509,12 @@ class ContainerGatewayTestMixin(object):
                 return BytesIO(b'mock'), None
 
         st_req.file_manager = MockFileManager()
+        st_req.extra_data_list = extra_sources
 
         test_invocation_flow()
 
         # ensure st_req.app_iter is drawn
-        self.assertRaises(StopIteration, next, st_req.data_iter)
+        self.assertRaises(StopIteration, next, st_req.data.data_iter)
         expected_mock_writer_calls = len(extra_sources) + 1
         self.assertEqual(expected_mock_writer_calls,
                          len(called_fd_and_bodies))
@@ -518,37 +525,20 @@ class ContainerGatewayTestMixin(object):
         self._test_invocation_flow()
 
     def test_invocation_flow_with_extra_sources(self):
-        options = {'generate_log': False,
-                   'scope': 'AUTH_account',
-                   'storlet_main': 'org.openstack.storlet.Storlet',
-                   'storlet_dependency': 'dep1,dep2',
-                   'storlet_language': 'java',
-                   'file_manager': FakeFileManager('storlet', 'dep')}
-
         data_sources = []
 
-        def generate_extra_st_request():
-            # This works similarly with build_storlet_request
-            # TODO(kota_): think of more generarl way w/o
-            # build_storlet_request
-            sw_req = Request.blank(
-                self.req_path, environ={'REQUEST_METHOD': 'GET'},
-                headers={'X-Run-Storlet': self.sobj})
-
+        def generate_extra_data():
             sw_resp = Response(
                 app_iter=iter(['This is a response body']), status=200)
 
-            st_req = ContainerStorletRequest(
-                storlet_id=sw_req.headers['X-Run-Storlet'],
-                params=sw_req.params,
+            data = StorletData(
                 user_metadata={},
-                data_iter=sw_resp.app_iter, options=options)
+                data_iter=sw_resp.app_iter)
             data_sources.append(sw_resp.app_iter)
-            return st_req
+            return data
 
-        extra_request = generate_extra_st_request()
-        mock_calls = self._test_invocation_flow(
-            extra_sources=[extra_request])
+        extra_data = generate_extra_data()
+        mock_calls = self._test_invocation_flow(extra_sources=[extra_data])
         self.assertEqual('This is a response body', mock_calls[1][1])
 
         # run all existing eventlet threads
