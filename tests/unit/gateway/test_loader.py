@@ -15,8 +15,8 @@
 import unittest
 from storlets.gateway.common.exceptions import StorletGatewayLoadError
 from storlets.gateway.loader import load_gateway
-from storlets.gateway.gateways.stub import StorletGatewayStub
-from storlets.gateway.gateways.docker import StorletGatewayDocker
+from storlets.gateway.gateways.stub import StubStorletGateway
+from storlets.gateway.gateways.docker import DockerStorletGateway
 
 
 class TestLoader(unittest.TestCase):
@@ -26,11 +26,11 @@ class TestLoader(unittest.TestCase):
     def test_load_gateway_entry_point(self):
         # existing entry point
         self.assertEqual(
-            StorletGatewayStub,
+            StubStorletGateway,
             load_gateway('stub'))
 
         self.assertEqual(
-            StorletGatewayDocker,
+            DockerStorletGateway,
             load_gateway('docker'))
 
         # If the given entry point does not exist
@@ -40,18 +40,18 @@ class TestLoader(unittest.TestCase):
     def test_load_gateway_full_class_path(self):
         # If the given class path exists
         self.assertEqual(
-            StorletGatewayStub,
-            load_gateway('storlets.gateway.gateways.stub.StorletGatewayStub'))
+            StubStorletGateway,
+            load_gateway('storlets.gateway.gateways.stub.StubStorletGateway'))
 
         self.assertEqual(
-            StorletGatewayDocker,
+            DockerStorletGateway,
             load_gateway('storlets.gateway.gateways.docker.'
-                         'StorletGatewayDocker'))
+                         'DockerStorletGateway'))
 
         # If module does not exist
         with self.assertRaises(StorletGatewayLoadError):
             load_gateway('storlets.gateway.gateways.another_stub.'
-                         'StorletGatewayStub')
+                         'StubStorletGateway')
 
         # If class does not exist
         with self.assertRaises(StorletGatewayLoadError):

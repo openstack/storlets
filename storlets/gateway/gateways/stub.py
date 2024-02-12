@@ -18,12 +18,12 @@ from storlets.gateway.common.stob import StorletRequest, StorletResponse
 from storlets.gateway.gateways.base import StorletGatewayBase
 
 
-class StorletGatewayStub(StorletGatewayBase):
+class StubStorletGateway(StorletGatewayBase):
 
     request_class = StorletRequest
 
     def __init__(self, conf, logger, scope):
-        super(StorletGatewayStub, self).__init__(conf, logger, scope)
+        super(StubStorletGateway, self).__init__(conf, logger, scope)
         self.logger = logger
         self.conf = conf
         self.scope = scope
