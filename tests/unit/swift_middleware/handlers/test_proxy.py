@@ -175,7 +175,7 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertEqual('200 OK', resp.status)
             self.assertEqual(b'FAKE APP', resp.body)
 
-    def test_GET_with_storlets_and_extra_resourece(self):
+    def test_GET_with_storlets_and_extra_resource(self):
         target = '/v1/AUTH_a/c/o'
         self.base_app.register('GET', target, HTTPOk, body=b'FAKE APP')
         extra_target = '/v1/AUTH_a/c2/o2'
@@ -194,6 +194,79 @@ class TestStorletMiddlewareProxy(BaseTestStorletMiddleware):
             self.assertTrue(any(self.base_app.get_calls('GET', target)))
             # GET extra target also called
             self.assertTrue(any(self.base_app.get_calls('GET', extra_target)))
+
+    def test_PUT_with_storlets_and_extra_resource(self):
+        target = '/v1/AUTH_a/c/o'
+        self.base_app.register('PUT', target, HTTPCreated, body=b'')
+        extra_target = '/v1/AUTH_a/c2/o2'
+        self.base_app.register('GET', extra_target, HTTPOk, body=b'Whooa')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Extra-Resources': '/c2/o2'}
+            resp = self.get_request_response(target, 'PUT', headers=headers)
+            self.assertEqual('201 Created', resp.status)
+
+            # PUT target called
+            self.assertTrue(any(self.base_app.get_calls('PUT', target)))
+            # GET extra target also called
+            self.assertTrue(any(self.base_app.get_calls('GET', extra_target)))
+
+    def test_GET_with_storlets_and_extra_resource_within_limit(self):
+        target = '/v1/AUTH_a/c/o'
+        self.base_app.register('GET', target, HTTPOk, body=b'FAKE APP')
+        extra_targets = ['/v1/AUTH_a/c2/o2', '/v1/AUTH_a/c3/o3']
+        for extra_target in extra_targets:
+            self.base_app.register('GET', extra_target, HTTPOk, body=b'foo')
+        storlet = '/v1/AUTH_a/storlet/Storlet-1.0.jar'
+        self.base_app.register('GET', storlet, HTTPOk, body=b'jar binary')
+
+        self.conf['max_extra_resources'] = 2
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Extra-Resources': '/c2/o2,/c3/o3'}
+            resp = self.get_request_response(target, 'GET', headers=headers)
+            self.assertEqual('200 OK', resp.status)
+            self.assertEqual(b'FAKE APP', resp.body)
+
+            # GET target called
+            self.assertTrue(any(self.base_app.get_calls('GET', target)))
+            # GET extra targets also called
+            for extra_target in extra_targets:
+                self.assertTrue(
+                    any(self.base_app.get_calls('GET', extra_target)))
+
+    def test_GET_with_storlets_and_extra_resource_not_object(self):
+        target = '/v1/AUTH_a/c/o'
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Extra-Resources': '/c2o2'}
+            resp = self.get_request_response(target, 'GET', headers=headers)
+            self.assertEqual('400 Bad Request', resp.status)
+
+    def test_GET_with_storlets_and_extra_resource_over_limit(self):
+        target = '/v1/AUTH_a/c/o'
+        self.conf['max_extra_resources'] = 1
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Extra-Resources': '/c2/o2,/c3/o3'}
+            resp = self.get_request_response(target, 'GET', headers=headers)
+            self.assertEqual('400 Bad Request', resp.status)
+
+    def test_GET_with_storlets_and_extra_resource_disabled(self):
+        target = '/v1/AUTH_a/c/o'
+        self.conf['max_extra_resources'] = 0
+
+        with storlet_enabled():
+            headers = {'X-Run-Storlet': 'Storlet-1.0.jar',
+                       'X-Storlet-Extra-Resources': '/c2/o2'}
+            resp = self.get_request_response(target, 'GET', headers=headers)
+            self.assertEqual('403 Forbidden', resp.status)
 
     def test_GET_slo_without_storlets(self):
         target = '/v1/AUTH_a/c/slo_manifest'

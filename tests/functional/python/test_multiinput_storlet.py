@@ -53,6 +53,28 @@ class TestMultiInputStorlet(StorletPythonFunctionalTest):
         self.assertEqual(b'0123456789abcdefghijklmnopqr',
                          resp_content)
 
+    def test_put_extra_sources(self):
+        obj = 'small'
+        obj2 = 'small2'
+        c.put_object(self.url, self.token,
+                     self.container, obj2,
+                     b'efghijklmnopqr')
+
+        headers = {
+            'X-Run-Storlet': self.storlet_name,
+            'X-Storlet-Extra-Resources':
+            os.path.join('/' + self.container, obj2)
+        }
+        headers.update(self.additional_headers)
+        c.put_object(
+            self.url, self.token, self.container, obj,
+            b'0123456789abcd', headers=headers)
+
+        resp_headers, resp_content = c.get_object(
+            self.url, self.token, self.container, obj)
+        self.assertEqual(b'0123456789abcdefghijklmnopqr',
+                         resp_content)
+
     def test_put_x_copy_from_extra_sources(self):
         obj = 'small'
         obj2 = 'small2'

@@ -41,10 +41,10 @@ class StorletProxyHandler(StorletBaseHandler):
     def __init__(self, request, conf, gateway_conf, app, logger):
         super(StorletProxyHandler, self).__init__(
             request, conf, gateway_conf, app, logger)
+        self.max_extra_resources = int(conf.get('max_extra_resources', -1))
         self.storlet_containers = [self.storlet_container,
                                    self.storlet_dependency]
         self.agent = 'ST'
-        self.extra_sources = []
 
         # A very initial hook for blocking requests
         self._should_block(request)
@@ -71,6 +71,7 @@ class StorletProxyHandler(StorletBaseHandler):
             raise NotStorletExecution()
         elif self.is_storlet_execution:
             self._setup_gateway()
+            self.extra_resources = self._parse_extra_resources()
         else:
             raise NotStorletExecution()
 
@@ -280,8 +281,6 @@ class StorletProxyHandler(StorletBaseHandler):
     def _call_gateway(self, resp):
         sreq = self._build_storlet_request(self.request, resp.headers,
                                            resp.app_iter)
-        if self.extra_sources:
-            sreq.extra_data_list = self.extra_sources
         return self.gateway.invocation_flow(sreq)
 
     def augment_storlet_request(self, params):
@@ -294,36 +293,60 @@ class StorletProxyHandler(StorletBaseHandler):
         for key, val in params.items():
             self.request.headers['X-Storlet-' + key] = val
 
-    def gather_extra_sources(self):
-        # (kota_): I know this is a crazy hack to set the resp
-        # dynamically so that this is a temporary way to make sure
-        # the capability, this absolutely needs cleanup more genelic
-        if 'X-Storlet-Extra-Resources' in self.request.headers:
-            try:
-                resources = list_from_csv(
-                    self.request.headers['X-Storlet-Extra-Resources'])
-                # resourece should be /container/object
-                for resource in resources:
-                    # sanity check, if it's invalid path ValueError
-                    # will be raisen
-                    swift_path = ['', self.api_version, self.account]
-                    swift_path.extend(split_path(resource, 2, 2, True))
-                    sub_req = make_subrequest(
-                        self.request.environ,
-                        'GET', '/'.join(swift_path),
-                        agent=self.agent)
-                    sub_resp = sub_req.get_response(self.app)
-                    # TODO(kota_): make this in another green thread
-                    # expicially, in parallel with primary GET
+    def _parse_extra_resources(self):
+        if 'X-Storlet-Extra-Resources' not in self.request.headers:
+            return []
 
-                    self.extra_sources.append(
-                        StorletData(
-                            self._get_user_metadata(sub_resp.headers),
-                            sub_resp.app_iter))
-            except ValueError:
-                raise HTTPBadRequest(
-                    'X-Storlet-Extra-Resource must be a csv with'
-                    '/container/object format')
+        try:
+            resources = list_from_csv(
+                self.request.headers['X-Storlet-Extra-Resources'])
+
+            if len(resources) == 0:
+                return []
+
+            if self.max_extra_resources > 0:
+                if len(resources) > self.max_extra_resources:
+                    msg = (
+                        'Too many extra resources. %d was requested but only '
+                        '%s is allowed,' %
+                        (len(resources), self.max_extra_resources)
+                    )
+                    raise HTTPBadRequest(msg.encode('utf-8'),
+                                         request=self.request)
+            elif self.max_extra_resources == 0:
+                msg = 'Usage of extra resources is not allowed'
+                raise HTTPForbidden(msg.encode('utf-8'), request=self.request)
+
+            res_list = []
+            # resourece should be /container/object
+            for resource in resources:
+                # sanity check, if it's invalid path ValueError
+                # will be raisen
+                swift_path = ['', self.api_version, self.account]
+                swift_path.extend(split_path(resource, 2, 2, True))
+                res_list.append('/'.join(swift_path))
+            return res_list
+        except ValueError:
+            msg = ('X-Storlet-Extra-Resource must be a csv with'
+                   '/container/object format')
+            raise HTTPBadRequest(msg.encode('utf-8'), request=self.request)
+
+    def _build_storlet_request(self, req, sheaders, sbody_iter):
+        sreq = super(StorletProxyHandler, self)._build_storlet_request(
+            req, sheaders, sbody_iter)
+        for resource in self.extra_resources:
+            # TODO(kota_): make this in another green thread
+            # expicially, in parallel with primary GET
+            sub_req = make_subrequest(
+                self.request.environ,
+                'GET', resource,
+                agent=self.agent)
+            sub_resp = sub_req.get_response(self.app)
+            sreq.extra_data_list.append(
+                StorletData(
+                    self._get_user_metadata(sub_resp.headers),
+                    sub_resp.app_iter))
+        return sreq
 
     @public
     def GET(self):
@@ -387,7 +410,6 @@ class StorletProxyHandler(StorletBaseHandler):
             # full object to detect if we are in SLO case,
             # and invoke Storlet only if in SLO case.
             if self.is_proxy_runnable(original_resp):
-                self.gather_extra_sources()
                 return self.apply_storlet(original_resp)
             else:
                 # Non proxy GET case: Storlet was already invoked at
@@ -470,9 +492,6 @@ class StorletProxyHandler(StorletBaseHandler):
             # Do it and fixup the user metadata headers.
             sreq = self._build_storlet_request(self.request, src_resp.headers,
                                                src_resp.app_iter)
-            self.gather_extra_sources()
-            if self.extra_sources:
-                sreq.extra_data_list = self.extra_sources
             sresp = self.gateway.invocation_flow(sreq)
             data_iter = sresp.data.data_iter
             self._set_metadata_in_headers(self.request.headers,
