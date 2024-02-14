@@ -210,6 +210,17 @@ An additional header ('X-Run-Storlet') must be provided to inform the system to 
 As with the invocation upon download, one may provide parameters to the storlet either through the URL query string or through
 the request headers.
 
+It is also possible to invoke a storlet on PUT over more then one object. This behavers similarly to storlet invocation over multiple objects
+during object download. The additional objects should be uploaded to swift in advance.
+
+::
+
+  [PUT] /v1/AUTH_1234/my_container/myobject_1
+
+  'X-Run-Storlet': 'multiinputstorlet-1.0.jar'
+  'X-Storlet-Extra-Resources': 'my_other_container/my_other_object', 'my_other_other_container/my_other_other_object'
+  'X-Auth-Token': {authorization_token}
+
 Invoke a storlet upon object copy
 ---------------------------------
 
