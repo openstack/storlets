@@ -1,0 +1,49 @@
+---
+prelude: >
+    This version includes various new functionalities to improve operation and
+    use case coverage of Storlets.
+
+features:
+  - |
+    Now storlets is tested with CentOS 9 Stream. Note that the docker-ce
+    package is required instead of the default container tool (podman) in
+    CentOS. Podman suport is still being worked on.
+
+  - |
+    Now swift middleware detects a symlink object and run applications using
+    the target object, instead of the symlink object itself.
+
+  - |
+    The new ``max_extra_resources`` option has been added to swift middleware.
+    This option determines the maximum number of extra input resources, so
+    that operators can prohibit client requests with two many extra resources,
+    which may consume large amount of resources.
+
+  - |
+    Now swift middleware supports executing storlet application in object PUT
+    with using existing objects as extra input resources. Previously it was
+    possible only in object GET.
+
+  - |
+    The following options were added to docker gateway. These options allows
+    limiting resources used by storlet application containers.
+
+    - ``container_cpu_period``
+    - ``container_cpu_quota``
+    - ``container_mem_limit``
+    - ``container_cpuset_cpus``
+    - ``container_cpuset_mems``
+    - ``container_pids_limit``
+
+  - |
+    The docker gateway no longer requires the entry point script within
+    application container images.
+
+deprecations:
+  - |
+    Some of the docker gateway options were deprecated and will be replaced
+    by the new options completely in a future release.
+
+    - ``docker_repo`` will be replaced by ``container_image_namespace``
+    - ``default_docker_image_name`` will be replaced by
+      ``default_container_image_name``
