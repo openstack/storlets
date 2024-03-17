@@ -121,9 +121,6 @@ class RunTimePaths(object):
         self.host_cache_root_dir = \
             conf.get('cache_dir',
                      os.path.join(self.host_root_dir, 'cache', 'scopes'))
-        self.host_restart_script_dir = \
-            conf.get('script_dir',
-                     os.path.join(self.host_root_dir, 'scripts'))
 
         self.host_storlet_native_lib_dir = '/usr/local/lib/storlets'
         self.sandbox_storlet_native_lib_dir = '/usr/local/lib/storlets'
