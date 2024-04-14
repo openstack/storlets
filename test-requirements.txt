@@ -10,9 +10,5 @@ testscenarios>=0.4
 testtools>=0.9.36
 python-swiftclient>=3.1.0
 python-keystoneclient
-ipython<6.0
-ipywidgets<7.6.0
-jupyter
-nbformat
 
 bashate # Apache-2.0

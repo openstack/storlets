@@ -130,7 +130,7 @@ function configure_swift_and_keystone_for_storlets {
     # Create storlet related containers and set ACLs
     start_swift
     _export_swift_os_vars
-    openstack object store account set --property Storlet-Enabled=True
+    swift post --meta "Storlet-Enabled:True"
     swift post --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER $STORLETS_STORLET_CONTAINER_NAME
     swift post --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER $STORLETS_DEPENDENCY_CONTAINER_NAME
     swift post $STORLETS_LOG_CONTAIER_NAME
