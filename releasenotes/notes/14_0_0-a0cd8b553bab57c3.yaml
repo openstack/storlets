@@ -1,0 +1,10 @@
+---
+prelude: >
+    This version is tested with OpenStack Swift 2024.2 release. A few minor
+    improvements in logging have been added.
+
+upgrade:
+  - |
+    iPython extension has been removed because it has been unmaintained for
+    several cycles and current requirements are known to be incompatible with
+    Python 3.12, which will be supported in 2025.1 release.
