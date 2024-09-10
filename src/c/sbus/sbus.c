@@ -81,8 +81,8 @@ void sbus_start_logger( const char* str_log_level, const char* container_id )
         setlogmask( LOG_EMERG );
     else
         setlogmask( LOG_UPTO( n_level ) );
-    syslog( LOG_ERR,
-            "sbus_start_logger: Started with Level  %s",
+    syslog( LOG_DEBUG,
+            "sbus_start_logger: Started with Level %s",
             str_log_level );
 }
 
