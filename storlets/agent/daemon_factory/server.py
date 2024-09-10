@@ -529,7 +529,8 @@ def main():
     logger.debug("Daemon factory started")
 
     try:
-        SBus.start_logger("DEBUG", container_id=opts.container_id)
+        SBus.start_logger(opts.log_level.upper(),
+                          container_id=opts.container_id)
         # create an instance of daemon_factory
         factory = StorletDaemonFactory(opts.sbus_path, logger,
                                        opts.container_id)
