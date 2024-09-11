@@ -260,7 +260,8 @@ def main():
     logger.debug("Storlet Daemon started")
 
     try:
-        SBus.start_logger("DEBUG", container_id=opts.container_id)
+        SBus.start_logger(opts.log_level.upper(),
+                          container_id=opts.container_id)
 
         # create an instance of storlet daemon
         daemon = StorletDaemon(opts.storlet_name, opts.sbus_path,
