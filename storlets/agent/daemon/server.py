@@ -270,5 +270,5 @@ def main():
         sys.exit(daemon.main_loop())
 
     except Exception:
-        logger.error('Unhandled exception')
+        logger.exception('Unhandled exception')
         sys.exit(EXIT_FAILURE)
