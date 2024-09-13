@@ -43,12 +43,12 @@ SWIFT_DEFAULT_USER=tester
 SWIFT_DEFAULT_USER_PWD=testing
 SWIFT_MEMBER_USER=tester_member
 SWIFT_MEMBER_USER_PWD=member
+SWIFT_DEFAULT_USER_DOMAIN_ID=${SWIFT_DEFAULT_USER_DOMAIN_ID:-default}
+SWIFT_DEFAULT_PROJECT_DOMAIN_ID=${SWIFT_DEFAULT_PROJECT_DOMAIN_ID:-default}
 
 SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
 
 # Storlets install tunables
-STORLETS_DEFAULT_USER_DOMAIN_ID=${STORLETS_DEFAULT_USER_DOMAIN_ID:-default}
-STORLETS_DEFAULT_PROJECT_DOMAIN_ID=${STORLETS_DEFAULT_PROJECT_DOMAIN_ID:-default}
 STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/var/lib/storlets}
 if is_fedora; then
     STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-quay.io/centos/centos:stream9}
@@ -77,57 +77,29 @@ TMP_REGISTRY_PREFIX=/tmp/registry
 # Functions
 # ---------
 
-function _export_os_vars {
-    export OS_IDENTITY_API_VERSION=3
-    export OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
-    export OS_REGION_NAME=RegionOne
-}
-
-function _export_keystone_os_vars {
-    _export_os_vars
-    export OS_USERNAME=$ADMIN_USER
-    export OS_USER_DOMAIN_ID=$STORLETS_DEFAULT_USER_DOMAIN_ID
-    export OS_PASSWORD=$ADMIN_PASSWORD
-    export OS_PROJECT_NAME=$ADMIN_USER
-    export OS_PROJECT_DOMAIN_ID=$STORLETS_DEFAULT_PROJECT_DOMAIN_ID
-}
-
 function _export_swift_os_vars {
-    _export_os_vars
+    export OS_IDENTITY_API_VERSION=3
+    export OS_AUTH_URL=$KEYSTONE_SERVICE_URI
+    export OS_REGION_NAME=$REGION_NAME
     export OS_USERNAME=$SWIFT_DEFAULT_USER
-    export OS_USER_DOMAIN_ID=$STORLETS_DEFAULT_USER_DOMAIN_ID
+    export OS_USER_DOMAIN_ID=$SWIFT_DEFAULT_USER_DOMAIN_ID
     export OS_PASSWORD=$SWIFT_DEFAULT_USER_PWD
     export OS_PROJECT_NAME=$SWIFT_DEFAULT_PROJECT
-    export OS_PROJECT_DOMAIN_ID=$STORLETS_DEFAULT_PROJECT_DOMAIN_ID
+    export OS_PROJECT_DOMAIN_ID=$SWIFT_DEFAULT_PROJECT_DOMAIN_ID
 }
 
 function configure_swift_and_keystone_for_storlets {
     # Add project and users to Keystone
-    _export_keystone_os_vars
-    project_test_created=$(openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | wc -l)
-    if [ $project_test_created -eq 0 ]; then
-        openstack project create $SWIFT_DEFAULT_PROJECT
-    fi
-    user_tester_created=$(openstack user list | grep -w $SWIFT_DEFAULT_USER | wc -l)
-    if [ $user_tester_created -eq 0 ]; then
-        openstack user create --project $SWIFT_DEFAULT_PROJECT \
-            --password $SWIFT_DEFAULT_USER_PWD \
-            --domain $STORLETS_DEFAULT_USER_DOMAIN_ID \
-            $SWIFT_DEFAULT_USER
-        openstack role add --user $SWIFT_DEFAULT_USER --project $SWIFT_DEFAULT_PROJECT admin
-    fi
-    member_user_tester_created=$(openstack user list | grep -w $SWIFT_MEMBER_USER | wc -l)
-    if [ $member_user_tester_created -eq 0 ]; then
-        role_member_created=$(openstack role list | grep -w _member_ | wc -l)
-        if [ $role_member_created -eq 0 ]; then
-            openstack role create _member_
-        fi
-        openstack user create --project $SWIFT_DEFAULT_PROJECT \
-            --password $SWIFT_MEMBER_USER_PWD \
-            --domain $STORLETS_DEFAULT_USER_DOMAIN_ID \
-            $SWIFT_MEMBER_USER
-        openstack role add --user $SWIFT_MEMBER_USER --project $SWIFT_DEFAULT_PROJECT _member_
-    fi
+    get_or_create_project $SWIFT_DEFAULT_PROJECT $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+    get_or_create_user $SWIFT_DEFAULT_USER $SWIFT_DEFAULT_USER_PWD \
+        $SWIFT_DEFAULT_USER_DOMAIN_ID
+    get_or_add_user_project_role admin $SWIFT_DEFAULT_USER $SWIFT_DEFAULT_PROJECT \
+        $SWIFT_DEFAULT_USER_DOMAIN_ID $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+
+    get_or_create_user $SWIFT_MEMBER_USER $SWIFT_MEMBER_USER_PWD \
+        $SWIFT_DEFAULT_USER_DOMAIN_ID
+    get_or_add_user_project_role anotherrole $SWIFT_MEMBER_USER $SWIFT_DEFAULT_PROJECT \
+        $SWIFT_DEFAULT_USER_DOMAIN_ID $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
 
     # Modify relevant Swift configuration files
     _modify_swift_conf
@@ -347,7 +319,7 @@ function create_default_tenant_image {
 
 function create_test_config_file {
     testfile=${REPO_DIR}/test.conf
-    iniset ${testfile} general keystone_default_domain $STORLETS_DEFAULT_PROJECT_DOMAIN_ID
+    iniset ${testfile} general keystone_default_domain $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
     iniset ${testfile} general keystone_public_url $KEYSTONE_PUBLIC_URL
     iniset ${testfile} general storlets_default_project_name $SWIFT_DEFAULT_PROJECT
     iniset ${testfile} general storlets_default_project_user_name $SWIFT_DEFAULT_USER
