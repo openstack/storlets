@@ -54,7 +54,6 @@ function start_s2aio {
 
 function _stop_s2aio {
     set +e
-    swift-init --run-dir ${SWIFT_DATA_DIR}/run/ all stop
     stop_keystone
     stop_swift
     set -e
