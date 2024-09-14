@@ -12,6 +12,7 @@
 #    under the License.
 
 set -e
+set -o xtrace
 
 REPO_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 DEVSTACK_DIR=~/devstack
@@ -19,7 +20,6 @@ SWIFT_IP=127.0.0.1
 KEYSTONE_IP=$SWIFT_IP
 KEYSTONE_PROTOCOL=http
 KEYSTONE_PUBLIC_URL=${KEYSTONE_PROTOCOL}://${KEYSTONE_IP}/identity/v3
-IDENTITY_API_VERSION=3
 
 SWIFT_DATA_DIR=/opt/stack/data/swift
 
@@ -76,7 +76,6 @@ function install_s2aio {
     install_swift_using_devstack
     install_storlets
 
-    echo "export OS_IDENTITY_API_VERSION=$KEYSTONE_IDENTITY_API_VERSION" >> ~/.bashrc
     echo "export OS_USERNAME=$SWIFT_DEFAULT_USER; export OS_PASSWORD=$SWIFT_DEFAULT_USER_PWD" >> ~/.bashrc
     echo "export OS_PROJECT_NAME=$SWIFT_DEFAULT_PROJECT; export OS_DEFAULT_DOMAIN=default" >> ~/.bashrc
     echo "export OS_AUTH_URL=$KEYSTONE_PUBLIC_URL" >> ~/.bashrc
@@ -122,3 +121,4 @@ case $COMMAND in
 esac
 
 set +e
+set +o xtrace
