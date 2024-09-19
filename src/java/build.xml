@@ -30,8 +30,8 @@
             dest="dependencies/logback-core-1.4.14.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.12/slf4j-api-2.0.12.jar"
-            dest="dependencies/slf4j-api-2.0.12.jar"
+        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar"
+            dest="dependencies/slf4j-api-2.0.16.jar"
             verbose="true"
             usetimestamp="true"/>
     </target>

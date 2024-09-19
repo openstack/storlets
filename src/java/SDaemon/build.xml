@@ -33,7 +33,7 @@
                 <pathelement
                     path="../dependencies/json-simple-1.1.1.jar"/>
                 <pathelement
-                    path="../dependencies/slf4j-api-2.0.12.jar"/>
+                    path="../dependencies/slf4j-api-2.0.16.jar"/>
                 <pathelement
                     path="../dependencies/logback-classic-1.4.14.jar"/>
                 <pathelement
