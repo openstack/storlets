@@ -31,8 +31,8 @@
                 <pathelement path="../SBus/bin/SBusJavaFacade.jar"/>
                 <pathelement path="../dependencies/json-simple-1.1.1.jar"/>
                 <pathelement path="../dependencies/slf4j-api-2.0.16.jar"/>
-                <pathelement path="../dependencies/logback-classic-1.4.14.jar"/>
-                <pathelement path="../dependencies/logback-core-1.4.14.jar"/>
+                <pathelement path="../dependencies/logback-classic-1.5.8.jar"/>
+                <pathelement path="../dependencies/logback-core-1.5.8.jar"/>
                 <pathelement path="."/>
             </classpath>
         </javac>

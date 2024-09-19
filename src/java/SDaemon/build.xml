@@ -35,9 +35,9 @@
                 <pathelement
                     path="../dependencies/slf4j-api-2.0.16.jar"/>
                 <pathelement
-                    path="../dependencies/logback-classic-1.4.14.jar"/>
+                    path="../dependencies/logback-classic-1.5.8.jar"/>
                 <pathelement
-                    path="../dependencies/logback-core-1.4.14.jar"/>
+                    path="../dependencies/logback-core-1.5.8.jar"/>
                 <pathelement path="."/>
             </classpath>
             <compilerarg value="-Xlint"/>
