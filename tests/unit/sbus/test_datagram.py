@@ -16,7 +16,7 @@
 import json
 import unittest
 import storlets.sbus.file_description as sbus_fd
-from storlets.sbus.datagram import SBusFileDescriptor, SBusDatagram, \
+from storlets.sbus.datagram import SBusFileDescriptor, \
     SBusServiceDatagram, SBusExecuteDatagram, build_datagram, \
     build_datagram_from_raw_message
 from storlets.sbus.command import SBUS_CMD_PING, SBUS_CMD_EXECUTE
@@ -51,27 +51,6 @@ class TestSBusFileDescriptor(unittest.TestCase):
                          fd.storlets_metadata)
         self.assertEqual({'storage_key': 'storage_value'},
                          fd.storage_metadata)
-
-
-class TestSBusDatagram(unittest.TestCase):
-    def test_check_required_fdtypes_not_implemented(self):
-        # SBusDatagram designed not to be called independently
-        with self.assertRaises(NotImplementedError) as err:
-            SBusDatagram('', [], [])
-        self.assertEqual(
-            'SBusDatagram class should not be initialized as bare',
-            err.exception.args[0])
-
-    def test_invalid_child_class_definition(self):
-        # no definition for _required_fdtypes
-        class InvalidSBusDatagram(SBusDatagram):
-            pass
-
-        with self.assertRaises(NotImplementedError) as err:
-            InvalidSBusDatagram('', [], [])
-        self.assertEqual(
-            'SBusDatagram class should define _required_fdtypes',
-            err.exception.args[0])
 
 
 class SBusDatagramTestMixin(object):

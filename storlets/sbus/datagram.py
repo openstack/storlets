@@ -12,6 +12,7 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
 import copy
 import json
 
@@ -47,14 +48,15 @@ class SBusFileDescriptor(object):
         return cls(fdtype, fileno, storlets_metadata, storage_metadata)
 
 
-class SBusDatagram(object):
+class SBusDatagram(object, metaclass=abc.ABCMeta):
     """
     The manager class for the datagram passed over sbus protocol
     """
 
-    # Each child Datagram should define what fd types are expected with
-    # list format
-    _required_fdtypes = None
+    @property
+    @abc.abstractmethod
+    def _required_fdtypes(self):
+        pass
 
     def __init__(self, command, sfds, params=None, task_id=None):
         """
@@ -67,9 +69,6 @@ class SBusDatagram(object):
         :param task_id: An optional string task id. This is currently used for
                         cancel command
         """
-        if type(self) == SBusDatagram:
-            raise NotImplementedError(
-                'SBusDatagram class should not be initialized as bare')
         self.command = command
         fdtypes = [sfd.fdtype for sfd in sfds]
         self._check_required_fdtypes(fdtypes)
@@ -145,11 +144,6 @@ class SBusDatagram(object):
             return ret[0]
 
     def _check_required_fdtypes(self, given_fdtypes):
-        if self._required_fdtypes is None:
-            raise NotImplementedError(
-                'SBusDatagram class should define _required_fdtypes')
-        # the first len(self._required_fdtypes) types should be fit
-        # to the required list
         if given_fdtypes[:len(self._required_fdtypes)] != \
                 self._required_fdtypes:
             raise ValueError('Fd type mismatch given_fdtypes:%s \
@@ -178,7 +172,9 @@ class SBusServiceDatagram(SBusDatagram):
      - SBUS_CMD_PING
      - SBUS_CMD_CANCEL
     """
-    _required_fdtypes = [sbus_fd.SBUS_FD_SERVICE_OUT]
+    @property
+    def _required_fdtypes(self):
+        return [sbus_fd.SBUS_FD_SERVICE_OUT]
 
     def __init__(self, command, sfds, params=None, task_id=None):
         super(SBusServiceDatagram, self).__init__(
@@ -190,11 +186,16 @@ class SBusServiceDatagram(SBusDatagram):
 
 
 class SBusExecuteDatagram(SBusDatagram):
-    _required_fdtypes = [sbus_fd.SBUS_FD_SERVICE_OUT,
-                         sbus_fd.SBUS_FD_INPUT_OBJECT,
-                         sbus_fd.SBUS_FD_OUTPUT_OBJECT,
-                         sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
-                         sbus_fd.SBUS_FD_LOGGER]
+
+    @property
+    def _required_fdtypes(self):
+        return [
+            sbus_fd.SBUS_FD_SERVICE_OUT,
+            sbus_fd.SBUS_FD_INPUT_OBJECT,
+            sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+            sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
+            sbus_fd.SBUS_FD_LOGGER
+        ]
 
     def __init__(self, command, sfds, params=None, task_id=None):
         # TODO(kota_): the args command is not used in ExecuteDatagram

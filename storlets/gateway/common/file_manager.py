@@ -12,9 +12,10 @@
 # implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import abc
 
 
-class FileManager(object):
+class FileManager(object, metaclass=abc.ABCMeta):
     """
     This class is used to load/save files required for storlet execution
     from/into the storage which also stores data to be processed
@@ -23,22 +24,25 @@ class FileManager(object):
     def __init__(self):
         pass
 
+    @abc.abstractmethod
     def get_storlet(self, name):
         """
         Load storlet file content
 
         :param name: storlet file name
         """
-        raise NotImplementedError()
+        pass
 
+    @abc.abstractmethod
     def get_dependency(self, name):
         """
         Load dependency file content
 
         :param name: dependency file name
         """
-        raise NotImplementedError()
+        pass
 
+    @abc.abstractmethod
     def put_log(self, name, fobj):
         """
         Save storlet log file to storage
@@ -46,4 +50,4 @@ class FileManager(object):
         :param name: log file name
         :param data_iter: File Object
         """
-        raise NotImplementedError()
+        pass
