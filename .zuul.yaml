@@ -6,10 +6,21 @@
     check:
       jobs:
         - storlets-functional
+        - storlets-functional-jammy
         - storlets-functional-centos-9-stream
     gate:
       jobs:
         - storlets-functional
+        - storlets-functional-jammy
+
+
+# TODO(gmann): As per the 2025.1 testing runtime, we need to run at least
+# one job on jammy. This job can be removed in the next cycle (2025.1).
+- job:
+    name: storlets-functional-jammy
+    description: This job testing on Ubuntu jammy(22.04)
+    parent: storlets-functional
+    nodeset: ubuntu-jammy
 
 - job:
     name: storlets-functional
