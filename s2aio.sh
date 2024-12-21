@@ -37,9 +37,11 @@ function _prepare_devstack_env {
         cp devstack/localrc.sample $DEVSTACK_DIR/localrc
     fi
 
-    source $DEVSTACK_DIR/stackrc
     source $DEVSTACK_DIR/functions
-    source $DEVSTACK_DIR/functions-common
+    if [[ -z "$os_PACKAGE" ]]; then
+        GetOSVersion
+    fi
+    source $DEVSTACK_DIR/stackrc
     source $DEVSTACK_DIR/lib/keystone
     source $DEVSTACK_DIR/lib/swift
     source devstack/plugin.sh

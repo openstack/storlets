@@ -53,7 +53,8 @@ STORLETS_DOCKER_DEVICE=${STORLETS_DOCKER_DEVICE:-/var/lib/storlets}
 if is_fedora; then
     STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-quay.io/centos/centos:stream9}
 else
-    STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:22.04}
+    ubuntu_version=$(source /etc/os-release ; echo $VERSION_ID)
+    STORLETS_DOCKER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:$ubuntu_version}
 fi
 STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
 STORLETS_SWIFT_RUNTIME_GROUP=${STORLETS_SWIFT_RUNTIME_GROUP:-$USER}
@@ -71,6 +72,8 @@ STORLETS_PIPES_DIR=${STORLETS_PIPES_DIR:-"$STORLETS_DOCKER_DEVICE"/pipes/scopes}
 STORLETS_RESTART_CONTAINER_TIMEOUT=${STORLETS_RESTART_CONTAINER_TIMEOUT:-3}
 STORLETS_RUNTIME_TIMEOUT=${STORLETS_RUNTIME_TIMEOUT:-40}
 STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-11}
+
+STORLETS_BIN_DIR=$(get_python_exec_prefix)
 
 TMP_REGISTRY_PREFIX=/tmp/registry
 
@@ -108,10 +111,14 @@ function configure_swift_and_keystone_for_storlets {
     # Create storlet related containers and set ACLs
     start_swift
     _export_swift_os_vars
-    swift post --meta "Storlet-Enabled:True"
-    swift post --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER $STORLETS_STORLET_CONTAINER_NAME
-    swift post --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER $STORLETS_DEPENDENCY_CONTAINER_NAME
-    swift post $STORLETS_LOG_CONTAIER_NAME
+    ${STORLETS_BIN_DIR}/swift post --meta "Storlet-Enabled:True"
+    ${STORLETS_BIN_DIR}/swift post \
+        --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER \
+        $STORLETS_STORLET_CONTAINER_NAME
+    ${STORLETS_BIN_DIR}/swift post \
+        --read-acl $SWIFT_DEFAULT_PROJECT:$SWIFT_MEMBER_USER \
+        $STORLETS_DEPENDENCY_CONTAINER_NAME
+    ${STORLETS_BIN_DIR}/swift post $STORLETS_LOG_CONTAIER_NAME
 }
 
 function _install_docker {
@@ -206,9 +213,7 @@ function install_storlets_code {
     # from docker container.
     sudo mkdir -p -m 755 /usr/local/lib/storlets/python
 
-    # NOTE(takashi): We need --no-deps to avoid enum34 installed in py 2 env,
-    #                which causes failure in py3 execution.
-    pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
+    GLOBAL_VENV=False pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
     sudo mkdir -p -m 755 /usr/local/libexec/storlets
     for bin_file in storlets-daemon storlets-daemon-factory ; do
         sudo cp ./bin/${bin_file} /usr/local/libexec/storlets/

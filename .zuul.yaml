@@ -27,7 +27,7 @@
     pre-run: playbooks/storlets-functional/pre.yaml
     run: playbooks/storlets-functional/run.yaml
     post-run: playbooks/storlets-functional/post.yaml
-    nodeset: ubuntu-jammy
+    nodeset: ubuntu-noble
     timeout: 2400
     irrelevant-files:
       - ^api-ref/.*$
