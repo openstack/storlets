@@ -3,13 +3,13 @@
   tasks:
     - name: Create log directory to pull
       file:
-        path: '{{ zuul.project.src_dir }}/logs'
+        path: '{{ ansible_user_dir }}/logs'
         state: directory
 
     - name: Prepare the logs into user space (Ubuntu)
       copy:
         src: /var/log/syslog
-        dest: "{{ zuul.project.src_dir }}/logs/syslog.log"
+        dest: "{{ ansible_user_dir }}/logs/syslog.log"
         mode: 0644
         remote_src: yes
       become: yes
@@ -19,17 +19,27 @@
     - name: Prepare the logs into user space (CentOS)
       copy:
         src: /var/log/messages
-        dest: "{{ zuul.project.src_dir }}/logs/syslog.log"
+        dest: "{{ ansible_user_dir }}/logs/syslog.log"
         mode: 0644
         remote_src: yes
       become: yes
       when:
         - ansible_os_family == 'RedHat'
 
+    - name: Capture command outputs
+      shell:
+        cmd: |
+          set -e
+          set -x
+          export WORKSPACE={{ansible_user_dir}}
+          ./tools/copy_logs.sh
+        executable: /bin/bash
+        chdir: 'src/{{ zuul.project.canonical_name }}'
+
     - name: Copy logs from worker nodes to executor node
       synchronize:
         # TODO: make it sort of tox_envdir
-        src: '{{ zuul.project.src_dir }}/logs'
+        src: '{{ ansible_user_dir }}/logs'
         dest: '{{ zuul.executor.log_root }}'
         mode: pull
         copy_links: true
