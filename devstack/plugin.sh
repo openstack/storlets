@@ -187,35 +187,6 @@ function create_base_jre_image {
     cd -
 }
 
-function create_logback_xml {
-    sudo tee /usr/local/lib/storlets/logback.xml <<EOF >/dev/null
-<configuration>
-  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-    <file>/tmp/SDaemon.log</file>
-    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- daily rollover. Make sure the path matches the one in the file element or else
-             the rollover logs are placed in the working directory. -->
-            <fileNamePattern>/srv/logs/application_%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-
-            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
-                <maxFileSize>1MB</maxFileSize>
-            </timeBasedFileNamingAndTriggeringPolicy>
-            <!-- keep 30 days' worth of history -->
-            <maxHistory>30</maxHistory>
-    </rollingPolicy>
-    <encoder>
-        <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
-    </encoder>
-  </appender>
-
-  <root level="TRACE">
-    <appender-ref ref="FILE" />
-  </root>
-</configuration>
-EOF
-    sudo chmod 0744 /usr/local/lib/storlets/logback.xml
-}
-
 function install_storlets_code {
     echo "Installing storlets"
     cd $REPO_DIR
@@ -342,9 +313,6 @@ function install_storlets {
     echo "Create Docker images"
     create_base_jre_image
     create_default_tenant_image
-
-    echo "Create logback xml file"
-    create_logback_xml
 
     echo "Create test configuration file"
     create_test_config_file
