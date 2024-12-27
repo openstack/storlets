@@ -7,45 +7,24 @@
         state: directory
 
     - name: Prepare the logs into user space (Ubuntu)
-      shell: "egrep {{ item }} /var/log/syslog > {{ zuul.project.src_dir }}/logs/{{ item }}.log"
-      with_items:
-        - "account-server"
-        - "container-server"
-        - "object-server"
-        - "proxy-server"
-        - "ansible"
-        - "storlets-daemon"
-        - "daemon-factory"
+      copy:
+        src: /var/log/syslog
+        dest: "{{ zuul.project.src_dir }}/logs/syslog.log"
+        mode: 0644
+        remote_src: yes
       become: yes
       when:
         - ansible_os_family == 'Debian'
 
     - name: Prepare the logs into user space (CentOS)
-      shell: "egrep {{ item }} /var/log/messages > {{ zuul.project.src_dir }}/logs/{{ item }}.log"
-      with_items:
-        - "account-server"
-        - "container-server"
-        - "object-server"
-        - "proxy-server"
-        - "ansible"
-        - "storlets-daemon"
-        - "daemon-factory"
+      copy:
+        src: /var/log/messages
+        dest: "{{ zuul.project.src_dir }}/logs/syslog.log"
+        mode: 0644
+        remote_src: yes
       become: yes
       when:
         - ansible_os_family == 'RedHat'
-
-    - name: Change log permisson as readable
-      file:
-        path: "{{ zuul.project.src_dir }}/logs/{{ item }}.log"
-        mode: 0644
-      with_items:
-        - "account-server"
-        - "container-server"
-        - "object-server"
-        - "proxy-server"
-        - "ansible"
-        - "storlets-daemon"
-        - "daemon-factory"
 
     - name: Copy logs from worker nodes to executor node
       synchronize:
