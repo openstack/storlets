@@ -117,12 +117,14 @@ function configure_swift_and_keystone_for_storlets {
 function _install_docker {
     if is_fedora; then
         # NOTE(tkajinam): install_docker.sh requires the yum command
-        sudo dnf install -y yum
+        install_package yum
+        wget http://get.docker.com -O install_docker.sh
+        chmod 755 install_docker.sh
+        sudo bash -x install_docker.sh
+        rm install_docker.sh
+    else
+        install_package docker.io
     fi
-    wget http://get.docker.com -O install_docker.sh
-    chmod 755 install_docker.sh
-    sudo bash -x install_docker.sh
-    rm install_docker.sh
 
     # Add swift user to docker group so that the user can manage docker
     # containers without sudo
