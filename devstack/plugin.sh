@@ -148,7 +148,8 @@ function prepare_storlets_install {
     _install_docker
 
     if is_fedora; then
-        install_package java-${STORLETS_JDK_VERSION}-openjdk-devel ant
+        install_package java-${STORLETS_JDK_VERSION}-openjdk-devel \
+            ant-openjdk${STORLETS_JDK_VERSION} ant
         install_package python3 python3-devel
     else
         install_package openjdk-${STORLETS_JDK_VERSION}-jdk-headless ant
