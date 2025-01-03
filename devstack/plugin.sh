@@ -164,7 +164,8 @@ function _generate_jre_dockerfile {
 FROM $STORLETS_DOCKER_BASE_IMG
 MAINTAINER root
 RUN dnf install ${PYTHON_PACKAGES} ${JDK_PACKAGE} util-linux-core -y && \
-    dnf clean all
+    dnf clean all && \
+    rm -rf /var/cache/dnf
 EOF
     else
         JDK_PACKAGE="openjdk-${STORLETS_JDK_VERSION}-jdk-headless"
@@ -173,8 +174,9 @@ EOF
 FROM $STORLETS_DOCKER_BASE_IMG
 MAINTAINER root
 RUN apt-get update && \
-    apt-get install ${PYTHON_PACKAGES} ${JDK_PACKAGE} -y && \
-    apt-get clean
+    apt-get install -y ${PYTHON_PACKAGES} ${JDK_PACKAGE} && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 EOF
     fi
 }
