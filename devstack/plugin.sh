@@ -211,7 +211,7 @@ function install_storlets_code {
     pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
     sudo mkdir -p -m 755 /usr/local/libexec/storlets
     for bin_file in storlets-daemon storlets-daemon-factory ; do
-        sudo cp `which ${bin_file}` /usr/local/libexec/storlets/
+        sudo cp ./bin/${bin_file} /usr/local/libexec/storlets/
     done
 
     sudo mkdir -p -m 0755 $STORLETS_DOCKER_DEVICE
