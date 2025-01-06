@@ -735,4 +735,4 @@ class StorletInvocationProtocol(object):
             # so we should catch an exception and suppress it here
             self.logger.exception('Unexpected error at writing input data')
         finally:
-            self._safe_close(fd)
+            self._safe_close([fd])
