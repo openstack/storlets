@@ -9,5 +9,11 @@
         executable: /bin/bash
         chdir: 'src/{{ zuul.project.canonical_name }}'
 
+    - shell:
+        cmd: |
+          ant build_storlets
+        executable: /bin/bash
+        chdir: 'src/{{ zuul.project.canonical_name }}'
+
   roles:
     - ensure-tox

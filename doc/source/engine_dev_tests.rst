@@ -50,12 +50,12 @@ The functional tests can be invoked using:
 
 ::
 
-    ./.functests dev
+    tox -e func
 
 .. note::
 
   To run the entire set of functional tests, which takes longer run:
-  ./.functests jenkins
+  tox -e func -- -A '!slow'
 
 from the repo root.
 

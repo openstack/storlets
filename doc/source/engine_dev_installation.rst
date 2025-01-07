@@ -388,4 +388,5 @@ Step 2: Run the functional tests
 ::
 
     cd $HOME/storlets
-    ./.functests dev
+    ant build_storlets
+    tox -e func
