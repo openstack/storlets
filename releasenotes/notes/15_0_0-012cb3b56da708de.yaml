@@ -1,0 +1,18 @@
+---
+prelude: >
+    This release supports the latest OpenStack Swift release and the updated
+    tested runtimes globally defined in OpenStack project.
+
+features:
+  - |
+    Now Storlets is tested in Ubuntu Noble (24.04).
+
+fixes:
+  - |
+    Re-added the static script for storlet-daeamon and storlet-daemon-factory.
+    These can be used in case the script generated during installation does not
+    work as start script in container (For example when storlets is installed
+    in venv while system python is used to launch the daemons). This is
+    especially useful in Ubuntu Noble which does not allow direct installation
+    to system python using pip.
+
