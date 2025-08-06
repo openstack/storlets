@@ -19,7 +19,6 @@ Create a localrc file under the devstack repository root directory:
 
 ::
 
-    ENABLE_HTTPD_MOD_WSGI_SERVICES=False
     ENABLED_SERVICES=key,swift,mysql
     HOST_IP=127.0.0.1
     ADMIN_PASSWORD=admin
