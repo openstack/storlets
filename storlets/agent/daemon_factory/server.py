@@ -102,7 +102,7 @@ class StorletDaemonFactory(SBusServer):
         pargs = [python_interpreter, str_daemon_main_file, storlet_name,
                  uds_path, log_level, str(pool_size), self.container_id]
 
-        python_path = os.path.join('/home/swift/', storlet_name)
+        python_path = os.path.join('/var/lib/storlets', storlet_name)
         if os.environ.get('PYTHONPATH'):
             python_path = os.environ['PYTHONPATH'] + ':' + python_path
         env = {'PYTHONPATH': python_path}

@@ -86,7 +86,7 @@ class RunTimePaths(object):
     directory.
     This directory is called the storlet directories.
     On the host side it is of the form <storlet_dir>/<scope>/<storlet_name>
-    On the sandbox side it is of the form /home/swift/<storlet_name>
+    On the sandbox side it is of the form /var/lib/storlets/<storlet_name>
     <storlet_dir> comes from the configuration
     <storlet_name> is the prefix of the jar.
 
@@ -107,7 +107,7 @@ class RunTimePaths(object):
         self.factory_pipe_name = 'factory_pipe'
         self.sandbox_pipe_dir = '/mnt/channels'
 
-        self.sandbox_storlet_base_dir = '/home/swift'
+        self.sandbox_storlet_base_dir = '/var/lib/storlets'
         self.host_root_dir = conf.get('host_root', '/var/lib/storlets')
         self.host_pipe_root_dir = \
             conf.get('pipes_dir',

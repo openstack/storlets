@@ -18,7 +18,6 @@
 # - ``functions`` file
 # - ``functions-common`` file
 # - ``STACK_USER`` must be defined
-# - ``SWIFT_DATA_DIR`` or ``DATA_DIR`` must be defined
 # - ``lib/swift`` file
 # - ``lib/keystone`` file
 #
@@ -49,7 +48,9 @@ SWIFT_DEFAULT_PROJECT_DOMAIN_ID=${SWIFT_DEFAULT_PROJECT_DOMAIN_ID:-default}
 SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
 
 # Storlets install tunables
-STORLETS_CONTAINER_DEVICE=${STORLETS_CONTAINER_DEVICE:-/var/lib/storlets}
+STORLETS_BIN_DIR=$(get_python_exec_prefix)
+# TODO(tkajinam): Move this to DATA_DIR
+STORLETS_DATA_DIR=${STORLETS_DATA_DIR:-/var/lib/storlets}
 if is_fedora; then
     STORLETS_CONTAINER_BASE_IMG=${STORLETS_CONTAINER_BASE_IMG:-quay.io/centos/centos:stream9}
 else
@@ -64,18 +65,14 @@ STORLETS_LOG_CONTAIER_NAME=${STORLETS_LOG_CONTAIER_NAME:-log}
 STORLETS_GATEWAY_MODULE=${STORLETS_GATEWAY_MODULE:-docker}
 STORLETS_GATEWAY_CONF_FILE=${STORLETS_GATEWAY_CONF_FILE:-${SWIFT_CONF_DIR}/storlet_gateway.conf}
 STORLETS_PROXY_EXECUTION_ONLY=${STORLETS_PROXY_EXECUTION_ONLY:-false}
-STORLETS_SCRIPTS_DIR=${STORLETS_SCRIPTS_DIR:-"$STORLETS_CONTAINER_DEVICE"/scripts}
-STORLETS_STORLETS_DIR=${STORLETS_STORLETS_DIR:-"$STORLETS_CONTAINER_DEVICE"/storlets/scopes}
-STORLETS_LOGS_DIR=${STORLETS_LOGS_DIR:-"$STORLETS_CONTAINER_DEVICE"/logs/scopes}
-STORLETS_CACHE_DIR=${STORLETS_CACHE_DIR:-"$STORLETS_CONTAINER_DEVICE"/cache/scopes}
-STORLETS_PIPES_DIR=${STORLETS_PIPES_DIR:-"$STORLETS_CONTAINER_DEVICE"/pipes/scopes}
+STORLETS_SCRIPTS_DIR=${STORLETS_SCRIPTS_DIR:-${STORLETS_DATA_DIR}/scripts}
+STORLETS_STORLETS_DIR=${STORLETS_STORLETS_DIR:-${STORLETS_DATA_DIR}storlets/scopes}
+STORLETS_LOGS_DIR=${STORLETS_LOGS_DIR:-${STORLETS_DATA_DIR}logs/scopes}
+STORLETS_CACHE_DIR=${STORLETS_CACHE_DIR:-${STORLETS_DATA_DIR}cache/scopes}
+STORLETS_PIPES_DIR=${STORLETS_PIPES_DIR:-${STORLETS_DATA_DIR}pipes/scopes}
 STORLETS_RESTART_CONTAINER_TIMEOUT=${STORLETS_RESTART_CONTAINER_TIMEOUT:-3}
 STORLETS_RUNTIME_TIMEOUT=${STORLETS_RUNTIME_TIMEOUT:-40}
 STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-11}
-
-STORLETS_BIN_DIR=$(get_python_exec_prefix)
-
-TMP_REGISTRY_PREFIX=/tmp/registry
 
 if [ $STORLETS_GATEWAY_MODULE == 'podman' ]; then
     CONTAINER_CMD=podman
@@ -191,7 +188,7 @@ function prepare_storlets_install {
 }
 
 function _generate_jre_dockerfile {
-    JRE_DOCKERFILE=${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image/Dockerfile
+    JRE_DOCKERFILE=${STORLETS_DATA_DIR}/images/storlet_engine_image/Dockerfile
 
     if is_fedora; then
         JDK_PACKAGE="java-${STORLETS_JDK_VERSION}-openjdk-headless"
@@ -223,9 +220,9 @@ EOF
 function create_base_jre_image {
     echo "Create base jre image"
     $CONTAINER_CMD pull $STORLETS_CONTAINER_BASE_IMG
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image
+    mkdir -p ${STORLETS_DATA_DIR}/images/storlet_engine_image
     _generate_jre_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/storlet_engine_image
+    cd ${STORLETS_DATA_DIR}/images/storlet_engine_image
     $CONTAINER_CMD build -t storlet_engine_image .
     cd -
 }
@@ -251,8 +248,8 @@ function install_storlets_code {
         sudo cp ./bin/${bin_file} /usr/local/libexec/storlets/
     done
 
-    sudo mkdir -p -m 0755 $STORLETS_CONTAINER_DEVICE
-    sudo chown -R "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" $STORLETS_CONTAINER_DEVICE
+    sudo mkdir -p -m 0755 $STORLETS_DATA_DIR
+    sudo chown -R "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" $STORLETS_DATA_DIR
 
     # NOTE(takashi): We should cleanup egg-info directory here, otherwise it
     #                causes permission denined when installing package by tox.
@@ -305,10 +302,7 @@ function _modify_swift_conf {
 
 function _generate_gateway_conf {
     iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlet_logcontainer $STORLETS_LOG_CONTAIER_NAME
-    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT cache_dir $STORLETS_CACHE_DIR
-    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT log_dir $STORLETS_LOGS_DIR
-    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlets_dir $STORLETS_STORLETS_DIR
-    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT pipes_dir $STORLETS_PIPES_DIR
+    iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT host_root $STORLETS_DATA_DIR
     iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT restart_linux_container_timeout $STORLETS_RESTART_CONTAINER_TIMEOUT
     iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlet_timeout $STORLETS_RUNTIME_TIMEOUT
     if [[ $STORLETS_GATEWAY_MODULE == 'podman' ]]; then
@@ -318,7 +312,7 @@ function _generate_gateway_conf {
 }
 
 function _generate_default_tenant_dockerfile {
-    cat <<EOF > ${TMP_REGISTRY_PREFIX}/repositories/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
+    cat <<EOF > ${STORLETS_DATA_DIR}/images/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
 FROM storlet_engine_image
 MAINTAINER root
 EOF
@@ -326,9 +320,9 @@ EOF
 
 function create_default_tenant_image {
     SWIFT_DEFAULT_PROJECT_ID=`openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | awk '{ print $2 }'`
-    mkdir -p ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
+    mkdir -p ${STORLETS_DATA_DIR}/images/$SWIFT_DEFAULT_PROJECT_ID
     _generate_default_tenant_dockerfile
-    cd ${TMP_REGISTRY_PREFIX}/repositories/$SWIFT_DEFAULT_PROJECT_ID
+    cd ${STORLETS_DATA_DIR}/images/$SWIFT_DEFAULT_PROJECT_ID
     $CONTAINER_CMD build -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
     cd -
 }
@@ -383,7 +377,7 @@ function uninstall_storlets {
     esac
 
     echo "Cleaning all storlets runtime stuff..."
-    sudo rm -fr ${STORLETS_CONTAINER_DEVICE}
+    sudo rm -fr ${STORLETS_DATA_DIR}
     # TODO(tkajinam): Remove config options
     # TODO(tkajinam): Remove docker containers/images
 }

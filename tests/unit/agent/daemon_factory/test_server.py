@@ -104,7 +104,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             pargs)
         self.assertEqual(
             {'PYTHONPATH': '/default/pythonpath:'
-                           '/home/swift/test_storlet.TestStorlet'},
+                           '/var/lib/storlets/test_storlet.TestStorlet'},
             env)
 
     def test_spawn_subprocess(self):

@@ -265,9 +265,9 @@ class TestDockerRunTimeSandbox(unittest.TestCase):
         storlet_main = 'org.openstack.storlet.Storlet'
         dependencies = ['dep1', 'dep2']
         self.assertEqual(
-            '/home/swift/org.openstack.storlet.Storlet/Storlet.jar:'
-            '/home/swift/org.openstack.storlet.Storlet/dep1:'
-            '/home/swift/org.openstack.storlet.Storlet/dep2',
+            '/var/lib/storlets/org.openstack.storlet.Storlet/Storlet.jar:'
+            '/var/lib/storlets/org.openstack.storlet.Storlet/dep1:'
+            '/var/lib/storlets/org.openstack.storlet.Storlet/dep2',
             self.sbox._get_storlet_classpath(storlet_main, storlet_id,
                                              dependencies),)
 

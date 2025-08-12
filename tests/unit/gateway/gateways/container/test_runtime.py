@@ -146,7 +146,7 @@ class TestRuntimePaths(unittest.TestCase):
 
     def test_get_sbox_storlet_dir(self):
         self.assertEqual(
-            os.path.join('/home/swift', self.storlet_id),
+            os.path.join('/var/lib/storlets', self.storlet_id),
             self.paths.get_sbox_storlet_dir(self.storlet_id))
 
     def test_host_storlet_base_dir(self):
@@ -218,7 +218,7 @@ class TestRuntimePaths(unittest.TestCase):
             '/var/lib/storlets/storlets/scopes/account/Storlet-1.0.jar',
             runtime_paths.get_host_storlet_dir(storlet_id))
         # And this one is a mount point in sand box?
-        self.assertEqual('/home/swift/Storlet-1.0.jar',
+        self.assertEqual('/var/lib/storlets/Storlet-1.0.jar',
                          runtime_paths.get_sbox_storlet_dir(storlet_id))
 
     @with_tempdir

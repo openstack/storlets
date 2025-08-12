@@ -114,7 +114,7 @@ Note that the log reflects the two invocations done above.
     Storlet invocation done
     About to invoke storlet
     IdentityStorlet Invoked
-    Exec = /home/swift/identitystorlet/get42
+    Exec = /var/lib/storlets/identitystorlet/get42
     Exit code = 42
     Storlet invocation done
 

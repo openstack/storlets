@@ -296,10 +296,6 @@ with the following content:
     [DEFAULT]
     storlet_logcontainer = storletlog
     host_root = /var/lib/storlets
-    cache_dir = /var/lib/storlets/cache/scopes
-    log_dir = /var/lib/storlets/logs/scopes
-    storlets_dir = /var/lib/storlets/storlets/scopes
-    pipes_dir = /var/lib/storlets/pipes/scopes
     storlet_timeout = 40
     container_image_namespace =
     restart_linux_container_timeout = 3
