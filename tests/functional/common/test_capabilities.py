@@ -36,10 +36,16 @@ class TestCapabilities(StorletBaseFunctionalTest):
         info = conn.get_capabilities()
         self.assertIn('storlet_handler', info)
         options = info['storlet_handler']
-        # TODO(eranr): take values from conf
-        self.assertEqual('dependency', options['storlet_dependency'])
-        self.assertEqual('storlet', options['storlet_container'])
-        self.assertIn('storlet_gateway_class', options)
+        self.assertEqual(self.conf.dependency_container,
+                         options['storlet_dependency'])
+        self.assertEqual(self.conf.storlet_container,
+                         options['storlet_container'])
+
+        gateway_class = 'DockerStorletGateway'
+        if self.conf.gateway_module == 'podman':
+            gateway_class = 'PodmanStorletGateway'
+
+        self.assertEqual(gateway_class, options['storlet_gateway_class'])
 
 
 if __name__ == '__main__':
