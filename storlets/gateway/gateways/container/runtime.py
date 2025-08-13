@@ -286,6 +286,91 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
             while not self.ping():
                 time.sleep(self.sandbox_ping_interval)
 
+    def _get_container_name(self, container_image_name):
+        """
+        Get container name based on container image name and scope
+
+        :param container_image_name: name of the container image to use
+        :returns: container name string
+        """
+        if self.container_image_namespace:
+            return '%s/%s_%s' % (self.container_image_namespace,
+                                 container_image_name,
+                                 self.scope)
+        return '%s_%s' % (container_image_name, self.scope)
+
+    def _get_container_command(self, container_name):
+        """
+        Get command executed in a sandbox
+
+        :param container_name: name of the container
+        :returns: command arguments
+        """
+        return [
+            self.paths.sandbox_factory_pipe,
+            self.storlet_daemon_factory_debug_level,
+            container_name
+        ]
+
+    def _get_container_entrypoint(self):
+        """
+        Get entrypoint of a sandbox
+
+        :returns: entrypoint command arguments
+        """
+        return [os.path.join(
+            self.paths.sandbox_storlet_native_bin_dir,
+            'storlets-daemon-factory'
+        )]
+
+    def _get_container_environment(self):
+        """
+        Get environment variables of a sandbox
+
+        :returns: dictionary of environment variables
+        """
+        return {
+            'PYTHONPATH': os.path.join(
+                self.paths.sandbox_storlet_native_lib_dir, 'python'
+            )
+        }
+
+    def _get_mounts(self):
+        """
+        Get list of bind mounts from host to a sandbox
+
+        :returns: list of bind mounts
+        """
+        return [
+            {
+                'type': 'bind',
+                'source': '/dev/log',
+                'target': '/dev/log'
+            },
+            {
+                'type': 'bind',
+                'source': self.paths.host_pipe_dir,
+                'target': self.paths.sandbox_pipe_dir
+            },
+            {
+                'type': 'bind',
+                'source': self.paths.host_storlet_base_dir,
+                'target': self.paths.sandbox_storlet_base_dir
+            },
+            {
+                'type': 'bind',
+                'source': self.paths.host_storlet_native_lib_dir,
+                'target': self.paths.sandbox_storlet_native_lib_dir,
+                'read_only': True
+            },
+            {
+                'type': 'bind',
+                'source': self.paths.host_storlet_native_bin_dir,
+                'target': self.paths.sandbox_storlet_native_bin_dir,
+                'read_only': True
+            }
+        ]
+
     @abc.abstractmethod
     def _restart(self, container_image_name):
         """
@@ -299,7 +384,6 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
     def restart(self):
         """
         Restarts the scope's sandbox
-
         """
         self.paths.create_host_pipe_dir()
 

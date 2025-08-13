@@ -25,6 +25,17 @@ from storlets.gateway.gateways.container.runtime import RunTimeSandbox
 
 class DockerRunTimeSandbox(RunTimeSandbox):
 
+    def _get_mounts(self):
+        """
+        Get list of bind mounts from host to a sandbox
+
+        :returns: list of bind mounts
+        """
+        mounts = super(DockerRunTimeSandbox, self)._get_mounts()
+        return [
+            DockerMount(**mount) for mount in mounts
+        ]
+
     def _restart(self, container_image_name):
         """
         Restarts the scope's sandbox using the specified container image
@@ -32,28 +43,7 @@ class DockerRunTimeSandbox(RunTimeSandbox):
         :param container_image_name: name of the container image to start
         :raises StorletRuntimeException: when failed to restart the container
         """
-        if self.container_image_namespace:
-            container_image_name = '%s/%s' % (self.container_image_namespace,
-                                              container_image_name)
-
-        container_name = '%s_%s' % (self.container_image_name_prefix,
-                                    self.scope)
-
-        mounts = [
-            DockerMount('/dev/log', '/dev/log', type='bind'),
-            DockerMount(self.paths.sandbox_pipe_dir,
-                        self.paths.host_pipe_dir,
-                        type='bind'),
-            DockerMount(self.paths.sandbox_storlet_base_dir,
-                        self.paths.host_storlet_base_dir,
-                        type='bind'),
-            DockerMount(self.paths.sandbox_storlet_native_lib_dir,
-                        self.paths.host_storlet_native_lib_dir,
-                        type='bind', read_only=True),
-            DockerMount(self.paths.sandbox_storlet_native_bin_dir,
-                        self.paths.host_storlet_native_bin_dir,
-                        type='bind', read_only=True)
-            ]
+        container_name = self._get_container_name(container_image_name)
 
         try:
             client = docker.from_env()
@@ -77,24 +67,11 @@ class DockerRunTimeSandbox(RunTimeSandbox):
             # Start the new one
             client.containers.run(
                 container_image_name, detach=True,
-                command=[
-                    self.paths.sandbox_factory_pipe,
-                    self.storlet_daemon_factory_debug_level,
-                    container_name
-                ],
-                entrypoint=[
-                    os.path.join(
-                        self.paths.sandbox_storlet_native_bin_dir,
-                        'storlets-daemon-factory'
-                    )
-                ],
-                environment={
-                    'PYTHONPATH': os.path.join(
-                        self.paths.sandbox_storlet_native_lib_dir, 'python'
-                    )
-                },
+                command=self._get_container_command(container_name),
+                entrypoint=self._get_container_entrypoint(),
+                environment=self._get_container_environment(),
                 name=container_name, network_disabled=True,
-                mounts=mounts, user=os.getuid(),
+                mounts=self._get_mounts(), user=os.getuid(),
                 auto_remove=True, stop_signal='SIGHUP',
                 cpu_period=self.container_cpu_period,
                 cpu_quota=self.container_cpu_quota,
