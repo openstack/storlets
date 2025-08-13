@@ -35,41 +35,7 @@ class PodmanRunTimeSandbox(RunTimeSandbox):
         :param container_image_name: name of the container image to start
         :raises StorletRuntimeException: when failed to restart the container
         """
-        if self.container_image_namespace:
-            container_image_name = '%s/%s' % (self.container_image_namespace,
-                                              container_image_name)
-
-        container_name = '%s_%s' % (self.container_image_name_prefix,
-                                    self.scope)
-
-        mounts = [
-            {
-                'type': 'bind',
-                'source': '/dev/log',
-                'target': '/dev/log'
-            },
-            {
-                'type': 'bind',
-                'source': self.paths.host_pipe_dir,
-                'target': self.paths.sandbox_pipe_dir
-            },
-            {
-                'type': 'bind',
-                'source': self.paths.host_storlet_base_dir,
-                'target': self.paths.sandbox_storlet_base_dir
-            },
-            {
-                'type': 'bind',
-                'source': self.paths.host_storlet_native_lib_dir,
-                'target': self.paths.sandbox_storlet_native_lib_dir,
-                'read_only': True
-            },
-            {
-                'type': 'bind',
-                'source': self.paths.host_storlet_native_bin_dir,
-                'target': self.paths.sandbox_storlet_native_bin_dir,
-                'read_only': True
-            }]
+        container_name = self._get_container_name(container_image_name)
 
         env = None
         if self.socket_path:
@@ -99,24 +65,11 @@ class PodmanRunTimeSandbox(RunTimeSandbox):
             # Start the new one
             client.containers.run(
                 container_image_name, detach=True,
-                command=[
-                    self.paths.sandbox_factory_pipe,
-                    self.storlet_daemon_factory_debug_level,
-                    container_name
-                ],
-                entrypoint=[
-                    os.path.join(
-                        self.paths.sandbox_storlet_native_bin_dir,
-                        'storlets-daemon-factory'
-                    )
-                ],
-                environment={
-                    'PYTHONPATH': os.path.join(
-                        self.paths.sandbox_storlet_native_lib_dir, 'python'
-                    )
-                },
+                command=self._get_container_command(container_name),
+                entrypoint=self._get_container_entrypoint(),
+                environment=self._get_container_environment(),
                 name=container_name, network_mode='none',
-                mounts=mounts, userns_mode='keep-id',
+                mounts=self._get_mounts(), userns_mode='keep-id',
                 auto_remove=True, stop_signal=1,
                 cpu_period=self.container_cpu_period,
                 cpu_quota=self.container_cpu_quota,
