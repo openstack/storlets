@@ -85,7 +85,6 @@ class TestRuntimePaths(unittest.TestCase):
     def _initialize(self):
         # TODO(takashi): take these values from config file
         base_dir = '/var/lib/storlets'
-        self.script_dir = os.path.join(base_dir, 'scripts')
         self.pipes_dir = os.path.join(base_dir, 'pipes', 'scopes')
         self.storlets_dir = os.path.join(base_dir, 'storlets', 'scopes')
         self.log_dir = os.path.join(base_dir, 'logs', 'scopes')

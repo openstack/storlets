@@ -298,7 +298,6 @@ with the following content:
     host_root = /var/lib/storlets
     cache_dir = /var/lib/storlets/cache/scopes
     log_dir = /var/lib/storlets/logs/scopes
-    script_dir = /var/lib/storlets/scripts
     storlets_dir = /var/lib/storlets/storlets/scopes
     pipes_dir = /var/lib/storlets/pipes/scopes
     storlet_timeout = 40
