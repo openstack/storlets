@@ -123,7 +123,7 @@ class StorletDaemonFactory(SBusServer):
         if not pargs:
             raise SDaemonError('Invalid process arguments')
 
-        if not (os.path.exists(pargs[0]) and os.access(pargs[0], os.X_OK)):
+        if not (os.path.isfile(pargs[0]) and os.access(pargs[0], os.X_OK)):
             raise SDaemonError('Requested runtime is unavailable')
 
         str_pargs = ' '.join(pargs)

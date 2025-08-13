@@ -37,7 +37,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
     # Class paths used in mock.patch
     base_path = 'storlets.agent.daemon_factory.server'
     os_environ_path = base_path + '.os.environ'
-    os_path_exists_path = base_path + '.os.path.exists'
+    os_path_isfile_path = base_path + '.os.path.isfile'
     os_access_path = base_path + '.os.access'
     os_kill_path = base_path + '.os.kill'
     os_waitpid_path = base_path + '.os.waitpid'
@@ -116,13 +116,13 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen, \
                 mock.patch(self.time_sleep_path), \
                 mock.patch(self.os_waitpid_path) as waitpid, \
                 self._mock_sbus_client('ping') as ping:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_velue = True
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
@@ -131,18 +131,18 @@ class TestStorletDaemonFactory(unittest.TestCase):
             self.dfactory.spawn_subprocess(
                 ['arg0', 'argv1', 'argv2'],
                 {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
             self.assertEqual((1000, 1), waitpid.call_args[0])
             self.assertEqual({'storleta': 1000},
                              self.dfactory.storlet_name_to_pid)
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen, \
                 mock.patch(self.time_sleep_path), \
                 mock.patch(self.os_waitpid_path) as waitpid, \
                 self._mock_sbus_client('ping') as ping:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_velue = True
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
@@ -152,17 +152,17 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
                     {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
             self.assertEqual((1000, 1), waitpid.call_args[0])
             self.assertEqual({'storleta': 1000},
                              self.dfactory.storlet_name_to_pid)
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen, \
                 mock.patch(self.time_sleep_path), \
                 mock.patch(self.os_waitpid_path) as waitpid:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_velue = True
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
@@ -171,47 +171,47 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
                     {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
             self.assertEqual((1000, 1), waitpid.call_args[0])
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.subprocess_popen_path) as popen:
-            exists.return_value = False
+            isfile.return_value = False
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
                     {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
             popen.assert_not_called()
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_value = False
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
                     {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
             popen.assert_not_called()
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_value = False
             popen.side_effect = OSError()
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess(
                     ['arg0', 'argv1', 'argv2'],
                     {'envk0': 'envv0'}, 'storleta')
-            self.assertEqual(('arg0',), exists.call_args[0])
+            self.assertEqual(('arg0',), isfile.call_args[0])
 
-        with mock.patch(self.os_path_exists_path) as exists:
+        with mock.patch(self.os_path_isfile_path) as isfile:
             with self.assertRaises(SDaemonError):
                 self.dfactory.spawn_subprocess([], {}, 'storleta')
-            self.assertEqual(0, exists.call_count)
+            self.assertEqual(0, isfile.call_count)
 
     def test_wait_for_daemon_to_initialize(self):
         self.dfactory.storlet_name_to_pipe_name = \
@@ -254,13 +254,13 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen, \
                 mock.patch(self.time_sleep_path), \
                 mock.patch(self.os_waitpid_path) as waitpid, \
                 self._mock_sbus_client('ping') as ping:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_value = True
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
@@ -560,14 +560,14 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
 
-        with mock.patch(self.os_path_exists_path) as exists, \
+        with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
                 mock.patch(self.subprocess_popen_path) as popen, \
                 mock.patch(self.time_sleep_path), \
                 mock.patch(self.os_waitpid_path) as waitpid, \
                 self._mock_sbus_client('ping') as ping, \
                 self._mock_sbus_client('start_daemon') as start_daemon:
-            exists.return_value = True
+            isfile.return_value = True
             access.return_value = True
             popen.side_effect = [FakePopenObject(1000),
                                  FakePopenObject(1001)]
