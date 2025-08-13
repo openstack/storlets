@@ -132,10 +132,10 @@ class StorletDaemonFactory(SBusServer):
 
         try:
             daemon_p = subprocess.Popen(
-                pargs, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
+                pargs, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 close_fds=True, shell=False, env=env)
             logger_p = subprocess.Popen(
-                'logger', stdin=daemon_p.stderr,
+                'logger', stdin=daemon_p.stdout,
                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                 close_fds=True, shell=False)
         except OSError:

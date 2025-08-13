@@ -115,6 +115,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             def __init__(self, pid):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
+                self.stdout = mock.MagicMock()
 
         with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
@@ -253,6 +254,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             def __init__(self, pid):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
+                self.stdout = mock.MagicMock()
 
         with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
@@ -559,6 +561,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
             def __init__(self, pid):
                 self.pid = pid
                 self.stderr = mock.MagicMock()
+                self.stdout = mock.MagicMock()
 
         with mock.patch(self.os_path_isfile_path) as isfile, \
                 mock.patch(self.os_access_path) as access, \
