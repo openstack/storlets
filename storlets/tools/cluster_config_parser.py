@@ -64,6 +64,18 @@ class ClusterConfig(object):
     def region(self):
         return self.conf.get('region', '')
 
+    @property
+    def dependency_container(self):
+        return self.conf['storlet_dependency']
+
+    @property
+    def storlet_container(self):
+        return self.conf['storlet_container']
+
+    @property
+    def gateway_module(self):
+        return self.conf['storlets_gateway_module']
+
     # TODO(eranr) move to cluster_config
     @property
     def auth_version(self):

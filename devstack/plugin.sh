@@ -343,6 +343,10 @@ function create_test_config_file {
     iniset ${testfile} general storlets_default_project_member_user $SWIFT_MEMBER_USER
     iniset ${testfile} general storlets_default_project_member_password $SWIFT_MEMBER_USER_PWD
     iniset ${testfile} general region
+
+    iniset ${testfile} general storlet_container $STORLETS_STORLET_CONTAINER_NAME
+    iniset ${testfile} general storlet_dependency $STORLETS_DEPENDENCY_CONTAINER_NAME
+    iniset ${testfile} general storlets_gateway_module $STORLETS_GATEWAY_MODULE
 }
 
 function install_storlets {
