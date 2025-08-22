@@ -190,7 +190,6 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
     restart - restart the sandbox
     start_storlet_daemon - start a daemon for a given storlet
     stop_storlet_daemon - stop a daemon of a given storlet
-    get_storlet_daemon_status - test if a given storlet daemon is running
     """
 
     def __init__(self, scope, conf, logger):
@@ -441,22 +440,29 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
         except SBusClientException:
             raise StorletRuntimeException('Daemon stop failed')
 
-    def get_storlet_daemon_status(self, storlet_id):
+    def _get_storlet_daemon_status(self, storlet_id):
         """
         Get the status of SDaemon process in the scope's sandbox
+
+        :returns: True if the daemon is running
+                  False if the daemon is not running
+        :raises StorletRuntimeException: when failed to communicate with
+                                         daemon-factory
         """
         pipe_path = self.paths.host_factory_pipe
         client = SBusClient(pipe_path)
         try:
             resp = client.daemon_status(storlet_id)
             if resp.status:
-                return 1
+                return True
             else:
                 self.logger.error('Failed to get status about storlet '
                                   'daemon: %s' % resp.message)
-                return 0
+                return False
         except SBusClientException:
-            return -1
+            msg = 'Failed to get status about storlet daemon'
+            self.logger.exception(msg)
+            raise StorletRuntimeException(msg)
 
     def _get_storlet_classpath(self, storlet_main, storlet_id, dependencies):
         """
@@ -477,17 +483,13 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
         return class_path + ':' + ':'.join(dep_path_list)
 
     def activate_storlet_daemon(self, sreq, cache_updated=True):
-        storlet_daemon_status = \
-            self.get_storlet_daemon_status(sreq.storlet_main)
-        if (storlet_daemon_status == -1):
-            # We failed to send a command to the factory.
-            # Best we can do is execute the container.
-            self.logger.debug('Failed to check the storlet daemon status. '
-                              'Restart its container')
+        try:
+            is_running = self._get_storlet_daemon_status(sreq.storlet_main)
+        except StorletRuntimeException:
             self.restart()
-            storlet_daemon_status = 0
+            is_running = False
 
-        if (cache_updated is True and storlet_daemon_status == 1):
+        if cache_updated and is_running:
             # The cache was updated while the daemon is running we need to
             # stop it.
             self.logger.debug('The cache was updated, and the storlet daemon '
@@ -501,9 +503,9 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
                 self.restart()
             else:
                 self.logger.debug('Deamon stopped')
-            storlet_daemon_status = 0
+            is_running = False
 
-        if (storlet_daemon_status == 0):
+        if not is_running:
             self.logger.debug('Going to start the storlet daemon!')
 
             # TODO(takashi): This is not needed for python application
