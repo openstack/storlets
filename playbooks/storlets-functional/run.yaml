@@ -3,4 +3,4 @@
   roles:
     - tox
   vars:
-    - tox_envlist: func
+    tox_envlist: func
