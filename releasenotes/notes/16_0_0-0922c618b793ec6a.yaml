@@ -1,0 +1,14 @@
+---
+prelude: >
+    This release supports the latest OpenStack Swift release. It contains
+    the new podman gateway driver to run storlet applications inside podman
+    containers, instead of docker containers, to support more deployment
+    patterns.
+
+features:
+  - |
+    The podman gateway driver has been added. This allows users to run
+    applications inside podman containers, which do not require root
+    priviledge. Note that using this driver requires ``podman.socket`` service
+    started with the user used by swift services, so that swift services can
+    request operations about containers.
