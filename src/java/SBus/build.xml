@@ -17,7 +17,7 @@
     <property name="jarname" value="SBusJavaFacade.jar"/>
     <property name="libdir" value="/usr/local/lib/storlets/java"/>
     <property environment="env"/>
-    <property name="env.STORLETS_JDK_VERSION" value="11"/>
+    <property name="env.STORLETS_JDK_VERSION" value="17"/>
 
     <target name="clean">
         <delete dir="bin" />
