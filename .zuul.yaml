@@ -7,7 +7,6 @@
       jobs:
         - storlets-functional
         - storlets-functional-podman
-        - storlets-functional-centos-9-stream
     gate:
       jobs:
         - storlets-functional
@@ -39,9 +38,3 @@
     voting: false
     vars:
       storlets_gateway_module: podman
-
-- job:
-    name: storlets-functional-centos-9-stream
-    parent: storlets-functional
-    nodeset: centos-9-stream
-    voting: false
