@@ -10,6 +10,7 @@
         chdir: 'src/{{ zuul.project.canonical_name }}'
       environment:
         STORLETS_GATEWAY_MODULE: '{{ storlets_gateway_module }}'
+        STORLETS_JDK_VERSION: '{{ storlets_jdk_version }}'
 
     - shell:
         cmd: |
