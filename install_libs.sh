@@ -6,7 +6,7 @@
 #       so you may need root privilege to execute this script
 set -x
 
-STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-17}
+STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-21}
 
 # install c library
 cd src/c/sbus
