@@ -51,29 +51,27 @@ public class STaskFactory {
     public SAbstractTask createStorletTask(
         ServerSBusInDatagram dtg, SExecutionManager sExecManager)
             throws StorletException {
-        SAbstractTask ResObj = null;
         String command = dtg.getCommand();
 
-        if (command.equals("SBUS_CMD_HALT")) {
-            this.logger_.trace("createStorletTask: "
-                    + "received Halt command");
-            ResObj = createHaltTask(dtg);
-        } else if (command.equals("SBUS_CMD_EXECUTE")) {
-            this.logger_.trace("createStorletTask: "
-                    + "received EXECUTE command");
-            ResObj = createExecutionTask(dtg, sExecManager);
-        } else if (command.equals("SBUS_CMD_PING")) {
-            this.logger_.trace("createStorletTask: "
-                    + "received Ping command");
-            ResObj = createPingTask(dtg);
-        } else if (command.equals("SBUS_CMD_CANCEL")) {
-            this.logger_.trace("createStorletTask: "
-                    + "received Cancel command");
-            ResObj = createCancelTask(dtg, sExecManager);
-        } else {
-            this.logger_.error("createStorletTask: " + command
+        SAbstractTask ResObj = switch (command) {
+            case "SBUS_CMD_HALT":
+                this.logger_.trace("createStorletTask: received Halt command");
+                yield createHaltTask(dtg);
+            case "SBUS_CMD_EXECUTE":
+                this.logger_.trace("createStorletTask: received Execute command");
+                yield createExecutionTask(dtg, sExecManager);
+            case "SBUS_CMD_PING":
+                this.logger_.trace("createStorletTask: received Ping command");
+                yield createPingTask(dtg);
+            case "SBUS_CMD_CANCEL":
+                this.logger_.trace("createStorletTask: received Cancel command");
+                yield createCancelTask(dtg, sExecManager);
+            default:
+                this.logger_.error("createStorletTask: " + command
                     + " is not supported");
-        }
+                yield null;
+        };
+
         return ResObj;
     }
 
@@ -91,61 +89,63 @@ public class STaskFactory {
             HashMap<String, String> storletsMetadata = FilesMD[i].get("storlets");
             HashMap<String, String> storageMetadata = FilesMD[i].get("storage");
             FileDescriptor fd = dtg.getFiles()[i];
+
             String strFDtype = storletsMetadata.get("type");
-            if (strFDtype.equals("SBUS_FD_SERVICE_OUT")) {
-                sOut = new FileOutputStream(fd);
-            } else if (strFDtype.equals("SBUS_FD_INPUT_OBJECT")) {
-                this.logger_.trace("createStorletTask: fd " + i
-                        + " is of type SBUS_FD_INPUT_OBJECT");
-                String start = storletsMetadata.get("start");
-                String end = storletsMetadata.get("end");
-                if (start != null && end != null) {
-                    RangeStorletInputStream rangeStream;
-                    try {
-                        rangeStream = new RangeStorletInputStream(
-                        fd,
-                        storageMetadata,
-                        Long.parseLong(start),
-                        Long.parseLong(end));
-                    } catch (IOException e) {
-                        this.logger_.error("Got start="+start+" end="+end);
-                        this.logger_.error(e.toString(), e);
-                        throw new StorletException(e.toString());
+            this.logger_.trace("createStorletTask: fd " + i + " is of type " + strFDtype);
+
+            switch (strFDtype) {
+                case "SBUS_FD_SERVICE_OUT":
+                    sOut = new FileOutputStream(fd);
+                    break;
+                case "SBUS_FD_INPUT_OBJECT":
+                    String start = storletsMetadata.get("start");
+                    String end = storletsMetadata.get("end");
+                    if (start != null && end != null) {
+                        RangeStorletInputStream rangeStream;
+                        try {
+                            rangeStream = new RangeStorletInputStream(
+                            fd,
+                            storageMetadata,
+                            Long.parseLong(start),
+                            Long.parseLong(end));
+                        } catch (IOException e) {
+                            this.logger_.error("Got start="+start+" end="+end);
+                            this.logger_.error(e.toString(), e);
+                            throw new StorletException(e.toString());
+                        }
+                        inStreams.add((StorletInputStream)rangeStream);
+                    } else {
+                        inStreams.add(new StorletInputStream(fd, storageMetadata));
                     }
-                    inStreams.add((StorletInputStream)rangeStream);
-                } else {
-                    inStreams.add(new StorletInputStream(fd, storageMetadata));
-                }
-            } else if (strFDtype.equals("SBUS_FD_OUTPUT_OBJECT")) {
-                this.logger_.trace("createStorletTask: fd " + i
-                        + " is of type SBUS_FD_OUTPUT_OBJECT");
-                String strNextFDtype = dtg.getFilesMetadata()[i + 1]
-                        .get("storlets").get("type");
-                if (!strNextFDtype.equals("SBUS_FD_OUTPUT_OBJECT_METADATA")) {
-                    this.logger_.error("StorletTask: fd " + (i + 1)
-                            + " is not SBUS_FD_OUTPUT_OBJECT_METADATA "
-                            + " as expected");
-                } else {
-                    this.logger_.trace("createStorletTask: fd " + (i + 1)
-                            + " is of type SBUS_FD_OUTPUT_OBJECT_METADATA");
-                }
-                outStreams.add(new StorletObjectOutputStream(fd, storageMetadata,
-                           dtg.getFiles()[i + 1]));
-                ++i;
-            } else if (strFDtype.equals("SBUS_FD_LOGGER")) {
-                this.logger_.trace("createStorletTask: fd " + i
-                        + " is of type SBUS_FD_LOGGER");
-                storletLogger = new StorletLogger(fd);
-            } else if (strFDtype.equals("SBUS_FD_OUTPUT_CONTAINER")) {
-                this.logger_.trace("createStorletTask: fd " + i
-                        + " is of type SBUS_FD_OUTPUT_CONTAINER");
-                this.logger_.trace("createStorletTask: md is"
-                        + storageMetadata.toString());
-                outStreams.add(new StorletContainerHandle(fd,
-                           storageMetadata, requestsTable_));
-            } else
-                this.logger_.error("createStorletTask: fd " + i
-                        + " is of unknown type " + strFDtype);
+                    break;
+                case "SBUS_FD_OUTPUT_OBJECT":
+                    String strNextFDtype = dtg.getFilesMetadata()[i + 1]
+                            .get("storlets").get("type");
+                    if (!strNextFDtype.equals("SBUS_FD_OUTPUT_OBJECT_METADATA")) {
+                        this.logger_.error("StorletTask: fd " + (i + 1)
+                                + " is not SBUS_FD_OUTPUT_OBJECT_METADATA "
+                                + " as expected");
+                    } else {
+                        this.logger_.trace("createStorletTask: fd " + (i + 1)
+                                + " is of type SBUS_FD_OUTPUT_OBJECT_METADATA");
+                    }
+                    outStreams.add(new StorletObjectOutputStream(fd, storageMetadata,
+                               dtg.getFiles()[i + 1]));
+                    ++i;
+                    break;
+                case "SBUS_FD_LOGGER":
+                    storletLogger = new StorletLogger(fd);
+                    break;
+                case "SBUS_FD_OUTPUT_CONTAINER":
+                    this.logger_.trace("createStorletTask: md is"
+                            + storageMetadata.toString());
+                    outStreams.add(new StorletContainerHandle(fd,
+                               storageMetadata, requestsTable_));
+                    break;
+                default:
+                    this.logger_.error("createStorletTask: fd " + i
+                            + " is of unknown type " + strFDtype);
+            }
         }
         return new SExecutionTask(storlet_, sOut, inStreams, outStreams,
                 dtg.getExecParams(), storletLogger, logger_, sExecManager);
