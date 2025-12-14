@@ -42,27 +42,20 @@ public class SBusBackend {
      * Initiate logging with the required detail level
      * */
     public void startLogger(eLogLevel eLogLevel, String contId) {
-        String strLogLevel = null;
-        switch (eLogLevel) {
-        case SBUS_LOG_DEBUG:
-            strLogLevel = "DEBUG";
-            break;
-        case SBUS_LOG_INFO:
-            strLogLevel = "INFO";
-            break;
-        case SBUS_LOG_WARNING:
-            strLogLevel = "WARNING";
-            break;
-        case SBUS_LOG_CRITICAL:
-            strLogLevel = "CRITICAL";
-            break;
-        case SBUS_LOG_OFF:
-            strLogLevel = "OFF";
-            break;
-        default:
-            strLogLevel = "WARNING";
-            break;
-        }
+        String strLogLevel = switch (eLogLevel) {
+            case SBUS_LOG_DEBUG:
+                yield "DEBUG";
+            case SBUS_LOG_INFO:
+                yield "INFO";
+            case SBUS_LOG_WARNING:
+                yield "WARNING";
+            case SBUS_LOG_CRITICAL:
+                yield "CRITICAL";
+            case SBUS_LOG_OFF:
+                yield "OFF";
+            default:
+                yield "WARNING";
+        };
         SBusJNIObj_.startLogger(strLogLevel, contId);
     }
 
