@@ -40,12 +40,10 @@ import org.openstack.storlet.sbus.ServerSBusInDatagram;
 public class STaskFactory {
     private IStorlet storlet_;
     private Logger logger_;
-    private ObjectRequestsTable requestsTable_;
 
     public STaskFactory(IStorlet storlet, Logger logger) {
         this.storlet_ = storlet;
         this.logger_ = logger;
-        this.requestsTable_ = new ObjectRequestsTable();
     }
 
     public SAbstractTask createStorletTask(
@@ -135,12 +133,6 @@ public class STaskFactory {
                     break;
                 case "SBUS_FD_LOGGER":
                     storletLogger = new StorletLogger(fd);
-                    break;
-                case "SBUS_FD_OUTPUT_CONTAINER":
-                    this.logger_.trace("createStorletTask: md is"
-                            + storageMetadata.toString());
-                    outStreams.add(new StorletContainerHandle(fd,
-                               storageMetadata, requestsTable_));
                     break;
                 default:
                     this.logger_.error("createStorletTask: fd " + i

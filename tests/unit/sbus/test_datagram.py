@@ -22,10 +22,11 @@ from storlets.sbus.datagram import SBusFileDescriptor, \
 from storlets.sbus.command import SBUS_CMD_PING, SBUS_CMD_EXECUTE
 
 ALL_FDTYPES = [
-    sbus_fd.SBUS_FD_INPUT_OBJECT, sbus_fd.SBUS_FD_OUTPUT_OBJECT,
+    sbus_fd.SBUS_FD_INPUT_OBJECT,
+    sbus_fd.SBUS_FD_OUTPUT_OBJECT,
     sbus_fd.SBUS_FD_OUTPUT_OBJECT_METADATA,
     sbus_fd.SBUS_FD_OUTPUT_OBJECT_AND_METADATA,
-    sbus_fd.SBUS_FD_LOGGER, sbus_fd.SBUS_FD_OUTPUT_CONTAINER,
+    sbus_fd.SBUS_FD_LOGGER,
     sbus_fd.SBUS_FD_SERVICE_OUT,
 ]
 

@@ -31,7 +31,6 @@ import org.openstack.storlet.common.StorletException;
 import org.openstack.storlet.common.StorletInputStream;
 import org.openstack.storlet.common.StorletLogger;
 import org.openstack.storlet.common.StorletObjectOutputStream;
-import org.openstack.storlet.common.StorletContainerHandle;
 import org.openstack.storlet.common.StorletOutputStream;
 import org.openstack.storlet.common.StorletUtils;
 
@@ -103,27 +102,8 @@ public class IdentityStorlet implements IStorlet {
                     "The chunk_size parameter is not an integer");
         }
 
-        /*
-         * 1) If the output stream is StorletObjectOutputStream we are in a GET
-         * or PUT scenario where we copy the data and metadata into it. 2) If
-         * the output stream is StorletContainerHandle we are in a Storlet batch
-         * scenario where we first ask for a StorletObjectOutputStream, and then
-         * do the copy.
-         */
         StorletObjectOutputStream storletObjectOutputStream;
-        StorletOutputStream storletOutputStream = outputStreams.get(0);
-        if (storletOutputStream instanceof StorletContainerHandle) {
-            log.emitLog("Requesting for output object");
-            StorletContainerHandle storletContainerHandle = (StorletContainerHandle) storletOutputStream;
-            String objectName = new String(storletContainerHandle.getName()
-                    + "/copy_target");
-            storletObjectOutputStream = storletContainerHandle
-                    .getObjectOutputStream(objectName);
-            storletContainerHandle.close();
-        } else {
-            storletObjectOutputStream = (StorletObjectOutputStream) outputStreams
-                    .get(0);
-        }
+        storletObjectOutputStream = (StorletObjectOutputStream) outputStreams.get(0);
 
         /*
          * add execution invocation result to out md

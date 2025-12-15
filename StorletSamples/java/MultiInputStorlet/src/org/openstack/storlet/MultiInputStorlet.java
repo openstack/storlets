@@ -30,7 +30,6 @@ import org.openstack.storlet.common.StorletException;
 import org.openstack.storlet.common.StorletInputStream;
 import org.openstack.storlet.common.StorletLogger;
 import org.openstack.storlet.common.StorletObjectOutputStream;
-import org.openstack.storlet.common.StorletContainerHandle;
 import org.openstack.storlet.common.StorletOutputStream;
 import org.openstack.storlet.common.StorletUtils;
 
