@@ -65,6 +65,26 @@ class StorletObjectHandler(StorletBaseHandler):
                 '{0} is NOT a symlink'.format(self.path))
         return is_symlink
 
+    def is_ec_response(self, resp):
+        """
+        Determines whether the response indicates an EC object
+
+        :param resp: swob.Response instance
+        :return: Whenther the object is an EC object
+        """
+        self.logger.debug(
+            'Verify if {0} is an EC object'.format(self.path))
+
+        ec_header = get_sys_meta_prefix('object') + 'ec-frag-index'
+        is_ec = ec_header in resp.headers
+        if is_ec:
+            self.logger.debug(
+                '{0} is indeed an EC object'.format(self.path))
+        else:
+            self.logger.debug(
+                '{0} is NOT an EC object'.format(self.path))
+        return is_ec
+
     def _get_storlet_invocation_options(self, req):
         options = super(StorletObjectHandler, self).\
             _get_storlet_invocation_options(req)
@@ -130,14 +150,11 @@ class StorletObjectHandler(StorletBaseHandler):
              self.execute_range_on_proxy,
              self.is_slo_get_request,
              self.is_slo_response(orig_resp),
-             self.is_symlink_response(orig_resp)
+             self.is_symlink_response(orig_resp),
+             self.is_ec_response(orig_resp)
              ])
 
         if not_runnable:
-            # Storlet must be invoked on proxy as it is:
-            # either an SLO
-            # or storlet-range-request
-            # or proxy only mode
             self.logger.debug(
                 'storlet_handler: invocation over %s to be executed on proxy'
                 % self.request.path)
