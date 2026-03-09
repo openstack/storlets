@@ -6,6 +6,7 @@
     check:
       jobs:
         - storlets-functional
+        - storlets-functional-openjdk21
         - storlets-functional-openjdk17
         - storlets-functional-podman
     gate:
@@ -32,7 +33,7 @@
       - ^tests/unit/.*$
     vars:
       storlets_gateway_module: docker
-      storlets_jdk_version: 21
+      storlets_jdk_version: 25
 
 - job:
     name: storlets-functional-openjdk17
@@ -41,6 +42,14 @@
     vars:
       storlets_gateway_module: docker
       storlets_jdk_version: 17
+
+- job:
+    name: storlets-functional-openjdk21
+    parent: storlets-functional
+    voting: false
+    vars:
+      storlets_gateway_module: docker
+      storlets_jdk_version: 21
 
 - job:
     name: storlets-functional-podman
