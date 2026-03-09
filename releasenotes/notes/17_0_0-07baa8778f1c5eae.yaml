@@ -1,0 +1,21 @@
+---
+prelude: >
+    This release supports the latest OpenStack Swift release for 2026.1. It
+    also officially supports newer JDK versions and and contains minor
+    improvements.
+
+features:
+  - |
+    Now the storlet_handler middleware can detect EC objects and runs storlet
+    applications in proxy server automatically. Previously users had to
+    request execution in proxy explicitly.
+
+  - |
+    Storlets is now tested with OpenJDK 17, 21 and 25.
+
+upgrade:
+  - |
+    Python 3.6 support has been removed.
+
+  - |
+    OpenJDK 11 is no longer tested.
