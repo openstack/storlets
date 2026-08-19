@@ -65,5 +65,5 @@ class FakeApp(object):
         if not method or not path:
             return self._calls
         else:
-            return([(m, p, h, b) for (m, p, h, b) in self._calls
-                   if m == method and p == path])
+            return [(m, p, h, b) for (m, p, h, b) in self._calls
+                    if m == method and p == path]

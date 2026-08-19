@@ -684,7 +684,7 @@ class StorletInvocationProtocol(object):
         """
         Send an execution command to the remote daemon factory
         """
-        with self.storlet_logger.activate(),\
+        with self.storlet_logger.activate(), \
                 self._activate_invocation_descriptors():
             self._send_execute_command()
 

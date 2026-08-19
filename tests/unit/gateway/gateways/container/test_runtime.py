@@ -70,7 +70,7 @@ def _mock_os_pipe(bufs):
     with mock.patch('storlets.gateway.gateways.container.runtime.os.pipe',
                     mock_os_pipe), \
         mock.patch('storlets.gateway.gateways.container.runtime.os.read',
-                   fake_os_read) as fake_os_read,\
+                   fake_os_read) as fake_os_read, \
         mock.patch('storlets.gateway.gateways.container.runtime.os.close',
                    fake_os_close) as fake_os_close:
         yield pipes

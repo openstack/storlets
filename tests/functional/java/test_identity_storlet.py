@@ -104,10 +104,10 @@ class TestIdentityStorlet(StorletJavaFunctionalTest):
                                                  response_dict=dict())
 
             if params is not None and params.get('double', None) == 'true':
-                assert(uploaded_c == saved_c[:1024])
-                assert(uploaded_c == saved_c[1024:])
+                assert (uploaded_c == saved_c[:1024])
+                assert (uploaded_c == saved_c[1024:])
             else:
-                assert(uploaded_c == saved_c)
+                assert (uploaded_c == saved_c)
 
             if params is not None and params.get('execute', None) is not None:
                 mdv = resp_headers['X-Object-Meta-Execution-Result'.lower()]

@@ -90,8 +90,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
                                 self.container, 'gen_thumb_on_copy.jpg')
         self.assertLess(int(headers['content-length']), 1087318)
         self.assertEqual('thumbnail', headers['x-object-meta-name'])
-        self.assertTrue('x-object-meta-x-timestamp' not in headers)
-        self.assertTrue('x-timestamp' in headers)
+        self.assertNotIn('x-object-meta-x-timestamp', headers)
+        self.assertIn('x-timestamp', headers)
 
     def invoke_storlet_on_copy_dest(self):
         # No COPY in swiftclient. Using urllib instead...
@@ -111,8 +111,8 @@ class TestThumbnailStorlet(StorletJavaFunctionalTest):
                                 self.container, 'gen_thumb_on_copy_.jpg')
         self.assertLess(int(headers['content-length']), 1087318)
         self.assertEqual('thumbnail', headers['x-object-meta-name'])
-        self.assertTrue('x-object-meta-x-timestamp' not in headers)
-        self.assertTrue('x-timestamp' in headers)
+        self.assertNotIn('x-object-meta-x-timestamp', headers)
+        self.assertIn('x-timestamp', headers)
 
     def test_get(self):
         self.invoke_storlet_on_get()
