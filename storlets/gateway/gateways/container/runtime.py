@@ -124,8 +124,6 @@ class RunTimePaths(object):
 
         self.host_storlet_native_lib_dir = '/usr/local/lib/storlets'
         self.sandbox_storlet_native_lib_dir = '/usr/local/lib/storlets'
-        self.host_storlet_native_bin_dir = '/usr/local/libexec/storlets'
-        self.sandbox_storlet_native_bin_dir = '/usr/local/libexec/storlets'
 
     @property
     def host_pipe_dir(self):
@@ -306,6 +304,7 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
         :returns: command arguments
         """
         return [
+            '-m', 'storlets.agent.daemon_factory',
             self.paths.sandbox_factory_pipe,
             self.storlet_daemon_factory_debug_level,
             container_name
@@ -317,10 +316,7 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
 
         :returns: entrypoint command arguments
         """
-        return [os.path.join(
-            self.paths.sandbox_storlet_native_bin_dir,
-            'storlets-daemon-factory'
-        )]
+        return ['python3']
 
     def _get_container_environment(self):
         """
@@ -360,12 +356,6 @@ class RunTimeSandbox(object, metaclass=abc.ABCMeta):
                 'type': 'bind',
                 'source': self.paths.host_storlet_native_lib_dir,
                 'target': self.paths.sandbox_storlet_native_lib_dir,
-                'read_only': True
-            },
-            {
-                'type': 'bind',
-                'source': self.paths.host_storlet_native_bin_dir,
-                'target': self.paths.sandbox_storlet_native_bin_dir,
                 'read_only': True
             }
         ]
