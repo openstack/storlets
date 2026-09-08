@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 
-import org.json.simple.JSONObject;
+import com.google.gson.Gson;
 
 public class StorletObjectOutputStream extends StorletOutputStream {
 
@@ -54,16 +54,17 @@ public class StorletObjectOutputStream extends StorletOutputStream {
 
     @SuppressWarnings("unchecked")
     public void setMetadata(Map<String, String> md) throws StorletException {
-        JSONObject jobj = new JSONObject();
+        Gson gson = new Gson();
+        Map<String, String> metaData = new HashMap<>();
         Iterator<Map.Entry<String, String>> it = md.entrySet().iterator();
         while (it.hasNext()) {
             Map.Entry<String, String> pairs = (Map.Entry<String, String>) it
                     .next();
-            jobj.put((String) pairs.getKey(), (String) pairs.getValue());
+            metaData.put(pairs.getKey(), pairs.getValue());
             it.remove();
         }
         try {
-            MetadataStream_.write(jobj.toString().getBytes());
+            MetadataStream_.write(gson.toJson(metaData).getBytes());
         } catch (IOException e) {
             throw new StorletException("Failed to set metadata " + e.toString());
         } finally {

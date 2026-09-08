@@ -18,8 +18,8 @@
     <!-- Bring build Dependencies-->
     <target name="dependencies" >
         <mkdir dir="dependencies" />
-        <get src="https://repo1.maven.org/maven2/com/googlecode/json-simple/json-simple/1.1.1/json-simple-1.1.1.jar"
-            dest="dependencies/json-simple-1.1.1.jar"
+        <get src="https://repo1.maven.org/maven2/com/google/code/gson/gson/2.14.0/gson-2.14.0.jar"
+            dest="dependencies/gson-2.14.0.jar"
             verbose="true"
             usetimestamp="true"/>
         <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.5.8/logback-classic-1.5.8.jar"

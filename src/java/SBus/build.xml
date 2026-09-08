@@ -29,7 +29,7 @@
         <javac
             srcdir="src/main"
             destdir="bin"
-            classpath="../dependencies/json-simple-1.1.1.jar"
+            classpath="../dependencies/gson-2.14.0.jar"
             includeantruntime="false"
             nativeheaderdir='.'>
             <compilerarg value="-Xlint"/>

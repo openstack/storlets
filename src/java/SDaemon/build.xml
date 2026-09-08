@@ -31,7 +31,7 @@
                 <pathelement
                     path="../SCommon/bin/SCommon.jar"/>
                 <pathelement
-                    path="../dependencies/json-simple-1.1.1.jar"/>
+                    path="../dependencies/gson-2.14.0.jar"/>
                 <pathelement
                     path="../dependencies/slf4j-api-2.0.16.jar"/>
                 <pathelement

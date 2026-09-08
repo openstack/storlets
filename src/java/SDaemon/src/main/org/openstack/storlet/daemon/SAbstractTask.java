@@ -18,8 +18,10 @@ package org.openstack.storlet.daemon;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.gson.Gson;
 
 import org.slf4j.Logger;
 
@@ -37,7 +39,8 @@ public abstract class SAbstractTask {
     }
 
     protected boolean respond(OutputStream ostream, boolean status, String message, String taskid) {
-        JSONObject obj = new JSONObject();
+        Gson gson = new Gson();
+        Map<String, Object> obj = new HashMap<>();
         obj.put("status", status);
         obj.put("message", message);
         if ( taskid != null ) {
@@ -45,7 +48,7 @@ public abstract class SAbstractTask {
         }
         boolean bStatus = true;
         try {
-            ostream.write(obj.toJSONString().getBytes());
+            ostream.write(gson.toJson(obj).getBytes());
             ostream.flush();
             ostream.close();
         } catch (IOException e) {

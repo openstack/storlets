@@ -29,17 +29,18 @@
 package org.openstack.storlet.sbus;
 
 import java.io.FileDescriptor;
-import java.util.ArrayList;
+import java.lang.IllegalStateException;
+import java.lang.reflect.Type;
 import java.util.Iterator;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
-import org.json.simple.JSONObject;
-import org.json.simple.JSONArray;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
 
 public class ServerSBusInDatagram {
 
@@ -49,13 +50,11 @@ public class ServerSBusInDatagram {
     private HashMap<String, String> params;
     private HashMap<String, HashMap<String, String>>[] metadata;
     private String taskID;
+    private Gson gson;
 
-    private void populateMetadata(HashMap<String, String> dest, JSONObject source) throws ParseException {
-        for (Object key : source.keySet()) {
-            String strKey = (String)key;
-            String strVal = (String)source.get(key);
-            dest.put(strKey, strVal);
-        }
+    private HashMap<String, String> populateMetadata(JsonElement source) throws JsonSyntaxException {
+        Type type = new TypeToken<HashMap<String, String>>(){}.getType();
+        return gson.fromJson(source, type);
     }
 
     /**
@@ -96,41 +95,45 @@ public class ServerSBusInDatagram {
      * @see SBusPythonFacade.ClientSBusOutDatagram the python code that serilializes the datagram
      * @see SBusPythonFacade.ServerSBusInDatagram the equivalent python code
      */
-    public ServerSBusInDatagram(final SBusRawMessage msg) throws ParseException {
-        this.fds = msg.getFiles();
-                numFDs = this.fds == null ? 0 : this.fds.length;
+    public ServerSBusInDatagram(final SBusRawMessage msg) throws JsonSyntaxException, IllegalStateException {
+        gson = new Gson();
 
-        JSONObject jsonCmdParams = (JSONObject)(new JSONParser().parse(msg.getParams()));
-        this.command = (String)jsonCmdParams.get("command");
-        this.params = new HashMap<String, String>();
-        if (jsonCmdParams.containsKey("params")) {
-            JSONObject jsonParams = (JSONObject)jsonCmdParams.get("params");
-            for (Object key : jsonParams.keySet()) {
-                this.params.put((String)key, (String)jsonParams.get(key));
-            }
+        this.fds = msg.getFiles();
+        numFDs = this.fds == null ? 0 : this.fds.length;
+
+        JsonObject jsonCmdParams = gson.fromJson(msg.getParams(), JsonObject.class);
+
+        this.command = jsonCmdParams.get("command").getAsString();
+
+        if (jsonCmdParams.has("params")) {
+            Type type = new TypeToken<HashMap<String, String>>(){}.getType();
+            this.params = gson.fromJson(jsonCmdParams.get("params"), type);
+        } else {
+            this.params = new HashMap<String, String>();
         }
-        if (jsonCmdParams.containsKey("task_id")) {
-            this.taskID = (String)jsonCmdParams.get("task_id");
+
+        if (jsonCmdParams.has("task_id")) {
+            this.taskID = jsonCmdParams.get("task_id").getAsString();
         }
 
         String strMD = msg.getMetadata();
         this.metadata = (HashMap<String, HashMap<String, String>>[])new HashMap[getNFiles()];
-        JSONArray jsonarray = (JSONArray)(new JSONParser().parse(strMD));
-        Iterator<JSONObject> it = jsonarray.iterator();
+        JsonArray jsonarray = gson.fromJson(strMD, JsonArray.class);
+        Iterator<JsonElement> it = jsonarray.iterator();
         int i=0;
         while (it.hasNext()) {
+            JsonObject jsonobject = it.next().getAsJsonObject();
+
             this.metadata[i] = new HashMap<String, HashMap<String, String>>();
             HashMap<String, String> storletsMetadata = new HashMap<String, String>();
             HashMap<String, String> storageMetadata = new HashMap<String, String>();
-            JSONObject jsonobject = it.next();
-            if (jsonobject.containsKey("storage")) {
-                populateMetadata(storageMetadata, (JSONObject)jsonobject.get("storage"));
+            if (jsonobject.has("storage")) {
+                storageMetadata = populateMetadata(jsonobject.get("storage"));
             }
-            if (!jsonobject.containsKey("storlets")) {
+            if (jsonobject.has("storlets")) {
+                storletsMetadata = populateMetadata(jsonobject.get("storlets"));
             }
-            else {
-                populateMetadata(storletsMetadata, (JSONObject)jsonobject.get("storlets"));
-            }
+
             this.metadata[i].put("storage", storageMetadata);
             this.metadata[i].put("storlets", storletsMetadata);
             i++;
