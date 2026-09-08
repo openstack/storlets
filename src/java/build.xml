@@ -22,16 +22,16 @@
             dest="dependencies/gson-2.14.0.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.5.8/logback-classic-1.5.8.jar"
-            dest="dependencies/logback-classic-1.5.8.jar"
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-classic/1.6.3/logback-classic-1.6.3.jar"
+            dest="dependencies/logback-classic-1.6.3.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.5.8/logback-core-1.5.8.jar"
-            dest="dependencies/logback-core-1.5.8.jar"
+        <get src="https://repo1.maven.org/maven2/ch/qos/logback/logback-core/1.6.3/logback-core-1.6.3.jar"
+            dest="dependencies/logback-core-1.6.3.jar"
             verbose="true"
             usetimestamp="true"/>
-        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.16/slf4j-api-2.0.16.jar"
-            dest="dependencies/slf4j-api-2.0.16.jar"
+        <get src="https://repo1.maven.org/maven2/org/slf4j/slf4j-api/2.0.18/slf4j-api-2.0.18.jar"
+            dest="dependencies/slf4j-api-2.0.18.jar"
             verbose="true"
             usetimestamp="true"/>
     </target>
