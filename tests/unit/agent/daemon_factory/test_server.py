@@ -98,7 +98,7 @@ class TestStorletDaemonFactory(unittest.TestCase):
                 1, 'path/to/uds', 'DEBUG', version)
         self.assertEqual(
             ['/usr/bin/python%s' % expected,
-             '/usr/local/libexec/storlets/storlets-daemon',
+             '-m', 'storlets.agent.daemon',
              'test_storlet.TestStorlet',
              'path/to/uds', 'DEBUG', '1', self.container_id],
             pargs)

@@ -243,10 +243,6 @@ function install_storlets_code {
     sudo mkdir -p -m 755 /usr/local/lib/storlets/python
 
     GLOBAL_VENV=False pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
-    sudo mkdir -p -m 755 /usr/local/libexec/storlets
-    for bin_file in storlets-daemon storlets-daemon-factory ; do
-        sudo cp ./bin/${bin_file} /usr/local/libexec/storlets/
-    done
 
     sudo mkdir -p -m 0755 $STORLETS_DATA_DIR
     sudo chown -R "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" $STORLETS_DATA_DIR

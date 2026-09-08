@@ -98,9 +98,9 @@ class StorletDaemonFactory(SBusServer):
                         daemon_language_version):
         daemon_language_version = daemon_language_version or '3'
         python_interpreter = '/usr/bin/python%s' % daemon_language_version
-        str_daemon_main_file = '/usr/local/libexec/storlets/storlets-daemon'
-        pargs = [python_interpreter, str_daemon_main_file, storlet_name,
-                 uds_path, log_level, str(pool_size), self.container_id]
+        pargs = [python_interpreter, '-m', 'storlets.agent.daemon',
+                 storlet_name, uds_path, log_level, str(pool_size),
+                 self.container_id]
 
         python_path = os.path.join('/var/lib/storlets', storlet_name)
         if os.environ.get('PYTHONPATH'):
