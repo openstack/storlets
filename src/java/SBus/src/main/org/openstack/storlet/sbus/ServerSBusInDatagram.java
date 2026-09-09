@@ -52,7 +52,7 @@ public class ServerSBusInDatagram {
     private String taskID;
     private Gson gson;
 
-    private HashMap<String, String> populateMetadata(JsonElement source) throws JsonSyntaxException {
+    private HashMap<String, String> parseStringHash(JsonElement source) throws JsonSyntaxException {
         Type type = new TypeToken<HashMap<String, String>>(){}.getType();
         return gson.fromJson(source, type);
     }
@@ -106,8 +106,7 @@ public class ServerSBusInDatagram {
         this.command = jsonCmdParams.get("command").getAsString();
 
         if (jsonCmdParams.has("params")) {
-            Type type = new TypeToken<HashMap<String, String>>(){}.getType();
-            this.params = gson.fromJson(jsonCmdParams.get("params"), type);
+            this.params = parseStringHash(jsonCmdParams.get("params"));
         } else {
             this.params = new HashMap<String, String>();
         }
@@ -128,10 +127,10 @@ public class ServerSBusInDatagram {
             HashMap<String, String> storletsMetadata = new HashMap<String, String>();
             HashMap<String, String> storageMetadata = new HashMap<String, String>();
             if (jsonobject.has("storage")) {
-                storageMetadata = populateMetadata(jsonobject.get("storage"));
+                storageMetadata = parseStringHash(jsonobject.get("storage"));
             }
             if (jsonobject.has("storlets")) {
-                storletsMetadata = populateMetadata(jsonobject.get("storlets"));
+                storletsMetadata = parseStringHash(jsonobject.get("storlets"));
             }
 
             this.metadata[i].put("storage", storageMetadata);
