@@ -1,0 +1,15 @@
+---
+prelude: >
+    This release supports the latest OpenStack Swift release for 2026.2. It
+    also contains minor improvements related to java dependecies.
+
+upgrade:
+  - |
+    The ``simple-json`` library has been replaced by the ``gson`` library due
+    to its maintenance status. Make sure that the jar file is available at
+    the path exposed to storlet containers.
+
+  - |
+    Storlet containers no longer need the executable scripts for python-written
+    agents, and now uses python modules directly to launch agents.
+    The ``/usr/local/libexec/storlets`` directory is no longer necessary.
