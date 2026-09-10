@@ -42,8 +42,6 @@ SWIFT_DEFAULT_USER=tester
 SWIFT_DEFAULT_USER_PWD=testing
 SWIFT_MEMBER_USER=tester_member
 SWIFT_MEMBER_USER_PWD=member
-SWIFT_DEFAULT_USER_DOMAIN_ID=${SWIFT_DEFAULT_USER_DOMAIN_ID:-default}
-SWIFT_DEFAULT_PROJECT_DOMAIN_ID=${SWIFT_DEFAULT_PROJECT_DOMAIN_ID:-default}
 
 SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
 
@@ -57,8 +55,8 @@ else
     ubuntu_version=$(source /etc/os-release ; echo $VERSION_ID)
     STORLETS_CONTAINER_BASE_IMG=${STORLETS_DOCKER_BASE_IMG:-ubuntu:$ubuntu_version}
 fi
-STORLETS_SWIFT_RUNTIME_USER=${STORLETS_SWIFT_RUNTIME_USER:-$USER}
-STORLETS_SWIFT_RUNTIME_GROUP=${STORLETS_SWIFT_RUNTIME_GROUP:-$(id -g $USER)}
+STACK_GROUP="$(id -g $STACK_USER)"
+
 STORLETS_STORLET_CONTAINER_NAME=${STORLETS_STORLET_CONTAINER_NAME:-storlet}
 STORLETS_DEPENDENCY_CONTAINER_NAME=${STORLETS_DEPENDENCY_CONTAINER_NAME:-dependency}
 STORLETS_LOG_CONTAIER_NAME=${STORLETS_LOG_CONTAIER_NAME:-log}
@@ -83,24 +81,22 @@ function _export_swift_os_vars {
     export OS_AUTH_URL=$KEYSTONE_SERVICE_URI
     export OS_REGION_NAME=$REGION_NAME
     export OS_USERNAME=$SWIFT_DEFAULT_USER
-    export OS_USER_DOMAIN_ID=$SWIFT_DEFAULT_USER_DOMAIN_ID
+    export OS_USER_DOMAIN_ID=default
     export OS_PASSWORD=$SWIFT_DEFAULT_USER_PWD
     export OS_PROJECT_NAME=$SWIFT_DEFAULT_PROJECT
-    export OS_PROJECT_DOMAIN_ID=$SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+    export OS_PROJECT_DOMAIN_ID=default
 }
 
 function configure_swift_and_keystone_for_storlets {
     # Add project and users to Keystone
-    get_or_create_project $SWIFT_DEFAULT_PROJECT $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
-    get_or_create_user $SWIFT_DEFAULT_USER $SWIFT_DEFAULT_USER_PWD \
-        $SWIFT_DEFAULT_USER_DOMAIN_ID
+    get_or_create_project $SWIFT_DEFAULT_PROJECT default
+    get_or_create_user $SWIFT_DEFAULT_USER $SWIFT_DEFAULT_USER_PWD default
     get_or_add_user_project_role admin $SWIFT_DEFAULT_USER $SWIFT_DEFAULT_PROJECT \
-        $SWIFT_DEFAULT_USER_DOMAIN_ID $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+        default default
 
-    get_or_create_user $SWIFT_MEMBER_USER $SWIFT_MEMBER_USER_PWD \
-        $SWIFT_DEFAULT_USER_DOMAIN_ID
+    get_or_create_user $SWIFT_MEMBER_USER $SWIFT_MEMBER_USER_PWD default
     get_or_add_user_project_role anotherrole $SWIFT_MEMBER_USER $SWIFT_DEFAULT_PROJECT \
-        $SWIFT_DEFAULT_USER_DOMAIN_ID $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+        default default
 
     # Modify relevant Swift configuration files
     _modify_swift_conf
@@ -135,11 +131,11 @@ function _install_docker {
     if [ $? -ne 0 ]; then
         sudo groupadd docker
     fi
-    add_user_to_group $STORLETS_SWIFT_RUNTIME_USER docker
+    add_user_to_group $STACK_USER docker
 
     # Ensure docker daemon is started
     start_service docker
-    if [ $STORLETS_SWIFT_RUNTIME_USER == $USER ]; then
+    if [ $STACK_USER == $USER ]; then
         # NOTE(takashi): We need this workaround because we can't reload
         #                user-group relationship in bash scripts
         DOCKER_UNIX_SOCKET=/var/run/docker.sock
@@ -238,7 +234,7 @@ function install_storlets_code {
     GLOBAL_VENV=False pip_install . -t /usr/local/lib/storlets/python --no-compile --no-deps
 
     sudo mkdir -p -m 0755 $STORLETS_DATA_DIR
-    sudo chown -R "$STORLETS_SWIFT_RUNTIME_USER":"$STORLETS_SWIFT_RUNTIME_GROUP" $STORLETS_DATA_DIR
+    sudo chown -R "$STACK_USER":"$STACK_GROUP" $STORLETS_DATA_DIR
 
     # NOTE(takashi): We should cleanup egg-info directory here, otherwise it
     #                causes permission denined when installing package by tox.
@@ -296,21 +292,17 @@ function _generate_gateway_conf {
     iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT storlet_timeout $STORLETS_RUNTIME_TIMEOUT
     if [[ $STORLETS_GATEWAY_MODULE == 'podman' ]]; then
         iniset ${STORLETS_GATEWAY_CONF_FILE} DEFAULT socket_path \
-            /var/run/user/$(id -u ${STORLETS_SWIFT_RUNTIME_USER})/podman/podman.sock
+            /var/run/user/$(id -u ${STACK_USER})/podman/podman.sock
     fi
-}
-
-function _generate_default_tenant_dockerfile {
-    cat <<EOF > ${STORLETS_DATA_DIR}/images/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
-FROM storlet_engine_image
-MAINTAINER root
-EOF
 }
 
 function create_default_tenant_image {
     SWIFT_DEFAULT_PROJECT_ID=`openstack project list | grep -w $SWIFT_DEFAULT_PROJECT | awk '{ print $2 }'`
     mkdir -p ${STORLETS_DATA_DIR}/images/$SWIFT_DEFAULT_PROJECT_ID
-    _generate_default_tenant_dockerfile
+    cat <<EOF > ${STORLETS_DATA_DIR}/images/"$SWIFT_DEFAULT_PROJECT_ID"/Dockerfile
+FROM storlet_engine_image
+MAINTAINER root
+EOF
     cd ${STORLETS_DATA_DIR}/images/$SWIFT_DEFAULT_PROJECT_ID
     $CONTAINER_CMD build -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
     cd -
@@ -318,14 +310,14 @@ function create_default_tenant_image {
 
 function create_test_config_file {
     testfile=${REPO_DIR}/test.conf
-    iniset ${testfile} general keystone_default_domain $SWIFT_DEFAULT_PROJECT_DOMAIN_ID
+    iniset ${testfile} general keystone_default_domain default
     iniset ${testfile} general keystone_public_url $KEYSTONE_PUBLIC_URL
     iniset ${testfile} general storlets_default_project_name $SWIFT_DEFAULT_PROJECT
     iniset ${testfile} general storlets_default_project_user_name $SWIFT_DEFAULT_USER
     iniset ${testfile} general storlets_default_project_user_password $SWIFT_DEFAULT_USER_PWD
     iniset ${testfile} general storlets_default_project_member_user $SWIFT_MEMBER_USER
     iniset ${testfile} general storlets_default_project_member_password $SWIFT_MEMBER_USER_PWD
-    iniset ${testfile} general region
+    iniset ${testfile} general region $REGION_NAME
 
     iniset ${testfile} general storlet_container $STORLETS_STORLET_CONTAINER_NAME
     iniset ${testfile} general storlet_dependency $STORLETS_DEPENDENCY_CONTAINER_NAME
