@@ -121,8 +121,6 @@ function configure_swift_and_keystone_for_storlets {
 
 function _install_docker {
     if is_fedora; then
-        # NOTE(tkajinam): install_docker.sh requires the yum command
-        install_package yum
         wget http://get.docker.com -O install_docker.sh
         chmod 755 install_docker.sh
         sudo bash -x install_docker.sh
