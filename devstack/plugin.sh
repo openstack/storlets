@@ -193,14 +193,16 @@ EOF
 
     else
         JDK_PACKAGE="openjdk-${STORLETS_JDK_VERSION}-jdk-headless"
-        PYTHON_PACKAGES="python3 python3.10"
+        PYTHON_PACKAGES="python3 python3.10 python3.11 python3.13 python3.14"
 
         cat <<EOF > ${JRE_DOCKERFILE}
 FROM $STORLETS_CONTAINER_BASE_IMG
 MAINTAINER root
 RUN apt-get update && \
-    apt-get install -y ${PYTHON_PACKAGES} ${JDK_PACKAGE} && \
-    apt-get clean && \
+    apt install -y --no-install-recommends software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt update && \
+    apt-get install -y --no-install-recommends ${PYTHON_PACKAGES} ${JDK_PACKAGE} && \
     rm -rf /var/lib/apt/lists/*
 EOF
     fi
