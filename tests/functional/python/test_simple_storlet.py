@@ -163,5 +163,30 @@ class TestSimpleStorletOnProxy(TestSimpleStorlet):
         self.additional_headers = {'X-Storlet-Run-On-Proxy': ''}
 
 
+class TestSimpleStorletPy310(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletPy310, self).setUp(version='3.10')
+
+
+class TestSimpleStorletPy311(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletPy311, self).setUp(version='3.11')
+
+
+class TestSimpleStorletPy312(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletPy312, self).setUp(version='3.12')
+
+
+class TestSimpleStorletPy313(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletPy313, self).setUp(version='3.13')
+
+
+class TestSimpleStorletPy314(TestSimpleStorlet):
+    def setUp(self):
+        super(TestSimpleStorletPy314, self).setUp(version='3.14')
+
+
 if __name__ == '__main__':
     unittest.main()
