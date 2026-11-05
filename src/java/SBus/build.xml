@@ -29,9 +29,13 @@
         <javac
             srcdir="src/main"
             destdir="bin"
-            classpath="../dependencies/gson-2.14.0.jar"
             includeantruntime="false"
             nativeheaderdir='.'>
+            <classpath>
+                <fileset dir="../dependencies/">
+                    <include name="gson-*.jar"/>
+                </fileset>
+            </classpath>
             <compilerarg value="-Xlint"/>
         </javac>
     </target>

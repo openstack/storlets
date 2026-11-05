@@ -29,10 +29,9 @@
         <javac srcdir="src/main" destdir="bin" includeantruntime="false">
             <classpath>
                 <pathelement path="../SBus/bin/SBusJavaFacade.jar"/>
-                <pathelement path="../dependencies/gson-2.14.0.jar"/>
-                <pathelement path="../dependencies/slf4j-api-2.0.18.jar"/>
-                <pathelement path="../dependencies/logback-classic-1.6.3.jar"/>
-                <pathelement path="../dependencies/logback-core-1.6.3.jar"/>
+                <fileset dir="../dependencies/">
+                    <include name="*.jar"/>
+                </fileset>
                 <pathelement path="."/>
             </classpath>
         </javac>
