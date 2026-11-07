@@ -75,7 +75,7 @@ void sbus_start_logger( const char* str_log_level, const char* container_id )
     strcat(ident, ": ");
     strcat(ident, SBUS_SYSLOG_PATH);
 
-    openlog( ident, LOG_PID, LOG_SYSLOG );
+    openlog( ident, LOG_PID, LOG_USER );
     if( LOG_EMERG == n_level )
         setlogmask( LOG_EMERG );
     else
