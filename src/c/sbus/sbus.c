@@ -64,19 +64,18 @@ int sbus_translate_log_level( const char* str_log_level )
     return level;
 }
 
-char str[80] = "CONT #";
-
 void sbus_start_logger( const char* str_log_level, const char* container_id )
 {
     int n_level = sbus_translate_log_level( str_log_level );
+    char ident[80] = "CONT #";
 
     closelog();
 
-    strcat(str, container_id);
-    strcat(str, ": ");
-    strcat(str, SBUS_SYSLOG_PATH);
+    strcat(ident, container_id);
+    strcat(ident, ": ");
+    strcat(ident, SBUS_SYSLOG_PATH);
 
-    openlog( str, LOG_PID, LOG_SYSLOG );
+    openlog( ident, LOG_PID, LOG_SYSLOG );
     if( LOG_EMERG == n_level )
         setlogmask( LOG_EMERG );
     else
