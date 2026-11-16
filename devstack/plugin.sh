@@ -69,8 +69,10 @@ STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-25}
 
 if [ $STORLETS_GATEWAY_MODULE == 'podman' ]; then
     CONTAINER_CMD=podman
+    CONTAINER_BUILD_CMD='podman build'
 elif [ $STORLETS_GATEWAY_MODULE == 'docker' ]; then
     CONTAINER_CMD='sudo docker'
+    CONTAINER_BUILD_CMD='sudo docker buildx build'
 fi
 
 # Functions
@@ -122,7 +124,7 @@ function _install_docker {
         sudo bash -x install_docker.sh
         rm install_docker.sh
     else
-        install_package docker.io
+        install_package docker.io docker-buildx
     fi
 
     # Add swift user to docker group so that the user can manage docker
@@ -214,7 +216,7 @@ function create_base_jre_image {
     mkdir -p ${STORLETS_DATA_DIR}/images/storlet_engine_image
     _generate_jre_dockerfile
     cd ${STORLETS_DATA_DIR}/images/storlet_engine_image
-    $CONTAINER_CMD build -t storlet_engine_image .
+    $CONTAINER_BUILD_CMD -t storlet_engine_image .
     cd -
 }
 
@@ -306,7 +308,7 @@ FROM storlet_engine_image
 MAINTAINER root
 EOF
     cd ${STORLETS_DATA_DIR}/images/$SWIFT_DEFAULT_PROJECT_ID
-    $CONTAINER_CMD build -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
+    $CONTAINER_BUILD_CMD -t ${SWIFT_DEFAULT_PROJECT_ID:0:13} .
     cd -
 }
 
