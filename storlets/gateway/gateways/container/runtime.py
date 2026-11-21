@@ -15,6 +15,7 @@
 
 import abc
 import errno
+import hashlib
 import os
 import select
 import stat
@@ -122,6 +123,9 @@ class RunTimePaths(object):
             conf.get('cache_dir',
                      os.path.join(self.host_root_dir, 'cache', 'scopes'))
 
+        self.pipe_hash_prefix = conf.get('pipe_hash_prefix', '')
+        self.pipe_hash_suffix = conf.get('pipe_hash_suffix', '')
+
         self.host_storlet_native_lib_dir = '/usr/local/lib/storlets'
         self.sandbox_storlet_native_lib_dir = '/usr/local/lib/storlets'
 
@@ -145,11 +149,18 @@ class RunTimePaths(object):
     def sandbox_factory_pipe(self):
         return os.path.join(self.sandbox_pipe_dir, self.factory_pipe_name)
 
+    def _hash_storlet_id(self, storlet_id):
+        raw = self.pipe_hash_prefix + storlet_id + self.pipe_hash_suffix
+        return hashlib.md5(
+            raw.encode("utf-8"), usedforsecurity=False).hexdigest()
+
     def get_host_storlet_pipe(self, storlet_id):
-        return os.path.join(self.host_pipe_dir, storlet_id)
+        return os.path.join(
+            self.host_pipe_dir, self._hash_storlet_id(storlet_id))
 
     def get_sbox_storlet_pipe(self, storlet_id):
-        return os.path.join(self.sandbox_pipe_dir, storlet_id)
+        return os.path.join(
+            self.sandbox_pipe_dir, self._hash_storlet_id(storlet_id))
 
     def get_sbox_storlet_dir(self, storlet_id):
         return os.path.join(self.sandbox_storlet_base_dir, storlet_id)

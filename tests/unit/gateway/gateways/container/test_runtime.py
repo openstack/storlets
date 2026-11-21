@@ -92,6 +92,7 @@ class TestRuntimePaths(unittest.TestCase):
 
         self.conf = {}
         self.storlet_id = 'org.openstack.storlet.mystorlet'
+        self.storlet_id_hash = '93c44c48eb95b0b1db9a47c8593a8528'
         self.paths = RunTimePaths(self.scope, self.conf)
 
     def tearDown(self):
@@ -136,12 +137,12 @@ class TestRuntimePaths(unittest.TestCase):
 
     def test_get_host_storlet_pipe(self):
         self.assertEqual(
-            os.path.join(self.pipes_dir, self.scope, self.storlet_id),
+            os.path.join(self.pipes_dir, self.scope, self.storlet_id_hash),
             self.paths.get_host_storlet_pipe(self.storlet_id))
 
     def test_get_sbox_storlet_pipe(self):
         self.assertEqual(
-            os.path.join('/mnt/channels', self.storlet_id),
+            os.path.join('/mnt/channels', self.storlet_id_hash),
             self.paths.get_sbox_storlet_pipe(self.storlet_id))
 
     def test_get_sbox_storlet_dir(self):
@@ -204,12 +205,14 @@ class TestRuntimePaths(unittest.TestCase):
             runtime_paths.host_factory_pipe)
         # 2. host_storlet_pipe_path <pipes_dir>/<scope>/<storlet_id>
         self.assertEqual(
-            '/var/lib/storlets/pipes/scopes/account/Storlet-1.0.jar',
+            '/var/lib/storlets/pipes/scopes/account/'
+            '6d46c4326871f52a62bb6ae6381c6ff8',
             runtime_paths.get_host_storlet_pipe(storlet_id))
         # 3. Yes, right now, we don't have the path for #3 in Python
         # 4. sandbox_storlet_pipe_path | /mnt/channels/<storlet_id>
-        self.assertEqual('/mnt/channels/Storlet-1.0.jar',
-                         runtime_paths.get_sbox_storlet_pipe(storlet_id))
+        self.assertEqual(
+            '/mnt/channels/6d46c4326871f52a62bb6ae6381c6ff8',
+            runtime_paths.get_sbox_storlet_pipe(storlet_id))
 
         # This looks like for jar load?
         self.assertEqual('/var/lib/storlets/storlets/scopes/account',

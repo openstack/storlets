@@ -8,3 +8,5 @@ container_image_namespace = localhost:5001
 restart_linux_container_timeout = 10
 storlet_timeout = 40
 max_containers_per_node = 0
+pipe_hash_prefix =
+pipe_hash_suffix =
