@@ -24,7 +24,7 @@ In addition there are several storlet examples written in both Python and Java u
 StorletSamples directory. This directory has a build.xml script used to build the samples.
 To build the storlets cd to the StorletSamples/java directory and run:
 
-::
+.. code-block:: console
 
     ant build
 
@@ -36,7 +36,7 @@ Unit tests
 
 Unit tests can be invoked using:
 
-::
+.. code-block:: console
 
     tox -e py3
 
@@ -48,7 +48,7 @@ Functional tests
 
 The functional tests can be invoked using:
 
-::
+.. code-block:: console
 
     tox -e func
 

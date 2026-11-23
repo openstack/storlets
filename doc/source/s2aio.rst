@@ -12,7 +12,7 @@ To install on the host:
 To install in a Docker container follow the same steps,
 replacing the last command with:
 
-::
+.. code-block:: console
 
     ./s2aio.sh install dev docker
 
@@ -27,13 +27,13 @@ device.
 When installed on the host, the script can be used to start and stop all
 relevant services using:
 
-::
+.. code-block:: console
 
     ./s2aio.sh stop
 
 and
 
-::
+.. code-block:: console
 
     ./s2aio.sh start
 

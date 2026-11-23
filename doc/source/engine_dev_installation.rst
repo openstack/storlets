@@ -11,13 +11,14 @@ Install Swift and Keystone using devstack
 
 Clone devstack:
 
-::
+.. code-block:: console
 
     git clone https://opendev.org/openstack/devstack.git
 
 Create a localrc file under the devstack repository root directory:
 
-::
+.. code-block:: bash
+   :caption: localrc
 
     ENABLED_SERVICES=key,swift,mysql
     HOST_IP=127.0.0.1
@@ -48,11 +49,10 @@ Create a localrc file under the devstack repository root directory:
     IDENTITY_API_VERSION=3
 
 Run the stack.sh script.
-Before proceeding, we need to stop the
-swift instances that were executed by the
+Before proceeding, we need to stop the swift instances that were executed by the
 stack.sh script. From the same directory do:
 
-::
+.. code-block:: console
 
     source functions
     source lib/swift
@@ -60,18 +60,17 @@ stack.sh script. From the same directory do:
 
 Finally, add the swift devices to fstab:
 
-::
+.. code-block:: console
 
     sudo sh -c 'echo "/opt/stack/data/swift/drives/images/swift.img /opt/stack/data/swift/drives/sdb1 xfs loop" >> /etc/fstab'
 
 Configure a user and project in Keystone
 ----------------------------------------
 
-We use the openstack cli to configure a user and project
-used by the storlets functional tests. We start by
-defining some environment variables:
+We use the openstack cli to configure a user and project used by the storlets
+functional tests. We start by defining some environment variables:
 
-::
+.. code-block:: console
 
     export OS_IDENTITY_API_VERSION=3
     export OS_AUTH_URL="http://$KEYSTONE_IP/identity/v3"
@@ -84,7 +83,7 @@ defining some environment variables:
 
 We now create the project and users with Keystone.
 
-::
+.. code-block:: console
 
     openstack project create test
     openstack user create --project test --password testing tester
@@ -92,19 +91,25 @@ We now create the project and users with Keystone.
     openstack user create --project test --password member tester_member
     openstack role add --user tester --project test _member_
 
-We now test that the setup by having the user 'tester' to stat the account 'test'. We use the Swift client cli.
+We now test that the setup by having the user 'tester' to stat the account
+'test'. We use the Swift client cli.
 A convenient way to do so is to edit the user's .bashrc adding the lines:
 
-::
+.. code-block:: bash
+   :caption: .bashrc
 
-    export OS_USERNAME=tester
-    export OS_PASSWORD=testing
-    export OS_TENANT_NAME=test
+    export OS_IDENTITY_API_VERSION=3
     export OS_AUTH_URL=http://127.0.0.1/identity/v3
+    export OS_USERNAME=tester
+    export OS_USER_DOMAIN_ID=default
+    export OS_PASSWORD=testing
+    export OS_PROJECT_NAME=test
+    export OS_PROJECT_DOMAIN_ID=default
+    export OS_REGION_NAME=RegionOne
 
 Now do:
 
-::
+.. code-block:: console
 
     source .bashrc
     swift stat
@@ -116,23 +121,20 @@ Install Dependencies
 --------------------
 We need the following for the Java parts
 
-::
+.. code-block:: console
 
-    sudo apt-get install openjdk-11-jdk ant
+    sudo apt-get install openjdk-25-jdk-headless ant ant-openjdk25
 
 We need the following for Docker
 
-::
+.. code-block:: console
 
-    sudo apt-get install docker.io
-    ln -sf /usr/bin/docker.io /usr/local/bin/docker
-    sed -i '$acomplete -F _docker docker' /etc/bash_completion.d/docker
-    update-rc.d docker defaults
+    sudo apt-get install docker.io docker-buildx
 
 Also, add swift user to docker group so that the user can manage docker
 containers without sudo
 
-::
+.. code-block:: console
 
     sudo usermod -aG docker swift
 
@@ -140,38 +142,38 @@ containers without sudo
 Get and install the storlets code
 ---------------------------------
 
-::
+.. code-block:: console
 
-    cd $HOME
+    cd ~
     git clone https://opendev.org/openstack/storlets.git
     cd storlets
     sudo ./install_libs.sh
-    sudo python setup.py install
-    cd -
-
-.. note:: You don't need sudo for 'python setup.py install' when installing the storlets package into your python virtualenv.
+    /opt/stack/data/venv/bin/pip install .
+    sudo mkdir -p -m 755 /usr/local/lib/storlets/python
+    pip install . -t /usr/local/lib/storlets/python --no-compile --no-deps 
+    cd ~
 
 Build the Docker image to be used for running storlets
 ------------------------------------------------------
 Step 1: Create a working space for building the docker images, e.g.
 
-::
+.. code-block:: console
 
     mkdir -p $HOME/docker_repos
-    sudo docker pull ubuntu:22.04
+    sudo docker pull ubuntu:24.04
 
 Step 2: Create a Docker image with Java
 
-::
+.. code-block:: console
 
-    mkdir -p $HOME/docker_repos/ubuntu_22.04_jre11
+    mkdir -p $HOME/docker_repos/storlet_engine_image
 
-Create the file: $HOME/docker_repos/ubuntu_22.04_jre11/Dockerfile
+Create the file: $HOME/docker_repos/storlet_engine_image/Dockerfile
 with the following content:
 
-::
+.. code-block:: dockerfile
 
-    FROM ubuntu:22.04
+    FROM ubuntu:24.04
     MAINTAINER root
 
     # The following operations should be defined in one line
@@ -179,24 +181,27 @@ with the following content:
     RUN apt-get update && \
     apt-get install python3 && \
     apt-get install software-properties-common && \
-    apt-get install openjdk-11-jre-headless ant  && \
+    apt-get install openjdk-25-jre-headless ant  && \
     apt-get clean
 
 Build the image and name it *storlet_engine_image*.
 
-::
+.. code-block:: console
 
-    cd $HOME/docker_repos/ubuntu_22.04_jre11
-    sudo docker build -t storlet_engine_image .
+    cd $HOME/docker_repos/storlet_engine_image
+    sudo docker buildx build -t storlet_engine_image .
     cd -
 
 Step 3: Create a tenant specific image. The engine looks for images
 having the name <tenand id>.
 First, we get the tenant id. Using the Swift cli and the above create user do:
 
-::
+.. code-block:: console
 
-    swift --os-auth-url http://127.0.0.1/identity/v3 --os-project-name test --os-project-domain-name default --os-username tester --os-password testing stat
+    swift --os-auth-url http://127.0.0.1/identity/v3 \
+        --os-project-name test --os-project-domain-name default \
+        --os-username tester --os-password testing \
+        stat
 
 The response from the above contains the account line, e.g.:
 
@@ -206,10 +211,10 @@ The response from the above contains the account line, e.g.:
 
 The account id is the number following the 'AUTH\_' prefix.
 
-Next create the file $HOME/docker_repos/storlet_engine_image_<account id>/Dockerfile
+Next create the file `$HOME/docker_repos/storlet_engine_image_<account id>/Dockerfile`
 with the following content:
 
-::
+.. code-block:: dockerfile
 
     FROM storlet_engine_image
     MAINTAINER root
@@ -217,17 +222,17 @@ with the following content:
 
 Build the image
 
-::
+.. code-block:: console
 
     cd $HOME/docker_repos/storlet_engine_image_<account id>
-    sudo docker build -t <account id> .
+    sudo docker buildx build -t <account id> .
     cd -
 
 Create the storlets run time environment
 ----------------------------------------
 Create the run time directory
 
-::
+.. code-block:: console
 
     export STORLETS_HOME=/var/lib/storlets
     sudo mkdir -p $STORLETS_HOME
@@ -246,13 +251,14 @@ do the following:
 
  #. Add the storlet_handler to the proxy server pipeline just before the slo middleware as shown below:
 
- ::
+ .. code-block:: ini
 
+    [pipeline:main]
     pipeline = catch_errors gatekeeper healthcheck proxy-logging cache container_sync bulk tempurl ratelimit authtoken keystoneauth container-quotas account-quotas storlet_handler slo dlo versioned_writes proxy-logging proxy-server
 
  #. At the bottom of the file add the following configuration block:
 
- ::
+ .. code-block:: ini
 
     [filter:storlet_handler]
     use = egg:storlets#storlet_handler
@@ -270,13 +276,14 @@ otherwise the file is typically /etc/swift/object-server.conf
 
  1. Add the storlet_handler to the object server pipeline just before the slo object-server as shown below:
 
- ::
+ .. code-block:: ini
 
+    [pipeline:main]
     pipeline = recon storlet_handler object-server
 
  2. At the bottom of the file add the following configuration block:
 
- ::
+ .. code-block:: ini
 
     [filter:storlet_handler]
     use = egg:storlets#storlet_handler
@@ -291,7 +298,7 @@ Step 3: Add the Docker gateway configuration file.
 Under /etc/swift create a file named storlet_docker_gateway.conf
 with the following content:
 
-::
+.. code-block:: ini
 
     [DEFAULT]
     storlet_logcontainer = storletlog
@@ -302,7 +309,7 @@ with the following content:
 
 Step 4: restart swift
 
-::
+.. code-block:: console
 
     sudo swift-init all restart
 
@@ -315,7 +322,7 @@ various Swift containers assumed by the engine.
 
 We use the swift cli as follows:
 
-::
+.. code-block:: console
 
   swift post \
   --os-auth-url=http://127.0.0.1/identity/v3 \
@@ -365,7 +372,7 @@ a cluster connfiguration file.
 Step 1: Create the file $HOME/storlets/test.conf with the below
 content.
 
-::
+.. code-block:: ini
 
     [general]
     region = RegionOne
@@ -379,7 +386,7 @@ content.
 
 Step 2: Run the functional tests
 
-::
+.. code-block:: console
 
     cd $HOME/storlets
     ant build_storlets
