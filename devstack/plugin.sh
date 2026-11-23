@@ -34,10 +34,6 @@ set +o xtrace
 # --------
 
 # General devstack install tunables
-ADMIN_USER=admin
-ADMIN_PASSWORD=admin
-ADMIN_PROJECT=admin
-
 SWIFT_DEFAULT_PROJECT=test
 SWIFT_DEFAULT_USER=tester
 SWIFT_DEFAULT_USER_PWD=testing
