@@ -18,6 +18,7 @@
 # - ``functions`` file
 # - ``functions-common`` file
 # - ``STACK_USER`` must be defined
+# - ``STORLETS_DATA_DIR`` or ``DATA_DIR`` must be defined
 # - ``lib/swift`` file
 # - ``lib/keystone`` file
 #
@@ -47,8 +48,7 @@ SWIFT_CONF_DIR=${SWIFT_CONF_DIR:-/etc/swift}
 
 # Storlets install tunables
 STORLETS_BIN_DIR=$(get_python_exec_prefix)
-# TODO(tkajinam): Move this to DATA_DIR
-STORLETS_DATA_DIR=${STORLETS_DATA_DIR:-/var/lib/storlets}
+STORLETS_DATA_DIR=${STORLETS_DATA_DIR:-${DATA_DIR}/storlets}
 if is_fedora; then
     STORLETS_CONTAINER_BASE_IMG=${STORLETS_CONTAINER_BASE_IMG:-quay.io/centos/centos:stream9}
 else
