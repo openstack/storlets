@@ -1,3 +1,56 @@
 [build-system]
-requires = ["pbr>=6.0.0", "setuptools>=64.0.0"]
+requires = ["pbr>=6.1.1"]
 build-backend = "pbr.build"
+
+[project]
+name = "storlets"
+description = "Middleware and Compute Engine for an OpenStack Swift compute framework that runs compute within a Swift cluster"
+authors = [
+    {name = "OpenStack", email = "openstack-discuss@lists.openstack.org"},
+]
+readme = {file = "README.rst", content-type = "text/x-rst"}
+license = "Apache-2.0"
+dynamic = ["version", "dependencies"]
+requires-python = ">=3.11"
+classifiers = [
+  "Environment :: OpenStack",
+  "Intended Audience :: Information Technology",
+  "Intended Audience :: System Administrators",
+  "Operating System :: POSIX :: Linux",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3 :: Only",
+]
+
+[project.urls]
+Homepage = "https://docs.openstack.org/storlets"
+Repository = "https://opendev.org/openstack/storlets"
+
+[project.optional-dependencies]
+docker = [
+    "docker>=1.5.0",  # Apache-2.0
+]
+podman = [
+    "podman>=5.0.0",  # Apache-2.0
+]
+
+[project.scripts]
+sbus = "storlets.sbus.cli:main"
+
+[project.entry-points."paste.filter_factory"]
+storlet_handler = "storlets.swift_middleware.storlet_handler:filter_factory"
+
+[project.entry-points."storlets.gateways"]
+stub = "storlets.gateway.gateways.stub:StubStorletGateway"
+docker = "storlets.gateway.gateways.docker:DockerStorletGateway"
+podman = "storlets.gateway.gateways.podman:PodmanStorletGateway"
+
+[tool.setuptools.packages.find]
+include = ["storlets*"]
+
+[tool.codespell]
+quiet-level = 4
