@@ -67,13 +67,20 @@ STORLETS_RESTART_CONTAINER_TIMEOUT=${STORLETS_RESTART_CONTAINER_TIMEOUT:-3}
 STORLETS_RUNTIME_TIMEOUT=${STORLETS_RUNTIME_TIMEOUT:-40}
 STORLETS_JDK_VERSION=${STORLETS_JDK_VERSION:-25}
 
-if [ $STORLETS_GATEWAY_MODULE == 'podman' ]; then
-    CONTAINER_CMD=podman
-    CONTAINER_BUILD_CMD='podman build'
-elif [ $STORLETS_GATEWAY_MODULE == 'docker' ]; then
-    CONTAINER_CMD='sudo docker'
-    CONTAINER_BUILD_CMD='sudo docker buildx build'
-fi
+case $STORLETS_GATEWAY_MODULE in
+    podman)
+        CONTAINER_CMD=podman
+        CONTAINER_BUILD_CMD='podman build'
+        ;;
+    docker)
+        CONTAINER_CMD='sudo docker'
+        CONTAINER_BUILD_CMD='sudo docker buildx build'
+        ;;
+    stub)
+        ;;
+    *)
+        die $LINENO "Unknown STORLETS_GATEWAY_MODULE: $STORLETS_GATEWAY_MODULE"
+esac
 
 # Functions
 # ---------
@@ -338,9 +345,11 @@ function install_storlets {
     echo "Configure swift and keystone for storlets"
     configure_swift_and_keystone_for_storlets
 
-    echo "Create Docker images"
-    create_base_jre_image
-    create_default_tenant_image
+    if [ -n "${CONTAINER_CMD}" ]; then
+        echo "Create Docker images"
+        create_base_jre_image
+        create_default_tenant_image
+    fi
 
     echo "Create test configuration file"
     create_test_config_file
