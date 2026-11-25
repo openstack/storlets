@@ -712,10 +712,8 @@ class StorletInvocationProtocol(object):
         Wait while the read file descriptor gets ready
 
         :param fd: File descriptor to read
-        :raises StorletTimeout: Exception raised when it times out to cancel
-                                the existing task
-        :raises StorletRuntimeException: Exception raised when it fails to
-                                         cancel the existing task
+        :raises StorletTimeout: when fd doesn't become ready for read within
+                                timeout
         """
         try:
             with StorletTimeout(self.timeout):
@@ -762,10 +760,8 @@ class StorletInvocationProtocol(object):
         Wait while the write file descriptor gets ready
 
         :param fd: File descriptor to write
-        :raises StorletTimeout: Exception raised when it times out to cancel
-                                the existing task
-        :raises StorletRuntimeException: Exception raised when it fails to
-                                         cancel the existing task
+        :raises StorletTimeout: when fd doesn't become ready for write within
+                                timeout
         """
         with StorletTimeout(self.timeout):
             r, w, e = select.select([], [fd], [])
